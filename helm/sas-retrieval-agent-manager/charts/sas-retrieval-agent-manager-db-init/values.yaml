@@ -1,0 +1,236 @@
+
+# Default values for sas-retrieval-agent-manager-db-init.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# -- Container image configuration for database initialization
+image:
+  # -- PostgreSQL container image configuration
+  postgres:
+    repo:
+      # -- Container registry base URL for PostgreSQL
+      base: docker.io
+      # -- Container image path/name for PostgreSQL
+      path: postgres
+      # -- Use global registry configuration instead of local
+      useGlobal: false
+    # -- Image pull policy for PostgreSQL container
+    pullPolicy: IfNotPresent
+    # -- PostgreSQL container image tag
+    tag: "15-alpine"
+  # -- kubectl container image configuration (used for Kubernetes operations)
+  kubectl:
+    repo:
+      # -- Container registry base URL for kubectl
+      base: "docker.io"
+      # -- Container image path/name for kubectl
+      path: alpine/k8s
+      # -- Use global registry configuration instead of local
+      useGlobal: false
+    # -- Image pull policy for kubectl container
+    pullPolicy: IfNotPresent
+    # -- kubectl container image tag
+    tag: "1.31.12"
+
+# -- Array of imagePullSecrets in the namespace for pulling images from private registries
+imagePullSecrets: []
+
+# -- String to partially override the fullname template with a string (will prepend the release name)
+nameOverride: "initialization"
+
+# -- String to fully override the fullname template with a string
+fullnameOverride: "sas-retrieval-agent-manager-db-init"
+
+# -- Service account configuration for database initialization
+serviceAccount:
+  # -- Specifies whether a service account should be created
+  create: true
+  # -- Automatically mount a ServiceAccount's API credentials
+  automount: true
+  # -- Annotations to add to the service account
+  annotations: {}
+  # -- The name of the service account to use. If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+# -- Annotations to add to the pods
+podAnnotations: {}
+
+# -- Labels to add to the pods
+podLabels:
+  sas.com/deployment: "sas-retrieval-agent-manager"
+  workload.sas.com/class: "ram"
+
+# -- The security context for the pods
+podSecurityContext:
+  # -- Group ID for file system ownership
+  fsGroup: 10001
+  # -- Group ID to run the entrypoint of the container process
+  runAsGroup: 10001
+  # -- Indicates that the container must be run as a non-root user
+  runAsNonRoot: true
+  # -- User ID to run the entrypoint of the container process
+  runAsUser: 10001
+  # -- Seccomp profile for the pod
+  seccompProfile:
+    type: RuntimeDefault
+  # fsGroup: 2000
+
+# -- The security context for the application container
+securityContext:
+  # -- Seccomp profile for the container
+  seccompProfile:
+    type: RuntimeDefault
+  # -- Whether a process can gain more privileges than its parent process
+  allowPrivilegeEscalation: false
+  # -- Linux capabilities to add/drop for the container
+  capabilities:
+    add: []
+    drop:
+      - ALL
+  # -- Whether the container has a read-only root filesystem
+  readOnlyRootFilesystem: true
+  # -- Whether the container must be run as a non-root user
+  runAsNonRoot: true
+  # -- User ID to run the entrypoint of the container process
+  runAsUser: 10001
+
+# -- The resources to allocate for the database initialization container
+resources:
+  # -- Resource limits for the container
+  limits:
+    # -- CPU limit
+    cpu: 200m
+    # -- Memory limit
+    memory: 256Mi
+  # -- Resource requests for the container
+  requests:
+    # -- CPU request
+    cpu: 100m
+    # -- Memory request
+    memory: 128Mi
+
+# -- Node labels for pod assignment
+nodeSelector: {}
+
+# -- Tolerations for pod assignment
+tolerations: []
+
+# -- Map of node/pod affinities
+affinity:
+  nodeAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 1
+      preference:
+        matchExpressions:
+        - key: sas.com/deployment
+          operator: In
+          values:
+          - sas-retrieval-agent-manager
+    - weight: 2
+      preference:
+        matchExpressions:
+        - key: workload.sas.com/class
+          operator: In
+          values:
+          - ram
+
+# -- Global configuration for database initialization and setup
+global:
+  # -- Configuration settings
+  configuration:
+    # -- Database connection and initialization configuration
+    database:
+      # -- Whether to initialize the database
+      initializeDb: "true"
+      # -- Database host
+      host: ""
+      # -- Database port
+      port: "5432"
+      # -- SSL mode for database connection
+      sslmode: "require"
+      # -- Initial admin role for database management
+      initAdminRole: "azure_pg_admin"
+      # -- Initial admin password (should be provided via secret)
+      # initAdminPassword: ""
+
+    # -- Database migration configuration
+    migration:
+      # -- Whether to create migration user
+      createUser: true
+      # -- Database migration user name
+      dbMigrationUser: "sas_iot_migration"
+      # -- Database migration user password (should be provided via secret)
+      # dbMigrationPassword: ""
+
+    # -- Application database configuration
+    application:
+      # -- Whether to create application database
+      createDB: true
+      # -- Whether to create application schema
+      createSchema: true
+      # -- Whether to create application user
+      createUser: true
+      # -- Application database name
+      db: "SASRetrievalAgentManager"
+      # -- Application schema name
+      schema: "retagentmgr"
+      # -- Application database user name
+      user: "sas_ram_pgrest_user"
+      # -- Application database user password
+      password: ""
+      # -- Admin role name for application
+      adminRole: "sas_ram_admin_role"
+      # -- User role name for application
+      userRole: "sas_ram_user_role"
+
+    # -- Keycloak database configuration
+    keycloak:
+      # -- Whether to create Keycloak database
+      createDB: true
+      # -- Whether to create Keycloak schema
+      createSchema: true
+      # -- Whether to create Keycloak user
+      createUser: true
+      # -- Keycloak database name
+      db: "SASRetrievalAgentManagerIAM"
+      # -- Keycloak schema name
+      schema: "keycloak"
+      # -- Keycloak database user name
+      user: "sas_keycloak_user"
+      # -- Keycloak database user password
+      password: ""
+
+    # -- Vectorization job user configuration
+    vectorizationJob:
+      # -- Database name (uses application database)
+      # db: "SASRetrievalAgentManager"
+      # -- Schema name (uses application schema)
+      # schema: "retagentmgr"
+      # -- Vectorization job user name
+      user: "sas_ram_vectorization_user"
+      # -- Vectorization job user password
+      password: ""
+
+    # -- Vector store database configuration
+    vectorStore:
+      # -- Whether vector store is enabled
+      enabled: true
+      # -- Whether to create vector store database
+      createDB: true
+      # -- Whether to create vector store schema
+      createSchema: true
+      # -- Whether to create vector store user
+      createUser: true
+      # -- Vector store database name
+      db: "SASRetrievalAgentManagerVector"
+      # -- Vector store schema name
+      schema: "vectorstore"
+      # -- Vector store database user name
+      user: "vector_store_user"
+      # -- Vector store database user password
+      password: ""
+
+    # -- Weaviate vector database configuration
+    weaviate:
+      # -- Whether Weaviate integration is enabled
+      enabled: true

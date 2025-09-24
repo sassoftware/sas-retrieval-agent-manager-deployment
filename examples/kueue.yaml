@@ -1,0 +1,125 @@
+# -- Controller Manager Configuration for Kueue workload scheduling
+# -- Manages the core Kueue controller components and container images
+controllerManager:
+ manager:
+   image:
+     # -- Main Kueue controller image repository location
+     # -- Uses the official Kubernetes registry for the core Kueue controller
+     repository: registry.k8s.io/kueue/kueue
+
+   # -- Pod annotations for the Kueue controller manager pods.
+   podAnnotations:
+     # -- Enable Linkerd injection for the kueue controller manager pods.
+     linkerd.io/inject: "enabled"
+
+# -- Kueue Visualization Components for dashboard and monitoring
+# -- Provides web-based visualization of queue status and workload management
+kueueViz:
+ backend:
+   # -- Backend service for the Kueue visualization dashboard
+   # -- Handles API requests and data processing for the visualization interface
+   image: "registry.k8s.io/kueue/kueueviz-backend:main"
+   
+ frontend:
+   # -- Frontend web interface for visualizing queue status and workloads
+   # -- Provides user interface for monitoring Kueue operations
+   image: "registry.k8s.io/kueue/kueueviz-frontend:main"
+
+# -- Naming configuration override for Kubernetes resources
+# -- Overrides the default chart name for resource naming
+# -- All Kubernetes resources under this chart will use 'kueue' as the base name
+nameOverride: kueue
+
+# -- Full name override for complete resource naming control
+# -- Completely overrides the full name template for all resources
+# -- This ensures consistent 'kueue' naming across all deployed components
+fullnameOverride: kueue
+
+# -- Manager configuration for Kueue controller behavior and policies
+# -- Defines comprehensive settings for workload management, API limits, and integrations
+managerConfig:
+ controllerManagerConfigYaml: |-
+   # -- API version for Kueue configuration schema
+   # -- Must match the supported configuration API version
+   apiVersion: config.kueue.x-k8s.io/v1beta1
+
+   # -- Configuration resource kind identifier
+   # -- Specifies this as a Kueue Configuration resource
+   kind: Configuration
+   
+   # -- Health and monitoring configuration for controller lifecycle
+   # -- Defines endpoints for Kubernetes health checks and monitoring
+   health:
+     # -- Port for Kubernetes health probes (liveness/readiness)
+     # -- Used by Kubernetes to determine controller health status
+     healthProbeBindAddress: :8081
+   
+   # -- Metrics configuration for monitoring and observability
+   # -- Exposes Prometheus-compatible metrics for system monitoring
+   metrics:
+     # -- Port for exposing Prometheus metrics endpoint
+     # -- Allows monitoring systems to collect Kueue performance data
+     bindAddress: :8080
+   
+   # -- Webhook configuration for admission control
+   # -- Defines HTTPS port for validating and mutating webhooks
+   webhook:
+     # -- HTTPS port for admission webhooks
+     # -- Secure port for intercepting and validating Kubernetes resources
+     port: 9443
+   
+   # -- Leader election configuration for high availability deployments
+   # -- Ensures only one controller instance is active when multiple replicas exist
+   leaderElection:
+     # -- Enable leader election for controller manager replicas
+     # -- Prevents split-brain scenarios in multi-replica deployments
+     leaderElect: true
+     # -- Unique identifier for the leader election lease resource
+     # -- Used to coordinate leadership among controller replicas
+     resourceName: c1f6bfd2.kueue.x-k8s.io
+   
+   # -- Controller concurrency settings for resource reconciliation
+   # -- Controls parallel processing of different resource types for optimal performance
+   controller:
+     groupKindConcurrency:
+       # -- Maximum concurrent reconciliation of Kubernetes Jobs
+       # -- Higher values improve throughput for job-heavy workloads
+       Job.batch: 5
+       # -- Maximum concurrent reconciliation of Pods
+       # -- Controls pod-level workload processing concurrency
+       Pod: 5
+       # -- Maximum concurrent reconciliation of Kueue Workloads
+       # -- Core Kueue resource reconciliation parallelism
+       Workload.kueue.x-k8s.io: 5
+       # -- LocalQueue reconciliation concurrency
+       # -- Typically single-threaded to maintain queue consistency
+       LocalQueue.kueue.x-k8s.io: 1
+       # -- ClusterQueue reconciliation concurrency
+       # -- Single-threaded for cluster-wide resource coordination
+       ClusterQueue.kueue.x-k8s.io: 1
+       # -- ResourceFlavor reconciliation concurrency
+       # -- Manages resource flavor definitions and updates
+       ResourceFlavor.kueue.x-k8s.io: 1
+   
+   # -- Kubernetes API client configuration for API server communication
+   # -- Controls rate limiting and connection behavior to the Kubernetes API
+   clientConnection:
+     # -- Queries per second limit to the Kubernetes API server
+     # -- Higher values allow more aggressive API usage
+     qps: 50
+     # -- Maximum burst of requests allowed above the QPS limit
+     # -- Provides headroom for temporary API usage spikes
+     burst: 100
+   
+   # -- Job management behavior for automatic queue assignment
+   # -- Controls whether Kueue manages jobs without explicit queue specification
+   # -- Recommended to keep false for security and explicit job management
+   manageJobsWithoutQueueName: false
+   
+   # -- Integration configuration for supported workload frameworks
+   # -- Defines which Kubernetes resource types Kueue will manage
+   integrations:
+     frameworks:
+     # -- List of supported workload types
+     # -- Currently configured to handle Kubernetes batch/Job resources
+     - "batch/job"

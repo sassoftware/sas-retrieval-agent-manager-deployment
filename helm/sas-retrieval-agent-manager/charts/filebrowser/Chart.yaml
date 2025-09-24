@@ -1,0 +1,54 @@
+annotations:
+  artifacthub.io/dependencies: |
+    - name: ingress-nginx
+      version: ">=4.0.0"
+      repository: https://kubernetes.github.io/ingress-nginx
+      condition: ingress.enabled
+  artifacthub.io/images: |
+    - name: filebrowser
+      image: docker.io/filebrowser/filebrowser:v2.23.0
+      whitelisted: true
+  artifacthub.io/license: MIT
+  artifacthub.io/links: |
+    - name: File Browser Documentation
+      url: https://filebrowser.org/
+    - name: Source Repository
+      url: https://github.com/filebrowser/filebrowser
+  artifacthub.io/operator: "false"
+  artifacthub.io/prerelease: "false"
+  helm.version.min: 3.8.0
+  kubernetes.version.max: 1.30.0
+  kubernetes.version.min: 1.20.0
+  resources.cpu.max: "1"
+  resources.cpu.min: 100m
+  resources.memory.max: 512Mi
+  resources.memory.min: 128Mi
+  storage.required: "true"
+  storage.size.min: 1Gi
+  storage.size.recommended: 10Gi
+apiVersion: v2
+appVersion: v2.23.0
+description: A Helm chart for File Browser - A web-based file management interface
+  with OAuth2 authentication
+home: https://filebrowser.org
+icon: https://raw.githubusercontent.com/filebrowser/filebrowser/bb5d192095646e1643f97d5f860d22bb566038d8/frontend/public/img/icons/favicon-32x32.png
+keywords:
+- filebrowser
+- file-browser
+- file-server
+- http-file-server
+- web-interface
+- file-management
+- oauth2
+- authentication
+- storage
+- kubernetes
+maintainers:
+- email: support@sas.com
+  name: SAS Institute
+  url: https://www.sas.com
+name: filebrowser
+sources:
+- https://github.com/filebrowser/filebrowser
+type: application
+version: 1.0.0

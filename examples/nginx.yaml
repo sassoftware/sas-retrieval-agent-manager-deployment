@@ -1,0 +1,125 @@
+controller:
+  service:
+    ###### REQUIRED FOR AZURE DEPLOYMENTS ######
+    # -- Azure deployment specific annotations for load balancer configuration
+    # -- Provides health probe and DNS label configuration for Azure environments
+    # annotations:
+    #   service.beta.kubernetes.io/azure-load-balancer-health-probe-request-path: /healthz
+    #   service.beta.kubernetes.io/azure-dns-label-name: <your-dns-label>
+
+    # -- Set external traffic policy to Local to preserve client source IPs.
+    # This allows accurate logging and IP-based access controls for ingress resources.
+    # See: https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/#preserving-the-client-source-ip
+    externalTrafficPolicy: Local
+    
+    # -- Restrict load balancer source IP ranges for enhanced security
+    # -- Empty array allows all source IPs to access the load balancer
+    loadBalancerSourceRanges: []
+    # Reserved documentation address blocks. See RFC5737.
+    #  - 10.0.0.0/8       # Required for azure internal services
+    #  - 192.0.2.0/24     # TEST-NET-1
+    #  - 198.51.100.0/24  # TEST-NET-2
+    #  - 203.0.113.0/24   # TEST-NET-3
+
+  # -- Allow snippet annotations in ingress resources (SECURITY SENSITIVE)
+  # -- Enables custom NGINX configuration via annotations but may pose security risks
+  allowSnippetAnnotations: true
+  
+  # -- Enable annotation validations for ingress resources
+  # -- Validates ingress annotations for security and correctness
+  enableAnnotationValidations: false
+  
+  # -- NGINX configuration options for the ingress controller
+  # -- Controls various NGINX behavior settings and security parameters
+  # -- Full list of options available at: https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/configmap
+  config:
+    # -- Use forwarded headers for client IP detection
+    # -- Controls whether NGINX uses X-Forwarded-* headers
+    use-forwarded-headers: "false"
+    
+    # -- HSTS max age in seconds for security headers
+    # -- Sets the max-age directive for HTTP Strict Transport Security
+    hsts-max-age: "63072000"
+    
+    # -- Hide server headers from HTTP responses
+    # -- Removes specified headers from responses for security
+    hide-headers: Server,X-Powered-By
+    
+    # -- Strict path validation for ingress paths
+    # -- Controls strict validation of path types in ingress resources
+    strict-validate-path-type: "false"
+    
+    # -- Annotation risk level for security assessment
+    # -- Defines the risk level for potentially dangerous annotations
+    annotations-risk-level: "Critical"
+    
+    # -- Allow snippet annotations in NGINX config
+    # -- Permits the use of configuration snippets in annotations
+    allow-snippet-annotations: "true"
+    
+    # -- Client header buffer settings for large headers
+    # -- Configures buffer size for reading large client request headers
+    large-client-header-buffers: 4 32k
+  
+  # -- IngressClass resource configuration for controller identification
+  # -- Defines the IngressClass resource that this controller will handle
+  ingressClassResource:
+    # -- IngressClass name for resource identification
+    # -- Name used by ingress resources to select this controller
+    name: nginx
+    
+    # -- Enable IngressClass resource creation
+    # -- Controls whether the IngressClass resource is created
+    enabled: 'true'
+    
+    # -- Make this the default IngressClass for the cluster
+    # -- Sets this IngressClass as the default for ingress resources without explicit class
+    default: 'true'
+    
+    # -- Controller identifier value for IngressClass
+    # -- Unique identifier for this ingress controller implementation
+    controllerValue: k8s.io/ingress-nginx
+  
+  # -- Admission webhooks configuration for validating ingress resources
+  # -- Provides validation and mutation of ingress resources before creation
+  admissionWebhooks:
+    # -- Enable admission webhooks for ingress validation
+    # -- Controls whether admission webhooks are deployed and active
+    enabled: true
+    
+    # -- Patch webhook configuration for certificate management
+    # -- Handles automatic certificate generation and patching for webhooks
+    patch:
+      enabled: true
+    
+    # -- Webhook annotations configuration for security validation
+    # -- Defines allowlist of annotations that can be used in ingress resources
+    annotations:
+      allowlist: "nginx.ingress.kubernetes.io/configuration-snippet,nginx.ingress.kubernetes.io/server-snippet,nginx.ingress.kubernetes.io/location-snippet"
+
+  # -- Pod annotations for the ingress controller pods
+  # -- Used for adding metadata or enabling features like service mesh injection
+  podAnnotations:
+    # -- Enable Linkerd injection for the nginx controller pods.
+    linkerd.io/inject: "enabled"
+
+    # --  Skip Linkerd proxying for inbound traffic on port 443 (HTTPS).
+    # This is important to avoid conflicts with the controller's own
+    # handling of HTTPS traffic and preserve client source IPs.
+    # Outbound traffic, and inbound traffic to other ports, is still
+    # proxied and encrypted by Linkerd as expected.
+    config.linkerd.io/skip-inbound-ports: "443"
+
+  # -- Node selector for pod placement constraints
+  # -- Restricts controller pods to nodes with specific labels
+  nodeSelector:
+    kubernetes.io/os: linux
+  
+  # -- Number of controller replica pods for high availability
+  # -- Controls horizontal scaling of the ingress controller
+  replicaCount: 1
+  
+  # -- Extra command line arguments for the controller
+  # -- Additional arguments passed to the ingress controller binary
+  extraArgs:
+    default-ssl-certificate: "retagentmgr/ingress-tls"

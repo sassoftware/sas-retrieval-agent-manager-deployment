@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "postgrest.fullname" . }}-configuration
+  labels:
+    {{- include "postgrest.labels" . | nindent 4 }}
+data:
+  postgrest.conf: |-
+    db-aggregates-enabled = "true"
+
+    {{- range $k, $v := .Values.global.configuration.postgrest }}
+    {{ $k }} = {{ $v | toString | quote }}
+    {{- end }}
+
+    {{ if .Values.ingress.useGlobal -}}
+    {{- if eq (hasKey .Values.global.configuration.postgrest "openapi-server-proxy-uri") false }}
+    openapi-server-proxy-uri = "https://{{ .Values.global.domain }}{{ regexReplaceAll "\\(.*" (first .Values.ingress.paths).path "" }}"
+    {{- end }}
+    {{- if eq (hasKey .Values.global.configuration.postgrest "server-cors-allowed-origins") false }}
+    server-cors-allowed-origins = "http://{{ .Values.global.domain }},https://{{ .Values.global.domain }}"
+    {{- end }}
+    {{- else -}}
+    {{- if eq (hasKey .Values.global.configuration.postgrest "openapi-server-proxy-uri") false }}
+    openapi-server-proxy-uri = "https://{{ with (first .Values.ingress.hosts) }}{{ .host }}{{ end }}/postgrest/"
+    {{- end }}
+    {{- if eq (hasKey .Values.global.configuration.postgrest "server-cors-allowed-origins") false }}
+    server-cors-allowed-origins = "http://{{ with (first .Values.ingress.hosts) }}{{ .host }}{{ end }},https://{{ with (first .Values.ingress.hosts) }}{{ .host }}{{ end }}"
+    {{- end }}
+    {{- end }}

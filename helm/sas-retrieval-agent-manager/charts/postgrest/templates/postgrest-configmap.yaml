@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgrest-configmap
+  labels:
+    {{- include "postgrest.labels" . | nindent 4 }}
+data:
+  namespace: {{ .Release.Namespace }}
+  adminService: {{ include "postgrest.fullname" . }}-admin
+  service: {{ include "postgrest.fullname" . }}
+  url: {{ if .Values.ingress.useGlobal -}}
+        "https://{{ .Values.global.domain }}{{ regexReplaceAll "\\(.*" (first .Values.ingress.paths).path "" }}"
+      {{- else -}}
+        "https://{{ with (first .Values.ingress.hosts) }}{{ .host }}{{ with (first .paths) }}/{{ regexReplaceAll "\\(.*" .path "" }}{{ end }}{{ end }}"
+      {{- end }}

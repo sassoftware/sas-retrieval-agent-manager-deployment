@@ -1,0 +1,122 @@
+annotations:
+  ai.frameworks.onnx: "true"
+  ai.frameworks.pytorch: "true"
+  ai.frameworks.tensorflow: "true"
+  ai.gpu.required: "false"
+  ai.gpu.supported: "true"
+  ai.models.embeddings: "true"
+  ai.models.llm: "true"
+  api.openapi.supported: "true"
+  api.rest.supported: "true"
+  api.versioning.supported: "true"
+  artifacthub.io/dependencies: |
+    - name: postgresql
+      version: ">=15.0.0"
+      repository: https://charts.bitnami.com/bitnami
+    - name: keycloak
+      version: ">=1.0.0"
+      repository: local
+    - name: ingress-nginx
+      version: ">=4.0.0"
+      repository: https://kubernetes.github.io/ingress-nginx
+      condition: ingress.enabled
+  artifacthub.io/images: |
+    - name: sas-retrieval-agent-manager
+      image: cr.sas.com/cdp-release-x64_oci_linux_2-docker-latest/sas-retrieval-agent-manager:latest
+      whitelisted: true
+    - name: sas-retrieval-agent-manager-api
+      image: cr.sas.com/cdp-release-x64_oci_linux_2-docker-latest/sas-retrieval-agent-manager-api:latest
+      whitelisted: true
+  artifacthub.io/license: SAS Proprietary
+  artifacthub.io/links: |
+    - name: SAS Viya Platform
+      url: https://www.sas.com/en_us/software/viya.html
+    - name: SAS AI and Machine Learning
+      url: https://www.sas.com/en_us/software/artificial-intelligence.html
+    - name: SAS IoT Solutions
+      url: https://www.sas.com/en_us/software/iot.html
+    - name: SAS Container Registry
+      url: https://cr.sas.com/
+  artifacthub.io/operator: "false"
+  artifacthub.io/prerelease: "false"
+  category: AI/ML
+  document.chunking: "true"
+  document.formats: pdf,docx,txt,html,md
+  document.metadata: "true"
+  document.ocr: "true"
+  enterprise.audit.supported: "true"
+  enterprise.sso.supported: "true"
+  helm.version.min: 3.10.0
+  integration.streaming.supported: "true"
+  integration.webhook.supported: "true"
+  kubernetes.version.max: 1.30.0
+  kubernetes.version.min: 1.22.0
+  monitoring.health-checks.supported: "true"
+  monitoring.logging.structured: "true"
+  monitoring.metrics.prometheus: "true"
+  monitoring.tracing.distributed: "true"
+  observability.model-performance: "true"
+  persistence.required: "true"
+  persistence.size.min: 10Gi
+  persistence.size.recommended: 100Gi
+  resources.cpu.max: "8"
+  resources.cpu.min: "1"
+  resources.memory.max: 16Gi
+  resources.memory.min: 2Gi
+  scaling.auto.cpu-based: "true"
+  scaling.auto.memory-based: "true"
+  scaling.horizontal.supported: "true"
+  scaling.replicas.max: "10"
+  scaling.replicas.min: "1"
+  scaling.replicas.recommended: "2"
+  search.hybrid: "true"
+  search.semantic: "true"
+  search.similarity: cosine,euclidean,dot-product
+  security.encryption.at-rest: "true"
+  security.encryption.in-transit: "true"
+  security.oauth2.supported: "true"
+  security.rbac.supported: "true"
+  storage.document-cache: "true"
+  storage.model-artifacts: "true"
+  storage.vector-embeddings: "true"
+  subcategory: Document Retrieval
+  use-case: Retrieval Augmented Generation
+  vectordb.supported: "true"
+  vectordb.types: weaviate,pinecone,chroma
+apiVersion: v2
+appVersion: 1.16.0
+description: A Helm chart for SAS Retrieval Agent Manager API - Backend service with
+  AI/ML capabilities for document retrieval and vectorization
+home: https://www.sas.com/
+icon: https://www.sas.com/content/dam/SAS/sasbrand/Images/Logos/sas-logo-midnight.png
+keywords:
+- sas
+- retrieval-agent-manager
+- api
+- backend
+- artificial-intelligence
+- machine-learning
+- document-retrieval
+- vectorization
+- nlp
+- embeddings
+- vector-search
+- rag
+- retrieval-augmented-generation
+- query-hub
+- microservices
+- kubernetes
+- enterprise-ai
+maintainers:
+- email: support@sas.com
+  name: SAS Institute
+  url: https://www.sas.com
+- email: iot-support@sas.com
+  name: SAS IoT Team
+  url: https://www.sas.com/en_us/software/iot.html
+name: sas-retrieval-agent-manager-api
+sources:
+- https://github.com/sas-institute-rnd-internal/tmp-viya-iot-ram-helm
+- https://cr.sas.com/cdp-release-x64_oci_linux_2-docker-latest/sas-retrieval-agent-manager
+type: application
+version: 1.1.0

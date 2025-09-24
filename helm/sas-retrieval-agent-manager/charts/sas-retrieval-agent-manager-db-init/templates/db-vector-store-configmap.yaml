@@ -1,0 +1,12 @@
+{{- if .Values.global.configuration.vectorStore.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: db-vector-store
+  labels:
+    {{- include "sas-retrieval-agent-manager-db-init.labels" . | nindent 4 }}
+data:
+  enabled: {{ .Values.global.configuration.vectorStore.enabled | quote }}
+  db: {{ .Values.global.configuration.vectorStore.db | quote }}
+  schema: {{ .Values.global.configuration.vectorStore.schema | quote }}
+{{- end }}

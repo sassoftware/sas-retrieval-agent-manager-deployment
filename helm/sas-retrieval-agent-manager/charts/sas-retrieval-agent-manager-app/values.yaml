@@ -1,0 +1,246 @@
+# Default values for sas-retrieval-agent-manager-app.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# -- Number of replicas to run. Chart is not designed to scale horizontally, use at your own risk
+replicaCount: 1
+
+# -- Container image configuration for SAS Retrieval Agent Manager App
+image:
+  # -- Image pull policy
+  pullPolicy: IfNotPresent
+  repo:
+    # -- Container registry base URL
+    base: cr.sas.com
+    # -- Container image path/name
+    path: cdp-release-x64_oci_linux_2-docker-latest/sas-retrieval-agent-manager-app
+    # -- Use global registry configuration instead of local
+    useGlobal: false
+  # -- Container image tag
+  tag: 1.0.17-20250829.1756492765827
+
+# -- Array of imagePullSecrets in the namespace for pulling images from private registries
+imagePullSecrets:
+  - name: cr-sas-secret
+
+# -- String to partially override the fullname template with a string (will prepend the release name)
+nameOverride: 'app'
+
+# -- String to fully override the fullname template with a string
+fullnameOverride: "sas-retrieval-agent-manager-app"
+
+# -- Service account configuration
+serviceAccount:
+  # -- Annotations to add to the service account
+  annotations: {}
+  # -- Automatically mount a ServiceAccount's API credentials
+  automount: true
+  # -- Specifies whether a service account should be created
+  create: true
+  # -- The name of the service account to use. If not set and create is true, a name is generated using the fullname template
+  name: ''
+
+# -- Annotations to add to the pods
+podAnnotations: {}
+
+# -- Labels to add to the pods
+podLabels:
+  sas.com/deployment: "sas-retrieval-agent-manager"
+  workload.sas.com/class: "ram"
+
+# -- The security context for the pods
+podSecurityContext:
+  # -- Group ID for file system ownership
+  fsGroup: 10001
+  # -- Group ID to run the entrypoint of the container process
+  runAsGroup: 10001
+  # -- Indicates that the container must be run as a non-root user
+  runAsNonRoot: true
+  # -- User ID to run the entrypoint of the container process
+  runAsUser: 10001
+  # -- Seccomp profile for the pod
+  seccompProfile:
+    type: RuntimeDefault
+
+# -- The security context for the application container
+securityContext:
+  # -- Seccomp profile for the container
+  seccompProfile:
+    type: RuntimeDefault
+  # -- Whether a process can gain more privileges than its parent process
+  allowPrivilegeEscalation: false
+  # -- Linux capabilities to add/drop for the container
+  capabilities:
+    add: []
+    drop:
+      - ALL
+  # -- Whether the container has a read-only root filesystem
+  readOnlyRootFilesystem: true
+  # -- Whether the container must be run as a non-root user
+  runAsNonRoot: true
+  # -- User ID to run the entrypoint of the container process
+  runAsUser: 10001
+  # -- Group ID to run the entrypoint of the container process
+  runAsGroup: 10001
+
+# -- Kubernetes Service configuration
+service:
+  # -- Kubernetes Service port
+  port: 8080
+  # -- Kubernetes Service type
+  type: ClusterIP
+
+# -- Ingress configuration for external access to the web application
+ingress:
+  # -- Use global ingress configuration instead of local hosts configuration
+  useGlobal: false
+  # -- Enable ingress for external access
+  enabled: true
+  # -- Class name of the Ingress
+  className: nginx
+  # -- Annotations for the Ingress
+  annotations:
+    # -- Disallow HTTP traffic, force HTTPS only
+    kubernetes.io/ingress.allow-http: 'false'
+    # -- Enable TLS certificate management via cert-manager
+    kubernetes.io/tls-acme: 'true'
+    # -- Application root path for redirects
+    # nginx.ingress.kubernetes.io/app-root: /SASRetrievalAgentManager
+    # -- Headers to pass from auth response to backend
+    nginx.ingress.kubernetes.io/auth-response-headers: Authorization
+    # -- OAuth2 authentication sign-in URL
+    nginx.ingress.kubernetes.io/auth-signin: https://$host/SASRetrievalAgentManager/oauth2/start?rd=$escaped_request_uri
+    # -- OAuth2 authentication validation URL
+    nginx.ingress.kubernetes.io/auth-url: https://$host/SASRetrievalAgentManager/oauth2/auth
+    # -- Maximum allowed size of client request body
+    nginx.ingress.kubernetes.io/proxy-body-size: 500m
+    # -- Size of buffer used for reading the first part of response
+    nginx.ingress.kubernetes.io/proxy-buffer-size: 16k
+    # -- URL rewrite rule (commented out for this app)
+    # nginx.ingress.kubernetes.io/rewrite-target: /SASRetrievalAgentManager/$2
+    # -- Force SSL redirect
+    nginx.ingress.kubernetes.io/ssl-redirect: 'true'
+  # -- Hosts configuration (used when useGlobal is false)
+  hosts:
+  - host: chart-example.local
+    paths:
+    - path: /SASRetrievalAgentManager(/|$)(.*)
+      pathType: ImplementationSpecific
+    # -- Optional root path configuration (commented out)
+    # - path: /($)
+    #   pathType: ImplementationSpecific
+  # -- Paths configuration (used when useGlobal is true)
+  paths:
+  - path: /SASRetrievalAgentManager(/|$)(.*)
+    pathType: ImplementationSpecific
+  # -- Optional root path configuration (commented out)
+  # - path: /($)
+  #   pathType: ImplementationSpecific
+  # -- TLS configuration for ingress
+  tls: []
+    # - secretName: ""
+    #   hosts:
+    #     - ""
+
+# -- The resources to allocate for the container
+resources:
+  # -- Resource limits for the container
+  limits:
+    # -- CPU limit
+    cpu: 100m
+    # -- Memory limit
+    memory: 512Mi
+  # -- Resource requests for the container
+  requests:
+    # -- CPU request
+    cpu: 50m
+    # -- Memory request
+    memory: 256Mi
+
+# -- Liveness probe configuration
+livenessProbe:
+  # -- Number of consecutive failures required to mark container as not ready
+  failureThreshold: 9
+  # -- HTTP GET probe configuration for liveness
+  httpGet:
+    # -- Path to probe for liveness
+    path: /
+    port: http
+  # -- How often to perform the probe
+  periodSeconds: 15
+  # -- Minimum consecutive successes for the probe to be considered successful
+  successThreshold: 1
+  # -- Timeout for the probe
+  timeoutSeconds: 1
+
+# -- Readiness probe configuration
+readinessProbe:
+  # -- Number of consecutive failures required to mark container as not ready
+  failureThreshold: 9
+  # -- HTTP GET probe configuration for readiness
+  httpGet:
+    # -- Path to probe for readiness
+    path: /
+    port: http
+  # -- How often to perform the probe
+  periodSeconds: 15
+  # -- Minimum consecutive successes for the probe to be considered successful
+  successThreshold: 1
+  # -- Timeout for the probe
+  timeoutSeconds: 1
+
+# -- Horizontal Pod Autoscaler configuration
+autoscaling:
+  # -- Enable horizontal pod autoscaling
+  enabled: false
+  # -- Maximum number of replicas
+  maxReplicas: 100
+  # -- Minimum number of replicas
+  minReplicas: 1
+  # -- Target CPU utilization percentage for scaling
+  targetCPUUtilizationPercentage: 80
+
+# -- Additional volumes on the output Deployment definition
+volumes: []
+
+# -- Additional volumeMounts on the output Deployment definition
+volumeMounts: []
+
+# -- Node labels for pod assignment
+nodeSelector: {}
+
+# -- Tolerations for pod assignment
+tolerations: []
+
+# -- Map of node/pod affinities
+affinity:
+  nodeAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 1
+      preference:
+        matchExpressions:
+        - key: sas.com/deployment
+          operator: In
+          values:
+          - sas-retrieval-agent-manager
+    - weight: 2
+      preference:
+        matchExpressions:
+        - key: workload.sas.com/class
+          operator: In
+          values:
+          - ram
+
+# -- Global configuration for SAS Retrieval Agent Manager App
+global:
+  # Default global ingress enabled value
+  ingress:
+    enabled: false
+  # -- Configuration settings
+  configuration:
+    # -- UI-specific configuration
+    ui:
+      # -- Enable root ingress path routing
+      enableRootIngress: true
+      # -- SSL verification setting for UI requests
+      sslVerify: 'False'

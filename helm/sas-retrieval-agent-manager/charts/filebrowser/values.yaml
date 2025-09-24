@@ -1,0 +1,229 @@
+# Default values for filebrowser.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# -- Enable the actual filebrowser deployment. Set to true to deploy the filebrowser component
+enabled: false
+
+# -- Number of replicas to run. Chart is not designed to scale horizontally, use at your own risk
+replicaCount: 1
+
+image:
+  # -- Container image configuration
+  repo:
+    # -- Container registry base URL
+    base: docker.io
+    # -- Container image path/name
+    path: filebrowser/filebrowser
+  # -- Container image pull policy
+  pullPolicy: IfNotPresent
+  # -- Overrides the image tag whose default is the chart appVersion.
+  tag: "v2.42.1" # https://hub.docker.com/r/filebrowser/filebrowser/tags
+
+# -- Array of imagePullSecrets in the namespace for pulling images
+imagePullSecrets: []
+
+# -- String to partially override the fullname template with a string (will prepend the release name)
+nameOverride: "filebrowser"
+
+# -- String to fully override the fullname template with a string
+fullnameOverride: "sas-retrieval-agent-manager-filebrowser"
+
+serviceAccount:
+  # -- Specifies whether a service account should be created
+  create: false
+  # -- Annotations to add to the service account
+  annotations: {}
+  # -- The name of the service account to use. If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+# -- Annotations of the pods
+podAnnotations: {}
+
+# -- Labels to add to the pods
+podLabels:
+  sas.com/deployment: "sas-retrieval-agent-manager"
+  workload.sas.com/class: "ram"
+
+# -- The security context for the pods
+podSecurityContext: {}
+  # runAsGroup: 10001
+  # runAsNonRoot: true
+  # runAsUser: 1001
+  # seccompProfile:
+  #   type: RuntimeDefault
+  # fsGroup: 2000
+
+# -- The security context for the application container
+securityContext: {}
+  # seccompProfile:
+  #   type: RuntimeDefault
+  # allowPrivilegeEscalation: false
+  # capabilities:
+  #   add: []
+  #   drop:
+  #     - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1001
+  # runAsGroup: 10001
+
+service:
+  # -- Kubernetes Service type
+  type: ClusterIP
+  # -- Kubernetes Service port
+  port: 80
+
+ingress:
+  # -- Use global ingress configuration instead of local hosts configuration
+  useGlobal: false
+  # -- Enable ingress for external access to the filebrowser
+  enabled: true
+  # -- Class name of the Ingress
+  className: "nginx"
+  # -- Annotations for the Ingress
+  annotations:
+    # -- OAuth2 authentication sign-in URL
+    nginx.ingress.kubernetes.io/auth-signin: https://$host/SASRetrievalAgentManager/oauth2/start?rd=$escaped_request_uri
+    # -- OAuth2 authentication validation URL
+    nginx.ingress.kubernetes.io/auth-url: https://$host/SASRetrievalAgentManager/oauth2/auth
+    # -- Maximum allowed size of client request body (for file uploads)
+    nginx.ingress.kubernetes.io/proxy-body-size: 500m
+    # -- Size of buffer used for reading the first part of response received from proxied server
+    nginx.ingress.kubernetes.io/proxy-buffer-size: 16k
+    # -- URL rewrite rule to strip the prefix path
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    # -- Force SSL redirect
+    nginx.ingress.kubernetes.io/ssl-redirect: 'true'
+    # kubernetes.io/tls-acme: "true"
+
+  # -- Hosts for the ingress
+  # @default -- see [values.yaml](values.yaml)
+
+  # If useGlobal = False
+  # hosts:
+  # - host: chart-example.local
+  #   paths:
+  #     - path: /files(/|$)(.*)
+  #       pathType: ImplementationSpecific
+
+  # If useGlobal = True
+  # -- Ingress path configuration when useGlobal is true
+  paths:
+    - path: /SASRetrievalAgentManager/files(/|$)(.*)
+      pathType: ImplementationSpecific
+  # -- TLS configuration for ingress
+  tls: []
+  #   - secretName: ""
+  #     hosts:
+  #       - ""
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+# -- The resources to allocate for the container
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+# -- Node labels for pod assignment
+nodeSelector: {}
+
+# -- Tolerations for pod assignment
+tolerations: []
+
+# -- Map of node/pod affinities
+affinity:
+  nodeAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 1
+        preference:
+          matchExpressions:
+            - key: sas.com/deployment
+              operator: In
+              values:
+                - sas-retrieval-agent-manager
+      - weight: 2
+        preference:
+          matchExpressions:
+            - key: workload.sas.com/class
+              operator: In
+              values:
+                - ram
+
+rootDir:
+  # -- Type of rootDir mount. Valid values are [pvc, hostPath, emptyDir]
+  type: pvc
+  # -- Mount the root directory in read-only mode
+  readOnly: false
+  # -- Host path configuration (only used when type is 'hostPath')
+  hostPath:
+    # -- Path on the host to mount
+    path: /mnt/data
+  # -- Persistent Volume Claim configuration (only used when type is 'pvc')
+  pvc:
+    # -- Name for the PVC
+    name: vhub-pv
+    # -- Storage class name for the root directory PVC
+    storageClassName: "azurefile-sas"
+    # -- Whether to create the storage class if it doesn't exist
+    createStorageClass: true
+    # -- Access modes for the root directory PVC
+    accessModes:
+      - ReadWriteOnce
+    # -- Size for the root directory PVC
+    size: 20Gi
+
+db:
+  # -- Database persistence configuration
+  pvc:
+    # -- Enable persistence for database
+    enabled: true
+    # -- Storage class name for the database PVC
+    storageClassName: ""
+    # -- Access modes for the database PVC
+    accessModes:
+      - ReadWriteOnce
+    # -- Size for the database PVC
+    size: 256Mi
+
+# -- Deployment strategy to use (Recreate is recommended for stateful applications)
+strategy:
+  type: Recreate
+
+# -- Liveness probe configuration (disabled by default, enable if needed)
+livenessProbe: {}
+
+# -- Readiness probe configuration
+# @default -- see [values.yaml](values.yaml)
+readinessProbe:
+  httpGet:
+    path: /health
+    port: http
+
+# -- Set of initContainers for the deployment
+initContainers: []
+
+# -- File Browser application specific configuration
+# @default -- see [values.yaml](values.yaml)
+config:
+  # -- Port on which the filebrowser application listens inside the container
+  port: 18080
+  # -- Base URL path for the filebrowser application
+  baseURL: "/files"
+  # -- Address to bind the server to (empty means all interfaces)
+  address: ""
+  # -- Log output destination (stdout, stderr, or file path)
+  log: stdout
+  # -- Path to the SQLite database file for storing filebrowser configuration
+  database: /db/filebrowser.db
+  # -- Root directory that filebrowser will serve and manage files from
+  root: /mnt/data

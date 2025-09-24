@@ -1,0 +1,22 @@
+{{- if .Values.rootDir.pvc.createStorageClass }}
+{{- $storageClassName := .Values.rootDir.pvc.storageClassName }}
+{{- $storageClass := lookup "storage.k8s.io/v1" "StorageClass" "" $storageClassName }}
+{{- if not $storageClass }}
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: {{ $storageClassName }}
+provisioner: file.csi.azure.com
+allowVolumeExpansion: true
+mountOptions:
+- dir_mode=0777
+- file_mode=0777
+- mfsymlinks
+- cache=strict
+- actimeo=30
+- uid=1001
+- gid=1001
+parameters:
+  skuName: Standard_LRS
+{{- end }}
+{{- end }}

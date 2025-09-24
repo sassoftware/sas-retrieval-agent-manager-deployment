@@ -1,0 +1,10 @@
+{{- if .Values.global.configuration.gpg.publicKey -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gpg-public-key
+  labels:
+    {{- include "gpg.labels" . | nindent 4 }}
+data:
+  publicKey: {{ .Values.global.configuration.gpg.publicKey | quote  }}
+{{- end }}

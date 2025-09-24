@@ -1,0 +1,27 @@
+dependencies:
+- name: filebrowser
+  repository: file://../filebrowser
+  version: 1.0.0
+- name: postgrest
+  repository: file://../postgrest
+  version: 1.1.0
+- name: keycloak
+  repository: file://../keycloak
+  version: 1.1.0
+- name: sas-retrieval-agent-manager-api
+  repository: file://../sas-retrieval-agent-manager-api
+  version: 1.1.0
+- name: sas-retrieval-agent-manager-app
+  repository: file://../sas-retrieval-agent-manager-app
+  version: 1.1.0
+- name: sas-retrieval-agent-manager-db-migration
+  repository: file://../sas-retrieval-agent-manager-db-migration
+  version: 1.1.0
+- name: sas-retrieval-agent-manager-db-init
+  repository: file://../sas-retrieval-agent-manager-db-init
+  version: 1.1.0
+- name: gpg
+  repository: file://../gpg
+  version: 1.1.0
+digest: sha256:8b0b637711effa6cb1c695080e814a61dc7420c775449e25885478a129219698
+generated: "2025-09-03T14:45:15.294802139Z"

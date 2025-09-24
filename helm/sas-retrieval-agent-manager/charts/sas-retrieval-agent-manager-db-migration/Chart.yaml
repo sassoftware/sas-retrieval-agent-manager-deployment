@@ -1,0 +1,150 @@
+annotations:
+  ai.embedding.tables: supported
+  ai.index.optimization: "true"
+  ai.vector.schema: supported
+  artifacthub.io/dependencies: |
+    - name: sas-retrieval-agent-manager-db-init
+      version: ">=1.0.0"
+      repository: local
+      condition: initialization.required
+  artifacthub.io/images: |
+    - name: sas-db-migration
+      image: cr.sas.com/cdp-release-x64_oci_linux_2-docker-latest/sas-retrieval-agent-manager-db-migration:latest
+      whitelisted: true
+    - name: goose
+      image: gomicro/goose:3.15.0
+      whitelisted: true
+    - name: postgres
+      image: postgres:15-alpine
+      whitelisted: true
+  artifacthub.io/license: SAS Proprietary
+  artifacthub.io/links: |
+    - name: Goose Migration Tool
+      url: https://github.com/pressly/goose
+    - name: Database Migration Best Practices
+      url: https://github.com/pressly/goose#usage
+    - name: PostgreSQL Documentation
+      url: https://www.postgresql.org/docs/
+    - name: Schema Migration Patterns
+      url: https://martinfowler.com/articles/evodb.html
+    - name: SAS Viya Platform
+      url: https://www.sas.com/en_us/software/viya.html
+  artifacthub.io/operator: "false"
+  artifacthub.io/prerelease: "false"
+  audit.migration.log: comprehensive
+  audit.user.tracking: detailed
+  category: Database
+  compliance.change.approval: workflow
+  compliance.migration.audit: full
+  compliance.rollback.approval: required
+  config.connection.pooling: supported
+  config.environment.specific: "true"
+  config.migration.path: configurable
+  config.timeout.configurable: "true"
+  database.extensions.ai: "true"
+  database.extensions.vector: pgvector
+  database.type: postgresql
+  database.version.min: "12.0"
+  database.version.recommended: "15.0"
+  dr.backup.integration: "true"
+  dr.rollback.procedures: documented
+  goose.version.min: 3.0.0
+  governance.approval.workflow: "true"
+  governance.change.tracking: "true"
+  ha.multi-environment: supported
+  ha.zero-downtime: strategies
+  helm.version.min: 3.8.0
+  history.migration.audit: comprehensive
+  integration.ci-cd: supported
+  integration.gitops: compatible
+  integration.slack.alerts: supported
+  integration.webhook.notifications: "true"
+  job.backoff.limit: "3"
+  job.completion.mode: sequential
+  job.deadline.seconds: "3600"
+  job.restart.policy: Never
+  job.retry.policy: OnFailure
+  job.type: migration
+  kubernetes.version.max: 1.30.0
+  kubernetes.version.min: 1.20.0
+  logging.migration.detailed: "true"
+  migration.atomic.transactions: "true"
+  migration.checkpoint.support: "true"
+  migration.dry-run.supported: "true"
+  migration.language: sql
+  migration.rollback.supported: "true"
+  migration.status.tracking: "true"
+  migration.strategy: forward-only
+  migration.tool: goose
+  migration.validation.post: "true"
+  migration.validation.pre: "true"
+  migration.versioning: sequential
+  ml.feature.tables: supported
+  ml.model.metadata: supported
+  monitoring.error.detection: "true"
+  monitoring.migration.progress: "true"
+  monitoring.performance.metrics: "true"
+  observability.migration.tracing: "true"
+  performance.analyze.post-migration: "true"
+  performance.index.concurrent: "true"
+  performance.migration.batching: "true"
+  performance.vacuum.post-migration: "true"
+  resources.cpu.max: "1"
+  resources.cpu.min: 100m
+  resources.memory.max: 1Gi
+  resources.memory.min: 256Mi
+  safety.backup.automatic: recommended
+  safety.dry-run.default: "true"
+  safety.rollback.tested: "true"
+  security.backup.pre-migration: recommended
+  security.migration.review: required
+  security.rollback.approval: required
+  subcategory: Migration
+  use-case: Schema Evolution and Versioning
+  validation.dependency.check: "true"
+  validation.syntax.check: "true"
+  versioning.migration.history: tracked
+  versioning.rollback.history: tracked
+  versioning.schema.git: integrated
+apiVersion: v2
+appVersion: 1.16.0
+description: A Helm chart for SAS Retrieval Agent Manager Database Migration - Schema
+  migration with Goose for AI/ML database evolution
+home: https://www.sas.com/
+icon: https://www.sas.com/content/dam/SAS/sasbrand/Images/Logos/sas-logo-midnight.png
+keywords:
+- sas
+- retrieval-agent-manager
+- database
+- migration
+- goose
+- schema-migration
+- database-evolution
+- versioning
+- postgresql
+- sql-migration
+- schema-versioning
+- database-upgrade
+- rollback
+- ai-database
+- vector-database
+- kubernetes
+- migration-job
+maintainers:
+- email: support@sas.com
+  name: SAS Institute
+  url: https://www.sas.com
+- email: iot-support@sas.com
+  name: SAS IoT Team
+  url: https://www.sas.com/en_us/software/iot.html
+- email: support@pressly.com
+  name: Goose Project
+  url: https://github.com/pressly/goose
+name: sas-retrieval-agent-manager-db-migration
+sources:
+- https://github.com/sas-institute-rnd-internal/tmp-viya-iot-ram-helm
+- https://github.com/pressly/goose
+- https://www.postgresql.org/
+- https://cr.sas.com/cdp-release-x64_oci_linux_2-docker-latest/sas-retrieval-agent-manager-db-migration
+type: application
+version: 1.1.0

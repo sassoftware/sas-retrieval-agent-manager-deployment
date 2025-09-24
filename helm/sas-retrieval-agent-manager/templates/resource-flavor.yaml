@@ -1,0 +1,6 @@
+apiVersion: kueue.x-k8s.io/v1beta1
+kind: ResourceFlavor
+metadata:
+  name: sas-retrieval-agent-manager
+  labels:
+    {{- include "sas-retrieval-agent-manager.labels" . | nindent 4 }}

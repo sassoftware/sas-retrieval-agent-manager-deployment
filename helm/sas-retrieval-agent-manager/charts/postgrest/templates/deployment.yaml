@@ -1,0 +1,212 @@
+{{- $pgrest_repo_base := "" -}}
+{{- $pgrest_repo_path := "" -}}
+{{- $postgres_repo_base := "" -}}
+{{- $postgres_repo_path := "" -}}
+{{- $kubectl_repo_base := "" -}}
+{{- $kubectl_repo_path := "" -}}
+ {{/* postgrest image */}}
+{{- if .Values.image.postgrest.repo.useGlobal | default false -}}
+  {{- $pgrest_repo_base = .Values.global.image.repo.base | default .Values.image.postgrest.repo.base -}}
+{{- else -}}
+  {{- $pgrest_repo_base = .Values.image.postgrest.repo.base -}}
+{{- end -}}
+{{- $pgrest_repo_path = .Values.image.postgrest.repo.path -}}
+ {{/* postgres image */}}
+{{- if .Values.image.postgres.repo.useGlobal | default false -}}
+  {{- $postgres_repo_base = .Values.global.image.repo.base | default .Values.image.postgres.repo.base -}}
+{{- else -}}
+  {{- $postgres_repo_base = .Values.image.postgres.repo.base -}}
+{{- end -}}
+{{- $postgres_repo_path = .Values.image.postgres.repo.path -}}
+ {{/* kubectl image */}}
+{{- if .Values.image.kubectl.repo.useGlobal | default false -}}
+  {{- $kubectl_repo_base = .Values.global.image.repo.base | default .Values.image.kubectl.repo.base -}}
+{{- else -}}
+  {{- $kubectl_repo_base = .Values.image.kubectl.repo.base -}}
+{{- end -}}
+{{- $kubectl_repo_path = .Values.image.kubectl.repo.path -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "postgrest.fullname" . }}
+  labels:
+    {{- include "postgrest.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "postgrest.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "postgrest.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with uniq (concat (.Values.imagePullSecrets | default (list)) (.Values.global.imagePullSecrets | default (list))) }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "postgrest.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      initContainers:
+        - name: {{ .Chart.Name }}-db-wait
+          command:
+            - "/bin/sh"
+            - "-c"
+            - "/config/wait_for_postgres.sh"
+          env:
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: application-db-credentials
+                  key: user
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: application-db-credentials
+                  key: password
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: db-connection
+                  key: host
+            - name: DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: db-connection
+                  key: port
+            - name: DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: db-application
+                  key: db
+          image: "{{ $postgres_repo_base }}/{{ $postgres_repo_path }}:{{ .Values.image.postgres.tag }}"
+          imagePullPolicy: {{ .Values.image.postgres.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - mountPath: "/config"
+              name: scripts
+              readOnly: true
+        - name: wait-for-secret
+          image: "{{ $kubectl_repo_base }}/{{ $kubectl_repo_path }}:{{ .Values.image.kubectl.tag }}"
+          imagePullPolicy: {{ .Values.image.kubectl.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          command:
+            - sh
+            - -c
+            - "/config/wait_for_secret.sh"
+          volumeMounts:
+            - mountPath: "/config"
+              name: scripts
+              readOnly: true
+            - mountPath: /workdir
+              name: workdir
+      containers:
+        - name: {{ .Chart.Name }}
+          command:
+              - /bin/postgrest
+          args:
+              - /postgrest-config/postgrest.conf
+          env:
+            - name: PGUSER
+              valueFrom:
+                secretKeyRef:
+                  name: application-db-credentials
+                  key: user
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: application-db-credentials
+                  key: password
+            - name: PGHOST
+              valueFrom:
+                configMapKeyRef:
+                  name: db-connection
+                  key: host
+            - name: PGPORT
+              valueFrom:
+                configMapKeyRef:
+                  name: db-connection
+                  key: port
+            - name: PGDATABASE
+              valueFrom:
+                configMapKeyRef:
+                  name: db-application
+                  key: db
+            - name: PGRST_DB_SCHEMAS
+              valueFrom:
+                configMapKeyRef:
+                  name: db-application
+                  key: schema
+            - name: PGRST_JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  key: certs.json
+                  name: keycloak-certs
+          image: "{{ $pgrest_repo_base }}/{{ $pgrest_repo_path }}:{{ .Values.image.postgrest.tag }}"
+          imagePullPolicy: {{ .Values.image.postgrest.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+            - name: admin
+              containerPort: 3001
+              protocol: TCP
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          volumeMounts:
+            - mountPath: "/config"
+              name: scripts
+              readOnly: true
+            - mountPath: "/postgrest-config"
+              name: configuration
+              readOnly: true
+            {{- with .Values.volumeMounts }}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
+      volumes:
+        - name: workdir
+          emptyDir: {}
+        - name: configuration
+          configMap:
+            name: {{ include "postgrest.fullname" . }}-configuration
+        - name: scripts
+          configMap:
+            name: {{ include "postgrest.fullname" . }}-scripts
+            defaultMode: 0777
+        {{- with .Values.volumes }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

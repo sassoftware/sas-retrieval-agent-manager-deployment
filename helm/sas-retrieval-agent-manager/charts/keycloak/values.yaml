@@ -1,0 +1,593 @@
+# Default values for keycloak.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# -- Number of replicas to run. Chart is not designed to scale horizontally, use at your own risk
+replicaCount: 1
+
+# -- Container image configuration for Keycloak and related services
+image:
+  # -- Keycloak main container image configuration
+  keycloak:
+    repo:
+      # -- Container registry base URL for Keycloak
+      base: quay.io
+      # -- Container image path/name for Keycloak
+      path: keycloak/keycloak
+      # -- Use global registry configuration instead of local
+      useGlobal: false
+    # -- Image pull policy for Keycloak container
+    pullPolicy: IfNotPresent
+    # -- Keycloak container image tag
+    tag: "26.3.3"
+  # -- PostgreSQL database container image configuration
+  postgres:
+    repo:
+      # -- Container registry base URL for PostgreSQL
+      base: docker.io
+      # -- Container image path/name for PostgreSQL
+      path: postgres
+      # -- Use global registry configuration instead of local
+      useGlobal: false
+    # -- Image pull policy for PostgreSQL container
+    pullPolicy: IfNotPresent
+    # -- PostgreSQL container image tag
+    tag: "15-alpine"
+  # -- Custom theme container image configuration
+  theme:
+    repo:
+      # -- Container registry base URL for theme
+      base: cr.sas.com
+      # -- Container image path/name for theme
+      path: cdp-release-x64_oci_linux_2-docker-latest/sas-iot-keycloak-theme
+      # -- Use global registry configuration instead of local
+      useGlobal: false
+    # -- Image pull policy for theme container
+    pullPolicy: IfNotPresent
+    # -- Theme container image tag
+    tag: "1.2.16-20250717.1752760329700"
+  # -- kubectl container image configuration (used for Kubernetes operations)
+  kubectl:
+    repo:
+      # -- Container registry base URL for kubectl
+      base: "docker.io"
+      # -- Container image path/name for kubectl
+      path: alpine/k8s
+      # -- Use global registry configuration instead of local
+      useGlobal: false
+    # -- Image pull policy for kubectl container
+    pullPolicy: IfNotPresent
+    # -- kubectl container image tag
+    tag: "1.31.12"
+
+# -- Array of imagePullSecrets in the namespace for pulling images from private registries
+imagePullSecrets:
+  - name: cr-sas-secret
+
+# -- String to partially override the fullname template with a string (will prepend the release name)
+nameOverride: "keycloak"
+
+# -- String to fully override the fullname template with a string
+fullnameOverride: "sas-retrieval-agent-manager-keycloak"
+
+# -- Service account configuration for Keycloak
+serviceAccount:
+  # -- Specifies whether a service account should be created
+  create: true
+  # -- Automatically mount a ServiceAccount's API credentials
+  automount: true
+  # -- Annotations to add to the service account
+  annotations: {}
+  # -- The name of the service account to use. If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+# -- Annotations to add to the pods
+podAnnotations: {}
+
+# -- Labels to add to the pods
+podLabels:
+  sas.com/deployment: "sas-retrieval-agent-manager"
+  workload.sas.com/class: "ram"
+
+# -- The security context for the pods
+podSecurityContext:
+  # -- Group ID to run the entrypoint of the container process
+  runAsGroup: 10001
+  # -- Indicates that the container must be run as a non-root user
+  runAsNonRoot: true
+  # -- User ID to run the entrypoint of the container process
+  runAsUser: 10001
+  # -- Seccomp profile for the pod
+  seccompProfile:
+    type: RuntimeDefault
+  # -- Group ID for file system ownership
+  fsGroup: 10001
+
+# -- The security context for the application container
+securityContext:
+  # -- Whether the container runs in privileged mode
+  privileged: false
+  # -- Seccomp profile for the container
+  seccompProfile:
+    type: RuntimeDefault
+  # -- Whether a process can gain more privileges than its parent process
+  allowPrivilegeEscalation: false
+  # -- Linux capabilities to add/drop for the container
+  capabilities:
+    add: []
+    drop:
+      - ALL
+  # -- Whether the container has a read-only root filesystem
+  readOnlyRootFilesystem: true
+  # -- Whether the container must be run as a non-root user
+  runAsNonRoot: true
+  # -- User ID to run the entrypoint of the container process
+  runAsUser: 10001
+  # -- Group ID to run the entrypoint of the container process
+  runAsGroup: 10001
+
+# -- Kubernetes Service configuration
+service:
+  # -- Kubernetes Service type
+  type: ClusterIP
+  # -- Kubernetes Service port
+  port: 8080
+
+# -- Ingress configuration for external access to Keycloak
+ingress:
+  # -- Use global ingress configuration instead of local hosts configuration
+  useGlobal: false
+  # -- Enable ingress for external access to Keycloak
+  enabled: true
+  # -- Class name of the Ingress
+  className: "nginx"
+  # -- Annotations for the Ingress
+  annotations:
+    # -- Disallow HTTP traffic, force HTTPS only
+    kubernetes.io/ingress.allow-http: 'false'
+    # -- Size of buffer used for reading the first part of response received from proxied server
+    nginx.ingress.kubernetes.io/proxy-buffer-size: 16k
+    # -- Force SSL redirect
+    nginx.ingress.kubernetes.io/ssl-redirect: 'true'
+  # -- Hosts configuration (ignored if useGlobal is true)
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /SASRetrievalAgentManager/auth(/(realms|resources)/(.*))$
+          pathType: ImplementationSpecific
+  # -- Paths configuration (used when useGlobal is true)
+  paths:
+    - path: /SASRetrievalAgentManager/auth(/(realms|resources)/(.*))$
+      pathType: ImplementationSpecific
+
+  # -- Admin interface ingress configuration
+  admin:
+    # -- Enable admin interface access via ingress. If false, admin console is only accessible via port forwarding
+    enabled: true
+    # -- IP addresses or CIDR blocks allowed to access admin interface. Empty means allow all
+    sourceRange: []
+    #   - "192.0.2.0/24" # Example CIDR block (TEST-NET-1, see RFC 5737)
+
+    # -- Admin interface host (ignored if useGlobal is true)
+    host: chart-example.local
+    # -- Admin interface path
+    path: /SASRetrievalAgentManager/auth/admin
+    # -- Admin interface path type
+    pathType: Prefix
+
+  # -- TLS configuration for ingress
+  tls: []
+    # - secretName: ""
+    #   hosts:
+    #     - ""
+
+# -- The resources to allocate for the Keycloak container
+resources:
+  # -- Resource limits for the container
+  limits:
+    # -- CPU limit
+    cpu: 500m
+    # -- Memory limit
+    memory: 768Mi
+  # -- Resource requests for the container
+  requests:
+    # -- CPU request
+    cpu: 50m
+    # -- Memory request
+    memory: 256Mi
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+# -- Liveness probe configuration for Keycloak
+livenessProbe:
+  # -- Number of consecutive failures required to mark container as not ready
+  failureThreshold: 5
+  # -- HTTP GET probe configuration
+  httpGet:
+    # -- Path to probe for liveness
+    path: /SASRetrievalAgentManager/auth/realms/master
+    port: http
+  # -- Initial delay before starting probes
+  initialDelaySeconds: 240
+  # -- How often to perform the probe
+  periodSeconds: 30
+
+# -- Readiness probe configuration for Keycloak
+readinessProbe:
+  # -- Number of consecutive failures required to mark container as not ready
+  failureThreshold: 5
+  # -- HTTP GET probe configuration
+  httpGet:
+    # -- Path to probe for readiness
+    path: /SASRetrievalAgentManager/auth/realms/master
+    port: http
+  # -- Initial delay before starting probes
+  initialDelaySeconds: 240
+  # -- How often to perform the probe
+  periodSeconds: 30
+
+# -- Horizontal Pod Autoscaler configuration
+autoscaling:
+  # -- Enable horizontal pod autoscaling
+  enabled: false
+  # -- Minimum number of replicas
+  minReplicas: 1
+  # -- Maximum number of replicas
+  maxReplicas: 100
+  # -- Target CPU utilization percentage for scaling
+  targetCPUUtilizationPercentage: 80
+  # -- Target memory utilization percentage for scaling (optional)
+  # targetMemoryUtilizationPercentage: 80
+
+# -- Additional volumes on the output Deployment definition
+volumes: []
+# - name: foo
+#   secret:
+#     secretName: mysecret
+#     optional: false
+
+# -- Additional volumeMounts on the output Deployment definition
+volumeMounts: []
+# - name: foo
+#   mountPath: "/etc/foo"
+#   readOnly: true
+
+# -- Node labels for pod assignment
+nodeSelector: {}
+
+# -- Tolerations for pod assignment
+tolerations: []
+
+# -- Map of node/pod affinities
+affinity:
+  nodeAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 1
+      preference:
+        matchExpressions:
+        - key: sas.com/deployment
+          operator: In
+          values:
+          - sas-retrieval-agent-manager
+    - weight: 2
+      preference:
+        matchExpressions:
+        - key: workload.sas.com/class
+          operator: In
+          values:
+          - ram
+
+# -- OAuth2 Proxy configuration for authentication
+oauthProxy:
+  # -- String to partially override the OAuth2 Proxy fullname template
+  nameOverride: "oauth2-proxy"
+  # -- String to fully override the OAuth2 Proxy fullname template
+  fullnameOverride: "sas-retrieval-agent-manager-oauth2-proxy"
+  # -- Number of OAuth2 Proxy replicas
+  replicaCount: 1
+  # -- OAuth2 Proxy service configuration
+  service:
+    # -- Kubernetes Service type for OAuth2 Proxy
+    type: ClusterIP
+    # -- Kubernetes Service port for OAuth2 Proxy
+    port: 4180
+
+  # -- OAuth2 Proxy service account configuration
+  serviceAccount:
+    # -- Specifies whether a service account should be created for OAuth2 Proxy
+    create: true
+    # -- Automatically mount a ServiceAccount's API credentials for OAuth2 Proxy
+    automount: true
+    # -- Annotations to add to the OAuth2 Proxy service account
+    annotations: {}
+    # -- The name of the service account to use for OAuth2 Proxy
+    name: "oauth2-proxy"
+
+  # -- OAuth2 Proxy ingress configuration
+  ingress:
+    # -- Use global ingress configuration instead of local hosts for OAuth2 Proxy
+    useGlobal: false
+    # -- Enable ingress for OAuth2 Proxy
+    enabled: true
+    # -- Class name of the OAuth2 Proxy Ingress
+    className: "nginx"
+    # -- Annotations for the OAuth2 Proxy Ingress
+    annotations:
+      # -- Disallow HTTP traffic, force HTTPS only
+      kubernetes.io/ingress.allow-http: 'false'
+      # -- Size of buffer used for reading the first part of response
+      nginx.ingress.kubernetes.io/proxy-buffer-size: 16k
+      # -- Force SSL redirect
+      nginx.ingress.kubernetes.io/ssl-redirect: 'true'
+      # -- Enable CORS for OAuth2 Proxy
+      nginx.ingress.kubernetes.io/enable-cors: 'true'
+      # -- Session cookie SameSite attribute
+      nginx.ingress.kubernetes.io/session-cookie-samesite: lax
+    # -- Hosts configuration for OAuth2 Proxy (ignored if useGlobal is true)
+    hosts: []
+    # - host: chart-example.local
+    #   paths:
+    #     - path: /oauth2(/|/(.*))$
+    #       pathType: ImplementationSpecific
+    # -- OAuth2 authentication paths
+    paths:
+      - path: /SASRetrievalAgentManager/oauth2(/|/(.*))$
+        pathType: ImplementationSpecific
+    # -- OAuth2 logout paths
+    logoutPaths:
+      - path: /SASRetrievalAgentManager/logout(/(.*))?$
+        pathType: ImplementationSpecific
+    # -- TLS configuration for OAuth2 Proxy ingress
+    tls: []
+    #   - secretName: ""
+    #     hosts:
+    #       - ""
+
+  # -- OAuth2 Proxy container image configuration
+  image:
+    repo:
+      # -- Container registry base URL for OAuth2 Proxy
+      base: quay.io
+      # -- Container image path/name for OAuth2 Proxy
+      path: oauth2-proxy/oauth2-proxy
+    # -- Image pull policy for OAuth2 Proxy container
+    pullPolicy: Always
+    # -- OAuth2 Proxy container image tag
+    tag: "v7.12.0"
+
+  # -- Array of imagePullSecrets for OAuth2 Proxy
+  imagePullSecrets:
+    - name: acr-secret
+
+  # -- Annotations to add to the OAuth2 Proxy pods
+  podAnnotations: {}
+
+  # -- Labels to add to the OAuth2 Proxy pods
+  podLabels:
+    sas.com/deployment: "sas-retrieval-agent-manager"
+    workload.sas.com/class: "ram"
+
+  # -- The security context for the OAuth2 Proxy pods
+  podSecurityContext:
+    # -- Group ID for file system ownership
+    fsGroup: 10001
+    # -- Group ID to run the entrypoint of the container process
+    runAsGroup: 10001
+    # -- Indicates that the container must be run as a non-root user
+    runAsNonRoot: true
+    # -- User ID to run the entrypoint of the container process
+    runAsUser: 10001
+    # -- Seccomp profile for the OAuth2 Proxy pod
+    seccompProfile:
+      type: RuntimeDefault
+
+  # -- The security context for the OAuth2 Proxy application container
+  securityContext:
+    # -- Seccomp profile for the OAuth2 Proxy container
+    seccompProfile:
+      type: RuntimeDefault
+    # -- Linux capabilities to add/drop for the OAuth2 Proxy container
+    capabilities:
+      add: []
+      drop:
+        - ALL
+    # -- Whether a process can gain more privileges than its parent process
+    allowPrivilegeEscalation: false
+    # -- Whether the container has a read-only root filesystem
+    readOnlyRootFilesystem: true
+    # -- Group ID to run the entrypoint of the container process
+    runAsGroup: 10001
+    # -- Whether the container must be run as a non-root user
+    runAsNonRoot: true
+    # -- User ID to run the entrypoint of the container process
+    runAsUser: 10001
+
+  # -- Liveness probe configuration for OAuth2 Proxy
+  livenessProbe:
+    # -- HTTP GET probe configuration for liveness
+    httpGet:
+      # -- Path to probe for liveness
+      path: /ping
+      port: http
+
+  # -- Readiness probe configuration for OAuth2 Proxy
+  readinessProbe:
+    # -- HTTP GET probe configuration for readiness
+    httpGet:
+      # -- Path to probe for readiness
+      path: /ping
+      port: http
+
+  # -- The resources to allocate for the OAuth2 Proxy container
+  resources:
+    # -- Resource limits for the OAuth2 Proxy container
+    limits:
+      # -- CPU limit
+      cpu: 100m
+      # -- Memory limit
+      memory: 64Mi
+    # -- Resource requests for the OAuth2 Proxy container
+    requests:
+      # -- CPU request
+      cpu: 50m
+      # -- Memory request
+      memory: 32Mi
+
+  # -- Horizontal Pod Autoscaler configuration for OAuth2 Proxy
+  autoscaling:
+    # -- Enable horizontal pod autoscaling for OAuth2 Proxy
+    enabled: false
+    # -- Minimum number of replicas for OAuth2 Proxy
+    minReplicas: 1
+    # -- Maximum number of replicas for OAuth2 Proxy
+    maxReplicas: 100
+    # -- Target CPU utilization percentage for OAuth2 Proxy scaling
+    targetCPUUtilizationPercentage: 80
+
+  # -- Additional volumes on the OAuth2 Proxy Deployment definition
+  volumes: []
+  # - name: foo
+  #   secret:
+  #     secretName: mysecret
+  #     optional: false
+
+  # -- Additional volumeMounts on the OAuth2 Proxy Deployment definition
+  volumeMounts: []
+  # - name: foo
+  #   mountPath: "/etc/foo"
+  #   readOnly: true
+
+  # -- Node labels for OAuth2 Proxy pod assignment
+  nodeSelector: {}
+
+  # -- Tolerations for OAuth2 Proxy pod assignment
+  tolerations: []
+
+  # -- Map of node/pod affinities for OAuth2 Proxy
+  affinity: {}
+
+# -- Mail server configuration
+# (optional email service for development)
+mail:
+  # -- Enable mail server deployment
+  enabled: false
+  # -- Full name override for mail service
+  fullnameOverride: mail
+  # -- Persistence configuration for mail server
+  persistence:
+    # -- Enable persistence for mail server
+    enabled: false
+  # -- Pod configuration for mail server
+  pod:
+    # -- Security context for mail server pod
+    securityContext:
+      # runAsGroup: 10001
+      # runAsNonRoot: true
+      # runAsUser: 1001
+      # -- Seccomp profile for mail server pod
+      seccompProfile:
+        type: RuntimeDefault
+  # -- Container configuration for mail server
+  container:
+    # -- Postfix container configuration
+    postfix:
+      # -- Security context for postfix container
+      securityContext:
+        # -- Seccomp profile for postfix container
+        seccompProfile:
+          type: RuntimeDefault
+        # allowPrivilegeEscalation: false
+        # capabilities:
+        #   add: []
+        #   drop:
+        #     - ALL
+        # #readOnlyRootFilesystem: true
+        # runAsNonRoot: true
+        # runAsUser: 1001
+        # runAsGroup: 10001
+  # -- Mail server configuration settings
+  config:
+    # -- General mail server settings
+    general:
+      # -- Timezone for mail server
+      TZ: UTC
+      # FORCE_COLOR:
+      # INBOUND_DEBUGGING:
+      # ALLOWED_SENDER_DOMAINS:
+      # -- Allow empty sender domains
+      ALLOW_EMPTY_SENDER_DOMAINS: "true"
+      # LOG_FORMAT:
+      # RELAYHOST:
+      # SASL_RELAYHOST: # when specified overwrites the RELAYHOST in the sasl_passwd file
+      # RELAYHOST_USERNAME:
+      # RELAYHOST_PASSWORD:
+      # MASQUERADED_DOMAINS:
+      # SMTP_HEADER_CHECKS:
+      # DKIM_SELECTOR:
+      # DKIM_AUTOGENERATE:
+    # -- Postfix-specific configuration
+    postfix:
+      # -- Mail server hostname
+      myhostname: ""
+      # -- Trusted networks for mail relay
+      mynetworks: "10.0.0.0/8, 127.0.0.0/8"
+      # -- SMTP recipient restrictions
+      smtpd_recipient_restrictions: "permit_mynetworks, reject_unauth_destination"
+
+# -- Global configuration for Keycloak and related services
+global:
+  # -- Configuration settings
+  configuration:
+    # -- Database configuration for Keycloak
+    database:
+      # -- Database username for Keycloak
+      user: ""
+      # -- Database password for Keycloak
+      password: ""
+      # -- Database host for Keycloak
+      host: ""
+      # -- Database port for Keycloak
+      port: "5432"
+      # -- Database name for Keycloak
+      database: "vectorizationhub"
+      # -- SSL mode for database connection
+      sslmode: "require"
+      # -- Whether to create database schema on startup
+      createSchema: true
+      # -- Whether to create database users on startup
+      createUsers: true
+
+    # -- Keycloak-specific configuration
+    keycloak:
+      # -- External URL for Keycloak service
+      url: ""
+      # -- Keycloak realm name for the application
+      realm: "sas-iot"
+      # -- Admin role name in Keycloak
+      adminRole: "sas-iot-admin"
+      # -- User role name in Keycloak
+      userRole: "sas-iot-user"
+      # -- Whether service accounts are enabled in Keycloak
+      serviceaccountsEnabled: false
+      # -- Keycloak theme to use
+      theme: sasblue
+      # -- Proxy mode configuration (edge, reencrypt, or passthrough)
+      proxy: edge
+      # -- Whether to enforce strict hostname checking
+      strictHostname: true
+      # -- Application admin username
+      appAdmin: AppAdmin
+      # -- Application admin password
+      appAdminPassword: ""
+      # -- Keycloak admin username
+      keycloakAdmin: kcAdmin
+      # -- Keycloak admin password
+      keycloakAdminPassword: ""
+      # -- OAuth2 client ID for the application
+      clientId: "sas-retagentmgr-app"
+      # -- OAuth2 client secret for the application
+      clientSecret: ""
