@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: db-keycloak
+data:
+  db: {{ .Values.global.configuration.keycloak.db | quote }}
+  schema: {{ .Values.global.configuration.keycloak.schema | quote }}

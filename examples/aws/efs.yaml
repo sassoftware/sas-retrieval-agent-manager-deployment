@@ -1,0 +1,15 @@
+controller:
+  deleteAccessPointRootDir: true
+  serviceAccount:
+    annotations:
+      eks.amazonaws.com/role-arn: <IAM_ROLE_ARN>
+storageClasses:
+- annotations:
+    storageclass.kubernetes.io/is-default-class: 'true'
+  name: efs-sc
+  parameters:
+    directoryPerms: '700'
+    fileSystemId: <EFS_FILESYSTEM_ID>
+    provisioningMode: efs-ap
+  reclaimPolicy: Delete
+  volumeBindingMode: Immediate

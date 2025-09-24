@@ -1,0 +1,10 @@
+{{- if .Values.global.configuration.weaviate.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: db-weaviate
+  labels:
+    {{- include "sas-retrieval-agent-manager-db-init.labels" . | nindent 4 }}
+data:
+  enabled: {{ .Values.global.configuration.weaviate.enabled | quote }}
+{{- end }}

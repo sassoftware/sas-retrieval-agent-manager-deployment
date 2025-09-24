@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: application-roles
+data:
+  userRole: {{ .Values.global.configuration.application.userRole | quote }}
+  adminRole: {{ .Values.global.configuration.application.adminRole | quote }}

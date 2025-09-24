@@ -1,0 +1,375 @@
+{{- $keycloak_repo_base := "" -}}
+{{- $keycloak_repo_path := "" -}}
+{{- $postgres_repo_base := "" -}}
+{{- $postgres_repo_path := "" -}}
+{{- $theme_repo_base := "" -}}
+{{- $theme_repo_path := "" -}}
+ {{/* keycloak image */}}
+{{- if .Values.image.keycloak.repo.useGlobal | default false -}}
+  {{- $keycloak_repo_base = .Values.global.image.repo.base | default .Values.image.keycloak.repo.base -}}
+{{- else -}}
+  {{- $keycloak_repo_base = .Values.image.keycloak.repo.base -}}
+{{- end -}}
+{{- $keycloak_repo_path = .Values.image.keycloak.repo.path -}}
+ {{/* postgres image */}}
+{{- if .Values.image.postgres.repo.useGlobal | default false -}}
+  {{- $postgres_repo_base = .Values.global.image.repo.base | default .Values.image.postgres.repo.base -}}
+{{- else -}}
+  {{- $postgres_repo_base = .Values.image.postgres.repo.base -}}
+{{- end -}}
+{{- $postgres_repo_path = .Values.image.postgres.repo.path -}}
+ {{/* theme image */}}
+{{- if .Values.image.theme.repo.useGlobal | default false }}
+  {{- $theme_repo_base = .Values.global.image.repo.base | default .Values.image.theme.repo.base -}}
+{{- else -}}
+  {{- $theme_repo_base = .Values.image.theme.repo.base -}}
+{{- end -}}
+{{- $theme_repo_path = .Values.image.theme.repo.path -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "keycloak.fullname" . }}
+  labels:
+    {{- include "keycloak.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "keycloak.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "keycloak.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with uniq (concat (.Values.imagePullSecrets | default (list)) (.Values.global.imagePullSecrets | default (list))) }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "keycloak.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      initContainers:
+        - name: check-db-ready
+          image: "{{ $postgres_repo_base }}/{{ $postgres_repo_path }}:{{ .Values.image.postgres.tag }}"
+          imagePullPolicy: IfNotPresent
+          command: [
+            'sh','-c', 
+            '/scripts/init.sh'
+          ]
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: keycloak-db-credentials
+                  key: user
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: keycloak-db-credentials
+                  key: password
+            - name: POSTGRES_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: db-connection
+                  key: host
+            - name: POSTGRES_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: db-connection
+                  key: port
+            - name: POSTGRES_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: db-keycloak
+                  key: db
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          volumeMounts:
+            - mountPath: /scripts
+              name: kc-scripts
+              readOnly: false
+        - name: copy-keycloak-theme
+          image: "{{ $theme_repo_base }}/{{ $theme_repo_path }}:{{ .Values.image.theme.tag }}"
+          imagePullPolicy: IfNotPresent
+          command: ['sh', '-c', 
+             'cp /opt/sas/viya/home/sas-iot-keycloak-theme-*.jar /opt/keycloak/providers']
+          volumeMounts:
+            - mountPath: /opt/keycloak/providers
+              name: providers
+              readOnly: false
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+        - name: keycloak-build
+          image: "{{ $keycloak_repo_base }}/{{ $keycloak_repo_path }}:{{ .Values.image.keycloak.tag }}"
+          imagePullPolicy: {{ .Values.image.keycloak.pullPolicy }}
+          env:
+            - name: KC_NS
+              value: "{{ .Release.Namespace }}"
+            - name: KC_DB
+              value: postgres
+            - name: KC_HOSTNAME
+              valueFrom:
+                configMapKeyRef:
+                  key: url
+                  name: keycloak-config
+            - name: KC_HOSTNAME_STRICT
+              value: {{ .Values.global.configuration.keycloak.strictHostname | quote }}
+            - name: KC_HTTP_RELATIVE_PATH
+              valueFrom:
+                configMapKeyRef:
+                  key: basePath
+                  name: keycloak-config
+              # value: {{ with (first .Values.ingress.hosts) }}{{ with (first .paths) }}{{ regexReplaceAll "\\(.*" .path "" }}{{ end }}{{ end }}
+            - name: KC_PROXY_HEADERS
+              value: xforwarded
+            - name: KC_HTTP_ENABLED
+              value: 'true'
+            - name: KC_THEME_NAME
+              value: {{ .Values.global.configuration.keycloak.theme }}
+            - name: KC_REALM_CLIENT_SERVICEACCOUNTSENABLED
+              value: {{ .Values.global.configuration.keycloak.serviceaccountsEnabled | quote }}
+            - name: KC_REALM_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: keycloak-client-secret
+                  key: realm
+            - name: KC_OAUTH2_ADMIN_ROLE
+              valueFrom:
+                configMapKeyRef:
+                  key: adminRole
+                  name: application-roles
+            - name: KC_OAUTH2_USER_ROLE
+              valueFrom:
+                configMapKeyRef:
+                  key: userRole
+                  name: application-roles
+            - name: KC_HEALTH_ENABLED
+              value: "true"
+            - name: KC_HTTPS_CERTIFICATE_FILE
+              value: "/tls/tls.crt"
+            - name: KC_HTTPS_CERTIFICATE_KEY_FILE
+              value: "/tls/tls.key"
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              cp -r /opt/keycloak/* /keycloak &&
+              cd /keycloak &&
+              ls -laR &&
+              ./bin/kc.sh build --features=token-exchange
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          volumeMounts:
+            - mountPath: /opt/keycloak/providers
+              name: providers
+              readOnly: true
+            - name: keycloak
+              mountPath: /keycloak
+              readOnly: false
+            - mountPath: /opt/keycloak/data/import
+              name: realm-config
+              readOnly: true
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ $keycloak_repo_base }}/{{ $keycloak_repo_path }}:{{ .Values.image.keycloak.tag }}"
+          imagePullPolicy: {{ .Values.image.keycloak.pullPolicy }}
+          args:
+            - start
+            - --import-realm
+            - --optimized
+            # - --features=token-exchange
+            - --verbose
+          env:
+            - name: KC_NS
+              value: "{{ .Release.Namespace }}"
+            - name: KC_DB
+              value: postgres
+            - name: KC_FQDN
+              valueFrom:
+                configMapKeyRef:
+                  key: host
+                  name: keycloak-config
+            - name: KC_DB_URL_HOST
+              valueFrom:
+                configMapKeyRef:
+                  key: host
+                  name: db-connection
+            - name: KC_DB_URL_PORT
+              valueFrom:
+                configMapKeyRef:
+                  key: port
+                  name: db-connection
+            - name: KC_DB_URL_DATABASE
+              valueFrom:
+                configMapKeyRef:
+                  key: db
+                  name: db-keycloak
+            - name: KC_DB_SCHEMA
+              valueFrom:
+                configMapKeyRef:
+                  key: schema
+                  name: db-keycloak
+            - name: KC_DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: keycloak-db-credentials
+                  key: user
+            - name: KC_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: keycloak-db-credentials
+                  key: password
+            - name: KC_HOSTNAME
+              valueFrom:
+                configMapKeyRef:
+                  key: url
+                  name: keycloak-config
+            - name: KC_HOSTNAME_STRICT
+              value: {{ .Values.global.configuration.keycloak.strictHostname | quote }}
+            - name: KC_HTTP_RELATIVE_PATH
+              valueFrom:
+                configMapKeyRef:
+                  key: basePath
+                  name: keycloak-config
+              # value: {{ with (first .Values.ingress.hosts) }}{{ with (first .paths) }}{{ regexReplaceAll "\\(.*" .path "" }}{{ end }}{{ end }}
+            - name: KC_PROXY_HEADERS
+              value: xforwarded
+            - name: KC_HTTP_ENABLED
+              value: 'true'
+            - name: KC_THEME_NAME
+              value: {{ .Values.global.configuration.keycloak.theme }}
+            - name: KC_REALM_CLIENT_SERVICEACCOUNTSENABLED
+              value: {{ .Values.global.configuration.keycloak.serviceaccountsEnabled | quote }}
+            - name: KC_BOOTSTRAP_ADMIN_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  key: user
+                  name: keycloak-admin-secret
+            - name: KC_BOOTSTRAP_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: password
+                  name: keycloak-admin-secret
+            - name: APP_ADMIN
+              valueFrom:
+                secretKeyRef:
+                  key: user
+                  name: keycloak-appadmin-secret
+            - name: APP_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: password
+                  name: keycloak-appadmin-secret
+            - name: OAUTH2_PROXY_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: keycloak-client-secret
+                  key: sv-client-id
+            - name: OAUTH2_PROXY_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: keycloak-client-secret
+                  key: sv-client-secret
+            - name: KC_REALM_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: keycloak-client-secret
+                  key: realm
+            - name: KC_OAUTH2_ADMIN_ROLE
+              valueFrom:
+                configMapKeyRef:
+                  key: adminRole
+                  name: application-roles
+            - name: KC_OAUTH2_USER_ROLE
+              valueFrom:
+                configMapKeyRef:
+                  key: userRole
+                  name: application-roles
+            - name: KC_HEALTH_ENABLED
+              value: "true"
+            - name: KC_HTTPS_CERTIFICATE_FILE
+              value: "/tls/tls.crt"
+            - name: KC_HTTPS_CERTIFICATE_KEY_FILE
+              value: "/tls/tls.key"
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: cache
+              mountPath: /opt/keycloak/.cache
+              readOnly: false
+            - mountPath: /opt/keycloak
+              name: keycloak
+            - mountPath: /opt/keycloak/data/import
+              name: realm-config
+              readOnly: true
+            - mountPath: /tls/
+              name: ingress-tls
+              readOnly: true
+            - mountPath: /tmp
+              name: tmp
+          {{- with .Values.volumeMounts }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      volumes:
+        - name: realm-config
+          secret:
+            defaultMode: 0444
+            secretName: keycloak-realm-secret
+        - name: kc-scripts
+          configMap:
+            name: {{ include "keycloak.fullname" . }}-kc-scripts
+            defaultMode: 0755
+        - name: ingress-tls
+          secret:
+            secretName: ingress-tls
+        - name: providers
+          emptyDir:
+            sizeLimit: 256Mi
+        - name: keycloak
+          emptyDir:
+            sizeLimit: 256Mi
+        - name: cache
+          emptyDir:
+            sizeLimit: 256Mi
+        - name: tmp
+          emptyDir:
+            sizeLimit: 256Mi
+      {{- with .Values.volumes }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

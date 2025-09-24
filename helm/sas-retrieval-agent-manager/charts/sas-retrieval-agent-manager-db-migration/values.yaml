@@ -1,0 +1,151 @@
+
+# Default values for sas-retrieval-agent-manager-db-migration.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# -- Container image configuration for database migration
+image:
+  # -- PostgreSQL container image configuration
+  postgres:
+    repo:
+      # -- Container registry base URL for PostgreSQL
+      base: docker.io
+      # -- Container image path/name for PostgreSQL
+      path: postgres
+      # -- Use global registry configuration instead of local
+      useGlobal: false
+    # -- Image pull policy for PostgreSQL container
+    pullPolicy: IfNotPresent
+    # -- PostgreSQL container image tag
+    tag: "15-alpine"
+  # -- Goose database migration tool container image configuration
+  goose:
+    repo: 
+      # -- Container registry base URL for Goose migration tool
+      base: cr.sas.com
+      # -- Container image path/name for Goose migration tool
+      path: cdp-release-x64_oci_linux_2-docker-latest/sas-retrieval-agent-manager-db-migration
+      # -- Use global registry configuration instead of local
+      useGlobal: false
+    # -- Image pull policy for Goose migration container
+    pullPolicy: IfNotPresent
+    # -- Goose migration container image tag
+    tag: 1.3.3-20250829.1756487242174
+
+# -- Array of imagePullSecrets in the namespace for pulling images from private registries
+imagePullSecrets: []
+
+# -- String to partially override the fullname template with a string (will prepend the release name)
+nameOverride: "db-migration"
+
+# -- String to fully override the fullname template with a string
+fullnameOverride: "sas-retrieval-agent-manager-db-migration"
+
+# -- Service account configuration for database migration
+serviceAccount:
+  # -- Specifies whether a service account should be created
+  create: true
+  # -- Automatically mount a ServiceAccount's API credentials
+  automount: true
+  # -- Annotations to add to the service account
+  annotations: {}
+  # -- The name of the service account to use. If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+# -- Annotations to add to the pods
+podAnnotations: {}
+
+# -- Labels to add to the pods
+podLabels:
+  sas.com/deployment: "sas-retrieval-agent-manager"
+  workload.sas.com/class: "ram"
+
+# -- The security context for the pods
+podSecurityContext:
+  # -- Group ID for file system ownership
+  fsGroup: 10001
+  # -- Group ID to run the entrypoint of the container process
+  runAsGroup: 10001
+  # -- Indicates that the container must be run as a non-root user
+  runAsNonRoot: true
+  # -- User ID to run the entrypoint of the container process
+  runAsUser: 10001
+  # -- Seccomp profile for the pod
+  seccompProfile:
+    type: RuntimeDefault
+  # fsGroup: 2000
+
+# -- The security context for the application container
+securityContext:
+  # -- Seccomp profile for the container
+  seccompProfile:
+    type: RuntimeDefault
+  # -- Whether a process can gain more privileges than its parent process
+  allowPrivilegeEscalation: false
+  # -- Linux capabilities to add/drop for the container
+  capabilities:
+    add: []
+    drop:
+      - ALL
+  # -- Whether the container has a read-only root filesystem
+  readOnlyRootFilesystem: true
+  # -- Whether the container must be run as a non-root user
+  runAsNonRoot: true
+  # -- User ID to run the entrypoint of the container process
+  runAsUser: 10001
+
+# -- The resources to allocate for the database migration container
+resources:
+  # -- Resource limits for the container
+  limits:
+    # -- CPU limit
+    cpu: 200m
+    # -- Memory limit
+    memory: 256Mi
+  # -- Resource requests for the container
+  requests:
+    # -- CPU request
+    cpu: 100m
+    # -- Memory request
+    memory: 128Mi
+
+# -- Node labels for pod assignment
+nodeSelector: {}
+
+# -- Tolerations for pod assignment
+tolerations: []
+
+# -- Map of node/pod affinities
+affinity:
+  nodeAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 1
+      preference:
+        matchExpressions:
+        - key: sas.com/deployment
+          operator: In
+          values:
+          - sas-retrieval-agent-manager
+    - weight: 2
+      preference:
+        matchExpressions:
+        - key: workload.sas.com/class
+          operator: In
+          values:
+          - ram
+
+# -- Global configuration for database migration
+global:
+  # -- Array of imagePullSecrets for global use
+  imagePullSecrets: []
+
+  # -- Configuration settings
+  configuration:
+    # -- Vector store configuration
+    vectorStore:
+      # -- Whether vector store migrations are enabled
+      enabled: true
+    # -- Weaviate vector database configuration
+    weaviate:
+      # -- Whether Weaviate-related migrations are enabled
+      enabled: true

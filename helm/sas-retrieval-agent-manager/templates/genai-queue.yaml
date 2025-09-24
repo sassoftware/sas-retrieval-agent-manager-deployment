@@ -1,0 +1,8 @@
+apiVersion: kueue.x-k8s.io/v1beta1
+kind: LocalQueue
+metadata: 
+  name: genai-queue
+  labels:
+    {{- include "sas-retrieval-agent-manager.labels" . | nindent 4 }}
+spec:
+  clusterQueue: cluster-queue

@@ -1,0 +1,160 @@
+# Default values for gpg.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# -- Container image configuration for GPG and kubectl containers
+image:
+  # -- GPG container image configuration
+  gpg:
+    repo:
+      # -- Container registry base URL for GPG image
+      base: vladgh
+      # -- Container image path/name for GPG
+      path: gpg
+      # -- Use global registry configuration instead of local
+      useGlobal: false
+    # -- Image pull policy for GPG container
+    pullPolicy: IfNotPresent
+    # -- GPG container image tag
+    tag: "1.3.6"
+  # -- kubectl container image configuration (used for Kubernetes operations)
+  kubectl:
+    repo:
+      # -- Container registry base URL for kubectl image
+      base: "docker.io"
+      # -- Container image path/name for kubectl
+      path: alpine/k8s
+      # -- Use global registry configuration instead of local
+      useGlobal: false
+    # -- Image pull policy for kubectl container
+    pullPolicy: IfNotPresent
+    # -- kubectl container image tag
+    tag: "1.31.12"
+
+# -- Array of imagePullSecrets in the namespace for pulling images from private registries
+imagePullSecrets: []
+
+# -- String to partially override the fullname template with a string (will prepend the release name)
+nameOverride: "gpg"
+
+# -- String to fully override the fullname template with a string
+fullnameOverride: "sas-retrieval-agent-manager-gpg"
+
+# -- Service account configuration for GPG operations
+serviceAccount:
+  # -- Specifies whether a service account should be created
+  create: true
+  # -- Automatically mount a ServiceAccount's API credentials
+  automount: true
+  # -- Annotations to add to the service account
+  annotations: {}
+  # -- The name of the service account to use. If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+# -- Annotations to add to the pods
+podAnnotations: {}
+
+# -- Labels to add to the pods
+podLabels:
+  sas.com/deployment: "sas-retrieval-agent-manager"
+  workload.sas.com/class: "ram"
+
+# -- The security context for the pods
+podSecurityContext:
+  # -- Group ID for file system ownership
+  fsGroup: 10001
+  # -- Group ID to run the entrypoint of the container process
+  runAsGroup: 10001
+  # -- Indicates that the container must be run as a non-root user
+  runAsNonRoot: true
+  # -- User ID to run the entrypoint of the container process
+  runAsUser: 10001
+  # -- Seccomp profile for the pod
+  seccompProfile:
+    type: RuntimeDefault
+
+# -- The security context for the application container
+securityContext:
+  # -- Seccomp profile for the container
+  seccompProfile:
+    type: RuntimeDefault
+  # -- Whether a process can gain more privileges than its parent process
+  allowPrivilegeEscalation: false
+  # -- Linux capabilities to add/drop for the container
+  capabilities:
+    add: []
+    drop:
+      - ALL
+  # -- Whether the container has a read-only root filesystem
+  readOnlyRootFilesystem: true
+  # -- Whether the container must be run as a non-root user
+  runAsNonRoot: true
+  # -- User ID to run the entrypoint of the container process
+  runAsUser: 10001
+  # -- Group ID to run the entrypoint of the container process
+  runAsGroup: 10001
+
+# -- The resources to allocate for the container
+resources:
+  # -- Resource limits for the container
+  limits:
+    # -- CPU limit
+    cpu: 200m
+    # -- Memory limit
+    memory: 256Mi
+  # -- Resource requests for the container
+  requests:
+    # -- CPU request
+    cpu: 100m
+    # -- Memory request
+    memory: 128Mi
+
+# -- Node labels for pod assignment
+nodeSelector: {}
+
+# -- Tolerations for pod assignment
+tolerations: []
+
+# -- Map of node/pod affinities
+affinity:
+  nodeAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 1
+      preference:
+        matchExpressions:
+        - key: sas.com/deployment
+          operator: In
+          values:
+          - sas-retrieval-agent-manager
+    - weight: 2
+      preference:
+        matchExpressions:
+        - key: workload.sas.com/class
+          operator: In
+          values:
+          - ram
+
+# -- Global configuration for GPG operations
+global:
+  # -- Configuration settings
+  configuration:
+    # -- GPG-specific configuration
+    gpg:
+      # -- Existing GPG public key (base64 encoded). Leave empty to generate a new key pair
+      publicKey: ""
+      # -- Existing GPG private key (base64 encoded). Leave empty to generate a new key pair
+      privateKey: ""
+      # -- Passphrase for the GPG key. Required for both existing keys and key generation
+      passphrase: ""
+      # -- Key generation settings (used when publicKey and privateKey are not provided)
+      key:
+        # -- Name associated with the generated GPG key
+        name: "RAM Secrets"
+        # -- Email address associated with the generated GPG key
+        email: "ram@sas.com"
+        # -- Comment for the generated GPG key
+        comment: "RAM GPG Key"
+        # -- Key length in bits for RSA keys
+        length: 4096
+        # -- Key expiration time (0 means never expires)
+        expire: "0"

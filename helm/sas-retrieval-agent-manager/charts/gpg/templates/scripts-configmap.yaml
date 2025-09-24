@@ -1,0 +1,126 @@
+{{- if (not (or .Values.global.configuration.gpg.publicKey .Values.global.configuration.gpg.privateKey)) }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "gpg.fullname" . }}-scripts
+  labels:
+    {{- include "gpg.labels" . | nindent 4 }}
+data:
+  check_secrets_exist.sh: |-
+    #!/bin/bash
+
+    KUBECTL=`which kubectl`
+    NAMESPACE="{{ .Release.Namespace }}"
+    
+    echo "🔍 Checking if GPG secrets already exist..."
+    
+    # Check if the Secret exists
+    if ${KUBECTL} get secret -n ${NAMESPACE} gpg-private-key >/dev/null 2>&1; then
+      echo "❌ Secret 'gpg-private-key' already exists."
+      touch /shared/secrets-exist
+      exit 0
+    fi
+
+    # Check if the ConfigMap exists
+    if ${KUBECTL} get configmap -n ${NAMESPACE} gpg-public-key >/dev/null 2>&1; then
+      echo "❌ ConfigMap 'gpg-public-key' already exists."
+      touch /shared/secrets-exist
+      exit 0
+    fi
+
+    echo "✅ Secrets do not exist. GPG key generation needed."
+    touch /shared/secrets-missing
+    exit 0
+
+  generate_gpg_keys.sh: |-
+    #!/bin/bash
+
+    cd /workdir
+
+    # Check if we should skip generation
+    if [ -f /shared/secrets-exist ]; then
+      echo "🔄 Secrets already exist, skipping GPG key generation."
+      exit 0
+    fi
+
+    # Output Path
+    GPG_DIR="/config/gpg"
+    PUBLIC_KEY_PATH="${GPG_DIR}/sas-retagentmgr-psql-public.key"
+    PRIVATE_KEY_PATH="${GPG_DIR}/sas-retagentmgr-psql-private.key"
+
+    # Batch file for GPG
+    cat > gen-key-script <<EOF
+    %no-protection
+    %echo Generating a GPG key
+    Key-Type: RSA
+    Key-Length: ${KEY_LENGTH}
+    Subkey-Type: RSA
+    Name-Real: ${KEY_NAME}
+    Name-Comment: ${KEY_COMMENT}
+    Name-Email: ${KEY_EMAIL}
+    Expire-Date: ${KEY_EXPIRE}
+    %commit
+    %echo done
+    EOF
+
+    # Generate the key
+    gpg --batch --generate-key gen-key-script
+    rm gen-key-script
+
+    # Get fingerprint
+    KEY_FPR=$(gpg --list-keys --with-colons "$KEY_EMAIL" | awk -F: '/^fpr:/ {print $10; exit}')
+
+    # Export public and private keys
+    gpg --armor --export "${KEY_FPR}" > "${PUBLIC_KEY_PATH}"
+    gpg --armor --export-secret-keys "${KEY_FPR}" > "${PRIVATE_KEY_PATH}"
+
+    # Output before update
+    echo "✅ GPG key generated."
+    echo "🔑 Public Key saved to: ${PUBLIC_KEY_PATH}"
+    echo "🔒 Private Key saved to: ${PRIVATE_KEY_PATH}"
+    echo "🧾 Fingerprint: ${KEY_FPR}"
+
+    # Signal completion for the kubectl container
+    touch /shared/keys-generated
+
+  apply_secrets.sh: |-
+    #!/bin/bash
+
+    KUBECTL=`which kubectl`
+    NAMESPACE="{{ .Release.Namespace }}"
+
+    # Check if we should skip application
+    if [ -f /shared/secrets-exist ]; then
+      echo "🔄 Secrets already exist, skipping secret application."
+      exit 0
+    fi
+
+    # Wait for keys to be generated
+    while [ ! -f /shared/keys-generated ]; do
+      echo "⏳ Waiting for GPG keys to be generated..."
+      sleep 2
+    done
+
+    # Paths to the generated keys
+    GPG_DIR="/config/gpg"
+    PUBLIC_KEY_PATH="${GPG_DIR}/sas-retagentmgr-psql-public.key"
+    PRIVATE_KEY_PATH="${GPG_DIR}/sas-retagentmgr-psql-private.key"
+
+    # Verify files exist
+    if [ ! -f "${PRIVATE_KEY_PATH}" ] || [ ! -f "${PUBLIC_KEY_PATH}" ]; then
+      echo "❌ Generated key files not found!"
+      exit 1
+    fi
+
+    # Update the Kubernetes Secret with the private key
+    ${KUBECTL} create secret generic -n ${NAMESPACE} gpg-private-key \
+      --from-file=privateKey="$PRIVATE_KEY_PATH" \
+      --dry-run=client -o yaml | ${KUBECTL} -n ${NAMESPACE} apply -f -
+
+    # Update the ConfigMap with the public key
+    ${KUBECTL} create configmap -n ${NAMESPACE} gpg-public-key \
+      --from-file=public="$PUBLIC_KEY_PATH" \
+      --dry-run=client -o yaml | ${KUBECTL} -n ${NAMESPACE} apply -f -
+
+    echo "🔄 Updated Kubernetes resources with new GPG keys."
+{{- end }}

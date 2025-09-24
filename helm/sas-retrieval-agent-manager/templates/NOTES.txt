@@ -1,0 +1,20 @@
+Thank you for installing the SAS Retrieval Agent Manager Helm chart!
+
+
+You can now access your environment at:
+
+  https://{{ if (index .Values "sas-retrieval-agent-manager-app").ingress.useGlobal | default false }}{{ .Values.global.domain }}{{ else }}{{ (index (index .Values "sas-retrieval-agent-manager-app").ingress.hosts 0).host }}{{ end }}{{ if (index .Values "sas-retrieval-agent-manager-app").ingress.useGlobal | default false }}{{ (index (index .Values "sas-retrieval-agent-manager-app").ingress.paths 0).path }}{{ else }}{{ (index (index (index .Values "sas-retrieval-agent-manager-app").ingress.hosts 0).paths 0).path }}{{ end }}
+
+Login with account:
+
+  {{ .Values.global.configuration.keycloak.appAdmin }}
+
+For user management, access Keycloak at:
+
+  https://{{ if .Values.keycloak.ingress.useGlobal | default false }}{{ .Values.global.domain }}{{ else }}{{ (index .Values.keycloak.ingress.hosts 0).host }}{{ end }}{{ if .Values.keycloak.ingress.useGlobal | default false }}{{ (index .Values.keycloak.ingress.paths 0).path }}{{ else }}{{ (index (index .Values.keycloak.ingress.hosts 0).paths 0).path }}{{ end }}
+
+Login with account:
+
+  {{ .Values.global.configuration.keycloak.keycloakAdmin }}
+
+For further help, check your documentation or contact your SAS Administrator.

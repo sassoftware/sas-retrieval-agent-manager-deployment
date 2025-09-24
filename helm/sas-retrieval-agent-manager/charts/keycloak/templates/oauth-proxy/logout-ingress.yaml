@@ -1,0 +1,118 @@
+{{- $dot := . -}}
+{{- $globalEnabled := false -}}
+{{- if hasKey .Values "global" -}}
+{{- if hasKey .Values.global "ingress" -}}
+{{- if .Values.global.ingress.enabled -}}
+{{- $globalEnabled := true -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- if or .Values.oauthProxy.ingress.enabled $globalEnabled -}}
+{{- $fullName := include "keycloak.oauthProxy.fullname" . | lower -}}
+{{- $svcPort := .Values.oauthProxy.service.port -}}
+{{- if and .Values.oauthProxy.ingress.className (not (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion)) }}
+  {{- if not (hasKey .Values.oauthProxy.ingress.annotations "kubernetes.io/ingress.class") }}
+  {{- $_ := set .Values.oauthProxy.ingress.annotations "kubernetes.io/ingress.class" .Values.oauthProxy.ingress.className}}
+  {{- end }}
+{{- end }}
+{{- if semverCompare ">=1.19-0" .Capabilities.KubeVersion.GitVersion -}}
+apiVersion: networking.k8s.io/v1
+{{- else if semverCompare ">=1.14-0" .Capabilities.KubeVersion.GitVersion -}}
+apiVersion: networking.k8s.io/v1beta1
+{{- else -}}
+apiVersion: extensions/v1beta1
+{{- end }}
+kind: Ingress
+metadata:
+  name: {{ $fullName }}-logout
+  labels:
+    {{- include "keycloak.labels" . | nindent 4 }}
+  annotations:
+{{- if .Values.oauthProxy.ingress.useGlobal | default false }}
+    nginx.ingress.kubernetes.io/rewrite-target: "https://{{ .Values.global.domain }}{{ with (first .Values.oauthProxy.ingress.paths) }}{{ regexReplaceAll "\\(.*" .path "" }}{{ end }}/sign_out?rd=https%3A%2F%2F$host{{ with (first .Values.ingress.paths) }}{{ regexReplaceAll "\\(.*" .path "" }}{{ end }}/realms/{{ .Values.global.configuration.keycloak.realm }}/protocol/openid-connect/logout%3Fclient_id={{ .Values.global.configuration.keycloak.clientId }}%26post_logout_redirect_uri=https%3A%2F%2F$host{{ with (first .Values.ingress.paths) }}{{ regexReplaceAll "\\(.*" .path "" }}{{ end }}"
+{{- else }}
+    nginx.ingress.kubernetes.io/rewrite-target: "https://{{ with (first .Values.oauthProxy.ingress.hosts) }}{{ .host }}{{ with (first .paths) }}{{ regexReplaceAll "\\(.*" .path "" }}{{ end }}{{ end }}/sign_out?rd=https%3A%2F%2F$host{{ with (first .Values.oauthProxy.ingress.hosts) }}{{ with (first .paths) }}{{ regexReplaceAll "\\(.*" .path "" }}{{ end }}{{ end }}/realms/{{ .Values.global.configuration.keycloak.realm }}/protocol/openid-connect/logout%3Fclient_id={{ .Values.global.configuration.keycloak.clientId }}%26post_logout_redirect_uri=https%3A%2F%2F$host{{ with (first .Values.oauthProxy.ingress.hosts) }}{{ with (first .paths) }}{{ regexReplaceAll "\\(.*" .path "" }}{{ end }}{{ end }}"
+{{- end }}
+  {{- with .Values.oauthProxy.ingress.annotations }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+{{- if .Values.oauthProxy.ingress.useGlobal | default false }}
+  {{- if and (.Values.global.ingress.className | default .Values.oauthProxy.ingress.className) (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion) }}
+  ingressClassName: {{ .Values.global.ingress.className | default .Values.oauthProxy.ingress.className }}
+  {{- end }}
+  {{- if .Values.global.ingress.tls.enabled | default false }}
+  tls:
+    - hosts:
+      - {{ .Values.global.domain | quote }}
+      {{- if (include "testValuesPath" (list .Values "oauthProxy" "ingress" "tls" "hosts")) | eq "true" }}
+        {{- range .Values.oauthProxy.ingress.tls.hosts }}
+          {{- if and . (ne . "") }}
+      - {{ . | quote }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+      {{- if ((include "testValuesPath" (list .Values "global" "ingress" "tls" "secretName")) | eq "true") }}
+      secretName: {{ .Values.global.ingress.tls.secretName | default "" }}
+      {{- else if ((include "testValuesPath" (list .Values "oauthProxy" "ingress" "tls" "secretName")) | eq "true") }}
+      secretName: {{ .Values.oauthProxy.ingress.tls.secretName | default "" }}
+      {{- end }}
+  {{- end }}
+  rules:
+    - host: {{ .Values.global.domain | quote }}
+      http:
+        paths:
+          {{- range .Values.oauthProxy.ingress.logoutPaths }}
+          - path: {{ .path}}
+            {{- if and .pathType (semverCompare ">=1.18-0" $.Capabilities.KubeVersion.GitVersion) }}
+            pathType: {{ .pathType }}
+            {{- end }}
+            backend:
+              {{- if semverCompare ">=1.19-0" $.Capabilities.KubeVersion.GitVersion }}
+              service:
+                name: {{ $fullName }}
+                port:
+                  number: {{ $svcPort }}
+              {{- else }}
+              serviceName: {{ $fullName }}
+              servicePort: {{ $svcPort }}
+              {{- end }}
+          {{- end }}
+{{- else }}
+  {{- if and .Values.oauthProxy.ingress.className (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion) }}
+  ingressClassName: {{ .Values.oauthProxy.ingress.className }}
+  {{- end }}
+  {{- if .Values.oauthProxy.ingress.tls }}
+  tls:
+    {{- range .Values.oauthProxy.ingress.tls }}
+    - hosts:
+        {{- range .hosts }}
+        - {{ . | quote }}
+        {{- end }}
+      secretName: {{ .secretName }}
+    {{- end }}
+  {{- end }}
+  rules:
+    {{- range .Values.oauthProxy.ingress.hosts }}
+    - host: {{ .host | quote }}
+      http:
+        paths:
+          {{- range $dot.Values.oauthProxy.ingress.logoutPaths }}
+          - path: {{ .path }}
+            {{- if and .pathType (semverCompare ">=1.18-0" $.Capabilities.KubeVersion.GitVersion) }}
+            pathType: {{ .pathType }}
+            {{- end }}
+            backend:
+              {{- if semverCompare ">=1.19-0" $.Capabilities.KubeVersion.GitVersion }}
+              service:
+                name: {{ $fullName }}
+                port:
+                  number: {{ $svcPort }}
+              {{- else }}
+              serviceName: {{ $fullName }}
+              servicePort: {{ $svcPort }}
+              {{- end }}
+          {{- end }}
+    {{- end }}
+  {{- end }}
+{{- end }}

@@ -1,0 +1,53 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "keycloak.oauthProxy.fullname" . | lower }}
+  labels:
+    {{- include "keycloak.oauthProxy.labels" . | nindent 4 }}
+data:
+  oauth2-proxy.cfg: |
+    http_address              = "0.0.0.0:{{ .Values.oauthProxy.service.port }}"
+    upstreams                 = "file:///dev/null"
+    reverse_proxy             = true
+    ssl_insecure_skip_verify  = true
+
+    # Provider Configuration
+    provider                = "oidc"
+    skip_provider_button    = true
+    skip_jwt_bearer_tokens  = true
+    code_challenge_method   = "S256"
+    {{ if .Values.ingress.useGlobal -}}
+    redirect_url            = "https://{{ .Values.global.domain }}{{ with (first .Values.oauthProxy.ingress.paths) }}{{  regexReplaceAll "\\(.*" .path "" | trimSuffix "/" }}{{ end }}/callback"
+    oidc_issuer_url         = "https://{{ .Values.global.domain }}{{ with (first .Values.ingress.paths) }}{{ regexReplaceAll "\\(.*" .path "" | trimSuffix "/"  }}{{ end }}/realms/{{ .Values.global.configuration.keycloak.realm }}"
+    whitelist_domains       = "{{ .Values.global.domain }}"
+    proxy_prefix            = "{{ with (first .Values.oauthProxy.ingress.paths) }}{{  regexReplaceAll "\\(.*" .path "" | trimSuffix "/" }}{{ end }}"
+    {{- else -}}
+    redirect_url            = "https://{{ with (first .Values.oauthProxy.ingress.hosts) }}{{ .host }}{{ with (first .paths) }}{{  regexReplaceAll "\\(.*" .path "" | trimSuffix "/" }}{{ end }}{{ end }}/callback"
+    oidc_issuer_url         = "https://{{ with (first .Values.ingress.hosts) }}{{ .host }}{{ with (first .paths) }}{{  regexReplaceAll "\\(.*" .path "" | trimSuffix "/" }}{{ end }}{{ end }}/realms/{{ .Values.global.configuration.keycloak.realm }}"
+    whitelist_domains       = "{{ with (first .Values.oauthProxy.ingress.hosts) }}{{ .host }}{{ end }}"
+    proxy_prefix            = "{{ with (first .Values.oauthProxy.ingress.hosts) }}{{ with (first .paths) }}{{  regexReplaceAll "\\(.*" .path "" | trimSuffix "/" }}{{ end }}{{ end }}"
+    {{- end }}
+    email_domains           = "*"
+
+    # Cookie Configuration
+    cookie_name     = "esp_oauth2_proxy"
+    cookie_expire   = "12h"
+    cookie_refresh  = "60s"    
+    cookie_secure   = true
+    {{ if .Values.ingress.useGlobal -}}
+    cookie_domains  = "{{ .Values.global.domain }}"
+    {{- else -}}
+    cookie_domains  = "{{ with (first .Values.oauthProxy.ingress.hosts) }}{{ .host }}{{ end }}"
+    {{- end }}
+    cookie_samesite = "lax"
+
+    # Auth Response Headers
+    set_authorization_header  = true
+    set_xauthrequest          = true
+    pass_access_token         = true
+
+    # bypass authentication for requests that match the method & path. Format: method=path_regex OR path_regex alone for all methods
+    # skip_auth_routes = [
+    #   "GET=^/$"
+    # ]

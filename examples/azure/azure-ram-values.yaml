@@ -1,0 +1,401 @@
+# -- Extra Kubernetes objects to deploy alongside the main chart
+# -- Allows deployment of additional secrets, configmaps, or custom resources
+extraObjects: [] # Remove the brackets and add YAML objects(eg. Ingress TLS secret) as needed
+
+
+  ### REQUIRED ###
+  # -- Ingress TLS secret for RAM HTTPS termination
+  # -- TLS Certificate for secure external access
+  # - apiVersion: v1
+  #   kind: Secret
+  #   metadata:
+  #     name: ingress-tls
+  #     namespace: retagentmgr
+  #   data:
+  #     tls.crt: >-
+  #       <base64_encoded_certificate>
+  #     tls.key: >-
+  #       <base64_encoded_private_key>
+  #   type: kubernetes.io/tls
+
+# --- Keycloak email configuration
+keycloak:
+  mail:
+    config:
+      postfix:
+        # -- Default domain/host
+        # -- Example: my-ram-deployment.eastus.cloudapp.azure.com
+        myhostname:
+          <your-domain>
+          
+# -- Enable File Browser for file management
+filebrowser:
+  enabled: true
+
+# ============================================================================
+# GLOBAL CONFIGURATION
+# ============================================================================
+global:
+  ### REQUIRED ###
+  # -- Default domain/host for ingress resources when useGlobal=true
+  # -- If not set, each chart uses its own host configuration
+  # -- Example: my-ram-deployment.eastus.cloudapp.azure.com
+  domain: <your-domain>
+
+  # -- Global container image repository configuration
+  # -- When sub-charts have useGlobal=true, images are pulled from this base repository
+  image:
+    repo:
+      # -- Base container registry URL (SAS Container Registry)
+      base: 'cr.sas.com'
+
+  # -- Global image pull secrets for accessing private container registries
+  # -- Applied to all sub-charts that reference private registries
+  imagePullSecrets:
+    - name: cr-sas-secret
+  
+  # -- Global ingress configuration applied when sub-charts use useGlobal=true
+  # -- Provides consistent external access patterns across all services
+  ingress:
+    # -- Enable ingress resources globally
+    enabled: true
+    # -- Ingress controller class
+    className: nginx
+    tls:
+      # -- Enable TLS/SSL termination
+      enabled: true
+    # -- Name of TLS secret
+    secretname: <your-ingress-tls-secret>
+
+
+  # -- Global application configuration
+  # -- Contains database, authentication, and service-specific settings
+  configuration:
+    # -- PostgreSQL Database configuration for RAM initialization
+    # -- Controls initial database setup and connection parameters
+    database:
+      # -- Whether to initialize the database on first deployment
+      initializeDb: "true"
+      # -- Create database users during initialization
+      createUsers: true
+      # -- PostgreSQL server hostname/IP (required for external DB)
+      host: <your-db-host>
+      # -- PostgreSQL server port
+      port: "5432"
+      # -- SSL connection mode (disable, allow, prefer, require, verify-ca, verify-full)
+      sslmode: "require"
+
+      # -- Create database schemas during initialization
+      createSchema: true
+      # -- Initial admin role for database setup
+      initAdminRole: <your-db-user>
+      # -- Password for initial admin user
+      initAdminPassword: <your-db-password>
+
+    # -- Application-specific database configuration
+    # -- Defines the main application database and user roles
+    application:
+      # -- Create application database during initialization
+      createDB: true
+      # -- Create application schema
+      createSchema: true
+      # -- Create application database user
+      createUser: true
+      # -- Application database name
+      db: "SASRetrievalAgentManager"
+      # -- Application schema name
+      schema: "retagentmgr"
+      # -- Application database user name
+      user: "sas_ram_pgrest_user"
+       # -- User password
+      password: <your-app-db-password>
+      # -- Administrator role name
+      adminRole: "sas_ram_admin_role"
+      # -- Regular user role name
+      userRole: "sas_ram_user_role"
+
+    # -- Database Migration Job configuration
+    migration:
+      # -- Create migration user during initialization
+      createUser: true
+      # -- Migration role user name
+      dbMigrationUser: "sas_ram_migrate_user"
+      # -- Migration role password
+      dbMigrationPassword: <your_migration-password>
+
+    # -- Keycloak Identity and Access Management configuration
+    # -- Defines authentication server settings and user management
+    keycloak:
+      # -- Create Keycloak database during initialization
+      createDB: true
+      # -- Create Keycloak schema
+      createSchema: true
+      # -- Create Keycloak database user
+      createUser: true
+      # -- Keycloak database name
+      db: "SASRetrievalAgentManagerIAM"
+      # -- Keycloak schema name
+      schema: "keycloak"
+      # -- Keycloak database user name
+      user: "sas_keycloak_user"
+      # -- Database user password
+      password: <your-keycloak-db-password>
+
+      # -- Keycloak realm name for authentication context
+      realm: "sas-iot"
+      # -- Administrator role in Keycloak
+      adminRole: "sas-iot-admin"
+      # -- Regular user role in Keycloak
+      userRole: "sas-iot-user"
+
+      # -- Enable service account authentication
+      serviceaccountsEnabled: false
+      # -- Keycloak UI theme (sasblue for SAS branding)
+      theme: sasblue
+      # -- Proxy mode (edge, reencrypt, passthrough)
+      proxy: edge
+      # -- Enforce strict hostname checking
+      strictHostname: true
+      # -- Application administrator username
+      appAdmin: AppAdmin
+      # -- Application admin password
+      appAdminPassword: <your-app-admin-password>
+      # -- Keycloak system administrator username
+      keycloakAdmin: kcAdmin
+      # -- Keycloak admin password
+      # -- Note: This password must include at least 1 special character
+      keycloakAdminPassword: ""
+      # -- OAuth2 client ID for application
+      clientId: "sas-ram-app"
+      # -- OAuth2 client secret
+      clientSecret: <your-client-secret>
+      # -- OAuth2 cookie secret
+      cookieSecret: <your-cookie-secret>
+
+    # -- Swagger/OpenAPI documentation configuration
+    # -- Controls API documentation generation and access
+    swagger:
+      # -- Enable Swagger UI for API documentation
+      enabled: false
+
+    # -- PostgREST API configuration
+    # -- Controls REST API generation from PostgreSQL database
+    postgrest:
+      # -- Port for PostgREST admin server
+      admin-server-port: 3001
+      # -- Port for PostgREST main server
+      server-port: 3000
+      # -- Whether OpenAPI security is active
+      openapi-security-active: true
+      # -- OpenAPI mode configuration
+      openapi-mode: "follow-privileges"
+      # -- Log level for PostgREST (info, debug, etc.)
+      log-level: "info"
+      # -- JWT role claim key configuration (uses value from keycloak.clientId)
+      jwt-role-claim-key: '.resource_access."sas-ram-app".roles[0]'
+
+    # -- GPG cryptographic key management configuration
+    # -- Controls encryption/decryption operations for secure data handling
+    gpg:
+      # -- Existing GPG public key
+      # publicKey: <your-gpg-public-key>
+      # -- Existing GPG private key
+      # privateKey: <your-gpg-private-key>
+      # -- GPG key passphrase
+      # You can either have a passphrase or public/private keys
+      # -- example: "SomeVeryStrong1000CharPassPhraseThatIsNotUsedAnywhere"
+      passphrase: <your-gpg-passphrase>
+      # -- Automatic key generation settings (used when publicKey/privateKey are empty)
+      key:
+        # -- Key owner name
+        name: "RAM Secrets"
+        # -- Key owner email address
+        email: "ram@sas.com"
+        # -- Key comment/description
+        comment: "RAM GPG Key"
+        # -- Key length in bits (2048, 4096)
+        length: 4096
+        # -- Key expiration (0 = never expires)
+        expire: "0"
+
+    # -- Main API service configuration
+    # -- Controls the core RAM backend service behavior
+    api:
+      # -- Enable experimental/development features
+      enable_dev_mode: 'False'
+      # -- Enable performance profiling and metrics
+      enable_profiling: 'False'
+      # -- Number of worker processes for handling requests
+      num_workers: 4
+      # -- Verify SSL certificates for external API calls
+      sslVerify: 'True'
+      # -- SAS license content
+      license: <your-ram-license-content>
+      
+    # -- Evaluation service configuration
+    # eval:
+    #   # -- Container image configuration for evaluation service
+    #   image:
+    #     repo:
+    #       # -- Container registry base URL for evaluation service
+    #       base: ""
+    #       # -- Container image path/name for evaluation service
+    #       path: ""
+    #     # -- Container image tag for evaluation service
+    #     tag: ""
+    #     # -- Use global registry configuration instead of local
+    #     useGlobal: false
+
+    # -- Plugin agent configuration
+    # plugin:
+    #   # -- Container image configuration for plugin agent
+    #   image:
+    #     repo:
+    #       # -- Container registry base URL for plugin agent
+    #       base: ""
+    #       # -- Container image path/name for plugin agent
+    #       path: ""
+    #     # -- Container image tag for plugin agent
+    #     tag: ""
+    #     # -- Use global registry configuration instead of local
+    #     useGlobal: false
+    
+    # -- Vectorization job user configuration
+    vectorizationJob:
+      user: "sas_ram_vectorization_user"
+      password: <your-vectorization-password>
+
+    # -- Vector Store user configuration
+    vectorStore:
+      user: "vector_store_user"
+      password: <your-vector-store-password>
+
+    # -- Vectorization Hub (VHub) configuration
+    vhub:
+      # -- Your database certificate secret name for secure DB connections during a vectorization
+      postgreSQLCertSecret: <your-PSQL-cert-secret>
+      # -- SAS license content
+      license: <your-ram-license-content>
+      # -- Available hardware configuration for processing
+      availableHardware:
+        # -- Execution providers for ML/AI processing
+        execution_providers:
+          - cpu
+          - openvino
+        # -- CPU requirements for jobs
+        job_req_cpu:
+          # -- Default CPU allocation for jobs
+          default: 6
+          # -- Maximum CPU allocation for jobs
+          max: 6
+          # -- Minimum CPU allocation for jobs
+          min: 1
+
+        # -- Memory requirements for jobs
+        job_req_mem:
+          # -- Default memory allocation for jobs
+          default: 32Gi
+          # -- Maximum memory allocation for jobs
+          max: 48Gi
+          # -- Minimum memory allocation for jobs
+          min: 16Gi
+
+          # -- Model-specific memory defaults
+          model_default:
+            all-MiniLM-L6-v2: 16Gi
+            distiluse-base-multilingual-cased-v2: 16Gi
+            GTE-ModernColBERT-v1: 24Gi
+            nomic-embed-text-v2-moe: 32Gi
+
+        # -- CPU requirements for plugins
+        plugin_req_cpu:
+          # -- Default CPU allocation for plugins
+          default: 2
+          # -- Maximum CPU allocation for plugins
+          max: 6
+          # -- Minimum CPU allocation for plugins
+          min: 1
+
+        # -- Memory requirements for plugins
+        plugin_req_mem:
+          # -- Default memory allocation for plugins
+          default: 4Gi
+          # -- Maximum memory allocation for plugins
+          max: 16Gi
+          # -- Minimum memory allocation for plugins
+          min: 1Gi
+
+        # -- OpenVINO device types supported
+        openvino_device_type:
+          - CPU_FP32
+
+        # -- Supported OCR languages by engine
+        supported_ocr_languages:
+          # -- Languages supported by PaddleOCR
+          paddle:
+            # -- English
+            - eng
+            # -- Chinese Traditional
+            - chi_tra
+            # -- Danish
+            - dan
+            # -- German (Deutsch)
+            - deu
+            # -- Spanish
+            - spa
+            # -- French
+            - fra
+            # -- Italian
+            - ita
+            # -- Dutch (Nederlands)
+            - nld
+            # -- Polish
+            - pol
+            # -- Portuguese
+            - por
+
+          # -- Languages supported by Tesseract
+          tesseract:
+            # -- English
+            - eng
+            # -- Chinese Traditional
+            - chi_tra
+            # -- Japanese
+            - jpn
+            # -- Danish
+            - dan
+            # -- German (Deutsch)
+            - deu
+            # -- Spanish
+            - spa
+            # -- French
+            - fra
+            # -- Italian
+            - ita
+            # -- Dutch (Nederlands)
+            - nld
+            # -- Polish
+            - pol
+            # -- Portuguese
+            - por
+            # -- Chinese Simplified
+            - chi_sim
+            # -- Orientation and Script Detection
+            - osd
+            # -- Math/Equation Detection
+            - equ
+
+      # -- Container image configuration for vectorization hub
+      # image:
+      #   repo:
+      #     # -- Container registry base URL for vectorization hub
+      #     base: ""
+      #     # -- Container image path/name for vectorization hub
+      #     path: ""
+      #   # -- Container image tag for vectorization hub
+      #   tag: ""
+      #   # -- Use global registry configuration instead of local
+      #   useGlobal: false
+
+      # -- Array of imagePullSecrets for vectorization hub
+      imagePullSecrets: []

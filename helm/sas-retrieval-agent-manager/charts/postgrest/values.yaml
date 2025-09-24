@@ -1,0 +1,516 @@
+# Default values for postgrest.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# -- Number of replicas to run. Chart is not designed to scale horizontally, use at your own risk
+replicaCount: 1
+
+# -- Container image configuration for PostgREST and related services
+image:
+  # -- PostgREST main container image configuration
+  postgrest:
+    repo:
+      # -- Container registry base URL for PostgREST
+      base: postgrest
+      # -- Container image path/name for PostgREST
+      path: postgrest
+      # -- Use global registry configuration instead of local
+      useGlobal: false
+    # -- Image pull policy for PostgREST container
+    pullPolicy: IfNotPresent
+    # -- PostgREST container image tag
+    tag: "v13.0.4" # https://hub.docker.com/r/postgrest/postgrest/tags
+    # tag: "v12.2.8" # https://hub.docker.com/r/postgrest/postgrest/tags
+  # -- PostgreSQL database container image configuration
+  postgres:
+    repo:
+      # -- Container registry base URL for PostgreSQL
+      base: docker.io
+      # -- Container image path/name for PostgreSQL
+      path: postgres
+      # -- Use global registry configuration instead of local
+      useGlobal: false
+    # -- Image pull policy for PostgreSQL container
+    pullPolicy: IfNotPresent
+    # -- PostgreSQL container image tag
+    tag: "15-alpine"
+  # -- kubectl container image configuration (used for Kubernetes operations)
+  kubectl:
+    repo:
+      # -- Container registry base URL for kubectl
+      base: "docker.io"
+      # -- Container image path/name for kubectl
+      path: alpine/k8s
+      # -- Use global registry configuration instead of local
+      useGlobal: false
+    # -- Image pull policy for kubectl container
+    pullPolicy: IfNotPresent
+    # -- kubectl container image tag
+    tag: "1.31.12"
+
+# -- Array of imagePullSecrets in the namespace for pulling images from private registries
+imagePullSecrets: []
+
+# -- String to partially override the fullname template with a string (will prepend the release name)
+nameOverride: "postgrest"
+
+# -- String to fully override the fullname template with a string
+fullnameOverride: "sas-retrieval-agent-manager-postgrest"
+
+# -- Service account configuration for PostgREST
+serviceAccount:
+  # -- Specifies whether a service account should be created
+  create: true
+  # -- Automatically mount a ServiceAccount's API credentials
+  automount: true
+  # -- Annotations to add to the service account
+  annotations: {}
+  # -- The name of the service account to use. If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+# -- Annotations to add to the pods
+podAnnotations: {}
+
+# -- Labels to add to the pods
+podLabels:
+  sas.com/deployment: "sas-retrieval-agent-manager"
+  workload.sas.com/class: "ram"
+
+# -- The security context for the pods
+podSecurityContext:
+  # -- Group ID for file system ownership
+  fsGroup: 10001
+  # -- Group ID to run the entrypoint of the container process
+  runAsGroup: 10001
+  # -- Indicates that the container must be run as a non-root user
+  runAsNonRoot: true
+  # -- User ID to run the entrypoint of the container process
+  runAsUser: 10001
+  # -- Seccomp profile for the pod
+  seccompProfile:
+    type: RuntimeDefault
+  # fsGroup: 2000
+
+# -- The security context for the application container
+securityContext:
+  # -- Seccomp profile for the container
+  seccompProfile:
+    type: RuntimeDefault
+  # -- Whether a process can gain more privileges than its parent process
+  allowPrivilegeEscalation: false
+  # -- Linux capabilities to add/drop for the container
+  capabilities:
+    add: []
+    drop:
+      - ALL
+  # -- Whether the container has a read-only root filesystem
+  readOnlyRootFilesystem: true
+  # -- Whether the container must be run as a non-root user
+  runAsNonRoot: true
+  # -- User ID to run the entrypoint of the container process
+  runAsUser: 10001
+  # -- Group ID to run the entrypoint of the container process
+  runAsGroup: 10001
+
+# -- Main PostgREST service configuration
+service:
+  # -- Kubernetes Service type for PostgREST API
+  type: ClusterIP
+  # -- Kubernetes Service port for PostgREST API
+  port: 3000
+
+# -- Admin service configuration for PostgREST management
+adminService:
+  # -- Kubernetes Service type for PostgREST admin interface
+  type: ClusterIP
+  # -- Kubernetes Service port for PostgREST admin interface
+  port: 3001
+
+# -- Ingress configuration for external access to PostgREST
+ingress:
+  # -- Use global ingress configuration instead of local hosts configuration
+  useGlobal: false
+  # -- Enable ingress for external access to PostgREST
+  enabled: true
+  # -- Class name of the Ingress
+  className: "nginx"
+  # -- Annotations for the Ingress
+  annotations:
+    # -- Enable TLS certificate management via cert-manager
+    kubernetes.io/tls-acme: "true"
+    # -- Force SSL redirect
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    # -- Disallow HTTP traffic, force HTTPS only
+    kubernetes.io/ingress.allow-http: "false"
+    # -- Maximum allowed size of client request body
+    nginx.ingress.kubernetes.io/proxy-body-size: 500m
+    # -- Size of buffer used for reading the first part of response
+    nginx.ingress.kubernetes.io/proxy-buffer-size: "16k"
+    # -- Headers to pass from auth response to backend
+    nginx.ingress.kubernetes.io/auth-response-headers: "Authorization"
+    # -- OAuth2 authentication sign-in URL
+    nginx.ingress.kubernetes.io/auth-signin: "https://$host/SASRetrievalAgentManager/oauth2/start?rd=$escaped_request_uri"
+    # -- OAuth2 authentication validation URL
+    nginx.ingress.kubernetes.io/auth-url: "https://$host/SASRetrievalAgentManager/oauth2/auth"
+    # -- URL rewrite rule to strip the prefix path
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+  # -- Hosts configuration (used when useGlobal is false)
+  hosts:
+  - host: chart-example.local
+    paths:
+      - path: /SASRetrievalAgentManager/postgrest(/|$)(.*) 
+        pathType: ImplementationSpecific
+  # -- Paths configuration (used when useGlobal is true)
+  paths:
+  - path: /SASRetrievalAgentManager/postgrest(/|$)(.*) 
+    pathType: ImplementationSpecific
+  # -- TLS configuration for ingress
+  tls: []
+    # - secretName: ""
+    #   hosts:
+    #     - ""
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+# -- The resources to allocate for the PostgREST container
+resources:
+  # -- Resource limits for the container
+  limits:
+    # -- CPU limit
+    cpu: 500m
+    # -- Memory limit
+    memory: 1Gi
+  # -- Resource requests for the container
+  requests:
+    # -- CPU request
+    cpu: 100m
+    # -- Memory request
+    memory: 128Mi
+
+# -- Liveness probe configuration for PostgREST
+livenessProbe:
+  # -- HTTP GET probe configuration for liveness
+  httpGet:
+    # -- Path to probe for liveness
+    path: /live
+    # -- Port to probe on
+    port: admin
+    # -- HTTP scheme to use
+    scheme: HTTP
+  # -- Timeout for the probe
+  timeoutSeconds: 1
+  # -- How often to perform the probe
+  periodSeconds: 10
+  # -- Minimum consecutive successes for the probe to be considered successful
+  successThreshold: 1
+  # -- Number of consecutive failures required to mark container as not ready
+  failureThreshold: 3
+
+# -- Readiness probe configuration for PostgREST
+readinessProbe:
+  # -- HTTP GET probe configuration for readiness
+  httpGet:
+    # -- Path to probe for readiness
+    path: /ready
+    # -- Port to probe on
+    port: admin
+    # -- HTTP scheme to use
+    scheme: HTTP
+  # -- Timeout for the probe
+  timeoutSeconds: 1
+  # -- How often to perform the probe
+  periodSeconds: 10
+  # -- Minimum consecutive successes for the probe to be considered successful
+  successThreshold: 1
+  # -- Number of consecutive failures required to mark container as not ready
+  failureThreshold: 3
+
+# -- Horizontal Pod Autoscaler configuration
+autoscaling:
+  # -- Enable horizontal pod autoscaling
+  enabled: false
+  # -- Minimum number of replicas
+  minReplicas: 1
+  # -- Maximum number of replicas
+  maxReplicas: 100
+  # -- Target CPU utilization percentage for scaling
+  targetCPUUtilizationPercentage: 80
+  # -- Target memory utilization percentage for scaling (optional)
+  # targetMemoryUtilizationPercentage: 80
+
+# -- Additional volumes on the output Deployment definition
+volumes: []
+# - name: foo
+#   secret:
+#     secretName: mysecret
+#     optional: false
+
+# -- Additional volumeMounts on the output Deployment definition
+volumeMounts: []
+# - name: foo
+#   mountPath: "/etc/foo"
+#   readOnly: true
+
+# -- Node labels for pod assignment
+nodeSelector: {}
+
+# -- Tolerations for pod assignment
+tolerations: []
+
+# -- Map of node/pod affinities
+affinity:
+  nodeAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 1
+      preference:
+        matchExpressions:
+        - key: sas.com/deployment
+          operator: In
+          values:
+          - sas-retrieval-agent-manager
+    - weight: 2
+      preference:
+        matchExpressions:
+        - key: workload.sas.com/class
+          operator: In
+          values:
+          - ram
+
+# -- Swagger UI configuration for API documentation
+swagger:
+  # -- Enable Swagger UI deployment
+  enabled: false
+
+  # -- Number of Swagger UI replicas
+  replicaCount: 1
+
+  # -- Swagger UI container image configuration
+  image:
+    repo:
+      # -- Container registry base URL for Swagger UI
+      base: swaggerapi
+      # -- Container image path/name for Swagger UI
+      path: swagger-ui
+    # -- Image pull policy for Swagger UI container
+    pullPolicy: IfNotPresent
+    # -- Swagger UI container image tag
+    tag: "v5.17.14" # https://hub.docker.com/r/swaggerapi/swagger-ui/tags
+
+  # -- Array of imagePullSecrets for Swagger UI
+  imagePullSecrets: []
+
+  # -- String to partially override the Swagger UI fullname template
+  nameOverride: "swagger"
+
+  # -- String to fully override the Swagger UI fullname template
+  fullnameOverride: ""
+
+  # -- Swagger UI service account configuration
+  serviceAccount:
+    # -- Specifies whether a service account should be created for Swagger UI
+    create: true
+    # -- Automatically mount a ServiceAccount's API credentials for Swagger UI
+    automount: true
+    # -- Annotations to add to the Swagger UI service account
+    annotations: {}
+    # -- The name of the service account to use for Swagger UI
+    name: ""
+
+  # -- Annotations to add to the Swagger UI pods
+  podAnnotations: {}
+
+  # -- Labels to add to the Swagger UI pods
+  podLabels:
+    sas.com/deployment: "sas-retrieval-agent-manager"
+    workload.sas.com/class: "ram"
+
+  # -- The security context for the Swagger UI pods
+  podSecurityContext:
+    # -- Group ID to run the entrypoint of the container process
+    runAsGroup: 10001
+    # -- Indicates that the container must be run as a non-root user
+    runAsNonRoot: true
+    # -- User ID to run the entrypoint of the container process
+    runAsUser: 10001
+    # -- Seccomp profile for the Swagger UI pod
+    seccompProfile:
+      type: RuntimeDefault
+    # -- Group ID for file system ownership
+    fsGroup: 10001
+
+  # -- The security context for the Swagger UI application container
+  securityContext:
+    # -- Seccomp profile for the Swagger UI container
+    seccompProfile:
+      type: RuntimeDefault
+    # -- Whether a process can gain more privileges than its parent process
+    allowPrivilegeEscalation: false
+    # -- Linux capabilities to add/drop for the Swagger UI container
+    capabilities:
+      add: []
+      drop:
+        - ALL
+    # -- Whether the container has a read-only root filesystem
+    readOnlyRootFilesystem: true
+    # -- Whether the container must be run as a non-root user
+    runAsNonRoot: true
+    # -- User ID to run the entrypoint of the container process
+    runAsUser: 1000
+    # -- Group ID to run the entrypoint of the container process
+    runAsGroup: 10001
+
+  # -- Swagger UI service configuration
+  service:
+    # -- Kubernetes Service type for Swagger UI
+    type: ClusterIP
+    # -- Kubernetes Service port for Swagger UI
+    port: 80
+
+  # -- Swagger UI ingress configuration
+  ingress:
+    # -- Use global ingress configuration instead of local hosts for Swagger UI
+    useGlobal: false
+    # -- Enable ingress for Swagger UI
+    enabled: true
+    # -- Class name of the Swagger UI Ingress
+    className: "nginx"
+    # -- Annotations for the Swagger UI Ingress
+    annotations:
+      # -- Enable TLS certificate management via cert-manager
+      kubernetes.io/tls-acme: "true"
+      # -- Force SSL redirect
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+      # -- Disallow HTTP traffic, force HTTPS only
+      kubernetes.io/ingress.allow-http: "false"
+      # -- Maximum allowed size of client request body
+      nginx.ingress.kubernetes.io/proxy-body-size: 500m
+      # -- Size of buffer used for reading the first part of response
+      nginx.ingress.kubernetes.io/proxy-buffer-size: "16k"
+      # -- Headers to pass from auth response to backend
+      nginx.ingress.kubernetes.io/auth-response-headers: "Authorization"
+      # -- OAuth2 authentication sign-in URL
+      nginx.ingress.kubernetes.io/auth-signin: "https://$host/SASRetrievalAgentManager/oauth2/start?rd=$escaped_request_uri"
+      # -- OAuth2 authentication validation URL
+      nginx.ingress.kubernetes.io/auth-url: "https://$host/SASRetrievalAgentManager/oauth2/auth"
+      # -- URL rewrite rule to strip the prefix path
+      nginx.ingress.kubernetes.io/rewrite-target: /$2
+    # -- Hosts configuration for Swagger UI (ignored if useGlobal is true)
+    hosts: []
+    # - host: chart-example.local
+    #   paths:
+    #     - path: /SASRetrievalAgentManager/swagger(/|$)(.*)
+    #       pathType: ImplementationSpecific
+    # -- Swagger UI paths configuration
+    paths:
+    - path: /SASRetrievalAgentManager/swagger(/|$)(.*)
+      pathType: ImplementationSpecific
+    # -- TLS configuration for Swagger UI ingress
+    tls: []
+      # - secretName: ""
+      #   hosts:
+      #     - ""
+
+  # -- The resources to allocate for the Swagger UI container
+  resources:
+    # -- Resource limits for the Swagger UI container
+    limits:
+      # -- CPU limit
+      cpu: 100m
+      # -- Memory limit
+      memory: 128Mi
+    # -- Resource requests for the Swagger UI container
+    requests:
+      # -- CPU request
+      cpu: 200m
+      # -- Memory request
+      memory: 256Mi
+
+  # -- Liveness probe configuration for Swagger UI
+  livenessProbe:
+    # -- HTTP GET probe configuration for liveness
+    httpGet:
+      # -- Path to probe for liveness
+      path: /
+      port: http
+
+  # -- Readiness probe configuration for Swagger UI
+  readinessProbe:
+    # -- HTTP GET probe configuration for readiness
+    httpGet:
+      # -- Path to probe for readiness
+      path: /
+      port: http
+
+  # -- Horizontal Pod Autoscaler configuration for Swagger UI
+  autoscaling:
+    # -- Enable horizontal pod autoscaling for Swagger UI
+    enabled: false
+    # -- Minimum number of replicas for Swagger UI
+    minReplicas: 1
+    # -- Maximum number of replicas for Swagger UI
+    maxReplicas: 100
+    # -- Target CPU utilization percentage for Swagger UI scaling
+    targetCPUUtilizationPercentage: 80
+    # -- Target memory utilization percentage for Swagger UI scaling (optional)
+    # targetMemoryUtilizationPercentage: 80
+
+  # -- Additional volumes on the Swagger UI Deployment definition
+  volumes: []
+  # - name: foo
+  #   secret:
+  #     secretName: mysecret
+  #     optional: false
+
+  # -- Additional volumeMounts on the Swagger UI Deployment definition
+  volumeMounts: []
+  # - name: foo
+  #   mountPath: "/etc/foo"
+  #   readOnly: true
+
+  # -- Node labels for Swagger UI pod assignment
+  nodeSelector: {}
+
+  # -- Tolerations for Swagger UI pod assignment
+  tolerations: []
+
+  # -- Map of node/pod affinities for Swagger UI
+  affinity: {}
+
+# -- Global configuration for PostgREST and related services
+global:
+  # -- Domain name for the application
+  domain: ""
+  # -- Configuration settings
+  configuration:
+    # -- Application-specific configuration
+    application:
+      # -- Database user for PostgREST application
+      user: "sas_ram_pgrest_user"
+      # -- Database password for PostgREST application
+      password: ""
+      # -- Admin role name for database access
+      adminRole: "sas_ram_admin_role"
+      # -- User role name for database access
+      userRole: "sas_ram_user_role"
+
+    # -- PostgREST-specific configuration
+    postgrest:
+      # -- Port for PostgREST admin server
+      admin-server-port: 3001
+      # -- Port for PostgREST main server
+      server-port: 3000
+      # -- Whether OpenAPI security is active
+      openapi-security-active: true
+      # -- OpenAPI mode configuration
+      openapi-mode: "follow-privileges"
+      # -- Log level for PostgREST (info, debug, etc.)
+      log-level: "info"
+      # -- JWT role claim key configuration (uses value from keycloak.clientId)
+      jwt-role-claim-key: '.resource_access."sas-retagentmgr-app".roles[0]'
+      # log-level: "debug
+
+    # -- Swagger UI configuration
+    swagger:
+      # -- Whether Swagger UI is enabled
+      enabled: false

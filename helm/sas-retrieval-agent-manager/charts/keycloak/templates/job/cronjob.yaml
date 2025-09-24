@@ -1,0 +1,84 @@
+{{- $kubectl_repo_base := "" -}}
+{{- $kubectl_repo_path := "" -}}
+ {{/* kubectl image */}}
+{{- if .Values.image.kubectl.repo.useGlobal | default false -}}
+  {{- $kubectl_repo_base = .Values.global.image.repo.base | default .Values.image.kubectl.repo.base -}}
+{{- else -}}
+  {{- $kubectl_repo_base = .Values.image.kubectl.repo.base -}}
+{{- end -}}
+{{- $kubectl_repo_path = .Values.image.kubectl.repo.path -}}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: sas-retagentmgr-fetch-keycloak-certs # Don't hardcode this after
+  labels:
+    {{- include "keycloak.oauthProxy.labels" . | nindent 4 }}
+spec:
+  schedule: "*/5 * * * *"  # Original schedule
+  concurrencyPolicy: Replace
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 5
+  # suspend: true
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          {{- with .Values.podAnnotations }}
+          annotations:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          labels:
+            {{- include "keycloak.labels" . | nindent 12 }}
+          {{- with .Values.podLabels }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+        spec:
+          {{- with uniq (concat (.Values.imagePullSecrets | default (list)) (.Values.global.imagePullSecrets | default (list))) }}
+          imagePullSecrets:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          serviceAccountName: {{ include "keycloak.serviceAccountName" . }}-job
+          securityContext:
+            {{- toYaml .Values.podSecurityContext | nindent 12 }}
+          containers:
+            - name: fetch-certs
+              image: "{{ $kubectl_repo_base }}/{{ $kubectl_repo_path }}:{{ .Values.image.kubectl.tag }}"
+              imagePullPolicy: {{ .Values.image.kubectl.pullPolicy }}
+              securityContext:
+                {{- toYaml .Values.securityContext | nindent 16 }}
+              resources:
+                limits:
+                  cpu: 500m
+                  memory: 768Mi
+                requests:
+                  cpu: 50m
+                  memory: 128Mi
+              command:
+                - "sh"
+                - "-c"
+                - "/script/init.sh"
+              volumeMounts:
+                - mountPath: /workdir
+                  name: workdir
+                - mountPath: /script
+                  name: fetch-keycloak-certs
+          volumes:
+            - name: workdir
+              emptyDir: {}
+            - name: fetch-keycloak-certs
+              configMap:
+                defaultMode: 0755
+                name: fetch-keycloak-certs
+          restartPolicy: OnFailure
+          {{- with .Values.nodeSelector }}
+          nodeSelector:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.affinity }}
+          affinity:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.tolerations }}
+          tolerations:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}

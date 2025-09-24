@@ -1,0 +1,165 @@
+{{- if (not (or .Values.global.configuration.gpg.publicKey .Values.global.configuration.gpg.privateKey)) }}
+{{- $gpg_repo_base := "" -}}
+{{- $gpg_repo_path := "" -}}
+{{- $kubectl_repo_base := "" -}}
+{{- $kubectl_repo_path := "" -}}
+{{/*- if hasKey .Values.global "repo" -}}
+  {{- $gpg_repo_base = .Values.global.repo.base | default .Values.image.gpg.repo.base -}}
+  {{- $gpg_repo_path = .Values.global.repo.path | default .Values.image.gpg.repo.path -}}
+  {{- $kubectl_repo_base = .Values.global.repo.base | default .Values.image.kubectl.repo.base -}}
+  {{- $kubectl_repo_path = .Values.global.repo.path | default .Values.image.kubectl.repo.path -}}
+{{- else -*/}}
+  {{- $gpg_repo_base = .Values.image.gpg.repo.base -}}
+  {{- $gpg_repo_path = .Values.image.gpg.repo.path -}}
+  {{- $kubectl_repo_base = .Values.image.kubectl.repo.base -}}
+  {{- $kubectl_repo_path = .Values.image.kubectl.repo.path -}}
+{{/*- end -*/}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: retagentmgr-gpg-initialization
+  labels:
+    {{- include "gpg.labels" . | nindent 4 }}
+  annotations:
+    argocd.argoproj.io/sync-options: Skip
+spec:
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+      {{- include "gpg.labels" . | nindent 8 }}
+      {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- with uniq (concat (.Values.imagePullSecrets | default (list)) (.Values.global.imagePullSecrets | default (list))) }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "gpg.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      initContainers:
+        - name: check-secrets
+          command:
+            - "/bin/sh"
+            - "-c"
+            - "sh /scripts/check_secrets_exist.sh"
+          image: "{{ $kubectl_repo_base }}/{{ $kubectl_repo_path }}:{{ .Values.image.kubectl.tag }}"
+          imagePullPolicy: {{ .Values.image.kubectl.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: configmap-scripts
+              mountPath: /scripts
+            - name: shared-state
+              mountPath: /shared
+      containers:
+        - name: gpg-creation
+          command:
+            - "/bin/sh"
+            - "-c"
+            - "sh /scripts/generate_gpg_keys.sh"
+          image: "{{ $gpg_repo_base }}/{{ $gpg_repo_path }}:{{ .Values.image.gpg.tag }}"
+          imagePullPolicy: {{ .Values.image.gpg.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          env:
+            - name: KEY_NAME
+              valueFrom:
+                configMapKeyRef:
+                  key: name
+                  name: {{ include "gpg.fullname" . }}-gpg-settings
+            - name: KEY_EMAIL
+              valueFrom:
+                configMapKeyRef:
+                  key: email
+                  name: {{ include "gpg.fullname" . }}-gpg-settings
+            - name: KEY_COMMENT
+              valueFrom:
+                configMapKeyRef:
+                  key: comment
+                  name: {{ include "gpg.fullname" . }}-gpg-settings
+            - name: KEY_LENGTH
+              valueFrom:
+                configMapKeyRef:
+                  key: length
+                  name: {{ include "gpg.fullname" . }}-gpg-settings
+            - name: KEY_EXPIRE
+              valueFrom:
+                configMapKeyRef:
+                  key: expire
+                  name: {{ include "gpg.fullname" . }}-gpg-settings
+            - name: KEY_PASSPHRASE
+              valueFrom:
+                secretKeyRef:
+                  key: passphrase
+                  name: gpg-passphrase
+          volumeMounts:
+            - name: gpg-volume
+              mountPath: /config/gpg
+            - name: tmp-gpg-volume
+              mountPath: /.gnupg
+            - name: workdir
+              mountPath: /workdir
+            - name: configmap-scripts
+              mountPath: /scripts
+            - name: shared-state
+              mountPath: /shared
+        - name: apply-secrets
+          command:
+            - "/bin/sh"
+            - "-c"
+            - "sh /scripts/apply_secrets.sh"
+          image: "{{ $kubectl_repo_base }}/{{ $kubectl_repo_path }}:{{ .Values.image.kubectl.tag }}"
+          imagePullPolicy: {{ .Values.image.kubectl.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: gpg-volume
+              mountPath: /config/gpg
+            - name: configmap-scripts
+              mountPath: /scripts
+            - name: shared-state
+              mountPath: /shared
+      restartPolicy: OnFailure
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+        - name: gpg-volume
+          emptyDir:
+            sizeLimit: 5Mi
+        - name: tmp-gpg-volume
+          emptyDir:
+            sizeLimit: 5Mi
+        - name: workdir
+          emptyDir:
+            sizeLimit: 128Mi
+        - name: shared-state
+          emptyDir:
+            sizeLimit: 1Mi
+        - name: configmap-scripts
+          configMap:
+            name: {{ include "gpg.fullname" . }}-scripts
+            defaultMode: 0777
+  backoffLimit: 1000
+{{- end }}

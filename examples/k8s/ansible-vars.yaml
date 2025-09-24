@@ -1,0 +1,58 @@
+# This file is used to configure Ansible variables for the K8s deployment
+
+# Replace with your host machine user and password to deploy the infrastructure
+ansible_user: host_machine_user        
+ansible_password: your_strong_password 
+
+# VM settings
+vm_os: "ubuntu"
+vm_arch: "amd64"
+
+# System settings
+enable_cgroup_v2: true
+system_ssh_keys_dir: "~/.ssh"
+
+# Cluster settings
+prefix: "ram-edge"
+deployment_type: "bare_metal"
+kubernetes_cluster_name: "ram-edge"
+kubernetes_version: "1.30.10"
+kubernetes_cni: "calico"
+kubernetes_cni_version: "3.29.0"
+kubernetes_cri: "containerd"
+kubernetes_cri_version: "1.7.24"
+kubernetes_service_subnet: "10.43.0.0/16"
+kubernetes_pod_subnet: "10.42.0.0/16"
+
+# Load balancer and VIP settings
+kubernetes_vip_version: "0.7.1"
+kubernetes_vip_ip: "192.168.155.204"                 # Replace with your VIP IP
+kubernetes_vip_fqdn: "ram-edge.unx.sas.com"          # Replace with your FQDN
+kubernetes_loadbalancer: "kube_vip"
+kubernetes_loadbalancer_addresses:
+  - "range-global: 192.168.155.204-192.168.155.222"  # Replace with your Service IP range
+
+# SSH key for control plane
+control_plane_ssh_key_name: "cp_ssh"
+
+# Node labels and taints
+node_labels:
+  system:
+    - kubernetes.azure.com/mode=system
+    
+# Specifies which workloads can run on the node
+node_taints:
+  control_plane:
+    - node-role.kubernetes.io/control-plane:NoSchedule
+  cas:
+    - workload.sas.com/class=cas:NoSchedule
+  compute:
+    - workload.sas.com/class=compute:NoSchedule
+  stateful:
+    - workload.sas.com/class=stateful:NoSchedule
+  stateless:
+    - workload.sas.com/class=stateless:NoSchedule
+  system:
+    - node-role.kubernetes.io/system-node:NoSchedule
+
+nfs_ip  : "192.168.155.126"

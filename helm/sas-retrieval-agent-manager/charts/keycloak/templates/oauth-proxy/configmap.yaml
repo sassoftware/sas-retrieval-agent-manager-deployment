@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: oauth-proxy-config
+  labels:
+    {{- include "keycloak.oauthProxy.labels" . | nindent 4 }}
+data:
+  namespace: {{ .Release.Namespace }}
+  service: {{ include "keycloak.oauthProxy.fullname" . }}
+  url: {{ if .Values.ingress.useGlobal -}}
+          "https://{{ .Values.global.domain }}{{ regexReplaceAll "\\(.*" (first .Values.oauthProxy.ingress.paths).path "" }}"
+       {{- else -}}
+          "https://{{ with (first .Values.oauthProxy.ingress.hosts) }}{{ .host }}{{ with (first .paths) }}{{ regexReplaceAll "\\(.*" .path "" }}{{ end }}{{ end }}"
+       {{- end }}
+  logoutUrl: {{ if .Values.ingress.useGlobal -}}
+          "https://{{ .Values.global.domain }}{{ regexReplaceAll "\\(.*" (first .Values.oauthProxy.ingress.logoutPaths).path "" }}"
+       {{- else -}}
+          "https://{{ with (first .Values.oauthProxy.ingress.hosts) }}{{ .host }}{{ with (first .paths) }}{{ regexReplaceAll "\\(.*" .path "" }}{{ end }}/logout{{ end }}"
+       {{- end }}

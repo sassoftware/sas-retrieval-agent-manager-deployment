@@ -1,0 +1,115 @@
+annotations:
+  category: Analytics
+  dependencies.keycloak: included
+  dependencies.linkerd: optional
+  dependencies.oauth2-proxy: included
+  dependencies.postgresql: required
+  documentation: https://helpcenter.unx.sas.com/doc/en/ragntmgrcdc/v_001/ragntmgrag/titlepage.htm
+  helm.sh/hook-weight: "0"
+  images.registry: cr.sas.com
+  kubeVersion: '>=1.24.0'
+  licenses: Apache-2.0
+  networking.ingress: required
+  networking.oauth2: supported
+  networking.tls: supported
+  operatorframework.io/arch.amd64: supported
+  operatorframework.io/arch.arm64: supported
+  operatorframework.io/os.linux: supported
+  resources.cpu.min: "4"
+  resources.memory.min: 8Gi
+  resources.storage.required: "true"
+  security.non-root: "true"
+  security.privileged: "false"
+  security.readOnlyRootFilesystem: "false"
+  security.runAsNonRoot: "true"
+  support.url: https://support.sas.com
+apiVersion: v2
+appVersion: 2025.8.0
+dependencies:
+- name: filebrowser
+  repository: file://../filebrowser
+  tags:
+  - filemanagement
+  - ui
+  version: 1.0.0
+- name: postgrest
+  repository: file://../postgrest
+  tags:
+  - api
+  - database
+  - rest
+  version: 1.1.0
+- name: keycloak
+  repository: file://../keycloak
+  tags:
+  - authentication
+  - oauth2
+  - iam
+  - security
+  version: 1.1.0
+- name: sas-retrieval-agent-manager-api
+  repository: file://../sas-retrieval-agent-manager-api
+  tags:
+  - api
+  - ai
+  - ml
+  - core
+  version: 1.1.0
+- name: sas-retrieval-agent-manager-app
+  repository: file://../sas-retrieval-agent-manager-app
+  tags:
+  - frontend
+  - ui
+  - web
+  version: 1.1.0
+- name: sas-retrieval-agent-manager-db-migration
+  repository: file://../sas-retrieval-agent-manager-db-migration
+  tags:
+  - database
+  - migration
+  - infrastructure
+  version: 1.1.0
+- name: sas-retrieval-agent-manager-db-init
+  repository: file://../sas-retrieval-agent-manager-db-init
+  tags:
+  - database
+  - initialization
+  - infrastructure
+  version: 1.1.0
+- name: gpg
+  repository: file://../gpg
+  tags:
+  - security
+  - encryption
+  - cryptography
+  version: 1.1.0
+description: A comprehensive Helm chart for deploying SAS Retrieval Agent Manager
+  (RAM) platform. Provides AI-powered document retrieval, processing, and management
+  capabilities with integrated authentication, file management, and vector search
+  functionality.
+home: https://www.sas.com/en_us/software/viya.html
+icon: https://www.sas.com/content/dam/SAS/sasbrand/Images/Logos/sas-logo-midnight.png
+keywords:
+- sas
+- retrieval-agent-manager
+- ai
+- machine-learning
+- document-processing
+- vector-search
+- authentication
+- postgresql
+- keycloak
+- enterprise
+- iot
+- data-management
+- rag
+kubeVersion: '>=1.24.0-0'
+maintainers:
+- email: support@sas.com
+  name: SAS Institute
+  url: https://www.sas.com
+name: sas-retrieval-agent-manager
+sources:
+- https://github.com/sas-institute-rnd-internal/tmp-viya-iot-ram-helm
+type: application
+version: 2025.8.7

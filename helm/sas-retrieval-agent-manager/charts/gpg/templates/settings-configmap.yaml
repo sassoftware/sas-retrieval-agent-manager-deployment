@@ -1,0 +1,14 @@
+{{- if (not (or .Values.global.configuration.gpg.publicKey .Values.global.configuration.gpg.privateKey)) }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "gpg.fullname" . }}-gpg-settings
+  labels:
+    {{- include "gpg.labels" . | nindent 4 }}
+data:
+  name: {{ .Values.global.configuration.gpg.key.name | quote  }}
+  email: {{ .Values.global.configuration.gpg.key.email | quote  }}
+  comment: {{ .Values.global.configuration.gpg.key.comment | quote  }}
+  length: {{ .Values.global.configuration.gpg.key.length | quote  }}
+  expire: {{ .Values.global.configuration.gpg.key.expire | quote  }}
+{{- end }}

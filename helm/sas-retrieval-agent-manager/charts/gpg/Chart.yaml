@@ -1,0 +1,80 @@
+annotations:
+  artifacthub.io/dependencies: |
+    - name: kubernetes
+      version: ">=1.20.0"
+      condition: required
+    - name: rbac
+      version: ">=1.0.0"
+      condition: security.rbac.enabled
+  artifacthub.io/images: |
+    - name: gpg
+      image: vladgh/gpg:1.3.6
+      whitelisted: true
+    - name: gpg-alpine
+      image: vladgh/gpg:1.3.6-alpine
+      whitelisted: true
+  artifacthub.io/license: GPL-3.0
+  artifacthub.io/links: |
+    - name: GnuPG Documentation
+      url: https://gnupg.org/documentation/
+    - name: GPG Command Reference
+      url: https://gnupg.org/gph/en/manual.html
+    - name: Source Repository
+      url: https://github.com/vladgh/docker_base_images
+  artifacthub.io/operator: "false"
+  artifacthub.io/prerelease: "false"
+  artifacthub.io/recommendations: |
+    - url: https://artifacthub.io/packages/helm/kubernetes/kubernetes-secret-generator
+      title: Kubernetes Secret Generator
+    - url: https://artifacthub.io/packages/helm/external-secrets/external-secrets
+      title: External Secrets Operator
+    - url: https://artifacthub.io/packages/helm/cert-manager/cert-manager
+      title: Cert-Manager for Certificate Management
+  category: Security
+  cryptography.keyLength.min: "2048"
+  cryptography.keyLength.recommended: "4096"
+  helm.version.min: 3.8.0
+  job.activeDeadlineSeconds: "300"
+  job.backoffLimit: "3"
+  job.completions: "1"
+  job.parallelism: "1"
+  kubernetes.version.max: 1.30.0
+  kubernetes.version.min: 1.20.0
+  resources.cpu.max: 500m
+  resources.cpu.min: 50m
+  resources.memory.max: 256Mi
+  resources.memory.min: 64Mi
+  security.capabilities.required: "true"
+  security.context.readOnlyRootFilesystem: "true"
+  security.context.runAsNonRoot: "true"
+  subcategory: Cryptography
+  use-case: Key Management
+apiVersion: v2
+appVersion: 1.3.6
+description: A Helm chart for GPG key management and cryptographic operations in Kubernetes
+home: https://gnupg.org/
+icon: https://gnupg.org/share/logo-gnupg-light-purple-bg.png
+keywords:
+- gpg
+- gnupg
+- cryptography
+- encryption
+- key-management
+- digital-signatures
+- security
+- secrets-management
+- kubernetes
+- sas-ram
+maintainers:
+- email: support@sas.com
+  name: SAS Institute
+  url: https://www.sas.com
+- email: vladimir@ghetau.org
+  name: Vladimir Ghetau
+  url: https://github.com/vladgh
+name: gpg
+sources:
+- https://github.com/vladgh/docker_base_images
+- https://gnupg.org/download/
+type: application
+version: 1.1.0
