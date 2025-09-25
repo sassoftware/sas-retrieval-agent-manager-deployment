@@ -112,4 +112,4 @@ name: sas-retrieval-agent-manager
 sources:
 - https://github.com/sas-institute-rnd-internal/tmp-viya-iot-ram-helm
 type: application
-version: 2025.8.7
+version: 2025.9.50
