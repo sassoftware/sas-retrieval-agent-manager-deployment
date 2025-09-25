@@ -10,12 +10,12 @@
     - [Common Prerequisites](#common-prerequisites)
     - [Technical Prerequisites](#technical-prerequisites)
   - [Infrastructure Setup](#infrastructure-setup)
-    - [Retrieve License](#retrieve-license)
     - [Kubernetes](#kubernetes)
     - [Database](#database)
       - [Automatic Database Initialization](#automatic-database-initialization)
       - [Manual Database Setup (Optional)](#manual-database-setup-optional)
   - [Application Deployment Guides](#application-deployment-guide)
+    - [Retrieve License](#retrieve-license)
   - [Backup and Restore Guide](#backup-and-restore-guide)
   - [Troubleshooting](#troubleshooting)
     - [Common Issues](#common-issues)
@@ -180,6 +180,28 @@ global:
 ```
 
 > Note: You can find more information on how to use SAS mirror manager in the [Viya Documentation](https://go.documentation.sas.com/doc/en/itopscdc/v_067/dplyml0phy0dkr/n1h0rgtr10fpnfn1mg0s8fgfuof8.htm).
+
+### License Renewal Process
+
+For migrating a license from a renewal to RAM, use the following steps:
+
+1. Use the link in your Software License Renewal Confirmation email to go the specific page at my.sas.com for your order.
+
+2. Click the Downloads tab.
+
+3. Select both the License and Certificates rows in the download table.
+
+4. Click the Download button to download the License and Certificates.
+
+5. [Download SAS Mirror Manager](https://support.sas.com/en/documentation/install-center/viya/deployment-tools/4/mirror-manager.html).
+
+6. [Update the pull secret](#create-pull-secret).
+
+7. Update your license.jwt in the license-secret secret found in the `retagentmgr` namespace with the new license using the following command: `kubectl edit secret license-secret -n retagentmgr`.
+
+8. Restart the `sas-retrieval-agent-manager-api` pod in your RAM deployment.
+
+9. Restart your agents via the UI.
 
 ### Populate Mirror Registry with Depdendencies
 
