@@ -33,8 +33,15 @@ postgres_servers = {
 
     # AWS RDS instance class (equivalent to Azure SKU)
 
-    instance_class           = "db.t3.small"     # Equivalent to B_Standard_B2s
-    #instance_class          = "db.m5.large"     # Equivalent to GP_Standard_D2ds_v5
+    # Small Deployment DB Size
+    instance_class           = "db.m5.large"
+    
+    # Medium Deployment DB Size
+    # instance_class          = "db.m5.xlarge"
+
+    # Large Deployment DB Size
+    # instance_class          = "db.m5.2xlarge"
+
     allocated_storage        = 20                # Storage in GB
     max_allocated_storage    = 100               # Auto-scaling limit
     engine_version          = "15.4"             # PostgreSQL version
