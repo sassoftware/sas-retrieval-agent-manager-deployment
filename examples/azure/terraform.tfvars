@@ -29,7 +29,16 @@ postgres_servers = {
     administrator_login          = "<admin-username>"
     administrator_password       = "<admin-password>"
 # ****************  REQUIRED VARIABLES  ***************
-    sku_name                     = "GP_Standard_D2ds_v4" # For dev/POC use "B_Standard_B2s", v4 is compatibility, use v5 if available in your region support it.
+    # Small Deployment DB Size
+    sku_name                     = "Standard_D4ds_v5"
+
+    # Medium Deployment DB Size
+    # sku_name                     = "Standard_D8ds_v5"
+
+    # Large Deployment DB Size
+    # sku_name                     = "Standard_D16ds_v5"
+
+    version                      = "15"
    # Necessary extensions for RAM to function
     postgresql_configurations    = [
        {
@@ -52,10 +61,18 @@ kubernetes_version         = "1.32"
 
 # Small Deployment Defaults
 default_nodepool_min_nodes = 1
-default_nodepool_max_nodes = 5
+default_nodepool_max_nodes = 3
 default_nodepool_vm_type   = "Standard_E8s_v5"
 
 # Medium Deployment Defaults
+# default_nodepool_min_nodes = 2
+# default_nodepool_max_nodes = 6
+# default_nodepool_vm_type   = "Standard_E8s_v5"
+
+# Large Deployment Defaults
+# default_nodepool_min_nodes = 2
+# default_nodepool_max_nodes = 8
+# default_nodepool_vm_type   = "Standard_E16s_v5"
 
 
 aks_network_plugin         = "azure"

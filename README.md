@@ -200,7 +200,7 @@ After you have access to the Kubernetes cluster, you must install the necessary 
 
 ### Install SAS Retrieval Agent Manager
 
-After you have configured a Kubernetes cluster and PostgreSQL database, use the following code to deploy SAS Retrieval Agent Manager on your platform:
+After you have configured a Kubernetes cluster and PostgreSQL 15 database, use the following code to deploy SAS Retrieval Agent Manager on your platform:
 
 #### Configure RAM Values File
 
@@ -215,8 +215,7 @@ Customize your RAM Values file based on the deployment template for your specifi
 #### Deploy with Helm
 
 ```bash
-helm install my-sas-retrieval-agent-manager oci://ghcr.io/sas-institute-rnd-internal/tmp-viya-iot-ram-helm/sas-retrieval-agent-manager \
-  --version 2025.9.44 \
+helm install my-sas-retrieval-agent-manager <path-to-repo>/chart/sas-retrieval-agent-manager/ \
   --values <RAM Values file>
 ```
 
