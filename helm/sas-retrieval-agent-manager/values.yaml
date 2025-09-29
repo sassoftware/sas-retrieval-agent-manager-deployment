@@ -26,10 +26,52 @@
 # -- • probes: Health checks for container lifecycle management
 # -- • affinity/nodeSelector/tolerations: Advanced pod scheduling
 
+# @schema
+# type: array
+# description: Additional Kubernetes objects to create alongside the main chart resources
+# items:
+#   type: object
+#   required: ["apiVersion", "kind", "metadata"]
+#   properties:
+#     apiVersion:
+#       type: string
+#       description: API version of the Kubernetes object
+#       enum: ["v1", "apps/v1", "batch/v1", "networking.k8s.io/v1"]
+#     kind:
+#       type: string
+#       description: Kind of Kubernetes object
+#       enum: ["Secret", "ConfigMap", "Service", "Deployment", "Ingress", "Job", "CronJob"]
+#     metadata:
+#       type: object
+#       required: ["name"]
+#       properties:
+#         name:
+#           type: string
+#           description: Name of the object
+#           minLength: 1
+#           maxLength: 63
+#         namespace:
+#           type: string
+#           description: Namespace for the object
+#           minLength: 1
+#           maxLength: 63
+#     data:
+#       type: object
+#       description: Data for Secret or ConfigMap objects
+#       additionalProperties:
+#         type: string
+#     type:
+#       type: string
+#       description: Type of Secret (e.g., kubernetes.io/tls, kubernetes.io/dockerconfigjson)
+# @schema
 # -- Extra Kubernetes objects to deploy alongside the main chart
 # -- Allows deployment of additional secrets, configmaps, or custom resources
 extraObjects: []
 
+# @schema
+# type: string
+# required: false
+# @schema
 # -- Override the full name of all resources created by this chart
 # -- This becomes the prefix for all Kubernetes resource names
 fullnameOverride: "sas-retrieval-agent-manager"
@@ -37,269 +79,913 @@ fullnameOverride: "sas-retrieval-agent-manager"
 # ============================================================================
 # GLOBAL CONFIGURATION
 # ============================================================================
+# @schema
+# type: object
+# required: true
+# properties:
+#   stage:
+#     type: [string,null]
+#   domain:
+#     type: [string,null]
+#   image:
+#     type: [object,null]
+#   imagePullSecrets:
+#     type: [array,null]
+#   ingress:
+#     type: [object,null]
+#   configuration:
+#     type: object
+#     required: true
+#   clusterName:
+#     type: [string,null]
+#   clusterUrl:
+#     type: [string,null]
+#   repo:
+#     type: [object,null]
+#     properties:
+#       base:
+#         type: string
+#   syncWindows:
+#     type: [array,null]
+#     items:
+#       type: object
+#       properties:
+#         kind:
+#           type: string
+#           enum: [allow,deny]
+#         schedule:
+#           type: string
+#           format: cron
+#         duration:
+#           type: string
+#         timezone:
+#           type: string
+#           default: "US/Eastern"
+#         applications:
+#           type: array
+#           items:
+#             type: string
+# @schema
+# -- Global configuration shared across all sub-charts
+# -- Sub-charts with useGlobal=true inherit these values
 global:
-  # -- Global configuration shared across all sub-charts
-  # -- Sub-charts with useGlobal=true inherit these values
 
+  # @schema
+  # type: [string,null]
+  # @schema
   # -- Default domain/host for ingress resources when useGlobal=true
   # -- If not set, each chart uses its own host configuration
-  # domain: ""
+  domain: ""
 
+  # @schema
+  # type: object
+  # @schema
   # -- Global container image repository configuration
-  # -- When sub-charts have useGlobal=true, images are pulled from this base repository
+  # -- When image.repo.base has content, subchart images are pulled from this base repository
   image:
+    # @schema
+    # type: object
+    # @schema
+    # -- Image repository details (useful for private registries)
     repo:
+      # @schema
+      # type: [string,null]
+      # @schema
       # -- Base container registry URL (SAS Container Registry)
-      base: 'cr.sas.com'
+      base: ''
 
+  # @schema
+  # type: array
+  # items:
+  #   type: object
+  #   properties:
+  #     name:
+  #       type: string
+  #       example: cr-sas-secret
+  # default: []
+  # @schema
   # -- Global image pull secrets for accessing private container registries
   # -- Applied to all sub-charts that reference private registries
-  imagePullSecrets:
-    - name: cr-sas-secret
+  imagePullSecrets: []
+  #   - name: cr-sas-secret
 
+  # @schema
+  # type: object
+  # required: true
+  # @schema
   # -- Global ingress configuration applied when sub-charts use useGlobal=true
   # -- Provides consistent external access patterns across all services
   ingress:
+    # @schema
+    # type: boolean
+    # required: true
+    # @schema
     # -- Enable ingress resources globally
     enabled: true
+    # @schema
+    # type: string
+    # required: true
+    # @schema
     # -- Ingress controller class
     className: nginx
+    # @schema
+    # type: object
+    # required: true
+    # @schema
     tls:
+      # @schema
+      # type: boolean
+      # required: true
+      # @schema
       # -- Enable TLS/SSL termination
       enabled: true
+    # @schema
+    # type: string
+    # @schema
     # -- Name of TLS secret
-    # secretname: ""
+    secretname: ""
 
-  # -- Global application configuration
-  # -- Contains database, authentication, and service-specific settings
+  # @schema
+  # type: object
+  # required: true
+  # properties:
+  #   database:
+  #     type: [object]
+  #   application:
+  #     type: [object]
+  #   keycloak:
+  #     type: [object]
+  #   swagger:
+  #     type: [object]
+  #   postgrest:
+  #     type: [object]
+  #   gpg:
+  #     type: [object]
+  #   api:
+  #     type: [object]
+  #   eval:
+  #     type: [object]
+  #   plugin:
+  #     type: [object]
+  #   kueue:
+  #     type: [object]
+  #   vhub:
+  #     type: [object]
+  #   migration:
+  #     type: [object]
+  #   vectorizationJob:
+  #     type: [object]
+  #   ui:
+  #     type: [object]
+  #   vectorStore:
+  #     type: [object]
+  #   weaviate:
+  #     type: [object]
+  # @schema
+  # -- Configuration settings
   configuration:
-    # -- PostgreSQL Database configuration for RAM initialization
-    # -- Controls initial database setup and connection parameters
+    # @schema
+    # type: object
+    # required: true
+    # @schema
+    # -- Database connection and initialization configuration
     database:
-      # -- Whether to initialize the database on first deployment
+      # @schema
+      # type: string
+      # required: true
+      # @schema
+      # -- Whether to initialize the database
       initializeDb: "true"
-      # -- Create database users during initialization
-      createUsers: true
-      # -- PostgreSQL server hostname/IP (required for external DB)
+      # @schema
+      # type: string
+      # required: true
+      # @schema
+      # -- Database host
       host: ""
-      # -- PostgreSQL server port
+      # @schema
+      # type: string
+      # required: true
+      # @schema
+      # -- Database port
       port: "5432"
-      # -- SSL connection mode (disable, allow, prefer, require, verify-ca, verify-full)
+      # @schema
+      # type: string
+      # required: true
+      # @schema
+      # -- SSL mode for database connection
       sslmode: "require"
-      # -- Create database schemas during initialization
-      createSchema: true
-      # -- Initial admin role for database setup
+      # @schema
+      # type: string
+      # required: true
+      # @schema
+      # -- Initial admin role for database management
       initAdminRole: "azure_pg_admin"
-      # -- Password for initial admin user
+      # @schema
+      # type: string
+      # required: true
+      # @schema
+      # -- Initial admin password (should be provided via secret)
       initAdminPassword: ""
 
-    # -- Application-specific database configuration
-    # -- Defines the main application database and user roles
+    # @schema
+    # type: object
+    # required: true
+    # properties:
+    #   createDB:
+    #     type: boolean
+    #     default: true
+    #     required: true
+    #   createSchema:
+    #     type: boolean
+    #     default: true
+    #     required: true
+    #   createUser:
+    #     type: boolean
+    #     default: true
+    #     required: true
+    #   db:
+    #     type: string
+    #     default: "SASRetrievalAgentManager"
+    #     required: true
+    #   schema:
+    #     type: string
+    #     default: "retagentmgr"
+    #     required: true
+    #   user:
+    #     type: string
+    #     default: "sas_ram_pgrest_user"
+    #     required: true
+    #   password:
+    #     type: string
+    #     default: ""
+    #     required: true
+    #   adminRole:
+    #     type: string
+    #     default: "sas_ram_admin_role"
+    #     required: true
+    #   userRole:
+    #     type: string
+    #     default: "sas_ram_user_role"
+    #     required: true
+    # @schema
+    # -- Application database configuration
     application:
-      # -- Create application database during initialization
+      # @schema
+      # type: boolean
+      # required: true
+      # @schema
+      # -- Whether to create application database
       createDB: true
-      # -- Create application schema
+      # @schema
+      # type: boolean
+      # required: true
+      # @schema
+      # -- Whether to create application schema
       createSchema: true
-      # -- Create application database user
+      # @schema
+      # type: boolean
+      # required: true
+      # @schema
+      # -- Whether to create application user
       createUser: true
+      # @schema
+      # type: string
+      # required: true
+      # @schema
       # -- Application database name
       db: "SASRetrievalAgentManager"
+      # @schema
+      # type: string
+      # required: true
+      # @schema
       # -- Application schema name
       schema: "retagentmgr"
+      # @schema
+      # type: string
+      # required: true
+      # @schema
       # -- Application database user name
       user: "sas_ram_pgrest_user"
-       # -- User password
+      # @schema
+      # type: string
+      # required: true
+      # @schema
+      # -- Application database user password
       password: ""
-      # -- Administrator role name
+      # @schema
+      # type: string
+      # required: true
+      # @schema
+      # -- Admin role name for application
       adminRole: "sas_ram_admin_role"
-      # -- Regular user role name
+      # @schema
+      # type: string
+      # required: true
+      # @schema
+      # -- User role name for application
       userRole: "sas_ram_user_role"
 
     # -- Keycloak Identity and Access Management configuration
     # -- Defines authentication server settings and user management
     keycloak:
-      # -- Create Keycloak database during initialization
+      # @schema
+      # type: boolean
+      # required: true
+      # @schema
+      # -- Whether to create Keycloak database
       createDB: true
-      # -- Create Keycloak schema
+      # @schema
+      # type: boolean
+      # required: true
+      # @schema
+      # -- Whether to create Keycloak schema
       createSchema: true
-      # -- Create Keycloak database user
+      # @schema
+      # type: boolean
+      # required: true
+      # @schema
+      # -- Whether to create Keycloak user
       createUser: true
+      # @schema
+      # type: string
+      # required: true
+      # @schema
       # -- Keycloak database name
       db: "SASRetrievalAgentManagerIAM"
+      # @schema
+      # type: string
+      # required: true
+      # @schema
       # -- Keycloak schema name
       schema: "keycloak"
+      # @schema
+      # type: string
+      # required: true
+      # @schema
       # -- Keycloak database user name
       user: "sas_keycloak_user"
-      # -- Database user password
+      # @schema
+      # type: string
+      # required: true
+      # @schema
+      # -- Keycloak database user password
       password: ""
-      # -- Keycloak realm name for authentication context
+      # @schema
+      # type: string
+      # required: true
+      # @schema
+      # -- Keycloak realm name for the application
       realm: "sas-iot"
-      # -- Administrator role in Keycloak
+      # @schema
+      # type: string
+      # required: true
+      # @schema
+      # -- Admin role name in Keycloak
       adminRole: "sas-iot-admin"
-      # -- Regular user role in Keycloak
+      # @schema
+      # type: string
+      # required: true
+      # @schema
+      # -- User role name in Keycloak
       userRole: "sas-iot-user"
-      # -- Enable service account authentication
+      # @schema
+      # type: boolean
+      # required: true
+      # @schema
+      # -- Whether service accounts are enabled in Keycloak
       serviceaccountsEnabled: false
-      # -- Keycloak UI theme (sasblue for SAS branding)
+      # @schema
+      # type: string
+      # required: true
+      # @schema
+      # -- Keycloak theme to use
       theme: sasblue
-      # -- Proxy mode (edge, reencrypt, passthrough)
+      # -- Proxy mode configuration (edge, reencrypt, or passthrough)
       proxy: edge
-      # -- Enforce strict hostname checking
+      # @schema
+      # type: boolean
+      # required: true
+      # @schema
+      # -- Whether to enforce strict hostname checking
       strictHostname: true
-      # -- Application administrator username
+      # @schema
+      # type: string
+      # required: true
+      # @schema
+      # -- Application admin username
       appAdmin: AppAdmin
+      # @schema
+      # type: string
+      # required: true
+      # @schema
       # -- Application admin password
       appAdminPassword: ""
-      # -- Keycloak system administrator username
+      # @schema
+      # type: string
+      # required: true
+      # @schema
+      # -- Keycloak admin username
       keycloakAdmin: kcAdmin
+      # @schema
+      # type: string
+      # required: true
+      # @schema
       # -- Keycloak admin password
       keycloakAdminPassword: ""
-      # -- OAuth2 client ID for application
+      # @schema
+      # type: string
+      # required: true
+      # @schema
+      # -- OAuth2 client ID for the application
       clientId: "sas-ram-app"
-      # -- OAuth2 client secret
+      # @schema
+      # type: string
+      # required: true
+      # @schema
+      # -- OAuth2 client secret for the application
       clientSecret: ""
-      # -- OAuth2 cookie secret
-      cookieSecret: ""
-      # -- Path to Keycloak secrets for API integration
+      # @schema
+      # type: string
+      # required: true
+      # @schema
+      # -- Path to Keycloak configuration secret mount
       secret_path: /mnt/config/keycloak
 
+
+    # @schema
+    # required: true
+    # type: object
+    # @schema
     # -- Swagger/OpenAPI documentation configuration
     # -- Controls API documentation generation and access
     swagger:
+      # @schema
+      # required: true
+      # type: boolean
+      # @schema
       # -- Enable Swagger UI for API documentation
       enabled: false
 
+    # @schema
+    # type: object
+    # @schema
     # -- PostgREST API configuration
     # -- Controls REST API generation from PostgreSQL database
     postgrest:
+      # @schema
+      # type: integer
+      # @schema
       # -- Port for PostgREST admin server
       admin-server-port: 3001
+      # @schema
+      # type: integer
+      # @schema
       # -- Port for PostgREST main server
       server-port: 3000
+      # @schema
+      # type: boolean
+      # @schema
       # -- Whether OpenAPI security is active
       openapi-security-active: true
+      # @schema
+      # type: string
+      # @schema
       # -- OpenAPI mode configuration
       openapi-mode: "follow-privileges"
-      # -- Log level for PostgREST (info, debug, etc.)
+      # @schema
+      # enum: [info, warn, error, crit]
+      # required: true
+      # @schema
+      # -- Log level for PostgREST (info, warn, etc.)
       log-level: "info"
+      # @schema
+      # type: string
+      # @schema
       # -- JWT role claim key configuration (uses value from keycloak.clientId)
       jwt-role-claim-key: '.resource_access."sas-ram-app".roles[0]'
 
+    # @schema
+    # required: true
+    # type: object
+    # @schema
     # -- GPG cryptographic key management configuration
     # -- Controls encryption/decryption operations for secure data handling
     gpg:
-      # -- Existing GPG public key
+      # @schema
+      # type: string
+      # @schema
+      # -- Existing GPG public key (base64 encoded). Leave empty to generate a new key pair
       publicKey: ""
-      # -- Existing GPG private key
+      # @schema
+      # type: string
+      # @schema
+      # -- Existing GPG private key (base64 encoded). Leave empty to generate a new key pair
       privateKey: ""
-      # -- GPG key passphrase
+      # @schema
+      # type: string
+      # required: true
+      # default: ""
+      # @schema
+      # -- Passphrase for the GPG key. Required for both existing keys and key generation
       passphrase: ""
-      # -- Automatic key generation settings (used when publicKey/privateKey are empty)
+      # @schema
+      # type: object
+      # required: true
+      # default: {"name":"RAM Secrets","email":"ram@sas.com","comment":"RAM GPG Key","length":4096,"expire":"0"}
+      # @schema
+      # -- Key generation settings (used when publicKey and privateKey are not provided)
       key:
-        # -- Key owner name
+        # @schema
+        # type: string
+        # required: true
+        # @schema
+        # -- Name associated with the generated GPG key
         name: "RAM Secrets"
-        # -- Key owner email address
+        # @schema
+        # type: string
+        # required: true
+        # @schema
+        # -- Email address associated with the generated GPG key
         email: "ram@sas.com"
-        # -- Key comment/description
+        # @schema
+        # type: string
+        # required: true
+        # @schema
+        # -- Comment for the generated GPG key
         comment: "RAM GPG Key"
-        # -- Key length in bits (2048, 4096)
+        # @schema
+        # type: integer
+        # required: true
+        # @schema
+        # -- Key length in bits for RSA keys
         length: 4096
-        # -- Key expiration (0 = never expires)
+        # @schema
+        # type: string
+        # required: true
+        # @schema
+        # -- Key expiration time (0 means never expires)
         expire: "0"
-
+      # @schema
+      # type: string
+      # required: true
+      # @schema
       # -- Path to GPG private key secret mount
       private_key_path: /mnt/config/gpg_key
+      # @schema
+      # type: string
+      # required: true
+      # @schema
       # -- Path to GPG passphrase secret mount
       passphrase_path: /mnt/config/gpg_passphrase
 
+    # @schema
+    # type: object
+    # required: true
+    # @schema
     # -- Main API service configuration
     # -- Controls the core RAM backend service behavior
     api:
-      # -- Use legacy license format compatibility
+      # @schema
+      # type: string
+      # required: true
+      # @schema
+      # -- Whether to use old license format
       useOldLicense: 'False'
-      # -- SAS license content
+      # @schema
+      # type: string
+      # required: true
+      # @schema
+      # -- License content (if not using secret)
       license: ""
-      # -- Path where license secret is mounted
+      # @schema
+      # type: string
+      # required: true
+      # @schema
+      # -- Path to license secret mount
       license_secret_path: /mnt/config/license
-      # -- Name of Kubernetes secret containing license
+      # @schema
+      # type: string
+      # required: true
+      # @schema
+      # -- Name of the license secret
       license_secret: "license-secret"
-      # -- Logging level (DEBUG, INFO, WARN, ERROR)
+      # @schema
+      # enum: [DEBUG, INFO, WARNING, ERROR]
+      # required: true
+      # @schema
+      # -- Log level for the API
       log_level: INFO
-      # -- Enable experimental/development features
+      # @schema
+      # type: string
+      # required: true
+      # @schema
+      # -- Enable development mode features
       enable_dev_mode: 'False'
-      # -- Enable performance profiling and metrics
+      # @schema
+      # type: string
+      # required: true
+      # @schema
+      # -- Enable profiling capabilities
       enable_profiling: 'False'
-      # -- Number of worker processes for handling requests
+      # @schema
+      # type: integer
+      # default: 4
+      # required: true
+      # @schema
+      # -- Number of worker processes
       num_workers: 4
-      # -- Verify SSL certificates for external API calls
+      # @schema
+      # type: string
+      # required: true
+      # @schema
+      # -- SSL verification setting
       sslVerify: 'True'
-      # -- Base URL path for API endpoints
+      # @schema
+      # type: string
+      # required: true
+      # @schema
+      # -- Base path for API endpoints
       base_path: /SASRetrievalAgentManager/api
-      # -- Latest API version identifier
+      # @schema
+      # type: string
+      # required: true
+      # @schema
+      # -- Latest API version
       latest_version: v1
+
+      # @schema
+      # required: true
+      # type: object
+      # @schema
       # -- Azure integration settings for API and identity management
       azure_settings:
         openAI:
+          # @schema
+          # type: string
+          # required: true
+          # @schema
           # -- Default API version for Azure OpenAI service (format: YYYY-MM-DD)
           default_api_version: "2024-10-21"
+        # @schema
+        # required: true
+        # type: object
+        # @schema
+        # -- Azure integration settings for identity management
         azure_identity:
+          # @schema
+          # required: true
+          # type: boolean
+          # default: false
+          # @schema
           # -- Enable Azure AD identity integration (true/false)
           enabled: false
+          # @schema
+          # type: string
+          # required: true
+          # @schema
           # -- Keyword used to identify Azure identity tokens in requests
           token_keyword: "AZURE_IDENTITY"
+          # @schema
+          # type: string
+          # required: true
+          # @schema
           # -- OAuth2 scope for Azure Cognitive Services authentication
           scope: "https://cognitiveservices.azure.com/.default"
+          # @schema
+          # type: string
+          # required: true
+          # @schema
           # -- Azure AD client ID for authentication (leave blank to disable)
           client_id: ""
 
-
+    # @schema
+    # required: true
+    # type: object
+    # properties:
+    #   image:
+    #     type: object
+    #     properties:
+    #       repo:
+    #         type: string
+    #         default: cr.sas.com
+    #         required: true
+    #       base:
+    #         type: string
+    #         default: viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-evaluation
+    #         required: true
+    #   tag:
+    #     type: string
+    #     required: true
+    # @schema
     # -- Evaluation service configuration
-    # eval:
-    #   # -- Container image configuration for evaluation service
-    #   image:
-    #     repo:
-    #       # -- Container registry base URL for evaluation service
-    #       base: ""
-    #       # -- Container image path/name for evaluation service
-    #       path: ""
-    #     # -- Container image tag for evaluation service
-    #     tag: ""
-    #     # -- Use global registry configuration instead of local
-    #     useGlobal: false
+    eval:
+      # -- Container image configuration for evaluation service
+      image:
+        repo:
+          # -- Container registry base URL for evaluation service
+          base: "cr.sas.com"
+          # -- Container image path/name for evaluation service
+          path: "viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-evaluation"
+        # -- Container image tag for evaluation service
+        # tag: ""
 
-    # -- Plugin agent configuration
-    # plugin:
-    #   # -- Container image configuration for plugin agent
+    # @schema
+    # required: true
+    # type: object
+    # properties:
     #   image:
-    #     repo:
-    #       # -- Container registry base URL for plugin agent
-    #       base: ""
-    #       # -- Container image path/name for plugin agent
-    #       path: ""
-    #     # -- Container image tag for plugin agent
-    #     tag: ""
-    #     # -- Use global registry configuration instead of local
-    #     useGlobal: false
+    #     type: object
+    #     properties:
+    #       repo:
+    #         type: string
+    #         default: cr.sas.com
+    #         required: true
+    #       base:
+    #         type: string
+    #         default: viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-agent
+    #         required: true
+    #   tag:
+    #     type: string
+    #     required: true
+    # @schema
+    # -- Plugin agent configuration
+    plugin:
+      # -- Container image configuration for plugin agent
+      image:
+        repo:
+          # -- Container registry base URL for plugin agent
+          base: cr.sas.com
+          # -- Container image path/name for plugin agent
+          path: viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-agent
+        # -- Container image tag for plugin agent
+        # tag: ""
     
+    # @schema
+    # type: object
+    # required: true
+    # @schema
     # -- Kueue configuration
     kueue:
+      # @schema
+      # type: string
+      # required: true
+      # @schema
       # -- Kueue CPU quota
       cpuQuota: "32"
+      # @schema
+      # type: string
+      # required: true
+      # @schema
       # -- Kueue memory quota
       memoryQuota: "128Gi"
+      # @schema
+      # type: integer
+      # required: true
+      # @schema
       # -- Kueue pod quota
       podQuota: 6
 
+    # @schema
+    # required: true
+    # type: object
+    # properties:
+    #   awsCertSecret:
+    #     type: string
+    #     deprecated: true
+    #   postgreSQLCertSecret:
+    #     type: string
+    #   availableHardware:
+    #     type: object
+    #     required: true
+    #     properties:
+    #       execution_providers:
+    #         type: array
+    #         items:
+    #           type: string
+    #         default: [cpu, openvino]
+    #       job_req_cpu:
+    #         type: object
+    #         required: true
+    #         properties:
+    #           default:
+    #             type: integer
+    #             default: 6
+    #           max:
+    #             type: integer
+    #             default: 6
+    #           min:
+    #             type: integer
+    #             default: 1
+    #       job_req_mem:
+    #         type: object
+    #         required: true
+    #         properties:
+    #           default:
+    #             type: string
+    #             default: 32Gi
+    #           max:
+    #             type: string
+    #             default: 48Gi
+    #           min:
+    #             type: string
+    #             default: 16Gi
+    #           model_default:
+    #             type: object
+    #             additionalProperties: true
+    #             properties:
+    #               all-MiniLM-L6-v2:
+    #                 type: string
+    #                 default: 16Gi
+    #               distiluse-base-multilingual-cased-v2:
+    #                 type: string
+    #                 default: 16Gi
+    #               GTE-ModernColBERT-v1:
+    #                 type: string
+    #                 default: 24Gi
+    #               nomic-embed-text-v2-moe:
+    #                 type: string
+    #                 default: 32Gi
+    #       plugin_req_cpu:
+    #         type: object
+    #         required: true
+    #         properties:
+    #           default:
+    #             type: integer
+    #             default: 2
+    #           max:
+    #             type: integer
+    #             default: 6
+    #           min:
+    #             type: integer
+    #             default: 1
+    #       plugin_req_mem:
+    #         type: object
+    #         required: true
+    #         properties:
+    #           default:
+    #             type: string
+    #             default: 4Gi
+    #           max:
+    #             type: string
+    #             default: 16Gi
+    #           min:
+    #             type: string
+    #             default: 1Gi
+    #       openvino_device_type:
+    #         type: array
+    #         items:
+    #           type: string
+    #         default: [CPU_FP32]
+    #       supported_ocr_languages:
+    #         type: object
+    #         required: true
+    #         properties:
+    #           paddle:
+    #             type: array
+    #             items:
+    #               type: string
+    #             default: [eng, chi_tra, dan, deu, spa, fra, ita, nld, pol, por]
+    #           tesseract:
+    #             type: array
+    #             items:
+    #               type: string
+    #             default: [eng, chi_tra, jpn, dan, deu, spa, fra, ita, nld, pol, por, chi_sim, rus]
+    # @schema
     # -- Vectorization Hub (VHub) configuration
     vhub:
+      # @schema
+      # required: false
+      # type: string
+      # @schema
       # -- AWS certificate secret name (if using AWS)
-      # postgreSQLCertSecret: ''
+      awsCertSecret: ''
+      # @schema
+      # required: true
+      # type: object
+      # @schema
       # -- Available hardware configuration for processing
       availableHardware:
+        # @schema
+        # required: true
+        # type: array
+        # items:
+        #   type: string
+        # @schema
         # -- Execution providers for ML/AI processing
         execution_providers:
-          - cpu
-          - openvino
+        - cpu
+        - openvino
+        # @schema
+        # required: true
+        # type: object
+        # properties:
+        #   default:
+        #     type: integer
+        #   max:
+        #     type: integer
+        #   min:
+        #     type: integer
+        # @schema
         # -- CPU requirements for jobs
         job_req_cpu:
           # -- Default CPU allocation for jobs
@@ -308,7 +994,21 @@ global:
           max: 6
           # -- Minimum CPU allocation for jobs
           min: 1
-
+        # @schema
+        # required: true
+        # type: object
+        # properties:
+        #   default:
+        #     type: string
+        #   max:
+        #     type: string
+        #   min:
+        #     type: string
+        #   model_default:
+        #     type: object
+        #     additionalProperties: 
+        #       type: string
+        # @schema
         # -- Memory requirements for jobs
         job_req_mem:
           # -- Default memory allocation for jobs
@@ -317,14 +1017,23 @@ global:
           max: 48Gi
           # -- Minimum memory allocation for jobs
           min: 16Gi
-
           # -- Model-specific memory defaults
           model_default:
             all-MiniLM-L6-v2: 16Gi
             distiluse-base-multilingual-cased-v2: 16Gi
             GTE-ModernColBERT-v1: 24Gi
             nomic-embed-text-v2-moe: 32Gi
-
+        # @schema
+        # required: true
+        # type: object
+        # properties:
+        #   default:
+        #     type: integer
+        #   max:
+        #     type: integer
+        #   min:
+        #     type: integer
+        # @schema
         # -- CPU requirements for plugins
         plugin_req_cpu:
           # -- Default CPU allocation for plugins
@@ -333,7 +1042,17 @@ global:
           max: 6
           # -- Minimum CPU allocation for plugins
           min: 1
-
+        # @schema
+        # required: true
+        # type: object
+        # properties:
+        #   default:
+        #     type: string
+        #   max:
+        #     type: string
+        #   min:
+        #     type: string
+        # @schema
         # -- Memory requirements for plugins
         plugin_req_mem:
           # -- Default memory allocation for plugins
@@ -342,122 +1061,243 @@ global:
           max: 16Gi
           # -- Minimum memory allocation for plugins
           min: 1Gi
-
+        # @schema
+        # required: true
+        # type: array
+        # items:
+        #   type: string
+        # @schema
         # -- OpenVINO device types supported
         openvino_device_type:
-          - CPU_FP32
-
+        - CPU_FP32
+        # @schema
+        # required: true
+        # type: object
+        # @schema
         # -- Supported OCR languages by engine
         supported_ocr_languages:
+          # @schema
+          # required: true
+          # type: array
+          # items:
+          #   type: string
+          # @schema
           # -- Languages supported by PaddleOCR
           paddle:
-            # -- English
-            - eng
-            # -- Chinese Traditional
-            - chi_tra
-            # -- Danish
-            - dan
-            # -- German (Deutsch)
-            - deu
-            # -- Spanish
-            - spa
-            # -- French
-            - fra
-            # -- Italian
-            - ita
-            # -- Dutch (Nederlands)
-            - nld
-            # -- Polish
-            - pol
-            # -- Portuguese
-            - por
-
+          - eng       # English
+          - chi_tra   # Chinese Traditional
+          - dan       # Danish
+          - deu       # German (Deutsch)
+          - spa       # Spanish
+          - fra       # French
+          - ita       # Italian
+          - nld       # Dutch (Nederlands)
+          - pol       # Polish
+          - por       # Portuguese
+          # @schema
+          # required: true
+          # type: array
+          # items:
+          #   type: string
+          # @schema
           # -- Languages supported by Tesseract
           tesseract:
-            # -- English
-            - eng
-            # -- Chinese Traditional
-            - chi_tra
-            # -- Japanese
-            - jpn
-            # -- Danish
-            - dan
-            # -- German (Deutsch)
-            - deu
-            # -- Spanish
-            - spa
-            # -- French
-            - fra
-            # -- Italian
-            - ita
-            # -- Dutch (Nederlands)
-            - nld
-            # -- Polish
-            - pol
-            # -- Portuguese
-            - por
-            # -- Chinese Simplified
-            - chi_sim
-            # -- Orientation and Script Detection
-            - osd
-            # -- Math/Equation Detection
-            - equ
+          - eng       # English
+          - chi_tra   # Chinese Traditional
+          - jpn       # Japanese
+          - dan       # Danish
+          - deu       # German (Deutsch)
+          - spa       # Spanish
+          - fra       # French
+          - ita       # Italian
+          - nld       # Dutch (Nederlands)
+          - pol       # Polish
+          - por       # Portuguese
+          - chi_sim   # Chinese Simplified
+          - osd       # Orientation and Script Detection
+          - equ       # Math/Equation Detection
 
-      # -- Container image configuration for vectorization hub
-      # image:
+      # @schema
+      # required: true
+      # type: object
+      # properties:
       #   repo:
-      #     # -- Container registry base URL for vectorization hub
-      #     base: ""
-      #     # -- Container image path/name for vectorization hub
-      #     path: ""
-      #   # -- Container image tag for vectorization hub
-      #   tag: ""
-      #   # -- Use global registry configuration instead of local
-      #   useGlobal: false
+      #     type: object
+      #     properties:
+      #       base:
+      #         type: string
+      #         default: cr.sas.com
+      #       path:
+      #         type: string
+      #         default: viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-vectorization-hub
+      #   tag:
+      #     type: string
+      # @schema
+      # -- Container image configuration for vectorization hub
+      image:
+        repo:
+          # -- Container registry base URL for vectorization hub
+          base: "cr.sas.com"
+          # -- Container image path/name for vectorization hub
+          path: "viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-vectorization-hub"
+        # -- Container image tag for vectorization hub
+        # tag: ""
 
+      # @schema
+      # type: array
+      # items:
+      #   type: object
+      #   properties:
+      #     name:
+      #       type: string
+      #       example: cr-sas-secret
+      # default: []
+      # @schema
       # -- Array of imagePullSecrets for vectorization hub
       imagePullSecrets: []
 
+    # @schema
+    # type: object
+    # required: true
+    # @schema
     # -- Database migration configuration
     # -- Controls database schema migration operations using Goose migration tool
     migration:
-      # -- Create database migration user during initialization
+      # @schema
+      # type: boolean
+      # required: true
+      # @schema
+      # -- Whether to create migration user
       createUser: true
+      # @schema
+      # type: string
+      # required: true
+      # @schema
       # -- Database migration user name
       dbMigrationUser: "sas_iot_migration"
-      # -- Database migration user password
+      # @schema
+      # type: string
+      # required: true
+      # @schema
+      # -- Database migration user password (should be provided via secret)
       dbMigrationPassword: ""
 
     # -- Vectorization job configuration
     # -- Controls user authentication for vectorization processing jobs
     vectorizationJob:
+      # schema: "retagentmgr"
+      # @schema
+      # type: string
+      # required: true
+      # @schema
       # -- Vectorization job user name
       user: "sas_ram_vectorization_user"
+      # @schema
+      # type: string
+      # required: true
+      # @schema
       # -- Vectorization job user password
       password: ""
 
+    # @schema
+    # type: object
+    # required: true
+    # properties:
+    #   enabled:
+    #     type:
+    #       - boolean
+    #       - null
+    #   createDB:
+    #     type:
+    #       - boolean
+    #       - null
+    #   createSchema:
+    #     type:
+    #       - boolean
+    #       - null
+    #   createUser:
+    #     type:
+    #       - boolean
+    #       - null
+    #   db:
+    #     type:
+    #       - string
+    #       - null
+    #   schema:
+    #     type:
+    #       - string
+    #       - null
+    #   user:
+    #     type:
+    #       - string
+    #       - null
+    #   password:
+    #     type:
+    #       - string
+    #       - null
+    # @schema
     # -- Vector store configuration
     # -- Controls vector database setup for AI/ML embeddings and similarity search
     vectorStore:
-      # -- Enable vector store functionality
+      # @schema
+      # type: boolean
+      # required: true
+      # @schema
+      # -- Whether vector store is enabled
       enabled: true
-      # -- Create vector store database during initialization
+      # @schema
+      # type: boolean
+      # required: true
+      # @schema
+      # -- Whether to create vector store database
       createDB: true
-      # -- Create vector store schema
+      # @schema
+      # type: boolean
+      # required: true
+      # @schema
+      # -- Whether to create vector store schema
       createSchema: true
-      # -- Create vector store database user
+      # @schema
+      # type: boolean
+      # required: true
+      # @schema
+      # -- Whether to create vector store user
       createUser: true
+      # @schema
+      # type: string
+      # required: true
+      # @schema
       # -- Vector store database name
       db: "SASRetrievalAgentManagerVector"
+      # @schema
+      # type: string
+      # required: true
+      # @schema
       # -- Vector store schema name
       schema: "vectorstore"
+      # @schema
+      # type: string
+      # required: true
+      # @schema
       # -- Vector store database user name
       user: "vector_store_user"
-      # -- Vector store user password
+      # @schema
+      # type: string
+      # required: true
+      # @schema
+      # -- Vector store database user password
       password: ""
 
+    # @schema
+    # type: object
+    # required: true
+    # @schema
     # -- weaviate settings
     weaviate:
+      # @schema
+      # type: boolean
+      # required: true
+      # @schema
       # -- Enable hydration for local Weaviate installation
       enabled: false
 
@@ -467,829 +1307,710 @@ global:
 
 # -- FileBrowser: Web-based file management interface
 # -- Provides a secure web UI for browsing, uploading, and managing files
-# -- Integrates with OAuth2 proxy for authentication
 filebrowser:
-  # -- Enable the FileBrowser deployment
-  # -- Disabled by default for security
+  # -- Enable the actual filebrowser deployment. Set to true to deploy the filebrowser component
   enabled: false
 
-  # -- Number of FileBrowser replica pods
-  # -- FileBrowser is not designed for horizontal scaling, keep at 1
+  # -- Number of replicas to run. Chart is not designed to scale horizontally, use at your own risk
   replicaCount: 1
 
-  # -- Container image configuration
-  # image:
-  #   repo:
-  #     # -- External registry (Docker Hub)
-  #     base: "docker.io"
-  #     # -- Official FileBrowser image path
-  #     path: "filebrowser/filebrowser"
-  #     # -- Use external registry, not SAS global registry
-  #     useGlobal: false
-  #   # -- Specific image version for stability
-  #   tag: "v2.42.1"
-  #   # -- Pull image only if not present locally
-  #   pullPolicy: IfNotPresent
+  # -- Container image configuration for Filebrowser and related services
+  image:
+    # -- Container image configuration
+    repo:
+      # -- Container registry base URL
+      base: docker.io
+      # -- Container image path/name
+      path: filebrowser/filebrowser
+    # -- Container image pull policy
+    pullPolicy: IfNotPresent
+    # -- Overrides the image tag whose default is the chart appVersion.
+    # tag: "" # https://hub.docker.com/r/filebrowser/filebrowser/tags
 
-  # -- Image pull secrets for private registry access
-  # -- Empty for public Docker Hub images
+  # -- Array of imagePullSecrets in the namespace for pulling images
   imagePullSecrets: []
 
-  # -- Kubernetes resource naming configuration
-  # -- Override default name prefix
+  # -- String to partially override the fullname template with a string (will prepend the release name)
   nameOverride: "filebrowser"
-  # -- Override full resource names
+
+  # -- String to fully override the fullname template with a string
   fullnameOverride: "sas-retrieval-agent-manager-filebrowser"
 
-  # -- Service account configuration
-  # -- Controls the Kubernetes service account used by FileBrowser pods
+  # -- Service account configuration for API
   serviceAccount:
-    # -- Create a new service account for this deployment
-    create: false
     # -- Annotations to add to the service account
     annotations: {}
-    # -- Service account name (auto-generated if empty and create=true)
-    name: ""
+    # -- Specifies whether a service account should be created
+    create: true
+    # -- The name of the service account to use. If not set and create is true, a name is generated using the fullname template
+    name: ''
 
-  # -- Pod-level security and metadata configuration
-  # -- Annotations applied to FileBrowser pods
+  # -- Annotations to add to the pods
   podAnnotations: {}
-  # -- Labels applied to FileBrowser pods
+
+  # -- Labels to add to the pods
   podLabels:
     sas.com/deployment: "sas-retrieval-agent-manager"
     workload.sas.com/class: "ram"
-  # -- Security context for the entire pod
-  podSecurityContext: {}
-  # -- Security context for the FileBrowser container
-  securityContext: {}
 
-  # -- Kubernetes service configuration
-  # -- Defines how FileBrowser is exposed within the cluster
+  # -- The security context for the pods
+  # podSecurityContext: {}
+  #   # -- Group ID to run the entrypoint of the container process
+  #   # runAsGroup: 1001
+  #   # -- Indicates that the container must be run as a non-root user
+  #   # runAsNonRoot: true
+  #   # -- User ID to run the entrypoint of the container process
+  #   # runAsUser: 1001
+  #   # -- Seccomp profile for the pod
+  #   # seccompProfile:
+  #   #   type: RuntimeDefault
+  #   # -- Group ID for file system ownership
+  #   # fsGroup: 2000
+
+  # -- The security context for the application container
+  # securityContext: {}
+  #   # -- Run as non-privileged container
+  #   # privileged: false
+  #   # -- Seccomp profile for the container
+  #   # seccompProfile:
+  #   #   type: RuntimeDefault
+  #   # -- Whether a process can gain more privileges than its parent process
+  #   # allowPrivilegeEscalation: false
+  #   # -- Linux capabilities to add/drop for the container
+  #   # capabilities:
+  #   #   add: []
+  #   #   drop:
+  #   #     - ALL
+  #   # -- Whether the container has a read-only root filesystem
+  #   # readOnlyRootFilesystem: true
+  #   # -- Whether the container must be run as a non-root user
+  #   # runAsNonRoot: true
+  #   # -- User ID to run the entrypoint of the container process
+  #   # runAsUser: 1001
+  #   # -- Group ID to run the entrypoint of the container process
+  #   # runAsGroup: 1001
+
+  # -- Kubernetes Service configuration
   service:
-    # -- Service type (ClusterIP, NodePort, LoadBalancer)
+    # -- Kubernetes Service type
     type: ClusterIP
-    # -- Service port number
+    # -- Kubernetes Service port
     port: 80
 
-  # -- Ingress configuration for external web access
-  # -- Provides HTTP/HTTPS access to the file browser interface
+  # -- Ingress configuration for external access to Filebrowser
   ingress:
-    # -- Use global ingress configuration from parent chart
-    useGlobal: true
+    # -- Use global ingress configuration instead of local hosts configuration
+    useGlobal: false
+    # -- Enable ingress for external access to API
+    enabled: true
+    # -- Class name of the Ingress
+    className: nginx
+    # -- Annotations for the Ingress
+    annotations:
+      # -- OAuth2 authentication sign-in URL
+      nginx.ingress.kubernetes.io/auth-signin: https://$host/SASRetrievalAgentManager/oauth2/start?rd=$escaped_request_uri
+      # -- OAuth2 authentication validation URL
+      nginx.ingress.kubernetes.io/auth-url: https://$host/SASRetrievalAgentManager/oauth2/auth
+      # -- Maximum allowed size of client request body (for file uploads)
+      nginx.ingress.kubernetes.io/proxy-body-size: 500m
+      # -- Size of buffer used for reading the first part of response received from proxied server
+      nginx.ingress.kubernetes.io/proxy-buffer-size: 16k
+      # -- URL rewrite rule to strip the prefix path
+      nginx.ingress.kubernetes.io/rewrite-target: /$2
+      # -- Force SSL redirect
+      nginx.ingress.kubernetes.io/ssl-redirect: 'true'
 
-  # -- Resource allocation and deployment configuration
-  # -- CPU and memory limits/requests (empty = no limits)
-  resources: {}
-  # -- Deployment strategy configuration
-  # -- Recreate ensures only one instance during updates (important for file consistency)
-  strategy:
-    # -- Deployment strategy (Recreate vs RollingUpdate)
-    type: Recreate
+    # -- Hosts for the ingress
+    # @default -- see [values.yaml](values.yaml)
 
-  # -- Pod scheduling configuration
-  # -- Schedule pods on nodes with specific labels
+    # If useGlobal = False
+    # hosts:
+    # - host: chart-example.local
+    #   paths:
+    #     - path: /files(/|$)(.*)
+    #       pathType: ImplementationSpecific
+
+    # If useGlobal = True
+    # -- Ingress path configuration when useGlobal is true
+    paths:
+      - path: /SASRetrievalAgentManager/files(/|$)(.*)
+        pathType: ImplementationSpecific
+    # -- TLS configuration for ingress
+    tls: []
+      # - secretName: ""
+      #   hosts:
+      #     - ""
+
+  # -- The resources to allocate for the container
+  # resources: {}
+    # We usually recommend not to specify default resources and to leave this as a conscious
+    # choice for the user. This also increases chances charts run on environments with little
+    # resources, such as Minikube. If you do want to specify resources, uncomment the following
+    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
+
+  # -- Node labels for pod assignment
   nodeSelector: {}
-  # -- Allow pods on nodes with matching taints
+
+  # -- Tolerations for pod assignment
   tolerations: []
-  # -- Advanced pod scheduling rules
+
+  # -- Map of node/pod affinities
   affinity:
     nodeAffinity:
       preferredDuringSchedulingIgnoredDuringExecution:
-      - weight: 1
-        preference:
-          matchExpressions:
-          - key: sas.com/deployment
-            operator: In
-            values:
-            - sas-retrieval-agent-manager
-      - weight: 2
-        preference:
-          matchExpressions:
-          - key: workload.sas.com/class
-            operator: In
-            values:
-            - ram
+        - weight: 1
+          preference:
+            matchExpressions:
+              - key: sas.com/deployment
+                operator: In
+                values:
+                  - sas-retrieval-agent-manager
+        - weight: 2
+          preference:
+            matchExpressions:
+              - key: workload.sas.com/class
+                operator: In
+                values:
+                  - ram
 
-  # -- Health check probes for container lifecycle management
-  # -- Check if container is alive (restart if fails)
-  livenessProbe: {}
-  # -- Check if container is ready to serve traffic
-  readinessProbe:
-    httpGet:
-      # -- Health check endpoint
-      path: /health
-      # -- Use the http port defined in service
-      port: http
-
-  # -- Storage configuration for file browser root directory
   rootDir:
-    # -- Storage type (pvc, hostPath, emptyDir)
+    # -- Type of rootDir mount. Valid values are [pvc, hostPath, emptyDir]
     type: pvc
-    # -- Storage class for PVC (empty = default)
-    storageClassName: ""
-    accessModes:
-      # -- Access mode for the volume
-      - ReadWriteOnce
-    # -- Size of the persistent volume
-    size: 10Gi
-
-  # -- Database storage configuration for FileBrowser metadata
-  db:
+    # -- Mount the root directory in read-only mode
+    readOnly: false
+    # -- Host path configuration (only used when type is 'hostPath')
+    hostPath:
+      # -- Path on the host to mount
+      path: "/mnt/data"
+    # -- Persistent Volume Claim configuration (only used when type is 'pvc')
     pvc:
-      # -- Storage class for database PVC
-      storageClassName: ""
-      # -- Access mode for database volume
+      # -- Name for the PVC
+      name: vhub-pv
+      # -- Storage class name for the root directory PVC
+      storageClassName: "azurefile-sas"
+      # -- Whether to create the storage class if it doesn't exist
+      createStorageClass: true
+      # -- Access modes for the root directory PVC
       accessModes:
         - ReadWriteOnce
-      # -- Size of database volume
-      size: 1Gi
+      # -- Size for the root directory PVC
+      size: 20Gi
 
-  # -- Additional pod configuration
-   # -- Init containers to run before main container
+  # -- Database configuration for Filebrowser
+  db:
+    # -- Database persistence configuration
+    pvc:
+      # -- Enable persistence for database
+      enabled: true
+      # -- Storage class name for the database PVC
+      storageClassName: ""
+      # -- Access modes for the database PVC
+      accessModes:
+        - ReadWriteOnce
+      # -- Size for the database PVC
+      size: 256Mi
+
+  # -- Deployment strategy to use (Recreate is recommended for stateful applications)
+  strategy:
+    type: Recreate
+
+  # -- Liveness probe configuration (disabled by default, enable if needed)
+  livenessProbe: {}
+
+  # -- Readiness probe configuration
+  readinessProbe:
+    httpGet:
+      path: /health
+      port: http
+
+  # -- Set of initContainers for the deployment
   initContainers: []
 
-  # -- FileBrowser application-specific configuration
+  # -- File Browser application specific configuration
   config:
-    # -- Internal port for FileBrowser service
+    # -- Port on which the filebrowser application listens inside the container
     port: 18080
-    # -- Root directory for file browsing
+    # -- Base URL path for the filebrowser application
+    baseURL: "/files"
+    # -- Address to bind the server to (empty means all interfaces)
+    address: ""
+    # -- Log output destination (stdout, stderr, or file path)
+    log: stdout
+    # -- Path to the SQLite database file for storing filebrowser configuration
+    database: /db/filebrowser.db
+    # -- Root directory that filebrowser will serve and manage files from
     root: /mnt/data
 
 # -- Keycloak: Identity and Access Management Server
 # -- Provides authentication, authorization, and user management
 keycloak:
-  # -- Number of Keycloak replica pods
-  # -- Single instance for simplicity (can be scaled for HA)
+  # Default values for keycloak.
+  # This is a YAML-formatted file.
+  # Declare variables to be passed into your templates.
+
+  # -- Number of replicas to run. Chart is not designed to scale horizontally, use at your own risk
   replicaCount: 1
 
-  # -- Container image configuration
-  # image:
-  #   #-- Keycloak main container image configuration
-  #   keycloak:
-  #     repo:
-  #       # -- Keycloak registry
-  #       base: "quay.io"
-  #       # -- Official Keycloak image
-  #       path: "keycloak/keycloak"
-  #       # -- Use external registry for main Keycloak image
-  #       useGlobal: false
-  #     # -- Image tag (defaults to chart appVersion)
-  #     tag: "26.3.3"
-  #     # -- Image pull policy
-  #     pullPolicy: IfNotPresent
+  # -- Container image configuration for Keycloak and related services
+  image:
+    # -- Container image configuration for Keycloak
+    keycloak:
+      # -- Container image configuration for Keycloak
+      repo:
+        # -- Container registry base URL for Keycloak
+        base: quay.io
+        # -- Container image path/name for Keycloak
+        path: keycloak/keycloak
+      # -- Image pull policy for Keycloak container
+      pullPolicy: IfNotPresent
+      # -- Keycloak container image tag
+      # tag: ""
+    # -- PostgreSQL database container image configuration
+    postgres:
+      # -- Container image configuration for Postgres
+      repo:
+        # -- Container registry base URL for PostgreSQL
+        base: docker.io
+        # -- Container image path/name for PostgreSQL
+        path: postgres
+      # -- Image pull policy for PostgreSQL container
+      pullPolicy: IfNotPresent
+      # -- PostgreSQL container image tag
+      # tag: ""
+    # -- Custom theme container image configuration
+    theme:
+      # -- Container image configuration for the SAS Keycloak theme
+      repo:
+        # -- Container registry base URL for theme
+        base: cr.sas.com
+        # -- Container image path/name for theme
+        path: viya-4-x64_oci_linux_2-docker/sas-iot-keycloak-theme
+      # -- Image pull policy for theme container
+      pullPolicy: IfNotPresent
+      # -- Theme container image tag
+      # tag: ""
+    # -- kubectl container image configuration (used for Kubernetes operations)
+    kubectl:
+      # -- Container image configuration for kubectl container
+      repo:
+        # -- Container registry base URL for kubectl
+        base: "docker.io"
+        # -- Container image path/name for kubectl
+        path: alpine/k8s
+      # -- Image pull policy for kubectl container
+      pullPolicy: IfNotPresent
+      # -- kubectl container image tag
+      # tag: ""
 
-  #   # -- PostgreSQL binary image for Keycloak
-  #   postgres:
-  #     repo:
-  #       # -- registry for PostgreSQL
-  #       base: ""
-  #       # -- Official PostgreSQL image
-  #       path: ""
-  #       # -- Use specific registry for PostgreSQL
-  #       useGlobal: false
-  #     # -- PostgreSQL image tag
-  #     tag: ""
-  #     # -- Image pull policy
-  #     pullPolicy: IfNotPresent
-
-  #   # -- Keycloak theme image for SAS branding
-  #   theme:
-  #     repo:
-  #       # -- SAS registry
-  #       base: ""
-  #       # -- Official Keycloak theme image
-  #       path: ""
-  #       # -- Use global SAS registry
-  #       useGlobal: false
-  #     # -- Theme image tag
-  #     tag: ""
-  #     # -- Image pull policy
-  #     pullPolicy: IfNotPresent
-
-  #   # -- kubectl utility image for database operations
-  #   kubectl:
-  #     repo:
-  #       # -- registry
-  #       base: ""
-  #       # -- kubectl image
-  #       path: ""
-  #       # -- Use global registry
-  #       useGlobal: false
-  #     # -- kubectl image tag
-  #     tag: ""
-  #     # -- Image pull policy
-  #     pullPolicy: IfNotPresent
-
-  # -- Image pull secrets for private registry access
+  # -- Array of imagePullSecrets in the namespace for pulling images from private registries
   imagePullSecrets:
-    # -- Secret for accessing SAS container registry
     - name: cr-sas-secret
 
-  # -- Kubernetes resource naming configuration
-  # -- Override default resource name prefix
+  # -- String to partially override the fullname template with a string (will prepend the release name)
   nameOverride: "keycloak"
-  # -- Full resource name override
+
+  # -- String to fully override the fullname template with a string
   fullnameOverride: "sas-retrieval-agent-manager-keycloak"
 
-  # -- Service account configuration
+  # -- Service account configuration for Keycloak
   serviceAccount:
-    # -- Create a service account for Keycloak
+    # -- Specifies whether a service account should be created
     create: true
-    # -- Service account annotations
+    # -- Automatically mount a ServiceAccount's API credentials
+    automount: true
+    # -- Annotations to add to the service account
     annotations: {}
-    # -- Service account name (auto-generated if empty)
+    # -- The name of the service account to use. If not set and create is true, a name is generated using the fullname template
     name: ""
 
-  # -- Pod-level metadata and security configuration
-  # -- Annotations applied to Keycloak pods
+  # -- Annotations to add to the pods
   podAnnotations: {}
-  # -- Labels applied to Keycloak pods
+
+  # -- Labels to add to the pods
   podLabels:
     sas.com/deployment: "sas-retrieval-agent-manager"
     workload.sas.com/class: "ram"
 
-  # -- Pod security context (applies to entire pod)
+  # -- The security context for the pods
   podSecurityContext:
-    # -- Run as non-root user
-    runAsUser: 10001
-    # -- Run as non-root group
+    # -- Group ID to run the entrypoint of the container process
     runAsGroup: 10001
-    # -- File system group ownership
+    # -- Indicates that the container must be run as a non-root user
+    runAsNonRoot: true
+    # -- User ID to run the entrypoint of the container process
+    runAsUser: 10001
+    # -- Seccomp profile for the pod
+    seccompProfile:
+      type: RuntimeDefault
+    # -- Group ID for file system ownership
     fsGroup: 10001
 
-  # -- Container security context (applies to Keycloak container)
+  # -- The security context for the application container
   securityContext:
-    # -- Prevent privilege escalation
-    allowPrivilegeEscalation: false
-    # -- Run as non-privileged container
+    # -- Whether the container runs in privileged mode
     privileged: false
-    # -- Ensure container runs as non-root
-    runAsNonRoot: true
-    # -- Run as specific non-root user
-    runAsUser: 10001
-    # -- Run as specific non-root group
-    runAsGroup: 10001
-    # -- Allow writes to container filesystem
-    readOnlyRootFilesystem: false
+    # -- Seccomp profile for the container
     seccompProfile:
-      # -- Use default seccomp profile
       type: RuntimeDefault
+    # -- Whether a process can gain more privileges than its parent process
+    allowPrivilegeEscalation: false
+    # -- Linux capabilities to add/drop for the container
     capabilities:
-      # -- Drop all Linux capabilities
+      add: []
       drop:
         - ALL
+    # -- Whether the container has a read-only root filesystem
+    readOnlyRootFilesystem: true
+    # -- Whether the container must be run as a non-root user
+    runAsNonRoot: true
+    # -- User ID to run the entrypoint of the container process
+    runAsUser: 10001
+    # -- Group ID to run the entrypoint of the container process
+    runAsGroup: 10001
 
-  # -- Kubernetes service configuration
+  # -- Kubernetes Service configuration
   service:
-    # -- Service type (internal cluster access)
+    # -- Kubernetes Service type
     type: ClusterIP
-    # -- Keycloak service port
+    # -- Kubernetes Service port
     port: 8080
 
-  # -- Ingress configuration for external access
+  # -- Ingress configuration for external access to Keycloak
   ingress:
-    # -- Use global ingress configuration from parent chart
-    useGlobal: true
+    # -- Use global ingress configuration instead of local hosts configuration
+    useGlobal: false
+    # -- Enable ingress for external access to Keycloak
+    enabled: true
+    # -- Class name of the Ingress
+    className: "nginx"
+    # -- Annotations for the Ingress
+    annotations:
+      # -- Disallow HTTP traffic, force HTTPS only
+      kubernetes.io/ingress.allow-http: 'false'
+      # -- Size of buffer used for reading the first part of response received from proxied server
+      nginx.ingress.kubernetes.io/proxy-buffer-size: 16k
+      # -- Force SSL redirect
+      nginx.ingress.kubernetes.io/ssl-redirect: 'true'
 
-  # -- Pod scheduling configuration
-  # -- Schedule pods on nodes with specific labels
-  nodeSelector: {}
-  # -- Allow pods on nodes with matching taints
-  tolerations: []
-  # -- Advanced pod scheduling rules
-  affinity:
-    nodeAffinity:
-      preferredDuringSchedulingIgnoredDuringExecution:
-      - weight: 1
-        preference:
-          matchExpressions:
-          - key: sas.com/deployment
-            operator: In
-            values:
-            - sas-retrieval-agent-manager
-      - weight: 2
-        preference:
-          matchExpressions:
-          - key: workload.sas.com/class
-            operator: In
-            values:
-            - ram
+    # -- Hosts configuration (ignored if useGlobal is true)
+    hosts: []
+    #   - host: chart-example.local
+    #     paths:
+    #       - path: "/SASRetrievalAgentManager/auth(/(realms|resources)/(.*))$"
+    #         pathType: ImplementationSpecific
 
-  # -- Additional volumes and volume mounts
-  # -- Additional volumes for the deployment
-  volumes: []
-  # -- Additional volume mounts for containers
-  volumeMounts: []
+    # -- Paths configuration (used when useGlobal is true)
+    paths:
+      - path: "/SASRetrievalAgentManager/auth(/(realms|resources)/(.*))$"
+        pathType: ImplementationSpecific
 
-  # -- OAuth2 Proxy configuration
-  # -- Provides OAuth2/OIDC authentication middleware
-  oauthProxy:
-    # -- OAuth2 proxy resource name
-    nameOverride: "oauth2-proxy"
-    # -- Full name override for OAuth2 proxy
-    fullnameOverride: ""
-    # -- Number of OAuth2 proxy replicas
-    replicaCount: 1
+    # -- Admin interface ingress configuration
+    admin:
+      # -- Enable admin interface access via ingress. If false, admin console is only accessible via port forwarding
+      enabled: true
+      # -- IP addresses or CIDR blocks allowed to access admin interface. Empty means allow all
+      sourceRange: []
+      #   - "192.0.2.0/24" # Example CIDR block (TEST-NET-1, see RFC 5737)
 
-    # -- OAuth2 Proxy container image
-    # image:
-    #   repo:
-    #     # -- OAuth2 proxy registry
-    #     base: ""
-    #     # -- Official OAuth2 proxy image
-    #     path: ""
-    #     # -- Use external registry
-    #     useGlobal: false
-    #   # -- Specific OAuth2 proxy version
-    #   tag: ""
-    #   # -- Pull for latest security updates
-    #   pullPolicy: IfNotPresent
+      # -- Admin interface host (ignored if useGlobal is true)
+      host: ""
+      # -- Admin interface path
+      path: /SASRetrievalAgentManager/auth/admin
+      # -- Admin interface path type
+      pathType: Prefix
 
-    # -- Image pull secrets for OAuth2 proxy
-    imagePullSecrets:
-      # -- Secret for accessing container registry
-      - name: acr-secret
+    # -- TLS configuration for ingress
+    tls: []
+      # - secretName: ""
+      #   hosts:
+      #     - ""
 
-    # -- Ingress configuration for OAuth2 proxy
-    ingress:
-      # -- Use global ingress configuration
-      useGlobal: true
+  # -- The resources to allocate for the Keycloak container
+  resources:
+    # -- Resource limits for the container
+    limits:
+      # -- CPU limit
+      cpu: 500m
+      # -- Memory limit
+      memory: 768Mi
+    # -- Resource requests for the container
+    requests:
+      # -- CPU request
+      cpu: 50m
+      # -- Memory request
+      memory: 256Mi
 
-    # -- Health check probes for OAuth2 proxy
-    livenessProbe:
-      httpGet:
-        # -- OAuth2 proxy health endpoint
-        path: /ping
-        # -- Use the http port
-        port: http
-    readinessProbe:
-      httpGet:
-        # -- OAuth2 proxy readiness endpoint
-        path: /ping
-        # -- Use the http port
-        port: http
+  # -- Liveness probe configuration for Keycloak
+  livenessProbe:
+    # -- Number of consecutive failures required to mark container as not ready
+    failureThreshold: 5
+    # -- HTTP GET probe configuration
+    httpGet:
+      # -- Path to probe for liveness
+      path: /SASRetrievalAgentManager/auth/realms/master
+      port: http
+    # -- Initial delay before starting probes
+    initialDelaySeconds: 240
+    # -- How often to perform the probe
+    periodSeconds: 30
 
-    # -- Resource allocation and autoscaling for OAuth2 proxy
-    # -- CPU and memory limits/requests
-    resources: {}
-    autoscaling:
-      # -- Enable horizontal pod autoscaling
-      enabled: false
-      # -- Minimum number of replicas
-      minReplicas: 1
-      # -- Maximum number of replicas
-      maxReplicas: 100
-      # -- CPU threshold for scaling
-      targetCPUUtilizationPercentage: 80
+  # -- Readiness probe configuration for Keycloak
+  readinessProbe:
+    # -- Number of consecutive failures required to mark container as not ready
+    failureThreshold: 5
+    # -- HTTP GET probe configuration
+    httpGet:
+      # -- Path to probe for readiness
+      path: /SASRetrievalAgentManager/auth/realms/master
+      port: http
+    # -- Initial delay before starting probes
+    initialDelaySeconds: 240
+    # -- How often to perform the probe
+    periodSeconds: 30
 
-    # -- Additional volumes and scheduling for OAuth2 proxy
-    # -- Additional volumes
-    volumes: []
-    # -- Additional volume mounts
-    volumeMounts: []
-    # -- Node selection constraints
-    nodeSelector: {}
-    # -- Node tolerations
-    tolerations: []
-    # -- Pod affinity rules
-    affinity:
-      nodeAffinity:
-        preferredDuringSchedulingIgnoredDuringExecution:
-        - weight: 1
-          preference:
-            matchExpressions:
-            - key: sas.com/deployment
-              operator: In
-              values:
-              - sas-retrieval-agent-manager
-        - weight: 2
-          preference:
-            matchExpressions:
-            - key: workload.sas.com/class
-              operator: In
-              values:
-              - ram
-    # -- Pod annotations
-    podAnnotations: {}
-    # -- Pod labels
-    podLabels:
-      sas.com/deployment: "sas-retrieval-agent-manager"
-      workload.sas.com/class: "ram"
-
-  # -- Mail server configuration (optional)
-  # -- Allows Keycloak to send emails for user management
-  # -- This should not be used for production workloads!
-  mail:
-    # -- Enable mail server integration
-    enabled: false
-    # -- Mail server resource name
-    fullnameOverride: mail
-
-    # -- Persistent storage for mail server
-    persistence:
-      # -- Enable persistent storage for mail
-      enabled: false
-
-    # -- Mail server pod configuration
-    pod:
-      annotations:
-        linkerd.io/inject: "enabled"   # -- Enable service mesh injection
-
-    # -- Mail server application configuration
-    config:
-      general:
-        # -- Timezone setting
-        TZ: UTC
-        # -- Allow empty sender domains
-        ALLOW_EMPTY_SENDER_DOMAINS: "true"
-      postfix:
-        # -- Mail server hostname
-        # myhostname: ""
-        # -- Trusted networks
-        mynetworks: "10.0.0.0/8, 127.0.0.0/8"
-        # -- SMTP restrictions
-        smtpd_recipient_restrictions: "permit_mynetworks, reject_unauth_destination"
-
-# -- GPG: Cryptographic key management service
-# -- Provides GPG encryption/decryption capabilities for secure data handling
-gpg:
-  # -- Container image configuration
-  # image:
-  #   gpg:
-  #     repo:
-  #       # -- GPG utilities registry
-  #       base: ""
-  #       # -- GPG tools image
-  #       path: ""
-  #       # -- Use external registry for GPG tools
-  #       useGlobal: false
-  #     # -- Image tag (defaults to chart appVersion)
-  #     tag: ""
-  #     # -- Image pull policy
-  #     pullPolicy: IfNotPresent
-
-  #   # -- kubectl container image configuration (used for Kubernetes operations)
-  #   kubectl:
-  #     repo:
-  #       # -- Container registry base URL for kubectl image
-  #       base: ""
-  #       # -- Container image path/name for kubectl
-  #       path: ""
-  #       # -- Use global registry configuration instead of local
-  #       useGlobal: false
-  #     # -- Image pull policy for kubectl container
-  #     pullPolicy: IfNotPresent
-  #     # -- kubectl container image tag
-  #     tag: ""
-
-  # -- Pod metadata configuration
-  podAnnotations:
-    # -- Enable service mesh integration
-    linkerd.io/inject: "enabled"
-
-  # -- Image pull secrets for private registry access
-  # -- No secrets needed for public registry
-  imagePullSecrets: []
-
-  # -- Kubernetes resource naming configuration
-  # -- Override default resource name prefix
-  nameOverride: "gpg"
-  # -- Full resource name
-  fullnameOverride: "sas-retrieval-agent-manager-gpg"
-
-  # -- Service account configuration
-  serviceAccount:
-    # -- Create a service account for GPG operations
-    create: true
-    # -- Service account annotations
-    annotations: {}
-    # -- Service account name (auto-generated if empty)
-    name: ""
-
-  # -- Pod and container security configuration
-  podSecurityContext:
-    # -- File system group for volume permissions
-    fsGroup: 10001
-
-  securityContext:
-    # -- Prevent privilege escalation
-    allowPrivilegeEscalation: false
-    # -- Run as non-privileged container
-    privileged: false
-    # -- Ensure container runs as non-root
-    runAsNonRoot: true
-    # -- Run as specific non-root user
-    runAsUser: 10001
-    # -- Run as specific non-root group
-    runAsGroup: 10001
-    # -- Allow writes for GPG operations
-    readOnlyRootFilesystem: false
-    seccompProfile:
-    # -- Use default seccomp profile
-      type: RuntimeDefault
-    capabilities:
-    # -- Drop all Linux capabilities
-      drop:
-        - ALL
-
-  # -- Resource allocation configuration
-  # resources:
-  #   limits:
-  #     # -- Maximum CPU allocation
-  #     cpu: ""
-  #     # -- Maximum memory allocation
-  #     memory: ""
-  #   requests:
-  #     # -- Requested CPU allocation
-  #     cpu: ""
-  #     # -- Requested memory allocation
-  #     memory: ""
-
-# -- PostgREST: REST API interface for PostgreSQL database
-# -- Automatically generates REST endpoints from database schema
-postgrest:
-  # -- Number of PostgREST replica pods
-  # -- Single instance (can be scaled for higher load)
-  replicaCount: 1
-
-  # -- PostgREST container image configuration
-  postgrest:
-    # image:
-    #   # -- PostgREST main container image configuration
-    #   postgrest:
-    #     repo:
-    #       # -- PostgREST registry
-    #       base: ""
-    #       # -- Official PostgREST image
-    #       path: ""
-    #       # -- Use external registry
-    #       useGlobal: false
-    #     # -- Image tag (defaults to chart appVersion)
-    #     tag: ""
-    #     # -- Image pull policy
-    #     pullPolicy: IfNotPresent
-
-    #   # -- PostgreSQL binary container image configuration
-    #   postgres:
-    #     repo:
-    #       # -- Container registry base URL for PostgreSQL
-    #       base: ""
-    #       # -- Container image path/name for PostgreSQL
-    #       path: ""
-    #       # -- Use global registry configuration instead of local
-    #       useGlobal: false
-    #     # -- Image pull policy for PostgreSQL container
-    #     pullPolicy: IfNotPresent
-    #     # -- PostgreSQL container image tag
-    #     tag: ""
-
-    #   # -- kubectl container image configuration (used for Kubernetes operations)
-    #   kubectl:
-    #     repo:
-    #       # -- Container registry base URL for kubectl
-    #       base: ""
-    #       # -- Container image path/name for kubectl
-    #       path: ""
-    #       # -- Use global registry configuration instead of local
-    #       useGlobal: false
-    #     # -- Image pull policy for kubectl container
-    #     pullPolicy: IfNotPresent
-    #     # -- kubectl container image tag
-    #     tag: ""
-
-  # -- Image pull secrets for private registry access
-  # -- No secrets needed for public registry
-  imagePullSecrets: []
-
-  # -- Kubernetes resource naming configuration
-  # -- Override default resource name prefix
-  nameOverride: "postgrest"
-  # -- Full resource name
-  fullnameOverride: "sas-retrieval-agent-manager-postgrest"
-
-  # -- Service account configuration
-  serviceAccount:
-    # -- Create a service account for PostgREST
-    create: true
-    # -- Service account annotations
-    annotations: {}
-    # -- Service account name (auto-generated if empty)
-    name: ""
-
-  # -- Pod metadata and security configuration
-  # -- Pod annotations
-  podAnnotations: {}
-  # -- Pod labels
-  podLabels:
-    sas.com/deployment: "sas-retrieval-agent-manager"
-    workload.sas.com/class: "ram"
-
-  # -- Pod security context (applies to entire pod)
-  podSecurityContext:
-    # -- File system group for volume permissions
-    fsGroup: 10001
-
-  # -- Container security context (applies to PostgREST container)
-  securityContext:
-    # -- Prevent privilege escalation
-    allowPrivilegeEscalation: false
-    # -- Run as non-privileged container
-    privileged: false
-    # -- Ensure container runs as non-root
-    runAsNonRoot: true
-    # -- Run as specific non-root user
-    runAsUser: 10001
-    # -- Run as specific non-root group
-    runAsGroup: 10001
-    # -- Allow writes for configuration
-    readOnlyRootFilesystem: false
-    seccompProfile:
-    # -- Use default seccomp profile
-      type: RuntimeDefault
-    capabilities:
-      # -- Drop all Linux capabilities
-      drop:
-        - ALL
-
-  # -- Kubernetes service configuration
-  service:
-    # -- Service type (internal cluster access)
-    type: ClusterIP
-    # -- PostgREST API port
-    port: 3000
-
-  # -- Admin service configuration (for administrative operations)
-  adminService:
-    # -- Admin service type
-    type: ClusterIP
-    # -- PostgREST admin port
-    port: 3001
-
-  # -- Ingress configuration for external API access
-  ingress:
-    # -- Use global ingress configuration from parent chart
-    useGlobal: true
-
-  # -- Pod scheduling configuration
-  # -- Schedule pods on nodes with specific labels
-  nodeSelector: {}
-  # -- Allow pods on nodes with matching taints
-  tolerations: []
-  # -- Advanced pod scheduling rules
-  affinity:
-    nodeAffinity:
-      preferredDuringSchedulingIgnoredDuringExecution:
-      - weight: 1
-        preference:
-          matchExpressions:
-          - key: sas.com/deployment
-            operator: In
-            values:
-            - sas-retrieval-agent-manager
-      - weight: 2
-        preference:
-          matchExpressions:
-          - key: workload.sas.com/class
-            operator: In
-            values:
-            - ram
-
-  # -- Resource allocation and horizontal pod autoscaling
-  # resources:
-  #   limits:
-  #     # -- Maximum CPU allocation
-  #     cpu: ""
-  #     # -- Maximum memory allocation
-  #     memory: ""
-  #   requests:
-  #     # -- Requested CPU allocation
-  #     cpu: ""
-  #     # -- Requested memory allocation
-  #     memory: ""
-
+  # -- Horizontal Pod Autoscaler configuration
   autoscaling:
-    # -- Disable horizontal pod autoscaling by default
+    # -- Enable horizontal pod autoscaling
     enabled: false
     # -- Minimum number of replicas
     minReplicas: 1
     # -- Maximum number of replicas
     maxReplicas: 100
-    # -- CPU threshold for scaling
+    # -- Target CPU utilization percentage for scaling
     targetCPUUtilizationPercentage: 80
+    # -- Target memory utilization percentage for scaling (optional)
+    # targetMemoryUtilizationPercentage: 80
 
-  # -- Health check probes for container lifecycle management
-  livenessProbe:
-    httpGet:
-      # -- PostgREST liveness endpoint
-      path: /live
-      # -- Use admin port
-      port: 3001
-      # -- HTTP scheme
-      scheme: HTTP
-      # -- Probe timeout
-    timeoutSeconds: 1
-    # -- Probe frequency
-    periodSeconds: 10
-    # -- Success threshold
-    successThreshold: 1
-    # -- Failure threshold before restart
-    failureThreshold: 3
-
-  readinessProbe:
-    httpGet:
-      # -- PostgREST readiness endpoint
-      path: /ready
-      # -- Use admin port
-      port: 3001
-      # -- HTTP scheme
-      scheme: HTTP
-    # -- Probe timeout
-    timeoutSeconds: 1
-    # -- Probe frequency
-    periodSeconds: 10
-    # -- Success threshold
-    successThreshold: 1
-    # -- Failure threshold before marking not ready
-    failureThreshold: 3
-
-  # -- Additional volumes and volume mounts
-  # -- Additional volumes for the deployment
+  # -- Additional volumes on the output Deployment definition
   volumes: []
-  # -- Additional volume mounts for containers
+  # - name: foo
+  #   secret:
+  #     secretName: mysecret
+  #     optional: false
+
+  # -- Additional volumeMounts on the output Deployment definition
   volumeMounts: []
+  # - name: foo
+  #   mountPath: "/etc/foo"
+  #   readOnly: true
 
-  # -- Swagger UI integration for API documentation
-  swagger:
-    # -- Enable Swagger UI for PostgREST API
-    enabled: false
-    # -- Number of Swagger UI replicas
+  # -- Node labels for pod assignment
+  nodeSelector: {}
+
+  # -- Tolerations for pod assignment
+  tolerations: []
+
+  # -- Map of node/pod affinities
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 1
+        preference:
+          matchExpressions:
+          - key: sas.com/deployment
+            operator: In
+            values:
+            - sas-retrieval-agent-manager
+      - weight: 2
+        preference:
+          matchExpressions:
+          - key: workload.sas.com/class
+            operator: In
+            values:
+            - ram
+
+  # -- OAuth2 Proxy configuration for authentication
+  oauthProxy:
+    # -- String to partially override the OAuth2 Proxy fullname template
+    nameOverride: "oauth2-proxy"
+    # -- String to fully override the OAuth2 Proxy fullname template
+    fullnameOverride: "sas-retrieval-agent-manager-oauth2-proxy"
+    # -- Number of OAuth2 Proxy replicas
     replicaCount: 1
+    # -- OAuth2 Proxy service configuration
+    service:
+      # -- Kubernetes Service type for OAuth2 Proxy
+      type: ClusterIP
+      # -- Kubernetes Service port for OAuth2 Proxy
+      port: 4180
 
-    # -- Swagger UI container image
-    # image:
-    #   repo:
-    #     # -- Swagger UI registry
-    #     base: ""
-    #     # -- Official Swagger UI image
-    #     path: ""
-    #     # -- Use external registry
-    #     useGlobal: false
-    #     # -- Image tag
-    #   tag: ""
-    #   # -- Image pull policy
-    #   pullPolicy: IfNotPresent
+    # -- OAuth2 Proxy service account configuration
+    serviceAccount:
+      # -- Specifies whether a service account should be created for OAuth2 Proxy
+      create: true
+      # -- Automatically mount a ServiceAccount's API credentials for OAuth2 Proxy
+      automount: true
+      # -- Annotations to add to the OAuth2 Proxy service account
+      annotations: {}
+      # -- The name of the service account to use for OAuth2 Proxy
+      name: "oauth2-proxy"
 
-    # -- Image pull secrets for Swagger UI
-    imagePullSecrets: []
-
-    # -- Kubernetes resource naming for Swagger UI
-    # -- Override default name prefix
-    nameOverride: "swagger"
-    # -- Full name override
-    fullnameOverride: ""
-
-    # -- Ingress configuration for Swagger UI
+    # -- OAuth2 Proxy ingress configuration
     ingress:
-      # -- Use global ingress configuration
-      useGlobal: true
+      # -- Use global ingress configuration instead of local hosts for OAuth2 Proxy
+      useGlobal: false
+      # -- Enable ingress for OAuth2 Proxy
+      enabled: true
+      # -- Class name of the OAuth2 Proxy Ingress
+      className: "nginx"
+      # -- Annotations for the OAuth2 Proxy Ingress
+      annotations:
+        # -- Disallow HTTP traffic, force HTTPS only
+        kubernetes.io/ingress.allow-http: 'false'
+        # -- Size of buffer used for reading the first part of response
+        nginx.ingress.kubernetes.io/proxy-buffer-size: 16k
+        # -- Force SSL redirect
+        nginx.ingress.kubernetes.io/ssl-redirect: 'true'
+        # -- Enable CORS for OAuth2 Proxy
+        nginx.ingress.kubernetes.io/enable-cors: 'true'
+        # -- Session cookie SameSite attribute
+        nginx.ingress.kubernetes.io/session-cookie-samesite: lax
+      # -- Hosts configuration for OAuth2 Proxy (ignored if useGlobal is true)
+      hosts: []
 
-    # -- Resource allocation and autoscaling for Swagger UI
-    # -- CPU and memory limits/requests
-    resources: {}
+      # -- OAuth2 authentication paths
+      paths:
+        - path: /SASRetrievalAgentManager/oauth2(/|/(.*))$
+          pathType: ImplementationSpecific
+
+      # -- OAuth2 logout paths
+      logoutPaths:
+        - path: /SASRetrievalAgentManager/logout(/(.*))?$
+          pathType: ImplementationSpecific
+
+      # -- TLS configuration for OAuth2 Proxy ingress
+      tls: []
+      #   - secretName: ""
+      #     hosts:
+      #       - ""
+
+    # -- OAuth2 Proxy container image configuration
+    image:
+      repo:
+        # -- Container registry base URL for OAuth2 Proxy
+        base: quay.io
+        # -- Container image path/name for OAuth2 Proxy
+        path: oauth2-proxy/oauth2-proxy
+      # -- Image pull policy for OAuth2 Proxy container
+      pullPolicy: Always
+      # -- OAuth2 Proxy container image tag
+      tag: "v7.12.0"
+
+    # -- Array of imagePullSecrets for OAuth2 Proxy
+    imagePullSecrets:
+      - name: acr-secret
+
+    # -- Annotations to add to the OAuth2 Proxy pods
+    podAnnotations: {}
+
+    # -- Labels to add to the OAuth2 Proxy pods
+    podLabels:
+      sas.com/deployment: "sas-retrieval-agent-manager"
+      workload.sas.com/class: "ram"
+
+    # -- The security context for the OAuth2 Proxy pods
+    podSecurityContext:
+      # -- Group ID for file system ownership
+      fsGroup: 10001
+      # -- Group ID to run the entrypoint of the container process
+      runAsGroup: 10001
+      # -- Indicates that the container must be run as a non-root user
+      runAsNonRoot: true
+      # -- User ID to run the entrypoint of the container process
+      runAsUser: 10001
+      # -- Seccomp profile for the OAuth2 Proxy pod
+      seccompProfile:
+        type: RuntimeDefault
+
+    # -- The security context for the OAuth2 Proxy application container
+    securityContext:
+      # -- Seccomp profile for the OAuth2 Proxy container
+      seccompProfile:
+        type: RuntimeDefault
+      # -- Linux capabilities to add/drop for the OAuth2 Proxy container
+      capabilities:
+        add: []
+        drop:
+          - ALL
+      # -- Whether a process can gain more privileges than its parent process
+      allowPrivilegeEscalation: false
+      # -- Whether the container has a read-only root filesystem
+      readOnlyRootFilesystem: true
+      # -- Group ID to run the entrypoint of the container process
+      runAsGroup: 10001
+      # -- Whether the container must be run as a non-root user
+      runAsNonRoot: true
+      # -- User ID to run the entrypoint of the container process
+      runAsUser: 10001
+
+    # -- Liveness probe configuration for OAuth2 Proxy
+    livenessProbe:
+      # -- HTTP GET probe configuration for liveness
+      httpGet:
+        # -- Path to probe for liveness
+        path: /ping
+        port: http
+
+    # -- Readiness probe configuration for OAuth2 Proxy
+    readinessProbe:
+      # -- HTTP GET probe configuration for readiness
+      httpGet:
+        # -- Path to probe for readiness
+        path: /ping
+        port: http
+
+    # -- The resources to allocate for the OAuth2 Proxy container
+    resources:
+      # -- Resource limits for the OAuth2 Proxy container
+      limits:
+        # -- CPU limit
+        cpu: 100m
+        # -- Memory limit
+        memory: 64Mi
+      # -- Resource requests for the OAuth2 Proxy container
+      requests:
+        # -- CPU request
+        cpu: 50m
+        # -- Memory request
+        memory: 32Mi
+
+    # -- Horizontal Pod Autoscaler configuration for OAuth2 Proxy
     autoscaling:
-      # -- Disable horizontal pod autoscaling
+      # -- Enable horizontal pod autoscaling for OAuth2 Proxy
       enabled: false
-      # -- Minimum number of replicas
+      # -- Minimum number of replicas for OAuth2 Proxy
       minReplicas: 1
-      # -- Maximum number of replicas
+      # -- Maximum number of replicas for OAuth2 Proxy
       maxReplicas: 100
-      # -- CPU threshold for scaling
+      # -- Target CPU utilization percentage for OAuth2 Proxy scaling
       targetCPUUtilizationPercentage: 80
 
-    # -- Health check probes for Swagger UI
-    livenessProbe:
-      httpGet:
-        # -- Swagger UI health endpoint
-        path: /
-        # -- Use the http port
-        port: http
-    readinessProbe:
-      httpGet:
-        # -- Swagger UI readiness endpoint
-        path: /
-          # -- Use the http port
-        port: http
-
-    # -- Additional volumes and scheduling for Swagger UI
-    # -- Additional volumes
+    # -- Additional volumes on the OAuth2 Proxy Deployment definition
     volumes: []
-    # -- Additional volume mounts
+    # - name: foo
+    #   secret:
+    #     secretName: mysecret
+    #     optional: false
+
+    # -- Additional volumeMounts on the OAuth2 Proxy Deployment definition
     volumeMounts: []
-    # -- Node selection constraints
+    # - name: foo
+    #   mountPath: "/etc/foo"
+    #   readOnly: true
+
+    # -- Node labels for OAuth2 Proxy pod assignment
     nodeSelector: {}
-    # -- Node tolerations
+
+    # -- Tolerations for OAuth2 Proxy pod assignment
     tolerations: []
-    # -- Pod affinity rules
+
+    # -- Map of node/pod affinities for OAuth2 Proxy
     affinity:
       nodeAffinity:
         preferredDuringSchedulingIgnoredDuringExecution:
@@ -1307,12 +2028,670 @@ postgrest:
               operator: In
               values:
               - ram
-    # -- Pod annotations
+
+  # -- Mail server configuration
+  # (optional email service for development)
+  mail:
+    # -- Enable mail server deployment
+    enabled: false
+    # -- Full name override for mail service
+    fullnameOverride: mail
+    # -- Persistence configuration for mail server
+    persistence:
+      # -- Enable persistence for mail server
+      enabled: false
+    # -- Pod configuration for mail server
+    pod:
+      # -- Security context for mail server pod
+      securityContext:
+        # -- Seccomp profile for mail server pod
+        seccompProfile:
+          type: RuntimeDefault
+    # -- Container configuration for mail server
+    container:
+      # -- Postfix container configuration
+      postfix:
+        # -- Security context for postfix container
+        securityContext:
+          # -- Seccomp profile for postfix container
+          seccompProfile:
+            type: RuntimeDefault
+    # -- Mail server configuration settings
+    config:
+      # -- General mail server settings
+      general:
+        # -- Timezone for mail server
+        TZ: UTC
+        # FORCE_COLOR:
+        # INBOUND_DEBUGGING:
+        # ALLOWED_SENDER_DOMAINS:
+        # -- Allow empty sender domains
+        ALLOW_EMPTY_SENDER_DOMAINS: "true"
+        # LOG_FORMAT:
+        # RELAYHOST:
+        # SASL_RELAYHOST: # when specified overwrites the RELAYHOST in the sasl_passwd file
+        # RELAYHOST_USERNAME:
+        # RELAYHOST_PASSWORD:
+        # MASQUERADED_DOMAINS:
+        # SMTP_HEADER_CHECKS:
+        # DKIM_SELECTOR:
+        # DKIM_AUTOGENERATE:
+      # -- Postfix-specific configuration
+      postfix:
+        # -- Mail server hostname
+        myhostname: ""
+        # -- Trusted networks for mail relay
+        mynetworks: "10.0.0.0/8, 127.0.0.0/8"
+        # -- SMTP recipient restrictions
+        smtpd_recipient_restrictions: "permit_mynetworks, reject_unauth_destination"
+
+# -- GPG: Cryptographic key management service
+# -- Provides GPG encryption/decryption capabilities for secure data handling
+gpg:
+  # -- Container image configuration for GPG and kubectl containers
+  image:
+    # -- Container image configuration for GPG
+    gpg:
+      # -- Container image configuration for GPG
+      repo:
+        # -- Container registry base URL for GPG image
+        base: docker.io
+        # -- Container image path/name for GPG
+        path: vladgh/gpg
+      # -- Image pull policy for GPG container
+      pullPolicy: IfNotPresent
+      # -- GPG container image tag
+      # tag: ""
+    # -- kubectl container image configuration (used for Kubernetes operations)
+    kubectl:
+      # -- Container image configuration for kubectl
+      repo:
+        # -- Container registry base URL for kubectl image
+        base: "docker.io"
+        # -- Container image path/name for kubectl
+        path: alpine/k8s
+      # -- Image pull policy for kubectl container
+      pullPolicy: IfNotPresent
+      # -- kubectl container image tag
+      # tag: ""
+
+  # -- Array of imagePullSecrets in the namespace for pulling images from private registries
+  imagePullSecrets: []
+
+  # -- String to partially override the fullname template with a string (will prepend the release name)
+  nameOverride: "gpg"
+
+  # -- String to fully override the fullname template with a string
+  fullnameOverride: "sas-retrieval-agent-manager-gpg"
+
+  # -- Service account configuration for GPG operations
+  serviceAccount:
+    # -- Specifies whether a service account should be created
+    create: true
+    # -- Automatically mount a ServiceAccount's API credentials
+    automount: true
+    # -- Annotations to add to the service account
+    annotations: {}
+    # -- The name of the service account to use. If not set and create is true, a name is generated using the fullname template
+    name: ""
+
+  # -- Annotations to add to the pods
+  podAnnotations: {}
+
+  # -- Labels to add to the pods
+  podLabels:
+    sas.com/deployment: "sas-retrieval-agent-manager"
+    workload.sas.com/class: "ram"
+
+  # -- The security context for the pods
+  podSecurityContext:
+    # -- Group ID for file system ownership
+    fsGroup: 10001
+    # -- Group ID to run the entrypoint of the container process
+    runAsGroup: 10001
+    # -- Indicates that the container must be run as a non-root user
+    runAsNonRoot: true
+    # -- User ID to run the entrypoint of the container process
+    runAsUser: 10001
+    # -- Seccomp profile for the pod
+    seccompProfile:
+      type: RuntimeDefault
+
+  # -- The security context for the application container
+  securityContext:
+    # -- Seccomp profile for the container
+    seccompProfile:
+      type: RuntimeDefault
+    # -- Whether a process can gain more privileges than its parent process
+    allowPrivilegeEscalation: false
+    # -- Linux capabilities to add/drop for the container
+    capabilities:
+      add: []
+      drop:
+        - ALL
+    # -- Whether the container has a read-only root filesystem
+    readOnlyRootFilesystem: true
+    # -- Whether the container must be run as a non-root user
+    runAsNonRoot: true
+    # -- User ID to run the entrypoint of the container process
+    runAsUser: 10001
+    # -- Group ID to run the entrypoint of the container process
+    runAsGroup: 10001
+
+  # -- The resources to allocate for the container
+  resources:
+    # -- Resource limits for the container
+    limits:
+      # -- CPU limit
+      cpu: 200m
+      # -- Memory limit
+      memory: 256Mi
+    # -- Resource requests for the container
+    requests:
+      # -- CPU request
+      cpu: 100m
+      # -- Memory request
+      memory: 128Mi
+
+  # -- Node labels for pod assignment
+  nodeSelector: {}
+
+  # -- Tolerations for pod assignment
+  tolerations: []
+
+  # -- Map of node/pod affinities
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 1
+        preference:
+          matchExpressions:
+          - key: sas.com/deployment
+            operator: In
+            values:
+            - sas-retrieval-agent-manager
+      - weight: 2
+        preference:
+          matchExpressions:
+          - key: workload.sas.com/class
+            operator: In
+            values:
+            - ram
+
+# -- PostgREST: REST API interface for PostgreSQL database
+# -- Automatically generates REST endpoints from database schema
+postgrest:
+  # -- Number of replicas to run. Chart is not designed to scale horizontally, use at your own risk
+  replicaCount: 1
+
+  # -- PostgREST container image configuration
+  image:
+    # -- PostgREST main container image configuration
+    postgrest:
+      repo:
+        # -- PostgREST registry
+        base: "docker.io"
+        # -- Official PostgREST image
+        path: "postgrest/postgrest"
+      # -- Image tag (defaults to chart appVersion)
+      # tag: ""
+      # -- Image pull policy
+      pullPolicy: IfNotPresent
+
+    # -- PostgreSQL binary container image configuration
+    postgres:
+      repo:
+        # -- Container registry base URL for PostgreSQL
+        base: "docker.io"
+        # -- Container image path/name for PostgreSQL
+        path: postgres
+      # -- Image pull policy for PostgreSQL container
+      pullPolicy: IfNotPresent
+      # -- PostgreSQL container image tag
+      # tag: ""
+
+    # -- kubectl container image configuration (used for Kubernetes operations)
+    kubectl:
+      repo:
+        # -- Container registry base URL for kubectl
+        base: "docker.io"
+        # -- Container image path/name for kubectl
+        path: "alpine/k8s"
+      # -- Image pull policy for kubectl container
+      pullPolicy: IfNotPresent
+      # -- kubectl container image tag
+      # tag: ""
+
+  # -- Array of imagePullSecrets in the namespace for pulling images from private registries
+  imagePullSecrets: []
+
+  # -- String to partially override the fullname template with a string (will prepend the release name)
+  nameOverride: "postgrest"
+
+  # -- String to fully override the fullname template with a string
+  fullnameOverride: "sas-retrieval-agent-manager-postgrest"
+
+  # -- Service account configuration
+  serviceAccount:
+    # -- Annotations to add to the service account
+    annotations: {}
+    # -- Automatically mount a ServiceAccount's API credentials
+    automount: true
+    # -- Specifies whether a service account should be created
+    create: true
+    # -- The name of the service account to use. If not set and create is true, a name is generated using the fullname template
+    name: ''
+
+  # -- Annotations to add to the pods
+  podAnnotations: {}
+
+  # -- Labels to add to the pods
+  podLabels:
+    sas.com/deployment: "sas-retrieval-agent-manager"
+    workload.sas.com/class: "ram"
+
+  # -- The security context for the pods
+  podSecurityContext:
+    # -- Group ID for file system ownership
+    fsGroup: 10001
+    # -- Group ID to run the entrypoint of the container process
+    runAsGroup: 10001
+    # -- Indicates that the container must be run as a non-root user
+    runAsNonRoot: true
+    # -- User ID to run the entrypoint of the container process
+    runAsUser: 10001
+    # -- Seccomp profile for the pod
+    seccompProfile:
+      type: RuntimeDefault
+
+  # -- The security context for the application container
+  securityContext:
+    # -- Seccomp profile for the container
+    seccompProfile:
+      type: RuntimeDefault
+    # -- Whether a process can gain more privileges than its parent process
+    allowPrivilegeEscalation: false
+    # -- Linux capabilities to add/drop for the container
+    capabilities:
+      add: []
+      drop:
+        - ALL
+    # -- Whether the container has a read-only root filesystem
+    readOnlyRootFilesystem: true
+    # -- Whether the container must be run as a non-root user
+    runAsNonRoot: true
+    # -- User ID to run the entrypoint of the container process
+    runAsUser: 10001
+    # -- Group ID to run the entrypoint of the container process
+    runAsGroup: 10001
+
+  # -- Kubernetes Service configuration
+  service:
+    # -- Kubernetes Service type
+    type: ClusterIP
+    # -- Kubernetes Service port
+    port: 3000
+
+  # -- Admin service configuration for PostgREST management
+  adminService:
+    # -- Kubernetes Service type for PostgREST admin interface
+    type: ClusterIP
+    # -- Kubernetes Service port for PostgREST admin interface
+    port: 3001
+
+  # -- Ingress configuration for external access to PostgREST
+  ingress:
+    # -- Use global ingress configuration instead of local hosts configuration
+    useGlobal: false
+    # -- Enable ingress for external access
+    enabled: true
+    # -- Class name of the Ingress
+    className: nginx
+    # -- Annotations for the Ingress
+    annotations:
+      # -- Enable TLS certificate management via cert-manager
+      kubernetes.io/tls-acme: "true"
+      # -- Force SSL redirect
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+      # -- Disallow HTTP traffic, force HTTPS only
+      kubernetes.io/ingress.allow-http: "false"
+      # -- Maximum allowed size of client request body
+      nginx.ingress.kubernetes.io/proxy-body-size: 500m
+      # -- Size of buffer used for reading the first part of response
+      nginx.ingress.kubernetes.io/proxy-buffer-size: "16k"
+      # -- Headers to pass from auth response to backend
+      nginx.ingress.kubernetes.io/auth-response-headers: "Authorization"
+      # -- OAuth2 authentication sign-in URL
+      nginx.ingress.kubernetes.io/auth-signin: "https://$host/SASRetrievalAgentManager/oauth2/start?rd=$escaped_request_uri"
+      # -- OAuth2 authentication validation URL
+      nginx.ingress.kubernetes.io/auth-url: "https://$host/SASRetrievalAgentManager/oauth2/auth"
+      # -- URL rewrite rule to strip the prefix path
+      nginx.ingress.kubernetes.io/rewrite-target: /$2
+
+    # -- Hosts configuration (used when useGlobal is false)
+    hosts:
+    - host: chart-example.local
+      paths:
+        - path: /SASRetrievalAgentManager/postgrest(/|$)(.*) 
+          pathType: ImplementationSpecific
+    # -- Paths configuration (used when useGlobal is true)
+    paths:
+    - path: /SASRetrievalAgentManager/postgrest(/|$)(.*) 
+      pathType: ImplementationSpecific
+
+    # -- TLS configuration for ingress
+    tls: []
+      # - secretName: ""
+      #   hosts:
+      #     - ""
+
+  # -- The resources to allocate for the PostgREST container
+  resources:
+    # -- Resource limits for the container
+    limits:
+      # -- CPU limit
+      cpu: 2
+      # -- Memory limit
+      memory: 1Gi
+    # -- Resource requests for the container
+    requests:
+      # -- CPU request
+      cpu: 100m
+      # -- Memory request
+      memory: 128Mi
+
+  # -- Liveness probe configuration for PostgREST
+  livenessProbe:
+    # -- HTTP GET probe configuration for liveness
+    httpGet:
+      # -- Path to probe for liveness
+      path: /live
+      # -- Port to probe on
+      port: admin
+      # -- HTTP scheme to use
+      scheme: HTTP
+    # -- Timeout for the probe
+    timeoutSeconds: 1
+    # -- How often to perform the probe
+    periodSeconds: 10
+    # -- Minimum consecutive successes for the probe to be considered successful
+    successThreshold: 1
+    # -- Number of consecutive failures required to mark container as not ready
+    failureThreshold: 3
+
+  # -- Readiness probe configuration for PostgREST
+  readinessProbe:
+    # -- HTTP GET probe configuration for readiness
+    httpGet:
+      # -- Path to probe for readiness
+      path: /ready
+      # -- Port to probe on
+      port: admin
+      # -- HTTP scheme to use
+      scheme: HTTP
+    # -- Timeout for the probe
+    timeoutSeconds: 1
+    # -- How often to perform the probe
+    periodSeconds: 10
+    # -- Minimum consecutive successes for the probe to be considered successful
+    successThreshold: 1
+    # -- Number of consecutive failures required to mark container as not ready
+    failureThreshold: 3
+
+  # -- Horizontal Pod Autoscaler configuration
+  autoscaling:
+    # -- Enable horizontal pod autoscaling
+    enabled: false
+    # -- Minimum number of replicas
+    minReplicas: 1
+    # -- Maximum number of replicas
+    maxReplicas: 100
+    # -- Target CPU utilization percentage for scaling
+    targetCPUUtilizationPercentage: 80
+    # -- Target memory utilization percentage for scaling (optional)
+    # targetMemoryUtilizationPercentage: 80
+
+  # -- Additional volumes on the output Deployment definition
+  volumes: []
+  # - name: foo
+  #   secret:
+  #     secretName: mysecret
+  #     optional: false
+
+  # -- Additional volumeMounts on the output Deployment definition
+  volumeMounts: []
+  # - name: foo
+  #   mountPath: "/etc/foo"
+  #   readOnly: true
+
+  # -- Node labels for pod assignment
+  nodeSelector: {}
+
+  # -- Tolerations for pod assignment
+  tolerations: []
+
+  # -- Map of node/pod affinities
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 1
+        preference:
+          matchExpressions:
+          - key: sas.com/deployment
+            operator: In
+            values:
+            - sas-retrieval-agent-manager
+      - weight: 2
+        preference:
+          matchExpressions:
+          - key: workload.sas.com/class
+            operator: In
+            values:
+            - ram
+
+  # -- Swagger UI configuration for API documentation
+  swagger:
+    # -- Enable Swagger UI deployment
+    enabled: false
+
+    # -- Number of Swagger UI replicas
+    replicaCount: 1
+
+    # -- Swagger UI container image configuration
+    image:
+      # -- Container image configuration for Swagger
+      repo:
+        # -- Container registry base URL for Swagger UI
+        base: swaggerapi
+        # -- Container image path/name for Swagger UI
+        path: swagger-ui
+      # -- Image pull policy for Swagger UI container
+      pullPolicy: IfNotPresent
+      # -- Swagger UI container image tag
+      tag: "v5.17.14"
+
+    # -- Array of imagePullSecrets in the namespace for pulling images from private registries
+    imagePullSecrets: []
+
+    # -- String to partially override the Swagger UI fullname template
+    nameOverride: "swagger"
+
+    # -- String to fully override the Swagger UI fullname template
+    fullnameOverride: ""
+
+    # -- Service account configuration
+    serviceAccount:
+      # -- Annotations to add to the service account
+      annotations: {}
+      # -- Automatically mount a ServiceAccount's API credentials
+      automount: true
+      # -- Specifies whether a service account should be created
+      create: true
+      # -- The name of the service account to use. If not set and create is true, a name is generated using the fullname template
+      name: ''
+
+    # -- Annotations to add to the Swagger UI pods
     podAnnotations: {}
-    # -- Pod labels
+
+    # -- Labels to add to the pods
     podLabels:
       sas.com/deployment: "sas-retrieval-agent-manager"
       workload.sas.com/class: "ram"
+
+    # -- The security context for the pods
+    podSecurityContext:
+      # -- Group ID for file system ownership
+      fsGroup: 10001
+      # -- Group ID to run the entrypoint of the container process
+      runAsGroup: 10001
+      # -- Indicates that the container must be run as a non-root user
+      runAsNonRoot: true
+      # -- User ID to run the entrypoint of the container process
+      runAsUser: 10001
+      # -- Seccomp profile for the pod
+      seccompProfile:
+        type: RuntimeDefault
+
+    # -- The security context for the application container
+    securityContext:
+      # -- Seccomp profile for the container
+      seccompProfile:
+        type: RuntimeDefault
+      # -- Whether a process can gain more privileges than its parent process
+      allowPrivilegeEscalation: false
+      # -- Linux capabilities to add/drop for the container
+      capabilities:
+        add: []
+        drop:
+          - ALL
+      # -- Whether the container has a read-only root filesystem
+      readOnlyRootFilesystem: true
+      # -- Whether the container must be run as a non-root user
+      runAsNonRoot: true
+      # -- User ID to run the entrypoint of the container process
+      runAsUser: 10001
+      # -- Group ID to run the entrypoint of the container process
+      runAsGroup: 10001
+
+    # -- Kubernetes Service configuration
+    service:
+      # -- Kubernetes Service type
+      type: ClusterIP
+      # -- Kubernetes Service port
+      port: 80
+
+    # -- Swagger UI ingress configuration
+    ingress:
+      # -- Use global ingress configuration instead of local hosts configuration
+      useGlobal: false
+      # -- Enable ingress for external access
+      enabled: true
+      # -- Class name of the Ingress
+      className: nginx
+      # -- Annotations for the Swagger UI Ingress
+      annotations:
+        # -- Enable TLS certificate management via cert-manager
+        kubernetes.io/tls-acme: "true"
+        # -- Force SSL redirect
+        nginx.ingress.kubernetes.io/ssl-redirect: "true"
+        # -- Disallow HTTP traffic, force HTTPS only
+        kubernetes.io/ingress.allow-http: "false"
+        # -- Maximum allowed size of client request body
+        nginx.ingress.kubernetes.io/proxy-body-size: 500m
+        # -- Size of buffer used for reading the first part of response
+        nginx.ingress.kubernetes.io/proxy-buffer-size: "16k"
+        # -- Headers to pass from auth response to backend
+        nginx.ingress.kubernetes.io/auth-response-headers: "Authorization"
+        # -- OAuth2 authentication sign-in URL
+        nginx.ingress.kubernetes.io/auth-signin: "https://$host/SASRetrievalAgentManager/oauth2/start?rd=$escaped_request_uri"
+        # -- OAuth2 authentication validation URL
+        nginx.ingress.kubernetes.io/auth-url: "https://$host/SASRetrievalAgentManager/oauth2/auth"
+        # -- URL rewrite rule to strip the prefix path
+        nginx.ingress.kubernetes.io/rewrite-target: /$2
+
+      # -- Hosts configuration for Swagger UI (ignored if useGlobal is true)
+      hosts: []
+      # - host: chart-example.local
+      #   paths:
+      #     - path: /SASRetrievalAgentManager/swagger(/|$)(.*)
+      #       pathType: ImplementationSpecific
+
+      # -- Swagger UI paths configuration
+      paths:
+      - path: /SASRetrievalAgentManager/swagger(/|$)(.*)
+        pathType: ImplementationSpecific
+
+      # -- TLS configuration for Swagger UI ingress
+      tls: []
+        # - secretName: ""
+        #   hosts:
+        #     - ""
+
+    # -- The resources to allocate for the Swagger UI container
+    resources:
+      # -- Resource limits for the Swagger UI container
+      limits:
+        # -- CPU limit
+        cpu: 100m
+        # -- Memory limit
+        memory: 128Mi
+      # -- Resource requests for the Swagger UI container
+      requests:
+        # -- CPU request
+        cpu: 200m
+        # -- Memory request
+        memory: 256Mi
+
+    # -- Liveness probe configuration for Swagger UI
+    livenessProbe:
+      # -- HTTP GET probe configuration for liveness
+      httpGet:
+        # -- Path to probe for liveness
+        path: /
+        port: http
+
+    # -- Readiness probe configuration for Swagger UI
+    readinessProbe:
+      # -- HTTP GET probe configuration for readiness
+      httpGet:
+        # -- Path to probe for readiness
+        path: /
+        port: http
+
+    # -- Horizontal Pod Autoscaler configuration for Swagger UI
+    autoscaling:
+      # -- Enable horizontal pod autoscaling for Swagger UI
+      enabled: false
+      # -- Minimum number of replicas for Swagger UI
+      minReplicas: 1
+      # -- Maximum number of replicas for Swagger UI
+      maxReplicas: 100
+      # -- Target CPU utilization percentage for Swagger UI scaling
+      targetCPUUtilizationPercentage: 80
+      # -- Target memory utilization percentage for Swagger UI scaling (optional)
+      # targetMemoryUtilizationPercentage: 80
+
+    # -- Additional volumes on the output Deployment definition
+    volumes: []
+    # - name: foo
+    #   secret:
+    #     secretName: mysecret
+    #     optional: false
+
+    # -- Additional volumeMounts on the output Deployment definition
+    volumeMounts: []
+    # - name: foo
+    #   mountPath: "/etc/foo"
+    #   readOnly: true
+
+    # -- Node labels for pod assignment
+    nodeSelector: {}
+
+    # -- Tolerations for pod assignment
+    tolerations: []
+
+    # -- Map of node/pod affinities for Swagger UI
+    affinity: {}
 
 # -- SAS Retrieval Agent Manager API: Main backend service
 # -- Provides REST API endpoints and AI/ML processing capabilities
@@ -1331,77 +2710,87 @@ sas-retrieval-agent-manager-api:
   #   # -- Image pull policy
   #   pullPolicy: IfNotPresent
 
-  # -- Image pull secrets for private registry access
+  # -- Array of imagePullSecrets in the namespace for pulling images from private registries
   imagePullSecrets:
-    # -- Secret for accessing SAS container registry
     - name: cr-sas-secret
 
-  # -- Kubernetes resource naming configuration
-  # -- Full resource name
-  fullnameOverride: "sas-retrieval-agent-manager-api"
-  # -- Short name for resources
+  # -- String to partially override the fullname template with a string (will prepend the release name)
   nameOverride: 'api'
 
-  # -- Number of API service replica pods
-  # -- Single instance (scale based on load requirements)
+  # -- String to fully override the fullname template with a string
+  fullnameOverride: "sas-retrieval-agent-manager-api"
+
+  # -- Number of replicas to run. Chart is not designed to scale horizontally, use at your own risk
   replicaCount: 1
 
-  # -- Service account configuration
+  # -- Service account configuration for API
   serviceAccount:
-    # -- Create a service account for the API
-    create: true
-    # -- Service account annotations
+    # -- Annotations to add to the service account
     annotations: {}
-    # -- Service account name (auto-generated if empty)
+    # -- Automatically mount a ServiceAccount's API credentials
+    automount: true
+    # -- Specifies whether a service account should be created
+    create: true
+    # -- The name of the service account to use. If not set and create is true, a name is generated using the fullname template
     name: ''
 
-  # -- Pod metadata configuration
-  # -- Pod-level annotations
+  # -- Annotations to add to the pods
   podAnnotations: {}
-  # -- Pod-level labels
+
+  # -- Labels to add to the pods
   podLabels:
     sas.com/deployment: "sas-retrieval-agent-manager"
     workload.sas.com/class: "ram"
 
-  # -- Pod security context (applies to entire pod)
+  # -- The security context for the pods
   podSecurityContext:
-    # -- File system group ID for volume permissions
+    # -- Group ID to run the entrypoint of the container process
+    runAsGroup: 1001
+    # -- Indicates that the container must be run as a non-root user
+    runAsNonRoot: true
+    # -- User ID to run the entrypoint of the container process
+    runAsUser: 1001
+    # -- Seccomp profile for the pod
+    seccompProfile:
+      type: RuntimeDefault
+    # -- Group ID for file system ownership
     fsGroup: 1001
 
-  # -- Container security context (applies to API container)
+  # -- The security context for the application container
   securityContext:
-    # -- Prevent privilege escalation
-    allowPrivilegeEscalation: false
     # -- Run as non-privileged container
     privileged: false
-    # -- Ensure container runs as non-root
-    runAsNonRoot: true
-    # -- Run as specific non-root user
-    runAsUser: 1001
-    # -- Run as specific non-root group
-    runAsGroup: 1001
-    # -- Allow writes for application data
-    readOnlyRootFilesystem: false
+    # -- Seccomp profile for the container
     seccompProfile:
-      # -- Use default seccomp profile
       type: RuntimeDefault
+    # -- Whether a process can gain more privileges than its parent process
+    allowPrivilegeEscalation: false
+    # -- Linux capabilities to add/drop for the container
     capabilities:
-      # -- Drop all Linux capabilities
+      add: []
       drop:
         - ALL
+    # -- Whether the container has a read-only root filesystem
+    readOnlyRootFilesystem: true
+    # -- Whether the container must be run as a non-root user
+    runAsNonRoot: true
+    # -- User ID to run the entrypoint of the container process
+    runAsUser: 1001
+    # -- Group ID to run the entrypoint of the container process
+    runAsGroup: 1001
 
-  # -- Kubernetes service configuration
+  # -- Kubernetes Service configuration
   service:
-    # -- API service port
-    port: 80
-    # -- Service type (internal cluster access)
+    # -- Kubernetes Service type
     type: ClusterIP
+    # -- Kubernetes Service port
+    port: 80
 
-  # -- Ingress configuration for external API access
+  # -- Ingress configuration for external access to API
   ingress:
     # -- Use global ingress configuration instead of local hosts configuration
-    useGlobal: true
-    # -- Enable ingress for external access
+    useGlobal: false
+    # -- Enable ingress for external access to API
     enabled: true
     # -- Class name of the Ingress
     className: nginx
@@ -1423,28 +2812,109 @@ sas-retrieval-agent-manager-api:
       nginx.ingress.kubernetes.io/proxy-buffer-size: 16k
       # -- Force SSL redirect
       nginx.ingress.kubernetes.io/ssl-redirect: 'true'
-    # -- Hosts configuration (used when useGlobal is false)
+
+    # -- Hosts configuration (ignored if useGlobal is true)
     hosts: []
     # - host: chart-example.local
     #   paths:
     #   - path: /SASRetrievalAgentManager/api(/|$)(.*)
     #     pathType: ImplementationSpecific
-    # -- Paths configuration (used when useGlobal is true)
+
+    # -- Hosts configuration (ignored if useGlobal is true)
     paths:
     - path: /SASRetrievalAgentManager/api(/|$)(.*)
       pathType: ImplementationSpecific
+
     # -- TLS configuration for ingress
     tls: []
       # - secretName: ""
       #   hosts:
       #     - ""
 
-  # -- Pod scheduling configuration
-  # -- Schedule pods on nodes with specific labels
+  # -- The resources to allocate for the API container
+  resources:
+    # -- Resource limits for the container
+    limits:
+      # -- CPU limit
+      cpu: 6
+      # -- Memory limit
+      memory: 35Gi
+    # -- Resource requests for the container
+    requests:
+      # -- CPU request
+      cpu: 500m
+      # -- Memory request
+      memory: 20Gi
+
+  # -- Liveness probe configuration for API
+  livenessProbe:
+    # -- Number of consecutive failures required to mark container as not ready
+    failureThreshold: 15
+    # -- HTTP GET probe configuration for liveness
+    httpGet:
+      # -- Path to probe for liveness
+      path: /SASRetrievalAgentManager/api/v1/health/liveness
+      port: http
+      scheme: HTTP
+    # -- How often to perform the probe
+    periodSeconds: 10
+    # -- Initial delay before starting probes
+    initialDelaySeconds: 120
+    # -- Minimum consecutive successes for the probe to be considered successful
+    successThreshold: 1
+    # -- Timeout for the probe
+    timeoutSeconds: 1
+
+  # -- Readiness probe configuration for API
+  readinessProbe:
+    # -- Number of consecutive failures required to mark container as not ready
+    failureThreshold: 5
+    # -- HTTP GET probe configuration for readiness
+    httpGet:
+      # -- Path to probe for readiness
+      path: /SASRetrievalAgentManager/api/v1/health/readiness
+      port: http
+      scheme: HTTP
+    # -- How often to perform the probe
+    periodSeconds: 10
+    # -- Initial delay before starting probes
+    initialDelaySeconds: 120
+    # -- Minimum consecutive successes for the probe to be considered successful
+    successThreshold: 1
+    # -- Timeout for the probe
+    timeoutSeconds: 1
+
+  # -- Horizontal Pod Autoscaler configuration
+  autoscaling:
+    # -- Enable horizontal pod autoscaling
+    enabled: false
+    # -- Maximum number of replicas
+    maxReplicas: 100
+    # -- Minimum number of replicas
+    minReplicas: 1
+    # -- Target CPU utilization percentage for scaling
+    targetCPUUtilizationPercentage: 80
+
+  # -- Additional volumes on the output Deployment definition
+  volumes: []
+  # - name: foo
+  #   secret:
+  #     secretName: mysecret
+  #     optional: false
+
+  # -- Additional volumeMounts on the output Deployment definition
+  volumeMounts: []
+  # - name: foo
+  #   mountPath: "/etc/foo"
+  #   readOnly: true
+
+  # -- Node labels for pod assignment
   nodeSelector: {}
-  # -- Allow pods on nodes with matching taints
+
+  # -- Tolerations for pod assignment
   tolerations: []
-  # -- Advanced pod scheduling rules
+
+  # -- Map of node/pod affinities
   affinity:
     nodeAffinity:
       preferredDuringSchedulingIgnoredDuringExecution:
@@ -1463,74 +2933,6 @@ sas-retrieval-agent-manager-api:
             values:
             - ram
 
-  # -- Resource allocation and horizontal pod autoscaling
-  # resources:
-  #   limits:
-  #     # -- Maximum CPU allocation (2 cores)
-  #     cpu: ""
-  #     # -- Maximum memory allocation
-  #     memory: ""
-  #   requests:
-  #     # -- Requested CPU allocation
-  #     cpu: ""
-  #     # -- Requested memory allocation
-  #     memory: ""
-
-  autoscaling:
-    # -- Disable horizontal pod autoscaling by default
-    enabled: false
-    # -- Minimum number of replicas
-    minReplicas: 1
-    # -- Maximum number of replicas
-    maxReplicas: 100
-    # -- CPU threshold for scaling
-    targetCPUUtilizationPercentage: 80
-
-  # -- Health check probes for container lifecycle management
-  livenessProbe:
-    httpGet:
-      # -- API liveness endpoint
-      path: /SASRetrievalAgentManager/api/v1/health/liveness
-      # -- Use the http port
-      port: http
-      # -- HTTP scheme
-      scheme: HTTP
-    # -- How often to perform the probe
-    periodSeconds: 10
-    # -- Initial delay before starting probes
-    initialDelaySeconds: 120
-    # -- Minimum consecutive successes for the probe to be considered successful
-    successThreshold: 1
-    # -- Timeout for the probe
-    timeoutSeconds: 1
-    # -- High threshold for slow startup
-    failureThreshold: 15
-
-  readinessProbe:
-    httpGet:
-      # -- API readiness endpoint
-      path: /SASRetrievalAgentManager/api/v1/health/readiness
-      # -- Use the http port
-      port: http
-      # -- HTTP scheme
-      scheme: HTTP
-    # -- Readiness failure threshold
-    failureThreshold: 5
-    # -- Probe timeout
-    timeoutSeconds: 1
-    # -- Probe frequency
-    periodSeconds: 10
-    # -- Success threshold
-    successThreshold: 1
-    # -- Initial delay before starting probes
-    initialDelaySeconds: 120
-
-  # -- Additional volumes and volume mounts
-  # -- Additional volumes for the deployment
-  volumes: []
-  # -- Additional volume mounts for containers
-  volumeMounts: []
-
 # -- SAS Retrieval Agent Manager Database Initialization
 # -- Initializes databases and schemas for the entire platform
 sas-retrieval-agent-manager-db-init:
@@ -1543,8 +2945,6 @@ sas-retrieval-agent-manager-db-init:
   #       base: ""
   #       # -- Container image path/name for PostgreSQL
   #       path: ""
-  #       # -- Use global registry configuration instead of local
-  #       useGlobal: false
   #     # -- Image pull policy for PostgreSQL container
   #     pullPolicy: IfNotPresent
   #     # -- PostgreSQL container image tag
@@ -1557,335 +2957,323 @@ sas-retrieval-agent-manager-db-init:
   #       base: ""
   #       # -- Container image path/name for kubectl
   #       path: ""
-  #       # -- Use global registry configuration instead of local
-  #       useGlobal: false
   #     # -- Image pull policy for kubectl container
   #     pullPolicy: IfNotPresent
   #     # -- kubectl container image tag
   #     tag: ""
 
-  # -- Image pull secrets for private registry access
+  # -- Array of imagePullSecrets in the namespace for pulling images from private registries
   imagePullSecrets: []
 
-  # -- Kubernetes resource naming configuration
-  # -- Override default resource name prefix
+  # -- String to partially override the fullname template with a string (will prepend the release name)
   nameOverride: "initialization"
-  # -- Full resource name
+
+  # -- String to fully override the fullname template with a string
   fullnameOverride: "sas-retrieval-agent-manager-db-init"
-
-  # -- Service account configuration
+  # -- Service account configuration for database initialization
   serviceAccount:
-    # -- Create a service account for database operations
+    # -- Specifies whether a service account should be created
     create: true
-    # -- Service account annotations
+    # -- Automatically mount a ServiceAccount's API credentials
+    automount: true
+    # -- Annotations to add to the service account
     annotations: {}
-    # -- Service account name (auto-generated if empty)
+    # -- The name of the service account to use. If not set and create is true, a name is generated using the fullname template
     name: ""
 
-  # -- Pod metadata configuration
-  # -- Pod-level annotations
+  # -- Annotations to add to the pods
   podAnnotations: {}
-  # -- Pod-level labels
+
+  # -- Labels to add to the pods
   podLabels:
     sas.com/deployment: "sas-retrieval-agent-manager"
     workload.sas.com/class: "ram"
 
-  # -- Pod security context (applies to entire pod)
+  # -- The security context for the pods
   podSecurityContext:
-    # -- File system group for volume permissions
+    # -- Group ID to run the entrypoint of the container process
+    runAsGroup: 10001
+    # -- Indicates that the container must be run as a non-root user
+    runAsNonRoot: true
+    # -- User ID to run the entrypoint of the container process
+    runAsUser: 10001
+    # -- Seccomp profile for the pod
+    seccompProfile:
+      type: RuntimeDefault
+    # -- Group ID for file system ownership
     fsGroup: 10001
 
-  # -- Container security context (applies to init containers)
+  # -- The security context for the application container
   securityContext:
-    # -- Prevent privilege escalation
-    allowPrivilegeEscalation: false
-    # -- Run as non-privileged container
-    privileged: false
-    # -- Ensure container runs as non-root
-    runAsNonRoot: true
-    # -- Run as specific non-root user
-    runAsUser: 10001
-    # -- Run as specific non-root group
-    runAsGroup: 10001
-    # -- Allow writes for database operations
-    readOnlyRootFilesystem: false
+    # -- Seccomp profile for the container
     seccompProfile:
-      # -- Use default seccomp profile
       type: RuntimeDefault
+    # -- Whether a process can gain more privileges than its parent process
+    allowPrivilegeEscalation: false
+    # -- Linux capabilities to add/drop for the container
     capabilities:
-      # -- Drop all Linux capabilities
+      add: []
       drop:
         - ALL
-
-  # -- Resource allocation for database initialization
-  # resources:
-  #   limits:
-  #     # -- Maximum CPU allocation
-  #     cpu: ""
-  #     # -- Maximum memory allocation
-  #     memory: ""
-  #   requests:
-  #     # -- Requested CPU allocation
-  #     cpu: ""
-  #     # -- Requested memory allocation
-  #     memory: ""
-
-# -- SAS Retrieval Agent Manager Database Migration
-# -- Manages database schema migrations using Goose migration tool
-sas-retrieval-agent-manager-db-migration:
-  # -- Container image configuration
-  # image:
-  #   # -- PostgreSQL binary container image configuration
-  #   postgres:
-  #     repo:
-  #       # -- Container registry base URL for PostgreSQL
-  #       base: ""
-  #       # -- Container image path/name for PostgreSQL
-  #       path: ""
-  #       # -- Use global registry configuration instead of local
-  #       useGlobal: false
-  #     # -- Image pull policy for PostgreSQL container
-  #     pullPolicy: IfNotPresent
-  #     # -- PostgreSQL container image tag
-  #     tag: ""
-
-  #   # -- Goose migration tool image
-  #   goose:
-  #     repo:
-  #       # -- SAS container registry
-  #       base: ""
-  #       # -- SAS Goose migration image
-  #       path: ""
-  #       # -- Use global SAS registry
-  #       useGlobal: false
-  #     # -- Image tag (defaults to chart appVersion)
-  #     tag: ""
-  #     # -- Image pull policy
-  #     pullPolicy: IfNotPresent
-
-  # -- Image pull secrets for private registry access
-  imagePullSecrets: []
-
-  # -- Kubernetes resource naming configuration
-  # -- Override default resource name prefix
-  nameOverride: "db-migration"
-  # -- Full resource name
-  fullnameOverride: "sas-retrieval-agent-manager-db-migration"
-
-  # -- Service account configuration
-  serviceAccount:
-    # -- Create a service account for migration operations
-    create: true
-    # -- Service account annotations
-    annotations: {}
-    # -- Service account name (auto-generated if empty)
-    name: ""
-
-  # -- Pod metadata configuration
-  # -- Pod-level annotations
-  podAnnotations: {}
-  # -- Pod-level labels
-  podLabels:
-    sas.com/deployment: "sas-retrieval-agent-manager"
-    workload.sas.com/class: "ram"
-
-  # -- Pod security context (applies to entire pod)
-  podSecurityContext:
-    # -- File system group for volume permissions
-    fsGroup: 10001
-
-  # -- Container security context (applies to migration containers)
-  securityContext:
-    # -- Prevent privilege escalation
-    allowPrivilegeEscalation: false
-    # -- Run as non-privileged container
-    privileged: false
-    # -- Ensure container runs as non-root
+    # -- Whether the container has a read-only root filesystem
+    readOnlyRootFilesystem: true
+    # -- Whether the container must be run as a non-root user
     runAsNonRoot: true
-    # -- Run as specific non-root user
+    # -- User ID to run the entrypoint of the container process
     runAsUser: 10001
-    # -- Run as specific non-root group
-    runAsGroup: 10001
-    # -- Allow writes for migration operations
-    readOnlyRootFilesystem: false
-    seccompProfile:
-      # -- Use default seccomp profile
-      type: RuntimeDefault
-    capabilities:
-      # -- Drop all Linux capabilities
-      drop:
-        - ALL
 
-  # -- Resource allocation for database migration
-  # resources:
-  #   limits:
-  #     # -- Maximum CPU allocation
-  #     cpu: ""
-  #     # -- Maximum memory allocation
-  #     memory: ""
-  #   requests:
-  #     # -- Requested CPU allocation
-  #     cpu: ""
-  #     # -- Requested memory allocation
-  #     memory: ""
+  # -- The resources to allocate for the database initialization container
+  resources:
+    # -- Resource limits for the container
+    limits:
+      # -- CPU limit
+      cpu: 200m
+      # -- Memory limit
+      memory: 256Mi
+    # -- Resource requests for the container
+    requests:
+      # -- CPU request
+      cpu: 100m
+      # -- Memory request
+      memory: 128Mi
+
+  # -- Node labels for pod assignment
+  nodeSelector: {}
+
+  # -- Tolerations for pod assignment
+  tolerations: []
+
+  # -- Map of node/pod affinities
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 1
+        preference:
+          matchExpressions:
+          - key: sas.com/deployment
+            operator: In
+            values:
+            - sas-retrieval-agent-manager
+      - weight: 2
+        preference:
+          matchExpressions:
+          - key: workload.sas.com/class
+            operator: In
+            values:
+            - ram
 
 # -- SAS Retrieval Agent Manager Web Application
 # -- Frontend user interface for the platform
 sas-retrieval-agent-manager-app:
-  # -- Container image configuration
-  # image:
-  #   repo:
-  #     # -- SAS container registry
-  #     base: ""
-  #     # -- SAS web app image
-  #     path: ""
-  #     # -- Use global SAS registry
-  #     useGlobal: false
-  #   # -- Specific image version
-  #   tag: ""
-  #   # -- Image pull policy
-  #   pullPolicy: IfNotPresent
+  image:
+    # -- Container image configuration for API
+    repo:
+      # -- Container registry base URL
+      base: cr.sas.com
+      # -- Container image path/name
+      path: viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-app
+    # -- Container image tag
+    # tag: ""
+    # -- Image pull policy for API container
+    pullPolicy: IfNotPresent
 
-  # -- Image pull secrets for private registry access
+  # -- Array of imagePullSecrets in the namespace for pulling images from private registries
   imagePullSecrets:
     - name: cr-sas-secret
 
-  # -- Kubernetes resource naming configuration
-  # -- Full resource name
-  fullnameOverride: "sas-retrieval-agent-manager-app"
-  # -- Short name for resources
+  # -- String to partially override the fullname template with a string (will prepend the release name)
   nameOverride: 'app'
 
-  # -- Number of web application replica pods
-  # -- Single instance (can be scaled for higher availability)
+  # -- String to fully override the fullname template with a string
+  fullnameOverride: "sas-retrieval-agent-manager-app"
+
+  # -- Number of replicas to run. Chart is not designed to scale horizontally, use at your own risk
   replicaCount: 1
 
   # -- Service account configuration
   serviceAccount:
-    # -- Create a service account for the web app
-    create: true
-    # -- Service account annotations
+    # -- Annotations to add to the service account
     annotations: {}
-    # -- Service account name (auto-generated if empty)
+    # -- Automatically mount a ServiceAccount's API credentials
+    automount: true
+    # -- Specifies whether a service account should be created
+    create: true
+    # -- The name of the service account to use. If not set and create is true, a name is generated using the fullname template
     name: ''
 
-  # -- Pod metadata configuration
-  # -- Pod-level annotations
+  # -- Annotations to add to the pods
   podAnnotations: {}
-  # -- Pod-level labels
+
+  # -- Labels to add to the pods
   podLabels:
     sas.com/deployment: "sas-retrieval-agent-manager"
     workload.sas.com/class: "ram"
 
-  # -- Pod security context (applies to entire pod)
+  # -- The security context for the pods
   podSecurityContext:
-    # -- File system group for volume permissions
+    # -- Group ID for file system ownership
     fsGroup: 10001
-
-  # -- Container security context (applies to web app container)
-  securityContext:
-    # -- Prevent privilege escalation
-    allowPrivilegeEscalation: false
-    # -- Run as non-privileged container
-    privileged: false
-    # -- Ensure container runs as non-root
-    runAsNonRoot: true
-    # -- Run as specific non-root user
-    runAsUser: 10001
-    # -- Run as specific non-root group
+    # -- Group ID to run the entrypoint of the container process
     runAsGroup: 10001
-    # -- Allow writes for application data
-    readOnlyRootFilesystem: false
+    # -- Indicates that the container must be run as a non-root user
+    runAsNonRoot: true
+    # -- User ID to run the entrypoint of the container process
+    runAsUser: 10001
+    # -- Seccomp profile for the pod
     seccompProfile:
-      # -- Use default seccomp profile
       type: RuntimeDefault
+
+  # -- The security context for the application container
+  securityContext:
+    # -- Seccomp profile for the container
+    seccompProfile:
+      type: RuntimeDefault
+    # -- Whether a process can gain more privileges than its parent process
+    allowPrivilegeEscalation: false
+    # -- Linux capabilities to add/drop for the container
     capabilities:
-      # -- Drop all Linux capabilities
+      add: []
       drop:
         - ALL
+    # -- Whether the container has a read-only root filesystem
+    readOnlyRootFilesystem: true
+    # -- Whether the container must be run as a non-root user
+    runAsNonRoot: true
+    # -- User ID to run the entrypoint of the container process
+    runAsUser: 10001
+    # -- Group ID to run the entrypoint of the container process
+    runAsGroup: 10001
 
-  # -- Kubernetes service configuration
+  # -- Kubernetes Service configuration
   service:
-    # -- Web application service port
-    port: 8080
-    # -- Service type (internal cluster access)
+    # -- Kubernetes Service type
     type: ClusterIP
+    # -- Kubernetes Service port
+    port: 8080
 
-  # -- Ingress configuration for external web access
+  # -- Ingress configuration for external access to the web application
   ingress:
-    # -- Use global ingress configuration from parent chart
-    useGlobal: true
+    # -- Use global ingress configuration instead of local hosts configuration
+    useGlobal: false
+    # -- Enable ingress for external access
+    enabled: true
+    # -- Class name of the Ingress
+    className: nginx
+    # -- Annotations for the Ingress
+    annotations:
+      # -- Disallow HTTP traffic, force HTTPS only
+      kubernetes.io/ingress.allow-http: 'false'
+      # -- Enable TLS certificate management via cert-manager
+      kubernetes.io/tls-acme: 'true'
+      # -- Headers to pass from auth response to backend
+      nginx.ingress.kubernetes.io/auth-response-headers: Authorization
+      # -- OAuth2 authentication sign-in URL
+      nginx.ingress.kubernetes.io/auth-signin: https://$host/SASRetrievalAgentManager/oauth2/start?rd=$escaped_request_uri
+      # -- OAuth2 authentication validation URL
+      nginx.ingress.kubernetes.io/auth-url: https://$host/SASRetrievalAgentManager/oauth2/auth
+      # -- Maximum allowed size of client request body
+      nginx.ingress.kubernetes.io/proxy-body-size: 500m
+      # -- Size of buffer used for reading the first part of response
+      nginx.ingress.kubernetes.io/proxy-buffer-size: 16k
+      # -- Force SSL redirect
+      nginx.ingress.kubernetes.io/ssl-redirect: 'true'
 
-  # -- Health check probes for container lifecycle management
+    # -- Hosts configuration (used when useGlobal is false)
+    hosts: []
+    # - host: chart-example.local
+    #   paths:
+    #   - path: /SASRetrievalAgentManager(/|$)(.*)
+    #     pathType: ImplementationSpecific
+
+    # -- Paths configuration (used when useGlobal is true)
+    paths:
+    - path: /SASRetrievalAgentManager(/|$)(.*)
+      pathType: ImplementationSpecific
+
+    # -- TLS configuration for ingress
+    tls: []
+      # - secretName: ""
+      #   hosts:
+      #     - ""
+
+  # -- The resources to allocate for the container
+  resources:
+    # -- Resource limits for the container
+    limits:
+      # -- CPU limit
+      cpu: 1
+      # -- Memory limit
+      memory: 512Mi
+    # -- Resource requests for the container
+    requests:
+      # -- CPU request
+      cpu: 50m
+      # -- Memory request
+      memory: 256Mi
+
+  # -- Liveness probe configuration
   livenessProbe:
-    httpGet:
-      # -- Web app liveness endpoint
-      path: /health
-      # -- Use the http port
-      port: http
-      # -- HTTP scheme
-      scheme: HTTP
-    # -- Failure threshold before restart
+    # -- Number of consecutive failures required to mark container as not ready
     failureThreshold: 9
-    # -- Probe timeout
-    timeoutSeconds: 1
-    # -- Probe frequency
-    periodSeconds: 10
-    # -- Success threshold
+    # -- HTTP GET probe configuration for liveness
+    httpGet:
+      # -- Path to probe for liveness
+      path: /
+      port: http
+    # -- How often to perform the probe
+    periodSeconds: 15
+    # -- Minimum consecutive successes for the probe to be considered successful
     successThreshold: 1
+    # -- Timeout for the probe
+    timeoutSeconds: 1
 
+  # -- Readiness probe configuration
   readinessProbe:
-    httpGet:
-      # -- Web app readiness endpoint
-      path: /health
-      # -- Use the http port
-      port: http
-      # -- HTTP scheme
-      scheme: HTTP
-    # -- Failure threshold before marking not ready
+    # -- Number of consecutive failures required to mark container as not ready
     failureThreshold: 9
-    # -- Probe timeout
-    timeoutSeconds: 1
-    # -- Probe frequency
-    periodSeconds: 10
-    # -- Success threshold
+    # -- HTTP GET probe configuration for readiness
+    httpGet:
+      # -- Path to probe for readiness
+      path: /
+      port: http
+    # -- How often to perform the probe
+    periodSeconds: 15
+    # -- Minimum consecutive successes for the probe to be considered successful
     successThreshold: 1
+    # -- Timeout for the probe
+    timeoutSeconds: 1
 
-  # -- Additional volumes and volume mounts
-  # -- Additional volumes for the deployment
-  volumes: []
-  # -- Additional volume mounts for containers
-  volumeMounts: []
-
-  # -- Resource allocation and horizontal pod autoscaling
-  # resources:
-  #   limits:
-  #     # -- Maximum CPU allocation
-  #     cpu: ""
-  #     # -- Maximum memory allocation
-  #     memory: ""
-  #   requests:
-  #     # -- Requested CPU allocation
-  #     cpu: ""
-  #     # -- Requested memory allocation
-  #     memory: ""
-
+  # -- Horizontal Pod Autoscaler configuration
   autoscaling:
-    # -- Disable horizontal pod autoscaling by default
+    # -- Enable horizontal pod autoscaling
     enabled: false
-    # -- Minimum number of replicas
-    minReplicas: 1
     # -- Maximum number of replicas
     maxReplicas: 100
-    # -- CPU threshold for scaling
+    # -- Minimum number of replicas
+    minReplicas: 1
+    # -- Target CPU utilization percentage for scaling
     targetCPUUtilizationPercentage: 80
 
-  # -- Pod scheduling configuration
-  # -- Schedule pods on nodes with specific labels
+  # -- Additional volumes on the output Deployment definition
+  volumes: []
+  # - name: foo
+  #   secret:
+  #     secretName: mysecret
+  #     optional: false
+
+  # -- Additional volumeMounts on the output Deployment definition
+  volumeMounts: []
+  # - name: foo
+  #   mountPath: "/etc/foo"
+  #   readOnly: true
+
+  # -- Node labels for pod assignment
   nodeSelector: {}
-  # -- Allow pods on nodes with matching taints
+
+  # -- Tolerations for pod assignment
   tolerations: []
-  # -- Advanced pod scheduling rules
+
+  # -- Map of node/pod affinities
   affinity:
     nodeAffinity:
       preferredDuringSchedulingIgnoredDuringExecution:
