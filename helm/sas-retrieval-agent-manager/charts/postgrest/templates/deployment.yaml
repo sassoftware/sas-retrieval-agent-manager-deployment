@@ -1,30 +1,21 @@
 {{- $pgrest_repo_base := "" -}}
-{{- $pgrest_repo_path := "" -}}
 {{- $postgres_repo_base := "" -}}
-{{- $postgres_repo_path := "" -}}
 {{- $kubectl_repo_base := "" -}}
-{{- $kubectl_repo_path := "" -}}
- {{/* postgrest image */}}
-{{- if .Values.image.postgrest.repo.useGlobal | default false -}}
+{{- if and (hasKey .Values "global") (hasKey .Values.global "image") (hasKey .Values.global.image "repo") (hasKey .Values.global.image.repo "base") -}}
+  {{/* Postgrest image if mirrored repository is used */}}
   {{- $pgrest_repo_base = .Values.global.image.repo.base | default .Values.image.postgrest.repo.base -}}
-{{- else -}}
-  {{- $pgrest_repo_base = .Values.image.postgrest.repo.base -}}
-{{- end -}}
-{{- $pgrest_repo_path = .Values.image.postgrest.repo.path -}}
- {{/* postgres image */}}
-{{- if .Values.image.postgres.repo.useGlobal | default false -}}
+  {{/* Postgres image if mirrored repository is used */}}
   {{- $postgres_repo_base = .Values.global.image.repo.base | default .Values.image.postgres.repo.base -}}
-{{- else -}}
-  {{- $postgres_repo_base = .Values.image.postgres.repo.base -}}
-{{- end -}}
-{{- $postgres_repo_path = .Values.image.postgres.repo.path -}}
- {{/* kubectl image */}}
-{{- if .Values.image.kubectl.repo.useGlobal | default false -}}
+  {{/* Kubectl image if mirrored repository is used */}}
   {{- $kubectl_repo_base = .Values.global.image.repo.base | default .Values.image.kubectl.repo.base -}}
 {{- else -}}
+  {{/* Postgrest image if mirrored repository is not used */}}
+  {{- $pgrest_repo_base = .Values.image.postgrest.repo.base -}}
+  {{/* Postgres image if mirrored repository is not used */}}
+  {{- $postgres_repo_base = .Values.image.postgres.repo.base -}}
+  {{/* Kubectl image if mirrored repository is not used */}}
   {{- $kubectl_repo_base = .Values.image.kubectl.repo.base -}}
 {{- end -}}
-{{- $kubectl_repo_path = .Values.image.kubectl.repo.path -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -89,7 +80,7 @@ spec:
                 configMapKeyRef:
                   name: db-application
                   key: db
-          image: "{{ $postgres_repo_base }}/{{ $postgres_repo_path }}:{{ .Values.image.postgres.tag }}"
+          image: "{{ $postgres_repo_base }}/{{ .Values.image.postgres.repo.path }}:{{ .Values.image.postgres.tag }}"
           imagePullPolicy: {{ .Values.image.postgres.pullPolicy }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
@@ -100,7 +91,7 @@ spec:
               name: scripts
               readOnly: true
         - name: wait-for-secret
-          image: "{{ $kubectl_repo_base }}/{{ $kubectl_repo_path }}:{{ .Values.image.kubectl.tag }}"
+          image: "{{ $kubectl_repo_base }}/{{ .Values.image.kubectl.repo.path }}:{{ .Values.image.kubectl.tag }}"
           imagePullPolicy: {{ .Values.image.kubectl.pullPolicy }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
@@ -158,7 +149,7 @@ spec:
                 secretKeyRef:
                   key: certs.json
                   name: keycloak-certs
-          image: "{{ $pgrest_repo_base }}/{{ $pgrest_repo_path }}:{{ .Values.image.postgrest.tag }}"
+          image: "{{ $pgrest_repo_base }}/{{ .Values.image.postgrest.repo.path }}:{{ .Values.image.postgrest.tag }}"
           imagePullPolicy: {{ .Values.image.postgrest.pullPolicy }}
           ports:
             - name: http

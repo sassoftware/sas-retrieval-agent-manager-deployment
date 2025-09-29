@@ -1,0 +1,125 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "filebrowser.fullname" . }}
+  labels:
+    {{- include "filebrowser.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "filebrowser.selectorLabels" . | nindent 6 }}
+  serviceName: "{{ include "filebrowser.fullname" . }}-service"
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+      {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "filebrowser.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "filebrowser.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- with .Values.initContainers }}
+      initContainers:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repo.base }}/{{ .Values.image.repo.path }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: FB_BASEURL
+              value: {{ .Values.config.baseURL }}
+            - name: FB_DATABASE
+              value: {{ .Values.config.database }}
+            - name: FB_NOAUTH
+              value: "true"
+            - name: FB_PORT
+              value: {{ .Values.config.port | quote }}
+            - name: FB_ROOT
+              value: {{ .Values.config.root }}
+            - name: FB_LOG
+              value: {{ .Values.config.log }}
+          volumeMounts:
+            - mountPath: /.filebrowser.json
+              name: config
+              subPath: .filebrowser.json
+            - mountPath: "/db"
+              name: {{ printf "%s-%s" (include "filebrowser.fullname" .) "db" }}
+            - mountPath: {{ .Values.rootDir.hostPath.path | default "/rootdir" }}
+              name: {{ .Values.rootDir.pvc.name }}
+              readOnly: {{ .Values.rootDir.readOnly }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.config.port }}
+              protocol: TCP
+          {{- with .Values.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "filebrowser.fullname" . }}
+  volumeClaimTemplates:
+    - kind: PersistentVolumeClaim
+      apiVersion: v1
+      metadata:
+        name: {{ printf "%s-%s" (include "filebrowser.fullname" .) "db" }}
+      spec:
+        accessModes:
+          {{- range .Values.db.pvc.accessModes }}
+          - {{ . | quote }}
+          {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.db.pvc.size | quote }}
+        {{- if .Values.db.pvc.storageClassName }}
+        storageClassName: {{ .Values.db.pvc.storageClassName }}
+        {{- end }}
+    - kind: PersistentVolumeClaim
+      apiVersion: v1
+      metadata:
+        name: {{ .Values.rootDir.pvc.name }}
+      spec:
+        accessModes:
+          {{- range .Values.rootDir.pvc.accessModes }}
+          - {{ . | quote }}
+          {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.rootDir.pvc.size | quote }}
+        {{- if .Values.rootDir.pvc.storageClassName }}
+        storageClassName: {{ .Values.rootDir.pvc.storageClassName }}
+        {{- end }}
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain

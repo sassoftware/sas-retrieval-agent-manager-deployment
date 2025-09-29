@@ -1,3 +1,13 @@
+
+{{- $globalEnabled := false -}}
+{{- if hasKey .Values "global" -}}
+{{- if hasKey .Values.global "ingress" -}}
+{{- if .Values.global.ingress.enabled -}}
+{{- $globalEnabled = true -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+---
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -7,17 +17,17 @@ metadata:
 data:
   namespace: {{ .Release.Namespace }}
   service: {{ include "keycloak.fullname" . }}
-  host: {{ if .Values.ingress.useGlobal -}}
+  host: {{ if $globalEnabled -}}
           "{{ .Values.global.domain }}"
        {{- else -}}
           "{{ with (first .Values.ingress.hosts) }}{{ .host }}{{ end }}"
        {{- end }}
-  basePath: {{ if .Values.ingress.useGlobal -}}
+  basePath: {{ if $globalEnabled -}}
           "{{ regexReplaceAll "\\(.*" (first .Values.ingress.paths).path "" }}"
        {{- else -}}
           "{{ with (first .Values.ingress.hosts) }}{{ with (first .paths) }}{{ regexReplaceAll "\\(.*" .path "" }}{{ end }}{{ end }}"
        {{- end }}
-  url: {{ if .Values.ingress.useGlobal -}}
+  url: {{ if $globalEnabled -}}
           "https://{{ .Values.global.domain }}{{ regexReplaceAll "\\(.*" (first .Values.ingress.paths).path "" }}"
        {{- else -}}
           "https://{{ with (first .Values.ingress.hosts) }}{{ .host }}{{ with (first .paths) }}{{ regexReplaceAll "\\(.*" .path "" }}{{ end }}{{ end }}"

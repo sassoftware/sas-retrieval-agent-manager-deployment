@@ -1,0 +1,31 @@
+{{- if .Values.metrics.enabled }}
+{{- $chart := "mail" -}}
+{{- $fullName := include (print $chart ".fullname") . -}}
+{{- $labels := include (print $chart ".labels") . -}}
+{{- $files := .Files -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ print $fullName "-metrics" | quote }}
+  labels:
+    {{- $labels | nindent 4 }}
+data:
+  logrotate.conf: | {{- index .Values.metrics.logrotate "logrotate.conf" | nindent 4 }}
+  maillog.conf: |
+    template(name="metricslog" type="string" string={{ .Values.metrics.maillog | quote }})
+    if ($syslogfacility == '2') or ($programname == 'postfix') then {
+      action(type="omfile" DynaFile="metricslog" template="plain" DirCreateMode="0755" FileCreateMode="0644")
+    }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ print $fullName "-scripts" | quote }}
+  labels:
+    {{- $labels | nindent 4 }}
+data:
+  logrotate.sh: |
+    #!/bin/sh
+    set -e
+    exec /usr/sbin/logrotate /etc/logrotate.d/logrotate.conf
+{{- end }}

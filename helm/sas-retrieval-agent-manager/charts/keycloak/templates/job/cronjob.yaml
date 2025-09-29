@@ -1,12 +1,9 @@
 {{- $kubectl_repo_base := "" -}}
-{{- $kubectl_repo_path := "" -}}
- {{/* kubectl image */}}
-{{- if .Values.image.kubectl.repo.useGlobal | default false -}}
+{{- if and (hasKey .Values "global") (hasKey .Values.global "image") (hasKey .Values.global.image "repo") (hasKey .Values.global.image.repo "base") -}}
   {{- $kubectl_repo_base = .Values.global.image.repo.base | default .Values.image.kubectl.repo.base -}}
 {{- else -}}
   {{- $kubectl_repo_base = .Values.image.kubectl.repo.base -}}
 {{- end -}}
-{{- $kubectl_repo_path = .Values.image.kubectl.repo.path -}}
 apiVersion: batch/v1
 kind: CronJob
 metadata:
@@ -42,7 +39,7 @@ spec:
             {{- toYaml .Values.podSecurityContext | nindent 12 }}
           containers:
             - name: fetch-certs
-              image: "{{ $kubectl_repo_base }}/{{ $kubectl_repo_path }}:{{ .Values.image.kubectl.tag }}"
+              image: "{{ $kubectl_repo_base }}/{{ .Values.image.kubectl.repo.path }}:{{ .Values.image.kubectl.tag }}"
               imagePullPolicy: {{ .Values.image.kubectl.pullPolicy }}
               securityContext:
                 {{- toYaml .Values.securityContext | nindent 16 }}

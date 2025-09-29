@@ -73,3 +73,43 @@ Create the cookie secret
 {{- end -}}
 {{- end -}}
 {{- end -}}
+
+{{/* Cluster-internal Keycloak URL */}}
+{{ define "keycloak.internalURL" -}}
+http://{{ include "keycloak.fullname" . }}:{{ .Values.service.port }}{{ with (first .Values.ingress.paths) }}{{  regexReplaceAll "\\(.*" .path "" | trimSuffix "/" }}{{ end }}/realms/{{ .Values.global.configuration.keycloak.realm }}
+{{- end }}
+
+{{/* OAuth2 Proxy domain */}}
+{{ define "keycloak.oauthProxy.domain" -}}
+{{$globalEnabled := (((.Values.global).ingress).enabled | default false) -}}
+{{ if $globalEnabled -}}
+{{ .Values.global.domain }}
+{{- else -}}
+{{ with (first .Values.oauthProxy.ingress.hosts) }}{{ .host }}{{ end }}
+{{- end }}
+{{- end }}
+
+{{/* OAuth2 Proxy prefix */}}
+{{ define "keycloak.oauthProxy.prefix" -}}
+{{ $globalEnabled := (((.Values.global).ingress).enabled | default false) -}}
+{{ if $globalEnabled -}}
+{{ with (first .Values.oauthProxy.ingress.paths) }}{{  regexReplaceAll "\\(.*" .path "" | trimSuffix "/" }}{{ end }}
+{{- else -}}
+{{ with (first .Values.oauthProxy.ingress.hosts) }}{{ with (first .paths) }}{{  regexReplaceAll "\\(.*" .path "" | trimSuffix "/" }}{{ end }}{{ end }}
+{{- end }}
+{{- end }}
+
+{{/* OAuth2 Proxy ingress URL */}}
+{{ define "keycloak.oauthProxy.ingressURL" -}}
+https://{{ include "keycloak.oauthProxy.domain" . }}{{ include "keycloak.oauthProxy.prefix" . }}
+{{- end }}
+
+{{/* Keycloak ingress URL */}}
+{{ define "keycloak.ingressURL" -}}
+{{ $globalEnabled := (((.Values.global).ingress).enabled | default false) -}}
+{{ if $globalEnabled -}}
+https://{{ .Values.global.domain }}{{ with (first .Values.ingress.paths) }}{{ regexReplaceAll "\\(.*" .path "" | trimSuffix "/"  }}{{ end }}/realms/{{ .Values.global.configuration.keycloak.realm }}
+{{- else -}}
+https://{{ with (first .Values.ingress.hosts) }}{{ .host }}{{ with (first .paths) }}{{  regexReplaceAll "\\(.*" .path "" | trimSuffix "/" }}{{ end }}{{ end }}/realms/{{ .Values.global.configuration.keycloak.realm }}
+{{- end }}
+{{- end }}

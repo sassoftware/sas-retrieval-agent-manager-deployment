@@ -1,3 +1,13 @@
+{{- $dot := . -}}
+{{- $globalEnabled := false -}}
+{{- if hasKey .Values "global" -}}
+{{- if hasKey .Values.global "ingress" -}}
+{{- if .Values.global.ingress.enabled -}}
+{{- $globalEnabled = true -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+---
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -7,12 +17,12 @@ metadata:
 data:
   namespace: {{ .Release.Namespace }}
   service: {{ include "keycloak.oauthProxy.fullname" . }}
-  url: {{ if .Values.ingress.useGlobal -}}
+  url: {{ if $globalEnabled -}}
           "https://{{ .Values.global.domain }}{{ regexReplaceAll "\\(.*" (first .Values.oauthProxy.ingress.paths).path "" }}"
        {{- else -}}
           "https://{{ with (first .Values.oauthProxy.ingress.hosts) }}{{ .host }}{{ with (first .paths) }}{{ regexReplaceAll "\\(.*" .path "" }}{{ end }}{{ end }}"
        {{- end }}
-  logoutUrl: {{ if .Values.ingress.useGlobal -}}
+  logoutUrl: {{ if $globalEnabled -}}
           "https://{{ .Values.global.domain }}{{ regexReplaceAll "\\(.*" (first .Values.oauthProxy.ingress.logoutPaths).path "" }}"
        {{- else -}}
           "https://{{ with (first .Values.oauthProxy.ingress.hosts) }}{{ .host }}{{ with (first .paths) }}{{ regexReplaceAll "\\(.*" .path "" }}{{ end }}/logout{{ end }}"

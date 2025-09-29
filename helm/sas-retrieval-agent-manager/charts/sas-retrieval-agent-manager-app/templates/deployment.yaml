@@ -1,11 +1,26 @@
 {{- $repo_base := "" -}}
-{{- $repo_path := "" -}}
-{{- if .Values.image.repo.useGlobal | default false -}}
+{{- if and (hasKey .Values "global") (hasKey .Values.global "image") (hasKey .Values.global.image "repo") (hasKey .Values.global.image.repo "base") -}}
   {{- $repo_base = .Values.global.image.repo.base | default .Values.image.repo.base -}}
 {{- else -}}
   {{- $repo_base = .Values.image.repo.base -}}
 {{- end -}}
-{{- $repo_path = .Values.image.repo.path -}}
+{{- $globalEnabled := false }}
+{{- if hasKey .Values "global" }}
+{{- if hasKey .Values.global "ingress" }}
+{{- if .Values.global.ingress.enabled }}
+{{- $globalEnabled = true }}
+{{- $globalEnabled = true }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- $uiPath := "" -}}
+{{- if $globalEnabled }}
+{{- $uiPath = regexReplaceAll "\\(.*" (first .Values.ingress.paths).path "" }}
+{{- else }}
+{{- if (len .Values.ingress.hosts) }}
+{{- $uiPath = regexReplaceAll "\\(.*" (first (first .Values.ingress.hosts).paths).path "" }}
+{{- end }}
+{{- end }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -42,7 +57,7 @@ spec:
         - name: {{ .Chart.Name }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ $repo_base }}/{{ $repo_path }}:{{ .Values.image.tag }}"
+          image: "{{ $repo_base }}/{{ .Values.image.repo.path }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
             - name: POSTGREST_SERVICE
@@ -58,7 +73,7 @@ spec:
               protocol: TCP
           livenessProbe:
             httpGet:
-              path: {{ with (first .Values.ingress.hosts) }}{{ with (first .paths) }}{{ regexReplaceAll "\\(.*" .path "" }}{{ end }}{{ end }}/health
+              path: {{ $uiPath }}/health
               port: {{ .Values.livenessProbe.httpGet.port }}
             timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
             periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
@@ -66,7 +81,7 @@ spec:
             failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
           readinessProbe:
             httpGet:
-              path: {{ with (first .Values.ingress.hosts) }}{{ with (first .paths) }}{{ regexReplaceAll "\\(.*" .path "" }}{{ end }}{{ end }}/health
+              path: {{ $uiPath }}/health
               port: {{ .Values.readinessProbe.httpGet.port }}
             timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
             periodSeconds: {{ .Values.readinessProbe.periodSeconds }}

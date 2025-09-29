@@ -1,0 +1,1396 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "properties": {
+    "affinity": {
+      "additionalProperties": false,
+      "description": "Map of node/pod affinities",
+      "properties": {
+        "nodeAffinity": {
+          "additionalProperties": false,
+          "properties": {
+            "preferredDuringSchedulingIgnoredDuringExecution": {
+              "items": {
+                "anyOf": [
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "preference": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "matchExpressions": {
+                            "items": {
+                              "anyOf": [
+                                {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "key": {
+                                      "default": "sas.com/deployment",
+                                      "required": [],
+                                      "title": "key",
+                                      "type": "string"
+                                    },
+                                    "operator": {
+                                      "default": "In",
+                                      "required": [],
+                                      "title": "operator",
+                                      "type": "string"
+                                    },
+                                    "values": {
+                                      "items": {
+                                        "anyOf": [
+                                          {
+                                            "required": [],
+                                            "type": "string"
+                                          }
+                                        ],
+                                        "required": []
+                                      },
+                                      "required": [],
+                                      "title": "values",
+                                      "type": "array"
+                                    }
+                                  },
+                                  "required": [
+                                    "key",
+                                    "operator",
+                                    "values"
+                                  ],
+                                  "type": "object"
+                                }
+                              ],
+                              "required": []
+                            },
+                            "required": [],
+                            "title": "matchExpressions",
+                            "type": "array"
+                          }
+                        },
+                        "required": [
+                          "matchExpressions"
+                        ],
+                        "title": "preference",
+                        "type": "object"
+                      },
+                      "weight": {
+                        "default": 1,
+                        "required": [],
+                        "title": "weight",
+                        "type": "integer"
+                      }
+                    },
+                    "required": [
+                      "weight",
+                      "preference"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "preference": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "matchExpressions": {
+                            "items": {
+                              "anyOf": [
+                                {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "key": {
+                                      "default": "workload.sas.com/class",
+                                      "required": [],
+                                      "title": "key",
+                                      "type": "string"
+                                    },
+                                    "operator": {
+                                      "default": "In",
+                                      "required": [],
+                                      "title": "operator",
+                                      "type": "string"
+                                    },
+                                    "values": {
+                                      "items": {
+                                        "anyOf": [
+                                          {
+                                            "required": [],
+                                            "type": "string"
+                                          }
+                                        ],
+                                        "required": []
+                                      },
+                                      "required": [],
+                                      "title": "values",
+                                      "type": "array"
+                                    }
+                                  },
+                                  "required": [
+                                    "key",
+                                    "operator",
+                                    "values"
+                                  ],
+                                  "type": "object"
+                                }
+                              ],
+                              "required": []
+                            },
+                            "required": [],
+                            "title": "matchExpressions",
+                            "type": "array"
+                          }
+                        },
+                        "required": [
+                          "matchExpressions"
+                        ],
+                        "title": "preference",
+                        "type": "object"
+                      },
+                      "weight": {
+                        "default": 2,
+                        "required": [],
+                        "title": "weight",
+                        "type": "integer"
+                      }
+                    },
+                    "required": [
+                      "weight",
+                      "preference"
+                    ],
+                    "type": "object"
+                  }
+                ],
+                "required": []
+              },
+              "required": [],
+              "title": "preferredDuringSchedulingIgnoredDuringExecution",
+              "type": "array"
+            }
+          },
+          "required": [
+            "preferredDuringSchedulingIgnoredDuringExecution"
+          ],
+          "title": "nodeAffinity",
+          "type": "object"
+        }
+      },
+      "required": [
+        "nodeAffinity"
+      ],
+      "title": "affinity",
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "autoscaling": {
+      "additionalProperties": false,
+      "description": "Horizontal Pod Autoscaler configuration",
+      "properties": {
+        "enabled": {
+          "default": false,
+          "required": [],
+          "type": "boolean"
+        },
+        "maxReplicas": {
+          "default": 100,
+          "format": "int32",
+          "required": [],
+          "type": "integer"
+        },
+        "minReplicas": {
+          "default": 1,
+          "format": "int32",
+          "required": [],
+          "type": "integer"
+        },
+        "targetCPUUtilizationPercentage": {
+          "default": 80,
+          "format": "int32",
+          "required": [],
+          "type": "integer"
+        },
+        "targetMemoryUtilizationPercentage": {
+          "default": 80,
+          "format": "int32",
+          "required": [],
+          "type": "integer"
+        }
+      },
+      "required": [],
+      "title": "autoscaling",
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "fullnameOverride": {
+      "default": "sas-retrieval-agent-manager-app",
+      "description": "String to fully override the fullname template with a string",
+      "required": [],
+      "title": "fullnameOverride",
+      "type": "string"
+    },
+    "global": {
+      "additionalProperties": false,
+      "description": "Global configuration for SAS Retrieval Agent Manager App",
+      "properties": {
+        "clusterName": {
+          "required": [],
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "clusterUrl": {
+          "required": [],
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "configuration": {
+          "required": [],
+          "type": "object"
+        },
+        "domain": {
+          "required": [],
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "image": {
+          "required": [],
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "imagePullSecrets": {
+          "required": [],
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "ingress": {
+          "required": [],
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "repo": {
+          "properties": {
+            "base": {
+              "required": [],
+              "type": "string"
+            }
+          },
+          "required": [],
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "stage": {
+          "required": [],
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "syncWindows": {
+          "items": {
+            "properties": {
+              "applications": {
+                "items": {
+                  "required": [],
+                  "type": "string"
+                },
+                "required": [],
+                "type": "array"
+              },
+              "duration": {
+                "required": [],
+                "type": "string"
+              },
+              "kind": {
+                "enum": [
+                  "allow",
+                  "deny"
+                ],
+                "required": [],
+                "type": "string"
+              },
+              "schedule": {
+                "format": "cron",
+                "required": [],
+                "type": "string"
+              },
+              "timezone": {
+                "default": "US/Eastern",
+                "required": [],
+                "type": "string"
+              }
+            },
+            "required": [],
+            "type": "object"
+          },
+          "required": [],
+          "type": [
+            "array",
+            "null"
+          ]
+        }
+      },
+      "required": [],
+      "title": "global",
+      "type": "object"
+    },
+    "image": {
+      "additionalProperties": false,
+      "description": "Container image configuration for SAS Retrieval Agent Manager App",
+      "properties": {
+        "pullPolicy": {
+          "default": "IfNotPresent",
+          "description": "Image pull policy for API container",
+          "enum": [
+            "Always",
+            "Never",
+            "IfNotPresent"
+          ],
+          "required": [],
+          "title": "pullPolicy"
+        },
+        "repo": {
+          "additionalProperties": false,
+          "description": "Container image configuration for API",
+          "properties": {
+            "base": {
+              "default": "cr.sas.com",
+              "description": "Container registry base URL",
+              "required": [],
+              "title": "base",
+              "type": "string"
+            },
+            "path": {
+              "default": "viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-app",
+              "description": "Container image path/name",
+              "required": [],
+              "title": "path",
+              "type": "string"
+            }
+          },
+          "required": [
+            "base",
+            "path"
+          ],
+          "title": "repo",
+          "type": "object"
+        },
+        "tag": {
+          "default": "1.0.18-20250910.1757513299699",
+          "description": "Container image tag",
+          "required": [],
+          "title": "tag",
+          "type": "string"
+        }
+      },
+      "required": [
+        "repo",
+        "tag"
+      ],
+      "title": "image",
+      "type": "object"
+    },
+    "imagePullSecrets": {
+      "default": [
+        {
+          "name": "cr-sas-secret"
+        }
+      ],
+      "description": "Array of imagePullSecrets in the namespace for pulling images from private registries",
+      "items": {
+        "properties": {
+          "name": {
+            "required": [],
+            "type": "string"
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "required": [],
+      "title": "imagePullSecrets",
+      "type": "array"
+    },
+    "ingress": {
+      "additionalProperties": false,
+      "description": "Ingress configuration for external access to the web application",
+      "properties": {
+        "annotations": {
+          "additionalProperties": false,
+          "default": {
+            "kubernetes.io/ingress.allow-http": "false",
+            "kubernetes.io/tls-acme": "true",
+            "nginx.ingress.kubernetes.io/auth-response-headers": "Authorization",
+            "nginx.ingress.kubernetes.io/auth-signin": "https://$host/SASRetrievalAgentManager/oauth2/start?rd=$escaped_request_uri",
+            "nginx.ingress.kubernetes.io/auth-url": "https://$host/SASRetrievalAgentManager/oauth2/auth",
+            "nginx.ingress.kubernetes.io/proxy-body-size": "500m",
+            "nginx.ingress.kubernetes.io/proxy-buffer-size": "16k",
+            "nginx.ingress.kubernetes.io/ssl-redirect": "true"
+          },
+          "description": "Annotations for the Ingress",
+          "properties": {
+            "kubernetes.io/ingress.allow-http": {
+              "default": "false",
+              "description": "Disallow HTTP traffic, force HTTPS only",
+              "required": [],
+              "title": "kubernetes.io/ingress.allow-http",
+              "type": "string"
+            },
+            "kubernetes.io/tls-acme": {
+              "default": "true",
+              "description": "Enable TLS certificate management via cert-manager",
+              "required": [],
+              "title": "kubernetes.io/tls-acme",
+              "type": "string"
+            },
+            "nginx.ingress.kubernetes.io/auth-response-headers": {
+              "default": "Authorization",
+              "description": "Headers to pass from auth response to backend",
+              "required": [],
+              "title": "nginx.ingress.kubernetes.io/auth-response-headers",
+              "type": "string"
+            },
+            "nginx.ingress.kubernetes.io/auth-signin": {
+              "default": "https://$host/SASRetrievalAgentManager/oauth2/start?rd=$escaped_request_uri",
+              "description": "OAuth2 authentication sign-in URL",
+              "required": [],
+              "title": "nginx.ingress.kubernetes.io/auth-signin",
+              "type": "string"
+            },
+            "nginx.ingress.kubernetes.io/auth-url": {
+              "default": "https://$host/SASRetrievalAgentManager/oauth2/auth",
+              "description": "OAuth2 authentication validation URL",
+              "required": [],
+              "title": "nginx.ingress.kubernetes.io/auth-url",
+              "type": "string"
+            },
+            "nginx.ingress.kubernetes.io/proxy-body-size": {
+              "default": "500m",
+              "description": "Maximum allowed size of client request body",
+              "required": [],
+              "title": "nginx.ingress.kubernetes.io/proxy-body-size",
+              "type": "string"
+            },
+            "nginx.ingress.kubernetes.io/proxy-buffer-size": {
+              "default": "16k",
+              "description": "Size of buffer used for reading the first part of response",
+              "required": [],
+              "title": "nginx.ingress.kubernetes.io/proxy-buffer-size",
+              "type": "string"
+            },
+            "nginx.ingress.kubernetes.io/ssl-redirect": {
+              "default": "true",
+              "description": "Force SSL redirect",
+              "required": [],
+              "title": "nginx.ingress.kubernetes.io/ssl-redirect",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kubernetes.io/ingress.allow-http",
+            "kubernetes.io/tls-acme",
+            "nginx.ingress.kubernetes.io/auth-response-headers",
+            "nginx.ingress.kubernetes.io/auth-signin",
+            "nginx.ingress.kubernetes.io/auth-url",
+            "nginx.ingress.kubernetes.io/proxy-body-size",
+            "nginx.ingress.kubernetes.io/proxy-buffer-size",
+            "nginx.ingress.kubernetes.io/ssl-redirect"
+          ],
+          "title": "annotations",
+          "type": "object"
+        },
+        "className": {
+          "default": "nginx",
+          "description": "Class name of the Ingress",
+          "required": [],
+          "title": "className",
+          "type": "string"
+        },
+        "enabled": {
+          "default": true,
+          "description": "Enable ingress for external access",
+          "required": [],
+          "title": "enabled",
+          "type": "boolean"
+        },
+        "hosts": {
+          "description": "Hosts configuration (used when useGlobal is false)",
+          "items": {
+            "properties": {
+              "host": {
+                "required": [],
+                "type": "string"
+              },
+              "paths": {
+                "items": {
+                  "properties": {
+                    "path": {
+                      "default": "/SASRetrievalAgentManager(/|$)(.*)",
+                      "required": [],
+                      "type": "string"
+                    },
+                    "pathType": {
+                      "default": "ImplementationSpecific",
+                      "required": [],
+                      "type": "string"
+                    }
+                  },
+                  "required": [],
+                  "type": "object"
+                },
+                "required": [],
+                "type": [
+                  "array",
+                  "null"
+                ]
+              }
+            },
+            "required": [],
+            "type": "object"
+          },
+          "required": [],
+          "title": "hosts",
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "paths": {
+          "description": "Paths configuration (used when useGlobal is true)",
+          "items": {
+            "properties": {
+              "host": {
+                "required": [],
+                "type": "string"
+              },
+              "paths": {
+                "items": {
+                  "properties": {
+                    "path": {
+                      "default": "/SASRetrievalAgentManager(/|$)(.*)",
+                      "required": [],
+                      "type": "string"
+                    },
+                    "pathType": {
+                      "default": "ImplementationSpecific",
+                      "required": [],
+                      "type": "string"
+                    }
+                  },
+                  "required": [],
+                  "type": "object"
+                },
+                "required": [],
+                "type": [
+                  "array",
+                  "null"
+                ]
+              }
+            },
+            "required": [],
+            "type": "object"
+          },
+          "required": [],
+          "title": "paths",
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "tls": {
+          "description": "TLS configuration for ingress",
+          "items": {
+            "properties": {
+              "hosts": {
+                "items": {
+                  "required": [],
+                  "type": "string"
+                },
+                "required": [],
+                "type": "array"
+              },
+              "secretName": {
+                "required": [],
+                "type": "string"
+              }
+            },
+            "required": [],
+            "type": "object"
+          },
+          "required": [],
+          "title": "tls",
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "useGlobal": {
+          "default": false,
+          "description": "Use global ingress configuration instead of local hosts configuration",
+          "required": [],
+          "title": "useGlobal",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "useGlobal",
+        "enabled",
+        "className"
+      ],
+      "title": "ingress",
+      "type": "object"
+    },
+    "livenessProbe": {
+      "additionalProperties": true,
+      "description": "Liveness probe configuration",
+      "properties": {
+        "failureThreshold": {
+          "default": 9,
+          "description": "Number of consecutive failures required to mark container as not ready",
+          "required": [],
+          "title": "failureThreshold",
+          "type": "integer"
+        },
+        "httpGet": {
+          "additionalProperties": false,
+          "description": "HTTP GET probe configuration for liveness",
+          "properties": {
+            "path": {
+              "default": "/",
+              "description": "Path to probe for liveness",
+              "required": [],
+              "title": "path",
+              "type": "string"
+            },
+            "port": {
+              "default": "http",
+              "required": [],
+              "title": "port",
+              "type": "string"
+            }
+          },
+          "required": [
+            "path",
+            "port"
+          ],
+          "title": "httpGet",
+          "type": "object"
+        },
+        "periodSeconds": {
+          "default": 15,
+          "description": "How often to perform the probe",
+          "required": [],
+          "title": "periodSeconds",
+          "type": "integer"
+        },
+        "successThreshold": {
+          "default": 1,
+          "description": "Minimum consecutive successes for the probe to be considered successful",
+          "required": [],
+          "title": "successThreshold",
+          "type": "integer"
+        },
+        "timeoutSeconds": {
+          "default": 1,
+          "description": "Timeout for the probe",
+          "required": [],
+          "title": "timeoutSeconds",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "failureThreshold",
+        "httpGet",
+        "periodSeconds",
+        "successThreshold",
+        "timeoutSeconds"
+      ],
+      "title": "livenessProbe",
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "nameOverride": {
+      "default": "app",
+      "description": "String to partially override the fullname template with a string (will prepend the release name)",
+      "required": [],
+      "title": "nameOverride",
+      "type": "string"
+    },
+    "nodeSelector": {
+      "additionalProperties": false,
+      "description": "Node labels for pod assignment",
+      "required": [],
+      "title": "nodeSelector",
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "podAnnotations": {
+      "additionalProperties": false,
+      "default": {},
+      "description": "Annotations to add to the pods",
+      "required": [],
+      "title": "podAnnotations",
+      "type": "object"
+    },
+    "podLabels": {
+      "additionalProperties": false,
+      "default": {
+        "sas.com/deployment": "sas-retrieval-agent-manager",
+        "workload.sas.com/class": "ram"
+      },
+      "description": "Labels to add to the pods",
+      "properties": {
+        "sas.com/deployment": {
+          "default": "sas-retrieval-agent-manager",
+          "required": [],
+          "title": "sas.com/deployment",
+          "type": "string"
+        },
+        "workload.sas.com/class": {
+          "default": "ram",
+          "required": [],
+          "title": "workload.sas.com/class",
+          "type": "string"
+        }
+      },
+      "required": [
+        "sas.com/deployment",
+        "workload.sas.com/class"
+      ],
+      "title": "podLabels",
+      "type": "object"
+    },
+    "podSecurityContext": {
+      "additionalProperties": false,
+      "default": {
+        "fsGroup": 10001,
+        "runAsGroup": 10001,
+        "runAsNonRoot": true,
+        "runAsUser": 10001,
+        "seccompProfile": {
+          "type": "RuntimeDefault"
+        }
+      },
+      "description": "The security context for the pods",
+      "properties": {
+        "appArmorProfile": {
+          "description": "appArmorProfile is the AppArmor options to use by the containers in this pod.",
+          "properties": {
+            "localhostProfile": {
+              "required": [],
+              "type": "string"
+            },
+            "type": {
+              "enum": [
+                "Localhost",
+                "RuntimeDefault"
+              ],
+              "required": []
+            }
+          },
+          "required": [],
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "fsGroup": {
+          "default": 10001,
+          "description": "A special supplemental group that applies to all containers in a pod. Some volume types allow the Kubelet to change the ownership of that volume to be owned by the pod:\\n\\n1. The owning GID will be the FSGroup 2. The setgid bit is set (new files created in the volume will be owned by FSGroup) 3. The permission bits are OR'd with rw-rw----\\n\\nIf unset, the Kubelet will not modify the ownership and permissions of any volume.",
+          "format": "int64",
+          "required": [],
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "fsGroupChangePolicy": {
+          "default": "Always",
+          "enum": [
+            "OnRootMismatch",
+            "Always"
+          ],
+          "required": []
+        },
+        "runAsGroup": {
+          "default": 10001,
+          "description": "The GID to run the entrypoint of the container process. Uses runtime default if unset. May also be set in SecurityContext.  If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence for that container.",
+          "format": "int64",
+          "required": [],
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "runAsNonRoot": {
+          "default": true,
+          "description": "Indicates that the container must run as a non-root user. If true, the Kubelet will validate the image at runtime to ensure that it does not run as UID 0 (root) and fail to start the container if it does. If unset or false, no such validation will be performed. May also be set in SecurityContext.  If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.",
+          "required": [],
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "runAsUser": {
+          "default": 10001,
+          "description": "The UID to run the entrypoint of the container process. Defaults to user specified in image metadata if unspecified. May also be set in SecurityContext.  If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence for that container.",
+          "format": "int64",
+          "required": [],
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "seLinuxOptions": {
+          "description": "The SELinux context to be applied to all containers. If unspecified, the container runtime will allocate a random SELinux context for each container.  May also be set in SecurityContext.  If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence for that container.",
+          "properties": {
+            "level": {
+              "required": [],
+              "type": "string"
+            },
+            "role": {
+              "required": [],
+              "type": "string"
+            },
+            "type": {
+              "required": [],
+              "type": "string"
+            },
+            "user": {
+              "required": [],
+              "type": "string"
+            }
+          },
+          "required": [],
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "seccompProfile": {
+          "description": "The seccomp options to use by the containers in this pod.",
+          "properties": {
+            "localhostProfile": {
+              "required": [],
+              "type": "string"
+            },
+            "type": {
+              "enum": [
+                "Localhost",
+                "RuntimeDefault"
+              ],
+              "required": []
+            }
+          },
+          "required": [],
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "supplementalGroups": {
+          "description": "A list of groups applied to the first process run in each container, in addition to the container's primary GID and fsGroup (if specified).  If the SupplementalGroupsPolicy feature is enabled, the supplementalGroupsPolicy field determines whether these are in addition to or instead of any group memberships defined in the container image. If unspecified, no additional groups are added, though group memberships defined in the container image may still be used, depending on the supplementalGroupsPolicy field.",
+          "items": {
+            "format": "int64",
+            "required": [],
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "required": [],
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "supplementalGroupsPolicy": {
+          "default": "Merge",
+          "description": "Defines how supplemental groups of the first container processes are calculated. Valid values are \"Merge\" and \"Strict\". If not specified, \"Merge\" is used. (Alpha) Using the field requires the SupplementalGroupsPolicy feature gate to be enabled and the container runtime must implement support for this feature.",
+          "enum": [
+            "Merge",
+            "Strict"
+          ],
+          "required": []
+        },
+        "sysctls": {
+          "description": "Sysctls hold a list of namespaced sysctls used for the pod. Pods with unsupported sysctls (by the container runtime) might fail to launch.",
+          "items": {
+            "properties": {
+              "name": {
+                "required": [],
+                "type": "string"
+              },
+              "value": {
+                "required": [],
+                "type": "string"
+              }
+            },
+            "required": [],
+            "type": "object"
+          },
+          "required": [],
+          "type": [
+            "array",
+            "null"
+          ]
+        }
+      },
+      "required": [],
+      "title": "podSecurityContext",
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "readinessProbe": {
+      "additionalProperties": true,
+      "description": "Readiness probe configuration",
+      "properties": {
+        "failureThreshold": {
+          "default": 9,
+          "description": "Number of consecutive failures required to mark container as not ready",
+          "required": [],
+          "title": "failureThreshold",
+          "type": "integer"
+        },
+        "httpGet": {
+          "additionalProperties": false,
+          "description": "HTTP GET probe configuration for readiness",
+          "properties": {
+            "path": {
+              "default": "/",
+              "description": "Path to probe for readiness",
+              "required": [],
+              "title": "path",
+              "type": "string"
+            },
+            "port": {
+              "default": "http",
+              "required": [],
+              "title": "port",
+              "type": "string"
+            }
+          },
+          "required": [
+            "path",
+            "port"
+          ],
+          "title": "httpGet",
+          "type": "object"
+        },
+        "periodSeconds": {
+          "default": 15,
+          "description": "How often to perform the probe",
+          "required": [],
+          "title": "periodSeconds",
+          "type": "integer"
+        },
+        "successThreshold": {
+          "default": 1,
+          "description": "Minimum consecutive successes for the probe to be considered successful",
+          "required": [],
+          "title": "successThreshold",
+          "type": "integer"
+        },
+        "timeoutSeconds": {
+          "default": 1,
+          "description": "Timeout for the probe",
+          "required": [],
+          "title": "timeoutSeconds",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "failureThreshold",
+        "httpGet",
+        "periodSeconds",
+        "successThreshold",
+        "timeoutSeconds"
+      ],
+      "title": "readinessProbe",
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "replicaCount": {
+      "default": 1,
+      "description": "Number of replicas to run. Chart is not designed to scale horizontally, use at your own risk",
+      "required": [],
+      "title": "replicaCount",
+      "type": "integer"
+    },
+    "resources": {
+      "additionalProperties": false,
+      "description": "The resources to allocate for the container",
+      "properties": {
+        "claims": {
+          "items": {
+            "properties": {
+              "name": {
+                "required": [],
+                "type": "string"
+              },
+              "request": {
+                "required": [],
+                "type": "string"
+              }
+            },
+            "required": [],
+            "type": "object"
+          },
+          "required": [],
+          "type": "array"
+        },
+        "limits": {
+          "required": [],
+          "type": "object"
+        },
+        "requests": {
+          "required": [],
+          "type": "object"
+        }
+      },
+      "required": [],
+      "title": "resources",
+      "type": "object"
+    },
+    "securityContext": {
+      "additionalProperties": false,
+      "default": {
+        "allowPrivilegeEscalation": false,
+        "capabilities": {
+          "add": [],
+          "drop": [
+            "ALL"
+          ]
+        },
+        "privileged": false,
+        "readOnlyRootFilesystem": true,
+        "runAsGroup": 10001,
+        "runAsNonRoot": true,
+        "runAsUser": 10001,
+        "seccompProfile": {
+          "type": "RuntimeDefault"
+        }
+      },
+      "description": "The security context for the application container",
+      "properties": {
+        "allowPrivilegeEscalation": {
+          "default": false,
+          "description": "AllowPrivilegeEscalation controls whether a process can gain more privileges than its parent process. This bool directly controls if the no_new_privs flag will be set on the container process. AllowPrivilegeEscalation is true always when the container is run as Privileged or has CAP_SYS_ADMIN",
+          "required": [],
+          "type": "boolean"
+        },
+        "appArmorProfile": {
+          "description": "appArmorProfile is the AppArmor options to use by this container. If set, this profile overrides the pod's appArmorProfile.",
+          "properties": {
+            "localhostProfile": {
+              "required": [],
+              "type": "string"
+            },
+            "type": {
+              "enum": [
+                "Localhost",
+                "RuntimeDefault"
+              ],
+              "required": []
+            }
+          },
+          "required": [],
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "capabilities": {
+          "description": "The capabilities to add/drop when running containers. Defaults to the default set of capabilities granted by the container runtime.",
+          "properties": {
+            "add": {
+              "default": [],
+              "description": "Added capabilities",
+              "items": {
+                "required": [],
+                "type": "string"
+              },
+              "required": [],
+              "type": [
+                "array",
+                "null"
+              ]
+            },
+            "drop": {
+              "default": [
+                "ALL"
+              ],
+              "description": "Dropped capabilities",
+              "items": {
+                "required": [],
+                "type": "string"
+              },
+              "required": [],
+              "type": [
+                "array",
+                "null"
+              ]
+            }
+          },
+          "required": [],
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "privileged": {
+          "default": false,
+          "description": "Run container in privileged mode. Processes in privileged containers are essentially equivalent to root on the host.",
+          "required": [],
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "procMount": {
+          "description": "procMount denotes the type of proc mount to use for the containers. The default value is Default which uses the container runtime defaults for readonly paths and masked paths. This requires the ProcMountType feature flag to be enabled.",
+          "required": [],
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "readOnlyRootFilesystem": {
+          "default": false,
+          "description": "Whether this container has a read-only root filesystem. Default is false.",
+          "required": [],
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "runAsGroup": {
+          "default": 10001,
+          "description": "The GID to run the entrypoint of the container process. Uses runtime default if unset. May also be set in SecurityContext.  If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence for that container.",
+          "format": "int64",
+          "required": [],
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "runAsNonRoot": {
+          "default": true,
+          "description": "Indicates that the container must run as a non-root user. If true, the Kubelet will validate the image at runtime to ensure that it does not run as UID 0 (root) and fail to start the container if it does. If unset or false, no such validation will be performed. May also be set in SecurityContext.  If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.",
+          "required": [],
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "runAsUser": {
+          "default": 10001,
+          "description": "The UID to run the entrypoint of the container process. Defaults to user specified in image metadata if unspecified. May also be set in SecurityContext.  If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence for that container.",
+          "format": "int64",
+          "required": [],
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "seLinuxOptions": {
+          "description": "The SELinux context to be applied to all containers. If unspecified, the container runtime will allocate a random SELinux context for each container.  May also be set in SecurityContext.  If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence for that container.",
+          "properties": {
+            "level": {
+              "required": [],
+              "type": "string"
+            },
+            "role": {
+              "required": [],
+              "type": "string"
+            },
+            "type": {
+              "required": [],
+              "type": "string"
+            },
+            "user": {
+              "required": [],
+              "type": "string"
+            }
+          },
+          "required": [],
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "seccompProfile": {
+          "description": "The seccomp options to use by the containers in this pod.",
+          "properties": {
+            "localhostProfile": {
+              "required": [],
+              "type": "string"
+            },
+            "type": {
+              "enum": [
+                "Localhost",
+                "RuntimeDefault"
+              ],
+              "required": []
+            }
+          },
+          "required": [],
+          "type": [
+            "object",
+            "null"
+          ]
+        }
+      },
+      "required": [],
+      "title": "securityContext",
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "service": {
+      "additionalProperties": false,
+      "description": "Kubernetes Service configuration",
+      "properties": {
+        "port": {
+          "default": 8080,
+          "description": "The port that will be exposed by this service.",
+          "required": [],
+          "title": "port",
+          "type": "integer"
+        },
+        "type": {
+          "default": "ClusterIP",
+          "description": "Service type must be one of ClusterIP, NodePort, or LoadBalancer.",
+          "enum": [
+            "ClusterIP",
+            "NodePort",
+            "LoadBalancer"
+          ],
+          "required": [],
+          "title": "type"
+        }
+      },
+      "required": [
+        "type",
+        "port"
+      ],
+      "title": "service",
+      "type": "object"
+    },
+    "serviceAccount": {
+      "additionalProperties": false,
+      "description": "Service account configuration",
+      "properties": {
+        "annotations": {
+          "additionalProperties": false,
+          "default": {},
+          "description": "Annotations to add to the service account",
+          "required": [],
+          "title": "annotations",
+          "type": "object"
+        },
+        "automount": {
+          "default": true,
+          "description": "Automatically mount a ServiceAccount's API credentials",
+          "required": [],
+          "title": "automount",
+          "type": "boolean"
+        },
+        "create": {
+          "default": true,
+          "description": "Specifies whether a service account should be created",
+          "required": [],
+          "title": "create",
+          "type": "boolean"
+        },
+        "name": {
+          "default": "",
+          "description": "The name of the service account to use. If not set and create is true, a name is generated using the fullname template",
+          "required": [],
+          "title": "name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "automount",
+        "create"
+      ],
+      "title": "serviceAccount",
+      "type": "object"
+    },
+    "tolerations": {
+      "description": "Tolerations for pod assignment",
+      "items": {
+        "required": []
+      },
+      "required": [],
+      "title": "tolerations",
+      "type": [
+        "array",
+        "null"
+      ]
+    },
+    "volumeMounts": {
+      "description": "Additional volumeMounts on the output Deployment definition",
+      "items": {
+        "required": []
+      },
+      "required": [],
+      "title": "volumeMounts",
+      "type": [
+        "array",
+        "null"
+      ]
+    },
+    "volumes": {
+      "description": "Additional volumes on the output Deployment definition",
+      "items": {
+        "required": []
+      },
+      "required": [],
+      "title": "volumes",
+      "type": [
+        "array",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "replicaCount",
+    "image",
+    "nameOverride",
+    "fullnameOverride",
+    "serviceAccount",
+    "service",
+    "ingress",
+    "resources",
+    "livenessProbe",
+    "readinessProbe",
+    "autoscaling",
+    "global"
+  ],
+  "type": "object"
+}
