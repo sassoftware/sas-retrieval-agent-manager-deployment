@@ -1,0 +1,39 @@
+# @schema
+# type: object
+# required: true
+# @schema
+# -- Cert-Manager configuration for certificate management
+cert-manager:
+  # @schema
+  # type: object
+  # required: true
+  # @schema
+  # -- Custom Resource Definitions configuration
+  crds:
+    # @schema
+    # type: boolean
+    # default: true
+    # required: true
+    # @schema
+    # -- Whether to install Cert-Manager CRDs
+    enabled: true
+
+# @schema
+# type: object
+# required: true
+# @schema
+# -- Trust-Manager configuration for trust bundle management
+trust-manager:
+  # @schema
+  # type: object
+  # required: true
+  # @schema
+  # -- Custom Resource Definitions configuration
+  crds:
+    # @schema
+    # type: boolean
+    # default: true
+    # required: true
+    # @schema
+    # -- Whether to install Trust-Manager CRDs
+    enabled: true

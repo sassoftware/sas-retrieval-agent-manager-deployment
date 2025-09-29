@@ -1,0 +1,21 @@
+apiVersion: v2
+name: linkerd
+description: Linkerd chart for Kubernetes
+type: application
+version: 1.0.1
+appVersion: "0.0.1"
+icon: https://linkerd.io/images/logo.png
+home: https://linkerd.io
+dependencies:
+  - name: linkerd-crds
+    version: "2024.11.8"
+    repository: "https://helm.linkerd.io/edge"
+  - name: linkerd-control-plane
+    version: "2024.11.8"
+    repository: "https://helm.linkerd.io/edge"
+  # - name: linkerd-jaeger
+  #   version: "30.12.11"
+  #   repository: "https://helm.linkerd.io/stable"
+  # - name: linkerd-viz
+  #   version: "30.12.11"
+  #   repository: "https://helm.linkerd.io/stable"

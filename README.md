@@ -215,9 +215,20 @@ After you have access to the Kubernetes cluster, you must install the necessary 
 
 | Dependency                  | Version             |                                                                              |                                                                                                                                                            |
 |-----------------------------|---------------------|------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| cert-manager, trust-manager | v1.18.2, v0.18.0    | [example](./docs/user/DependencyInstall.md#certificate-and-trust-management) | [cert-manager docs](https://cert-manager.io/docs/installation/helm/), [trust-manager docs](https://cert-manager.io/docs/trust/trust-manager/installation/) |
+| Linkerd                     | 2.17 (edge-24.11.8) | [example](./docs/user/DependencyInstall.md#service-mesh)                     | [docs](https://linkerd.io/2/tasks/install-helm/)                                                                                                           |
 | Ingress-Nginx               | 4.12.3              | [example](./docs/user/DependencyInstall.md#ingress-nginx)                    | [docs](https://kubernetes.github.io/ingress-nginx/deploy/)                                                                                                 |
 | Kueue                       | 0.12.1              | [example](./docs/user/DependencyInstall.md#kueue)                            | [docs](https://kueue.sigs.k8s.io/docs/installation/)                                                                                                       |
 
+> Note: order of installation matters for some dependencies, namely:
+>
+> 1. Certificate management components (cert-manager and trust-manager) must be installed first.
+>
+> 2. The service mesh (Linkerd) must be installed second, as it depends on the certificates and issuers created during the
+>    first step.
+>
+> 3. Other dependencies can be installed in any order after that. They do not have hard dependencies on each other, but
+>    do require the previous two steps to be completed to ensure internal traffic is properly secured.
 > Note: It is critical to provide an `azure-dns-label` for Azure NGINX Controller deployments. This is documented at the top of the example NGINX values file given.
 
 ### Install SAS Retrieval Agent Manager

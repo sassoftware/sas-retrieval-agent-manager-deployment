@@ -1,0 +1,20 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: jaeger-injector
+spec:
+  secretName: jaeger-injector-k8s-tls
+  secretTemplate:
+    labels:
+      app.kubernetes.io/part-of: Linkerd
+  duration: 168h    # 7 days duration.
+  renewBefore: 24h  # Renew 1 day before expiration.
+  issuerRef:
+    name: linkerd-webhook-issuer
+    kind: ClusterIssuer
+  commonName: jaeger-injector.linkerd-jaeger.svc
+  dnsNames:
+    - jaeger-injector.linkerd-jaeger.svc
+  isCA: false
+  usages:
+    - server auth

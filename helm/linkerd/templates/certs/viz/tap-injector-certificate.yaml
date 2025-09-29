@@ -1,0 +1,21 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: tap-injector
+  # namespace: linkerd-viz
+spec:
+  secretName: tap-injector-k8s-tls
+  secretTemplate:
+    labels:
+      app.kubernetes.io/part-of: Linkerd
+  duration: 168h    # 7 days duration.
+  renewBefore: 24h  # Renew 1 day before expiration.
+  issuerRef:
+    name: linkerd-webhook-issuer
+    kind: ClusterIssuer
+  commonName: tap-injector.linkerd-viz.svc
+  dnsNames:
+    - tap-injector.linkerd-viz.svc
+  isCA: false
+  usages:
+    - server auth
