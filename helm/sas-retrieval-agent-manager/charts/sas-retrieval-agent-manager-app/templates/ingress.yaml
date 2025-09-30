@@ -29,7 +29,7 @@
 {{- if hasKey .Values "global" -}}
 {{- if hasKey .Values.global "ingress" -}}
 {{- if .Values.global.ingress.enabled -}}
-{{- $globalEnabled := true -}}
+{{- $globalEnabled = true -}}
 {{- end -}}
 {{- end -}}
 {{- end -}}
@@ -58,21 +58,14 @@ metadata:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
-{{- if .Values.ingress.useGlobal | default false }}
+{{- if $globalEnabled | default false }}
   {{- if and (.Values.global.ingress.className | default .Values.ingress.className) (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion) }}
   ingressClassName: {{ .Values.global.ingress.className | default .Values.ingress.className  }}
   {{- end }}
   {{- if and ((include "testValuesPath" (list .Values "global" "ingress" "tls" "enabled")) | eq "true"  | default false) (.Values.global.ingress.tls.enabled | default false) }}
   tls:
     - hosts:
-      - {{ .Values.global.domain | quote }}
-      {{- if (include "testValuesPath" (list .Values "ingress" "tls" "hosts")) | eq "true" }}
-        {{- range .Values.ingress.tls.hosts }}
-          {{- if and . (ne . "") }}
-      - {{ . | quote }}
-          {{- end }}
-        {{- end }}
-      {{- end }}
+       - {{ .Values.global.domain | quote }}
       {{- if ((include "testValuesPath" (list .Values "global" "ingress" "tls" "secretName")) | eq "true") }}
       secretName: {{ .Values.global.ingress.tls.secretName | default "" }}
       {{- else if ((include "testValuesPath" (list .Values "ingress" "tls" "secretName")) | eq "true") }}

@@ -1,0 +1,762 @@
+
+# @schema
+# required: true
+# type: integer
+# default: 1
+# @schema
+# -- Number of replicas to run
+replicaCount: 1
+
+
+# @schema
+# required: true
+# type: object
+# @schema
+# -- Container image configuration
+image:
+  # @schema
+  # required: true
+  # type: string
+  # @schema
+  # -- Image repository
+  repository: boky/postfix
+  # @schema
+  # type: string
+  # @schema
+  # -- Image tag (If not specified uses chart's AppVersion as the tag)
+  tag: "latest"
+  # @schema
+  # type: string
+  # @schema
+  # -- Image pull policy
+  pullPolicy: IfNotPresent
+
+# @schema
+# type: array
+# items:
+#   type: object
+#   properties:
+#     name:
+#       type: string
+#       example: cr-sas-secret
+# default: []
+# @schema
+# -- Array of imagePullSecrets for pulling images from private registries
+imagePullSecrets: []
+# @schema
+# type: string
+# default: ""
+# @schema
+# -- String to partially override the fullname template
+nameOverride: ""
+# @schema
+# type: string
+# default: ""
+# @schema
+# -- String to fully override the fullname template
+fullnameOverride: ""
+
+# @schema
+# required: true
+# type: object
+# @schema
+# -- Service account configuration
+serviceAccount:
+  # @schema
+  # required: true
+  # type: boolean
+  # default: true
+  # @schema
+  # -- Specifies whether a service account should be created
+  create: true
+  # @schema
+  # type: object
+  # default: {}
+  # @schema
+  # -- Annotations to add to the service account
+  annotations: {}
+  # @schema
+  # type: string
+  # default: ""
+  # @schema
+  # -- The name of the service account to use. If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+# @schema
+# required: true
+# type: object
+# @schema
+# -- Kubernetes Service configuration
+service:
+  # @schema
+  # required: true
+  # enum:
+  #   - ClusterIP
+  #   - NodePort
+  #   - LoadBalancer
+  # @schema
+  # -- Kubernetes Service type
+  type: ClusterIP
+  # @schema
+  # required: true
+  # type: integer
+  # default: 587
+  # @schema
+  # -- Kubernetes Service port
+  port: 587
+  # @schema
+  # type: object
+  # default: {}
+  # @schema
+  # -- Additional labels for the service
+  labels: {}
+  # @schema
+  # type: object
+  # default: {}
+  # @schema
+  # -- Additional annotations for the service
+  annotations: {}
+  # externalTrafficPolicy: Cluster
+  # nodePort:
+
+# StatefulSets now require a headless service
+# https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#limitations
+# @schema
+# required: true
+# type: object
+# @schema
+# -- Headless service configuration for StatefulSets
+headlessService:
+  # @schema
+  # type: boolean
+  # default: true
+  # @schema
+  enabled: true
+  # @schema
+  # type: object
+  # default: {}
+  # @schema
+  labels: {}
+  # @schema
+  # type: object
+  # default: {}
+  # @schema
+  annotations: {}
+
+# @schema
+# required: true
+# type: object
+# additionalProperties: true
+# @schema
+# -- Metrics exporter configuration
+metrics:
+  # @schema
+  # type: boolean
+  # default: false
+  # @schema
+  enabled: false
+  # @schema
+  # type: object
+  # default: {}
+  # @schema
+  service:
+    labels: {}
+    annotations: {}
+  # @schema
+  # type: object
+  # default: {}
+  # @schema
+  serviceMonitor:
+    enabled: false
+    labels: {}
+    annotations: {}
+  # @schema
+  # type: integer
+  # default: 9154
+  # @schema
+  port: 9154
+  # @schema
+  # type: string
+  # default: /metrics
+  # @schema
+  path: /metrics
+  # @schema
+  # type: object
+  # @schema
+  image:
+    repository: "boky/postfix-exporter"
+    tag: "latest"
+  # @schema
+  # type: string
+  # default: /var/log/mail.log
+  # @schema
+  maillog: /var/log/mail.log
+  # @schema
+  # type: object
+  # @schema
+  logrotate:
+    enabled: true
+    logrotate.conf: |
+      /var/log/mail.log {
+          copytruncate
+          rotate 1
+          monthly
+          minsize 1M
+          compress
+          missingok
+          notifempty
+          dateext
+          olddir /var/log/
+          maxage 90
+      }
+  # @schema
+  # type: object
+  # default: {}
+  # @schema
+  resources: {}
+
+# Tell helm to restart (recreate) pods on every deploy. Setting this to true will inject
+# `date/deploy-date: <timestamp>` annotation into pod specification for StateFulset. This
+# ensures that the Pod is recreated with the new changes.
+#
+# Feel free to disable this but doing so **IS IT YOUR OWN RISK**. By disabling this feature
+# you might run into issues where some changes are not reflected on the Pod. If you experience
+# this with this setting set to `false` the first thing to try out is to restart / delete
+# a pod and let `StatefulSet` recreate it.
+# @schema
+# type: boolean
+# default: true
+# @schema
+# -- Whether to recreate pods on every deploy
+recreateOnRedeploy: true
+
+# @schema
+# type: object
+# default: {}
+# @schema
+# -- Resource requests and limits for the container
+resources:
+  {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+# @schema
+# required: true
+# type: object
+# @schema
+# -- Horizontal Pod Autoscaler configuration
+autoscaling:
+  # @schema
+  # type: boolean
+  # default: false
+  # @schema
+  enabled: false
+  # @schema
+  # type: integer
+  # default: 1
+  # @schema
+  minReplicas: 1
+  # @schema
+  # type: integer
+  # default: 100
+  # @schema
+  maxReplicas: 100
+  # @schema
+  # type: integer
+  # default: 80
+  # @schema
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+  # @schema
+  # type: object
+  # default: {}
+  # @schema
+  labels: {}
+  # @schema
+  # type: object
+  # default: {}
+  # @schema
+  annotations: {}
+
+# @schema
+# type: object
+# default: {}
+# @schema
+nodeSelector: {}
+# @schema
+# type: array
+# default: []
+# @schema
+tolerations: []
+# @schema
+# type: object
+# default: {}
+# @schema
+affinity: {}
+# @schema
+# type: array
+# default: []
+# @schema
+extraVolumes: []
+# @schema
+# type: array
+# default: []
+# @schema
+extraVolumeMounts: []
+# @schema
+# type: array
+# default: []
+# @schema
+extraInitContainers: []
+# @schema
+# type: array
+# default: []
+# @schema
+extraEnv: []
+# @schema
+# type: array
+# default: []
+# @schema
+extraContainers: []
+
+# @schema
+# type: object
+# default: {}
+# @schema
+deployment:
+  labels: {}
+  annotations: {}
+
+# @schema
+# type: object
+# default: {}
+# @schema
+pod:
+  # @schema
+  # type: [object,null]
+  # default: {"runAsGroup":10001,"runAsNonRoot":true,"runAsUser":10001,"seccompProfile":{"type":"RuntimeDefault"},"fsGroup":10001}
+  # properties:
+  #   appArmorProfile:
+  #     description: appArmorProfile is the AppArmor options to use by the containers in this pod.
+  #     type: [object,null]
+  #     properties:
+  #       localhostProfile:
+  #         type: string
+  #       type:
+  #         enum: [Localhost,RuntimeDefault]
+  #   fsGroup:
+  #     description: A special supplemental group that applies to all containers in a pod. Some volume types allow the Kubelet to change the ownership of that volume to be owned by the pod:\n\n1. The owning GID will be the FSGroup 2. The setgid bit is set (new files created in the volume will be owned by FSGroup) 3. The permission bits are OR'd with rw-rw----\n\nIf unset, the Kubelet will not modify the ownership and permissions of any volume.
+  #     format: int64
+  #     type: [integer,null]
+  #     default: 10001
+  #   fsGroupChangePolicy:
+  #     enum:
+  #       - OnRootMismatch
+  #       - Always
+  #     default: Always
+  #   runAsGroup:
+  #     description: The GID to run the entrypoint of the container process. Uses runtime default if unset. May also be set in SecurityContext.  If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence for that container.
+  #     format: int64
+  #     type: [integer,null]
+  #     default: 10001
+  #   runAsNonRoot:
+  #     description: Indicates that the container must run as a non-root user. If true, the Kubelet will validate the image at runtime to ensure that it does not run as UID 0 (root) and fail to start the container if it does. If unset or false, no such validation will be performed. May also be set in SecurityContext.  If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.
+  #     type: [boolean,null]
+  #     default: true
+  #   runAsUser:
+  #     description: The UID to run the entrypoint of the container process. Defaults to user specified in image metadata if unspecified. May also be set in SecurityContext.  If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence for that container.
+  #     format: int64
+  #     type: [integer,null]
+  #     default: 10001
+  #   seLinuxOptions:
+  #     description: The SELinux context to be applied to all containers. If unspecified, the container runtime will allocate a random SELinux context for each container.  May also be set in SecurityContext.  If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence for that container.
+  #     type: [object,null]
+  #     properties:
+  #       level:
+  #         type: string
+  #       role:
+  #         type: string
+  #       type:
+  #         type: string
+  #       user:
+  #         type: string
+  #   seccompProfile:
+  #     description: The seccomp options to use by the containers in this pod.
+  #     type: [object,null]
+  #     properties:
+  #       localhostProfile:
+  #         type: string
+  #       type:
+  #         enum: [Localhost,RuntimeDefault]
+  #   supplementalGroups:
+  #     description: A list of groups applied to the first process run in each container, in addition to the container's primary GID and fsGroup (if specified).  If the SupplementalGroupsPolicy feature is enabled, the supplementalGroupsPolicy field determines whether these are in addition to or instead of any group memberships defined in the container image. If unspecified, no additional groups are added, though group memberships defined in the container image may still be used, depending on the supplementalGroupsPolicy field.
+  #     type: [array,null]
+  #     items:
+  #       format: int64
+  #       type: [integer,null]
+  #   supplementalGroupsPolicy:
+  #     description: Defines how supplemental groups of the first container processes are calculated. Valid values are "Merge" and "Strict". If not specified, "Merge" is used. (Alpha) Using the field requires the SupplementalGroupsPolicy feature gate to be enabled and the container runtime must implement support for this feature.
+  #     enum:
+  #       - Merge
+  #       - Strict
+  #     default: Merge
+  #   sysctls:
+  #     description: Sysctls hold a list of namespaced sysctls used for the pod. Pods with unsupported sysctls (by the container runtime) might fail to launch.
+  #     type: [array,null]
+  #     items:
+  #       type: object
+  #       properties:
+  #         name:
+  #           type: string
+  #         value:
+  #           type: string
+  # @schema
+  securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+  # @schema
+  # type: object
+  # default: {}
+  # @schema
+  labels: {}
+  # @schema
+  # type: object
+  # default: {}
+  # @schema
+  annotations: {}
+
+# @schema
+# type: object
+# required: true
+# @schema
+container:
+  postfix:
+    # @schema
+    # type: [object,null]
+    # default: {"privileged":false,"seccompProfile":{"type":"RuntimeDefault"},"allowPrivilegeEscalation":false,"capabilities":{"add":[],"drop":["ALL"]},"readOnlyRootFilesystem":true,"runAsNonRoot":true,"runAsUser":10001,"runAsGroup":10001}
+    # properties:
+    #   allowPrivilegeEscalation:
+    #     description: AllowPrivilegeEscalation controls whether a process can gain more privileges than its parent process. This bool directly controls if the no_new_privs flag will be set on the container process. AllowPrivilegeEscalation is true always when the container is run as Privileged or has CAP_SYS_ADMIN
+    #     type: boolean
+    #     default: false
+    #   appArmorProfile:
+    #     description: appArmorProfile is the AppArmor options to use by this container. If set, this profile overrides the pod's appArmorProfile.
+    #     type: [object,null]
+    #     properties:
+    #       localhostProfile:
+    #         type: string
+    #       type:
+    #         enum: [Localhost,RuntimeDefault]
+    #   capabilities:
+    #     description: The capabilities to add/drop when running containers. Defaults to the default set of capabilities granted by the container runtime.
+    #     type: [object,null]
+    #     properties:
+    #       add:
+    #         description: Added capabilities
+    #         type: [array,null]
+    #         items:
+    #           type: string
+    #         default: []
+    #       drop:
+    #         description: Dropped capabilities
+    #         type: [array,null]
+    #         items:
+    #           type: string
+    #         default: [ALL]
+    #   privileged:
+    #     description: Run container in privileged mode. Processes in privileged containers are essentially equivalent to root on the host.
+    #     type: [boolean,null]
+    #     default: false
+    #   procMount:
+    #     description: procMount denotes the type of proc mount to use for the containers. The default value is Default which uses the container runtime defaults for readonly paths and masked paths. This requires the ProcMountType feature flag to be enabled.
+    #     type: [string,null]
+    #   readOnlyRootFilesystem:
+    #     description: Whether this container has a read-only root filesystem. Default is false.
+    #     type: [boolean,null]
+    #     default: false
+    #   runAsGroup:
+    #     description: The GID to run the entrypoint of the container process. Uses runtime default if unset. May also be set in SecurityContext.  If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence for that container.
+    #     format: int64
+    #     type: [integer,null]
+    #     default: 10001
+    #   runAsNonRoot:
+    #     description: Indicates that the container must run as a non-root user. If true, the Kubelet will validate the image at runtime to ensure that it does not run as UID 0 (root) and fail to start the container if it does. If unset or false, no such validation will be performed. May also be set in SecurityContext.  If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.
+    #     type: [boolean,null]
+    #     default: true
+    #   runAsUser:
+    #     description: The UID to run the entrypoint of the container process. Defaults to user specified in image metadata if unspecified. May also be set in SecurityContext.  If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence for that container.
+    #     format: int64
+    #     type: [integer,null]
+    #     default: 10001
+    #   seLinuxOptions:
+    #     description: The SELinux context to be applied to all containers. If unspecified, the container runtime will allocate a random SELinux context for each container.  May also be set in SecurityContext.  If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence for that container.
+    #     type: [object,null]
+    #     properties:
+    #       level:
+    #         type: string
+    #       role:
+    #         type: string
+    #       type:
+    #         type: string
+    #       user:
+    #         type: string
+    #   seccompProfile:
+    #     description: The seccomp options to use by the containers in this pod.
+    #     type: [object,null]
+    #     properties:
+    #       localhostProfile:
+    #         type: string
+    #       type:
+    #         enum: [Localhost,RuntimeDefault]
+    # @schema
+    securityContext: {}
+
+# @schema
+# type: object
+# required:
+# - "create"
+# - "existingSecret"
+# additionalProperties: true
+# properties:
+#   create:
+#     type: boolean
+#     default: false
+#     required: true
+#   existingSecret:
+#     type: string
+#     default: ""
+#     required: true
+# @schema
+certs:
+  # @schema
+  # required: true
+  # type: boolean
+  # default: false
+  # @schema
+  # -- Auto-generate certificates for the server and mount them into Postfix volume
+  create: false
+  # @schema
+  # type: string
+  # default: ""
+  # @schema
+  # -- Provide existing secret name
+  existingSecret: ""
+
+
+# @schema
+# type: object
+# default: {}
+# @schema
+# -- Data to be stored in a Secret and shared with the pod as environment variables
+secret: {}
+
+
+# @schema
+# type: string
+# default: ""
+# @schema
+# -- Use an existing secret to share with the pod as environment variables
+existingSecret: ""
+
+
+# @schema
+# type: object
+# required: true
+# @schema
+# -- Secret to be deployed and mounted into a specific directory in the pod
+mountSecret:
+  # @schema
+  # type: boolean
+  # default: false
+  # @schema
+  enabled: false
+  # @schema
+  # type: string
+  # default: /var/lib/secret
+  # @schema
+  path: /var/lib/secret
+  # @schema
+  # type: object
+  # default: {}
+  # @schema
+  data:
+    {}
+
+
+# @schema
+# type: object
+# required: true
+# properties:
+#   general:
+#     type: object
+#     default: {}
+#     additionalProperties: true
+#   postfix:
+#     type: object
+#     default: {}
+#     additionalProperties: true
+#   opendkim:
+#     type: object
+#     default: {}
+#     additionalProperties: true
+# @schema
+# -- Configuration for Postfix and related components
+config:
+  # @schema
+  # type: object
+  # default: {}
+  # additionalProperties: true
+  # @schema
+  general:
+    {}
+  # @schema
+  # type: object
+  # default: {}
+  # additionalProperties: true
+  # @schema
+  postfix:
+    {}
+  # @schema
+  # type: object
+  # default: {}
+  # additionalProperties: true
+  # @schema
+  opendkim:
+    {}
+
+
+# @schema
+# type: object
+# required: true
+# @schema
+# -- DNS configuration for the pod
+dns:
+  # @schema
+  # type: string
+  # default: ""
+  # @schema
+  policy: ""
+  # policy: "None"
+  # @schema
+  # type: object
+  # default: {}
+  # @schema
+  nameservers:
+    {}
+  # @schema
+  # type: string
+  # default: ""
+  # @schema
+  searches: ""
+  # @schema
+  # type: object
+  # default: {}
+  # @schema
+  options: {}
+
+
+# @schema
+# type: object
+# required: true
+# @schema
+# -- Persistence configuration for the pod
+persistence:
+  # @schema
+  # type: boolean
+  # default: true
+  # @schema
+  enabled: true
+  # @schema
+  # type: array
+  # default: [ReadWriteOnce]
+  # @schema
+  accessModes:
+    - ReadWriteOnce
+  # @schema
+  # type: string
+  # default: ""
+  # @schema
+  existingClaim: ""
+  # @schema
+  # type: string
+  # default: 1Gi
+  # @schema
+  size: 1Gi
+  # @schema
+  # type: string
+  # default: ""
+  # @schema
+  storageClass: ""
+
+
+# @schema
+# type: object
+# required: true
+# additionalProperties: true
+# @schema
+# -- Readiness probe configuration
+readinessProbe:
+  initialDelaySeconds: 10
+  periodSeconds: 60
+  failureThreshold: 6
+  timeoutSeconds: 8
+  exec:
+    command:
+      - sh
+      - -c
+      - /scripts/healthcheck.sh
+# @schema
+# type: object
+# required: true
+# additionalProperties: true
+# @schema
+# -- Liveness probe configuration
+livenessProbe:
+  initialDelaySeconds: 5
+  periodSeconds: 5
+  failureThreshold: 2
+  exec:
+    command:
+      - sh
+      - -c
+      - >-
+        ps axf | fgrep -v grep | egrep -q '\{supervisord\}|/usr/bin/supervisord' &&
+        ps axf | fgrep -v grep | egrep -q '(/usr/lib/postfix/sbin/|/usr/libexec/postfix/)master'
+# @schema
+# type: object
+# required: true
+# additionalProperties: true
+# @schema
+# -- Startup probe configuration
+startupProbe:
+  initialDelaySeconds: 5
+  periodSeconds: 5
+  failureThreshold: 12
+  exec:
+    command:
+      - sh
+      - -c
+      - >-
+        ps axf | fgrep -v grep | egrep -q '\{supervisord\}|/usr/bin/supervisord' &&
+        ps axf | fgrep -v grep | fgrep -q "postfix-script" &&
+        ps axf | fgrep -v grep | fgrep -q 'opendkim'
+
+
+# @schema
+# type: object
+# default: {}
+# @schema
+lifecycle:
+  postStart: {}

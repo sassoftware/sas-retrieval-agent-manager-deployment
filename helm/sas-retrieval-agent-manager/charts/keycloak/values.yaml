@@ -1,94 +1,335 @@
+# vim: set ft=yaml:
+# yaml-language-server: $schema=values.schema.json
+
 # Default values for keycloak.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
+# @schema
+# required: true
+# type: integer
+# default: 1
+# @schema
 # -- Number of replicas to run. Chart is not designed to scale horizontally, use at your own risk
 replicaCount: 1
 
+# @schema
+# required: true
+# type: object
+# @schema
 # -- Container image configuration for Keycloak and related services
 image:
-  # -- Keycloak main container image configuration
+  # @schema
+  # required: true
+  # type: object
+  # @schema
+  # -- Container image configuration for Keycloak
   keycloak:
+    # @schema
+    # required: true
+    # type: object
+    # @schema
+    # -- Container image configuration for Keycloak
     repo:
+      # @schema
+      # required: true
+      # type: string
+      # default: quay.io
+      # @schema
       # -- Container registry base URL for Keycloak
       base: quay.io
+      # @schema
+      # required: true
+      # type: string
+      # default: keycloak/keycloak
+      # @schema
       # -- Container image path/name for Keycloak
       path: keycloak/keycloak
-      # -- Use global registry configuration instead of local
-      useGlobal: false
+    # @schema
+    # default: IfNotPresent
+    # enum: [Always,Never,IfNotPresent]
+    # @schema
     # -- Image pull policy for Keycloak container
     pullPolicy: IfNotPresent
+    # @schema
+    # required: true
+    # type: string
+    # @schema
     # -- Keycloak container image tag
-    tag: "26.3.3"
+    tag: "26.3.2"
+  # @schema
+  # required: true
+  # type: object
+  # @schema
   # -- PostgreSQL database container image configuration
   postgres:
+    # @schema
+    # required: true
+    # type: object
+    # @schema
+    # -- Container image configuration for Postgres
     repo:
+      # @schema
+      # required: true
+      # type: string
+      # default: docker.io
+      # @schema
       # -- Container registry base URL for PostgreSQL
       base: docker.io
+      # @schema
+      # required: true
+      # type: string
+      # default: postgres
+      # @schema
       # -- Container image path/name for PostgreSQL
       path: postgres
-      # -- Use global registry configuration instead of local
-      useGlobal: false
+    # @schema
+    # default: IfNotPresent
+    # enum: [Always,Never,IfNotPresent]
+    # @schema
     # -- Image pull policy for PostgreSQL container
     pullPolicy: IfNotPresent
+    # @schema
+    # required: true
+    # type: string
+    # @schema
     # -- PostgreSQL container image tag
     tag: "15-alpine"
+  # @schema
+  # required: true
+  # type: object
+  # @schema
   # -- Custom theme container image configuration
   theme:
+    # @schema
+    # required: true
+    # type: object
+    # @schema
+    # -- Container image configuration for the SAS Keycloak theme
     repo:
+      # @schema
+      # required: true
+      # type: string
+      # default: cr.sas.com
+      # @schema
       # -- Container registry base URL for theme
       base: cr.sas.com
+      # @schema
+      # required: true
+      # type: string
+      # default: viya-4-x64_oci_linux_2-docker/sas-iot-keycloak-theme
+      # @schema
       # -- Container image path/name for theme
-      path: cdp-release-x64_oci_linux_2-docker-latest/sas-iot-keycloak-theme
-      # -- Use global registry configuration instead of local
-      useGlobal: false
+      path: viya-4-x64_oci_linux_2-docker/sas-iot-keycloak-theme
+    # @schema
+    # default: IfNotPresent
+    # enum: [Always,Never,IfNotPresent]
+    # @schema
     # -- Image pull policy for theme container
     pullPolicy: IfNotPresent
+    # @schema
+    # required: true
+    # type: string
+    # @schema
     # -- Theme container image tag
-    tag: "1.2.16-20250717.1752760329700"
+    tag: "1.2.19-20250908.1757359720294"
   # -- kubectl container image configuration (used for Kubernetes operations)
   kubectl:
+    # @schema
+    # required: true
+    # type: object
+    # @schema
+    # -- Container image configuration for kubectl container
     repo:
+      # @schema
+      # required: true
+      # type: string
+      # default: docker.io
+      # @schema
       # -- Container registry base URL for kubectl
       base: "docker.io"
+      # @schema
+      # required: true
+      # type: string
+      # default: alpine/k8s
+      # @schema
       # -- Container image path/name for kubectl
       path: alpine/k8s
-      # -- Use global registry configuration instead of local
-      useGlobal: false
+    # @schema
+    # default: IfNotPresent
+    # enum: [Always,Never,IfNotPresent]
+    # @schema
     # -- Image pull policy for kubectl container
     pullPolicy: IfNotPresent
+    # @schema
+    # required: true
+    # type: string
+    # @schema
     # -- kubectl container image tag
     tag: "1.31.12"
 
+# @schema
+# type: array
+# items:
+#   type: object
+#   properties:
+#     name:
+#       type: string
+#       example: cr-sas-secret
+# default: [{"name":"cr-sas-secret"}]
+# @schema
 # -- Array of imagePullSecrets in the namespace for pulling images from private registries
 imagePullSecrets:
   - name: cr-sas-secret
 
+# @schema
+# required: true
+# type: string
+# default: keycloak
+# @schema
 # -- String to partially override the fullname template with a string (will prepend the release name)
 nameOverride: "keycloak"
 
+# @schema
+# required: true
+# type: string
+# default: sas-retrieval-agent-manager-keycloak
+# @schema
 # -- String to fully override the fullname template with a string
 fullnameOverride: "sas-retrieval-agent-manager-keycloak"
 
+# @schema
+# required: true
+# type: object
+# @schema
 # -- Service account configuration for Keycloak
 serviceAccount:
+  # @schema
+  # required: true
+  # type: boolean
+  # default: true
+  # @schema
   # -- Specifies whether a service account should be created
   create: true
+  # @schema
+  # required: true
+  # type: boolean
+  # default: true
+  # @schema
   # -- Automatically mount a ServiceAccount's API credentials
   automount: true
+  # @schema
+  # type: object
+  # default: {}
+  # additionalProperties: true
+  # @schema
   # -- Annotations to add to the service account
   annotations: {}
+  # @schema
+  # required: false
+  # type: string
+  # default: ""
+  # @schema
   # -- The name of the service account to use. If not set and create is true, a name is generated using the fullname template
   name: ""
 
+# @schema
+# type: object
+# default: {}
+# additionalProperties: true
+# @schema
 # -- Annotations to add to the pods
 podAnnotations: {}
 
+# @schema
+# type: object
+# default: {"sas.com/deployment":"sas-retrieval-agent-manager","workload.sas.com/class":"ram"}
+# additionalProperties: true
+# @schema
 # -- Labels to add to the pods
 podLabels:
   sas.com/deployment: "sas-retrieval-agent-manager"
   workload.sas.com/class: "ram"
 
+# @schema
+# type: [object,null]
+# default: {"runAsGroup":10001,"runAsNonRoot":true,"runAsUser":10001,"seccompProfile":{"type":"RuntimeDefault"},"fsGroup":10001}
+# properties:
+#   appArmorProfile:
+#     description: appArmorProfile is the AppArmor options to use by the containers in this pod.
+#     type: [object,null]
+#     properties:
+#       localhostProfile:
+#         type: string
+#       type:
+#         enum: [Localhost,RuntimeDefault]
+#   fsGroup:
+#     description: A special supplemental group that applies to all containers in a pod. Some volume types allow the Kubelet to change the ownership of that volume to be owned by the pod:\n\n1. The owning GID will be the FSGroup 2. The setgid bit is set (new files created in the volume will be owned by FSGroup) 3. The permission bits are OR'd with rw-rw----\n\nIf unset, the Kubelet will not modify the ownership and permissions of any volume.
+#     format: int64
+#     type: [integer,null]
+#     default: 10001
+#   fsGroupChangePolicy:
+#     enum:
+#       - OnRootMismatch
+#       - Always
+#     default: Always
+#   runAsGroup:
+#     description: The GID to run the entrypoint of the container process. Uses runtime default if unset. May also be set in SecurityContext.  If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence for that container.
+#     format: int64
+#     type: [integer,null]
+#     default: 10001
+#   runAsNonRoot:
+#     description: Indicates that the container must run as a non-root user. If true, the Kubelet will validate the image at runtime to ensure that it does not run as UID 0 (root) and fail to start the container if it does. If unset or false, no such validation will be performed. May also be set in SecurityContext.  If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.
+#     type: [boolean,null]
+#     default: true
+#   runAsUser:
+#     description: The UID to run the entrypoint of the container process. Defaults to user specified in image metadata if unspecified. May also be set in SecurityContext.  If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence for that container.
+#     format: int64
+#     type: [integer,null]
+#     default: 10001
+#   seLinuxOptions:
+#     description: The SELinux context to be applied to all containers. If unspecified, the container runtime will allocate a random SELinux context for each container.  May also be set in SecurityContext.  If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence for that container.
+#     type: [object,null]
+#     properties:
+#       level:
+#         type: string
+#       role:
+#         type: string
+#       type:
+#         type: string
+#       user:
+#         type: string
+#   seccompProfile:
+#     description: The seccomp options to use by the containers in this pod.
+#     type: [object,null]
+#     properties:
+#       localhostProfile:
+#         type: string
+#       type:
+#         enum: [Localhost,RuntimeDefault]
+#   supplementalGroups:
+#     description: A list of groups applied to the first process run in each container, in addition to the container's primary GID and fsGroup (if specified).  If the SupplementalGroupsPolicy feature is enabled, the supplementalGroupsPolicy field determines whether these are in addition to or instead of any group memberships defined in the container image. If unspecified, no additional groups are added, though group memberships defined in the container image may still be used, depending on the supplementalGroupsPolicy field.
+#     type: [array,null]
+#     items:
+#       format: int64
+#       type: [integer,null]
+#   supplementalGroupsPolicy:
+#     description: Defines how supplemental groups of the first container processes are calculated. Valid values are "Merge" and "Strict". If not specified, "Merge" is used. (Alpha) Using the field requires the SupplementalGroupsPolicy feature gate to be enabled and the container runtime must implement support for this feature.
+#     enum:
+#       - Merge
+#       - Strict
+#     default: Merge
+#   sysctls:
+#     description: Sysctls hold a list of namespaced sysctls used for the pod. Pods with unsupported sysctls (by the container runtime) might fail to launch.
+#     type: [array,null]
+#     items:
+#       type: object
+#       properties:
+#         name:
+#           type: string
+#         value:
+#           type: string
+# @schema
 # -- The security context for the pods
 podSecurityContext:
   # -- Group ID to run the entrypoint of the container process
@@ -103,6 +344,84 @@ podSecurityContext:
   # -- Group ID for file system ownership
   fsGroup: 10001
 
+# @schema
+# type: [object,null]
+# default: {"privileged":false,"seccompProfile":{"type":"RuntimeDefault"},"allowPrivilegeEscalation":false,"capabilities":{"add":[],"drop":["ALL"]},"readOnlyRootFilesystem":true,"runAsNonRoot":true,"runAsUser":10001,"runAsGroup":10001}
+# properties:
+#   allowPrivilegeEscalation:
+#     description: AllowPrivilegeEscalation controls whether a process can gain more privileges than its parent process. This bool directly controls if the no_new_privs flag will be set on the container process. AllowPrivilegeEscalation is true always when the container is run as Privileged or has CAP_SYS_ADMIN
+#     type: boolean
+#     default: false
+#   appArmorProfile:
+#     description: appArmorProfile is the AppArmor options to use by this container. If set, this profile overrides the pod's appArmorProfile.
+#     type: [object,null]
+#     properties:
+#       localhostProfile:
+#         type: string
+#       type:
+#         enum: [Localhost,RuntimeDefault]
+#   capabilities:
+#     description: The capabilities to add/drop when running containers. Defaults to the default set of capabilities granted by the container runtime.
+#     type: [object,null]
+#     properties:
+#       add:
+#         description: Added capabilities
+#         type: [array,null]
+#         items:
+#           type: string
+#         default: []
+#       drop:
+#         description: Dropped capabilities
+#         type: [array,null]
+#         items:
+#           type: string
+#         default: [ALL]
+#   privileged:
+#     description: Run container in privileged mode. Processes in privileged containers are essentially equivalent to root on the host.
+#     type: [boolean,null]
+#     default: false
+#   procMount:
+#     description: procMount denotes the type of proc mount to use for the containers. The default value is Default which uses the container runtime defaults for readonly paths and masked paths. This requires the ProcMountType feature flag to be enabled.
+#     type: [string,null]
+#   readOnlyRootFilesystem:
+#     description: Whether this container has a read-only root filesystem. Default is false.
+#     type: [boolean,null]
+#     default: false
+#   runAsGroup:
+#     description: The GID to run the entrypoint of the container process. Uses runtime default if unset. May also be set in SecurityContext.  If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence for that container.
+#     format: int64
+#     type: [integer,null]
+#     default: 10001
+#   runAsNonRoot:
+#     description: Indicates that the container must run as a non-root user. If true, the Kubelet will validate the image at runtime to ensure that it does not run as UID 0 (root) and fail to start the container if it does. If unset or false, no such validation will be performed. May also be set in SecurityContext.  If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.
+#     type: [boolean,null]
+#     default: true
+#   runAsUser:
+#     description: The UID to run the entrypoint of the container process. Defaults to user specified in image metadata if unspecified. May also be set in SecurityContext.  If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence for that container.
+#     format: int64
+#     type: [integer,null]
+#     default: 10001
+#   seLinuxOptions:
+#     description: The SELinux context to be applied to all containers. If unspecified, the container runtime will allocate a random SELinux context for each container.  May also be set in SecurityContext.  If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence for that container.
+#     type: [object,null]
+#     properties:
+#       level:
+#         type: string
+#       role:
+#         type: string
+#       type:
+#         type: string
+#       user:
+#         type: string
+#   seccompProfile:
+#     description: The seccomp options to use by the containers in this pod.
+#     type: [object,null]
+#     properties:
+#       localhostProfile:
+#         type: string
+#       type:
+#         enum: [Localhost,RuntimeDefault]
+# @schema
 # -- The security context for the application container
 securityContext:
   # -- Whether the container runs in privileged mode
@@ -126,21 +445,65 @@ securityContext:
   # -- Group ID to run the entrypoint of the container process
   runAsGroup: 10001
 
+# @schema
+# required: true
+# type: object
+# @schema
 # -- Kubernetes Service configuration
 service:
+  # @schema
+  # required: true
+  # description: Service type must be one of ClusterIP, NodePort, or LoadBalancer.
+  # enum:
+  #   - ClusterIP
+  #   - NodePort
+  #   - LoadBalancer
+  # @schema
   # -- Kubernetes Service type
   type: ClusterIP
+  # @schema
+  # required: true
+  # description: The port that will be exposed by this service.
+  # type: integer
+  # default: 8080
+  # @schema
   # -- Kubernetes Service port
   port: 8080
 
+# @schema
+# required: true
+# type: object
+# @schema
 # -- Ingress configuration for external access to Keycloak
 ingress:
+  # @schema
+  # required: true
+  # type: boolean
+  # default: false
+  # @schema
   # -- Use global ingress configuration instead of local hosts configuration
   useGlobal: false
+  # @schema
+  # required: true
+  # type: boolean
+  # default: true
+  # @schema
   # -- Enable ingress for external access to Keycloak
   enabled: true
+  # @schema
+  # required: true
+  # type: string
+  # default: nginx
+  # @schema
   # -- Class name of the Ingress
   className: "nginx"
+  # @schema
+  # type: object
+  # default:
+  #   kubernetes.io/ingress.allow-http: 'false'
+  #   nginx.ingress.kubernetes.io/proxy-buffer-size: 16k
+  #   nginx.ingress.kubernetes.io/ssl-redirect: 'true'
+  # @schema
   # -- Annotations for the Ingress
   annotations:
     # -- Disallow HTTP traffic, force HTTPS only
@@ -149,17 +512,79 @@ ingress:
     nginx.ingress.kubernetes.io/proxy-buffer-size: 16k
     # -- Force SSL redirect
     nginx.ingress.kubernetes.io/ssl-redirect: 'true'
+  # @schema
+  # type: [array,null]
+  # items:
+  #   type: object
+  #   properties:
+  #     host:
+  #       type: string
+  #       required: true
+  #     paths:
+  #       type: [array,null]
+  #       items:
+  #         type: object
+  #         properties:
+  #           path:
+  #             type: string
+  #             default: "/SASRetrievalAgentManager/auth(/(realms|resources)/(.*))$"
+  #             required: true
+  #           pathType:
+  #             type: string
+  #             default: ImplementationSpecific
+  #             required: true
+  # @schema
   # -- Hosts configuration (ignored if useGlobal is true)
-  hosts:
-    - host: chart-example.local
-      paths:
-        - path: /SASRetrievalAgentManager/auth(/(realms|resources)/(.*))$
-          pathType: ImplementationSpecific
+  hosts: []
+  #   - host: chart-example.local
+  #     paths:
+  #       - path: "/SASRetrievalAgentManager/auth(/(realms|resources)/(.*))$"
+  #         pathType: ImplementationSpecific
+
+  # @schema
+  # type: [array,null]
+  # items:
+  #   type: object
+  #   properties:
+  #     path:
+  #       type: string
+  #       default: "/SASRetrievalAgentManager/auth(/(realms|resources)/(.*))$"
+  #       required: true
+  #     pathType:
+  #       type: string
+  #       default: ImplementationSpecific
+  #       required: true
+  # default:
+  #   - path: "/SASRetrievalAgentManager/auth(/(realms|resources)/(.*))$"
+  #     pathType: ImplementationSpecific
+  # @schema
   # -- Paths configuration (used when useGlobal is true)
   paths:
-    - path: /SASRetrievalAgentManager/auth(/(realms|resources)/(.*))$
+    - path: "/SASRetrievalAgentManager/auth(/(realms|resources)/(.*))$"
       pathType: ImplementationSpecific
 
+  # @schema
+  # type: object
+  # required: true
+  # properties:
+  #   enabled:
+  #     type: boolean
+  #     default: true
+  #   sourceRange:
+  #     type: array
+  #     items:
+  #       type: string
+  #     default: []
+  #   host:
+  #     type: string
+  #     default: ""
+  #   path:
+  #     type: string
+  #     default: "/SASRetrievalAgentManager/auth/admin"
+  #   pathType:
+  #     type: string
+  #     default: "Prefix"
+  # @schema
   # -- Admin interface ingress configuration
   admin:
     # -- Enable admin interface access via ingress. If false, admin console is only accessible via port forwarding
@@ -169,18 +594,53 @@ ingress:
     #   - "192.0.2.0/24" # Example CIDR block (TEST-NET-1, see RFC 5737)
 
     # -- Admin interface host (ignored if useGlobal is true)
-    host: chart-example.local
+    host: ""
     # -- Admin interface path
     path: /SASRetrievalAgentManager/auth/admin
     # -- Admin interface path type
     pathType: Prefix
 
+  # @schema
+  # type: [array,null]
+  # items:
+  #   type: object
+  #   properties:
+  #     secretName:
+  #       type: string
+  #       required: true
+  #     hosts:
+  #       type: array
+  #       required: true
+  #       items:
+  #         type: string
+  # default:
+  #   - path: "/SASRetrievalAgentManager/auth(/(realms|resources)/(.*))$"
+  #     pathType: ImplementationSpecific
+  # @schema
   # -- TLS configuration for ingress
   tls: []
     # - secretName: ""
     #   hosts:
     #     - ""
 
+# @schema
+# type: object
+# required: true
+# properties:
+#   claims:
+#     type: array
+#     items:
+#       type: object
+#       properties:
+#         name:
+#           type: string
+#         request:
+#           type: string
+#   limits:
+#     type: object
+#   requests:
+#     type: object
+# @schema
 # -- The resources to allocate for the Keycloak container
 resources:
   # -- Resource limits for the container
@@ -195,13 +655,12 @@ resources:
     cpu: 50m
     # -- Memory request
     memory: 256Mi
-  # limits:
-  #   cpu: 100m
-  #   memory: 128Mi
-  # requests:
-  #   cpu: 100m
-  #   memory: 128Mi
 
+# @schema
+# type: [object,null]
+# required: true
+# additionalProperties: true
+# @schema
 # -- Liveness probe configuration for Keycloak
 livenessProbe:
   # -- Number of consecutive failures required to mark container as not ready
@@ -216,6 +675,11 @@ livenessProbe:
   # -- How often to perform the probe
   periodSeconds: 30
 
+# @schema
+# type: [object,null]
+# required: true
+# additionalProperties: true
+# @schema
 # -- Readiness probe configuration for Keycloak
 readinessProbe:
   # -- Number of consecutive failures required to mark container as not ready
@@ -230,6 +694,30 @@ readinessProbe:
   # -- How often to perform the probe
   periodSeconds: 30
 
+# @schema
+# type: [object,null]
+# required: true
+# properties:
+#   enabled:
+#     type: boolean
+#     default: false
+#   minReplicas:
+#     type: integer
+#     format: int32
+#     default: 1
+#   maxReplicas:
+#     type: integer
+#     format: int32
+#     default: 100
+#   targetCPUUtilizationPercentage:
+#     type: integer
+#     format: int32
+#     default: 80
+#   targetMemoryUtilizationPercentage:
+#     type: integer
+#     format: int32
+#     default: 80
+# @schema
 # -- Horizontal Pod Autoscaler configuration
 autoscaling:
   # -- Enable horizontal pod autoscaling
@@ -243,6 +731,9 @@ autoscaling:
   # -- Target memory utilization percentage for scaling (optional)
   # targetMemoryUtilizationPercentage: 80
 
+# @schema
+# type: [array,null]
+# @schema
 # -- Additional volumes on the output Deployment definition
 volumes: []
 # - name: foo
@@ -250,18 +741,30 @@ volumes: []
 #     secretName: mysecret
 #     optional: false
 
+# @schema
+# type: [array,null]
+# @schema
 # -- Additional volumeMounts on the output Deployment definition
 volumeMounts: []
 # - name: foo
 #   mountPath: "/etc/foo"
 #   readOnly: true
 
+# @schema
+# type: [object,null]
+# @schema
 # -- Node labels for pod assignment
 nodeSelector: {}
 
+# @schema
+# type: [array,null]
+# @schema
 # -- Tolerations for pod assignment
 tolerations: []
 
+# @schema
+# type: [object,null]
+# @schema
 # -- Map of node/pod affinities
 affinity:
   nodeAffinity:
@@ -281,40 +784,128 @@ affinity:
           values:
           - ram
 
+# @schema
+# type: object
+# required: true
+# @schema
 # -- OAuth2 Proxy configuration for authentication
 oauthProxy:
+  # @schema
+  # type: string
+  # required: true
+  # default: "oauth2-proxy"
+  # @schema
   # -- String to partially override the OAuth2 Proxy fullname template
   nameOverride: "oauth2-proxy"
+  # @schema
+  # type: string
+  # required: true
+  # default: "sas-retrieval-agent-manager-oauth2-proxy"
+  # @schema
   # -- String to fully override the OAuth2 Proxy fullname template
   fullnameOverride: "sas-retrieval-agent-manager-oauth2-proxy"
   # -- Number of OAuth2 Proxy replicas
+  # @schema
+  # type: integer
+  # required: true
+  # default: 1
+  # @schema
   replicaCount: 1
+  # @schema
+  # required: true
+  # type: object
+  # @schema
   # -- OAuth2 Proxy service configuration
   service:
+    # @schema
+    # required: true
+    # description: Service type must be one of ClusterIP, NodePort, or LoadBalancer.
+    # enum:
+    #   - ClusterIP
+    #   - NodePort
+    #   - LoadBalancer
+    # @schema
     # -- Kubernetes Service type for OAuth2 Proxy
     type: ClusterIP
+    # @schema
+    # required: true
+    # description: The port that will be exposed by this service.
+    # type: integer
+    # default: 8080
+    # @schema
     # -- Kubernetes Service port for OAuth2 Proxy
     port: 4180
 
+  # @schema
+  # required: true
+  # type: object
+  # @schema
   # -- OAuth2 Proxy service account configuration
   serviceAccount:
+    # @schema
+    # required: true
+    # type: boolean
+    # default: true
+    # @schema
     # -- Specifies whether a service account should be created for OAuth2 Proxy
     create: true
+    # @schema
+    # required: true
+    # type: boolean
+    # default: true
+    # @schema
     # -- Automatically mount a ServiceAccount's API credentials for OAuth2 Proxy
     automount: true
+    # @schema
+    # type: object
+    # default: {}
+    # @schema
     # -- Annotations to add to the OAuth2 Proxy service account
     annotations: {}
+    # @schema
+    # required: false
+    # type: string
+    # default: ""
+    # @schema
     # -- The name of the service account to use for OAuth2 Proxy
     name: "oauth2-proxy"
 
+  # @schema
+  # required: true
+  # type: object
+  # @schema
   # -- OAuth2 Proxy ingress configuration
   ingress:
+    # @schema
+    # required: true
+    # type: boolean
+    # default: false
+    # @schema
     # -- Use global ingress configuration instead of local hosts for OAuth2 Proxy
     useGlobal: false
+    # @schema
+    # required: true
+    # type: boolean
+    # default: true
+    # @schema
     # -- Enable ingress for OAuth2 Proxy
     enabled: true
+    # @schema
+    # required: true
+    # type: string
+    # default: nginx
+    # @schema
     # -- Class name of the OAuth2 Proxy Ingress
     className: "nginx"
+    # @schema
+    # type: object
+    # default:
+    #   kubernetes.io/ingress.allow-http: 'false'
+    #   nginx.ingress.kubernetes.io/proxy-buffer-size: 16k
+    #   nginx.ingress.kubernetes.io/ssl-redirect: 'true'
+    #   nginx.ingress.kubernetes.io/enable-cors: 'true'
+    #   nginx.ingress.kubernetes.io/session-cookie-samesite: lax
+    # @schema
     # -- Annotations for the OAuth2 Proxy Ingress
     annotations:
       # -- Disallow HTTP traffic, force HTTPS only
@@ -327,50 +918,248 @@ oauthProxy:
       nginx.ingress.kubernetes.io/enable-cors: 'true'
       # -- Session cookie SameSite attribute
       nginx.ingress.kubernetes.io/session-cookie-samesite: lax
+    # @schema
+    # type: [array,null]
+    # items:
+    #   type: object
+    #   properties:
+    #     host:
+    #       type: string
+    #       required: true
+    #     paths:
+    #       type: [array,null]
+    #       items:
+    #         type: object
+    #         properties:
+    #           path:
+    #             type: string
+    #             default: "/SASRetrievalAgentManager/auth(/(realms|resources)/(.*))$"
+    #             required: true
+    #           pathType:
+    #             type: string
+    #             default: ImplementationSpecific
+    #             required: true
+    # @schema
     # -- Hosts configuration for OAuth2 Proxy (ignored if useGlobal is true)
     hosts: []
-    # - host: chart-example.local
-    #   paths:
-    #     - path: /oauth2(/|/(.*))$
-    #       pathType: ImplementationSpecific
+
+    # @schema
+    # type: [array,null]
+    # items:
+    #   type: object
+    #   properties:
+    #     path:
+    #       type: string
+    #       default: "/SASRetrievalAgentManager/oauth2(/|/(.*))$"
+    #       required: true
+    #     pathType:
+    #       type: string
+    #       default: ImplementationSpecific
+    #       required: true
+    # default:
+    #   - path: "/SASRetrievalAgentManager/oauth2(/|/(.*))$"
+    #     pathType: ImplementationSpecific
+    # @schema
     # -- OAuth2 authentication paths
     paths:
       - path: /SASRetrievalAgentManager/oauth2(/|/(.*))$
         pathType: ImplementationSpecific
+
+    # @schema
+    # type: [array,null]
+    # items:
+    #   type: object
+    #   properties:
+    #     path:
+    #       type: string
+    #       default: "/SASRetrievalAgentManager/logout(/(.*))?$"
+    #       required: true
+    #     pathType:
+    #       type: string
+    #       default: ImplementationSpecific
+    #       required: true
+    # default:
+    #   - path: "/SASRetrievalAgentManager/logout(/(.*))?$"
+    #     pathType: ImplementationSpecific
+    # @schema
     # -- OAuth2 logout paths
     logoutPaths:
       - path: /SASRetrievalAgentManager/logout(/(.*))?$
         pathType: ImplementationSpecific
+
+    
+    # @schema
+    # type: [array,null]
+    # items:
+    #   type: object
+    #   properties:
+    #     secretName:
+    #       type: string
+    #       required: true
+    #     hosts:
+    #       type: array
+    #       required: true
+    #       items:
+    #         type: string
+    # default:
+    #   - path: "/SASRetrievalAgentManager/auth(/(realms|resources)/(.*))$"
+    #     pathType: ImplementationSpecific
+    # @schema
     # -- TLS configuration for OAuth2 Proxy ingress
     tls: []
     #   - secretName: ""
     #     hosts:
     #       - ""
 
+  # @schema
+  # required: true
+  # type: object
+  # @schema
   # -- OAuth2 Proxy container image configuration
   image:
+    # @schema
+    # required: true
+    # type: object
+    # @schema
     repo:
+      # @schema
+      # required: true
+      # type: string
+      # default: quay.io
+      # @schema
       # -- Container registry base URL for OAuth2 Proxy
       base: quay.io
+      # @schema
+      # required: true
+      # type: string
+      # default: oauth2-proxy/oauth2-proxy
+      # @schema
       # -- Container image path/name for OAuth2 Proxy
       path: oauth2-proxy/oauth2-proxy
+    # @schema
+    # default: IfNotPresent
+    # enum: [Always,Never,IfNotPresent]
+    # @schema
     # -- Image pull policy for OAuth2 Proxy container
     pullPolicy: Always
+    # @schema
+    # required: true
+    # type: string
+    # @schema
     # -- OAuth2 Proxy container image tag
     tag: "v7.12.0"
 
+  # @schema
+  # type: array
+  # items:
+  #   type: object
+  #   properties:
+  #     name:
+  #       type: string
+  #       example: cr-sas-secret
+  # default: [{"name":"cr-sas-secret"}]
+  # @schema
   # -- Array of imagePullSecrets for OAuth2 Proxy
   imagePullSecrets:
     - name: acr-secret
 
+  # @schema
+  # type: object
+  # default: {}
+  # @schema
   # -- Annotations to add to the OAuth2 Proxy pods
   podAnnotations: {}
 
+  # @schema
+  # type: object
+  # default:
+  #   sas.com/deployment: "sas-retrieval-agent-manager"
+  #   workload.sas.com/class: "ram"
+  # @schema
   # -- Labels to add to the OAuth2 Proxy pods
   podLabels:
     sas.com/deployment: "sas-retrieval-agent-manager"
     workload.sas.com/class: "ram"
 
+  # @schema
+  # type: [object,null]
+  # default: {"runAsGroup":10001,"runAsNonRoot":true,"runAsUser":10001,"seccompProfile":{"type":"RuntimeDefault"},"fsGroup":10001}
+  # properties:
+  #   appArmorProfile:
+  #     description: appArmorProfile is the AppArmor options to use by the containers in this pod.
+  #     type: [object,null]
+  #     properties:
+  #       localhostProfile:
+  #         type: string
+  #       type:
+  #         enum: [Localhost,RuntimeDefault]
+  #   fsGroup:
+  #     description: A special supplemental group that applies to all containers in a pod. Some volume types allow the Kubelet to change the ownership of that volume to be owned by the pod:\n\n1. The owning GID will be the FSGroup 2. The setgid bit is set (new files created in the volume will be owned by FSGroup) 3. The permission bits are OR'd with rw-rw----\n\nIf unset, the Kubelet will not modify the ownership and permissions of any volume.
+  #     format: int64
+  #     type: [integer,null]
+  #     default: 10001
+  #   fsGroupChangePolicy:
+  #     enum:
+  #       - OnRootMismatch
+  #       - Always
+  #     default: Always
+  #   runAsGroup:
+  #     description: The GID to run the entrypoint of the container process. Uses runtime default if unset. May also be set in SecurityContext.  If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence for that container.
+  #     format: int64
+  #     type: [integer,null]
+  #     default: 10001
+  #   runAsNonRoot:
+  #     description: Indicates that the container must run as a non-root user. If true, the Kubelet will validate the image at runtime to ensure that it does not run as UID 0 (root) and fail to start the container if it does. If unset or false, no such validation will be performed. May also be set in SecurityContext.  If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.
+  #     type: [boolean,null]
+  #     default: true
+  #   runAsUser:
+  #     description: The UID to run the entrypoint of the container process. Defaults to user specified in image metadata if unspecified. May also be set in SecurityContext.  If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence for that container.
+  #     format: int64
+  #     type: [integer,null]
+  #     default: 10001
+  #   seLinuxOptions:
+  #     description: The SELinux context to be applied to all containers. If unspecified, the container runtime will allocate a random SELinux context for each container.  May also be set in SecurityContext.  If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence for that container.
+  #     type: [object,null]
+  #     properties:
+  #       level:
+  #         type: string
+  #       role:
+  #         type: string
+  #       type:
+  #         type: string
+  #       user:
+  #         type: string
+  #   seccompProfile:
+  #     description: The seccomp options to use by the containers in this pod.
+  #     type: [object,null]
+  #     properties:
+  #       localhostProfile:
+  #         type: string
+  #       type:
+  #         enum: [Localhost,RuntimeDefault]
+  #   supplementalGroups:
+  #     description: A list of groups applied to the first process run in each container, in addition to the container's primary GID and fsGroup (if specified).  If the SupplementalGroupsPolicy feature is enabled, the supplementalGroupsPolicy field determines whether these are in addition to or instead of any group memberships defined in the container image. If unspecified, no additional groups are added, though group memberships defined in the container image may still be used, depending on the supplementalGroupsPolicy field.
+  #     type: [array,null]
+  #     items:
+  #       format: int64
+  #       type: [integer,null]
+  #   supplementalGroupsPolicy:
+  #     description: Defines how supplemental groups of the first container processes are calculated. Valid values are "Merge" and "Strict". If not specified, "Merge" is used. (Alpha) Using the field requires the SupplementalGroupsPolicy feature gate to be enabled and the container runtime must implement support for this feature.
+  #     enum:
+  #       - Merge
+  #       - Strict
+  #     default: Merge
+  #   sysctls:
+  #     description: Sysctls hold a list of namespaced sysctls used for the pod. Pods with unsupported sysctls (by the container runtime) might fail to launch.
+  #     type: [array,null]
+  #     items:
+  #       type: object
+  #       properties:
+  #         name:
+  #           type: string
+  #         value:
+  #           type: string
+  # @schema
   # -- The security context for the OAuth2 Proxy pods
   podSecurityContext:
     # -- Group ID for file system ownership
@@ -385,6 +1174,84 @@ oauthProxy:
     seccompProfile:
       type: RuntimeDefault
 
+  # @schema
+  # type: [object,null]
+  # default: {"privileged":false,"seccompProfile":{"type":"RuntimeDefault"},"allowPrivilegeEscalation":false,"capabilities":{"add":[],"drop":["ALL"]},"readOnlyRootFilesystem":true,"runAsNonRoot":true,"runAsUser":10001,"runAsGroup":10001}
+  # properties:
+  #   allowPrivilegeEscalation:
+  #     description: AllowPrivilegeEscalation controls whether a process can gain more privileges than its parent process. This bool directly controls if the no_new_privs flag will be set on the container process. AllowPrivilegeEscalation is true always when the container is run as Privileged or has CAP_SYS_ADMIN
+  #     type: boolean
+  #     default: false
+  #   appArmorProfile:
+  #     description: appArmorProfile is the AppArmor options to use by this container. If set, this profile overrides the pod's appArmorProfile.
+  #     type: [object,null]
+  #     properties:
+  #       localhostProfile:
+  #         type: string
+  #       type:
+  #         enum: [Localhost,RuntimeDefault]
+  #   capabilities:
+  #     description: The capabilities to add/drop when running containers. Defaults to the default set of capabilities granted by the container runtime.
+  #     type: [object,null]
+  #     properties:
+  #       add:
+  #         description: Added capabilities
+  #         type: [array,null]
+  #         items:
+  #           type: string
+  #         default: []
+  #       drop:
+  #         description: Dropped capabilities
+  #         type: [array,null]
+  #         items:
+  #           type: string
+  #         default: [ALL]
+  #   privileged:
+  #     description: Run container in privileged mode. Processes in privileged containers are essentially equivalent to root on the host.
+  #     type: [boolean,null]
+  #     default: false
+  #   procMount:
+  #     description: procMount denotes the type of proc mount to use for the containers. The default value is Default which uses the container runtime defaults for readonly paths and masked paths. This requires the ProcMountType feature flag to be enabled.
+  #     type: [string,null]
+  #   readOnlyRootFilesystem:
+  #     description: Whether this container has a read-only root filesystem. Default is false.
+  #     type: [boolean,null]
+  #     default: false
+  #   runAsGroup:
+  #     description: The GID to run the entrypoint of the container process. Uses runtime default if unset. May also be set in SecurityContext.  If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence for that container.
+  #     format: int64
+  #     type: [integer,null]
+  #     default: 10001
+  #   runAsNonRoot:
+  #     description: Indicates that the container must run as a non-root user. If true, the Kubelet will validate the image at runtime to ensure that it does not run as UID 0 (root) and fail to start the container if it does. If unset or false, no such validation will be performed. May also be set in SecurityContext.  If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.
+  #     type: [boolean,null]
+  #     default: true
+  #   runAsUser:
+  #     description: The UID to run the entrypoint of the container process. Defaults to user specified in image metadata if unspecified. May also be set in SecurityContext.  If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence for that container.
+  #     format: int64
+  #     type: [integer,null]
+  #     default: 10001
+  #   seLinuxOptions:
+  #     description: The SELinux context to be applied to all containers. If unspecified, the container runtime will allocate a random SELinux context for each container.  May also be set in SecurityContext.  If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence for that container.
+  #     type: [object,null]
+  #     properties:
+  #       level:
+  #         type: string
+  #       role:
+  #         type: string
+  #       type:
+  #         type: string
+  #       user:
+  #         type: string
+  #   seccompProfile:
+  #     description: The seccomp options to use by the containers in this pod.
+  #     type: [object,null]
+  #     properties:
+  #       localhostProfile:
+  #         type: string
+  #       type:
+  #         enum: [Localhost,RuntimeDefault]
+  # @schema
   # -- The security context for the OAuth2 Proxy application container
   securityContext:
     # -- Seccomp profile for the OAuth2 Proxy container
@@ -406,6 +1273,11 @@ oauthProxy:
     # -- User ID to run the entrypoint of the container process
     runAsUser: 10001
 
+  # @schema
+  # type: [object,null]
+  # required: true
+  # additionalProperties: true
+  # @schema
   # -- Liveness probe configuration for OAuth2 Proxy
   livenessProbe:
     # -- HTTP GET probe configuration for liveness
@@ -414,6 +1286,11 @@ oauthProxy:
       path: /ping
       port: http
 
+  # @schema
+  # type: [object,null]
+  # required: true
+  # additionalProperties: true
+  # @schema
   # -- Readiness probe configuration for OAuth2 Proxy
   readinessProbe:
     # -- HTTP GET probe configuration for readiness
@@ -422,6 +1299,24 @@ oauthProxy:
       path: /ping
       port: http
 
+  # @schema
+  # type: object
+  # required: true
+  # properties:
+  #   claims:
+  #     type: array
+  #     items:
+  #       type: object
+  #       properties:
+  #         name:
+  #           type: string
+  #         request:
+  #           type: string
+  #   limits:
+  #     type: object
+  #   requests:
+  #     type: object
+  # @schema
   # -- The resources to allocate for the OAuth2 Proxy container
   resources:
     # -- Resource limits for the OAuth2 Proxy container
@@ -437,6 +1332,30 @@ oauthProxy:
       # -- Memory request
       memory: 32Mi
 
+  # @schema
+  # type: [object,null]
+  # required: true
+  # properties:
+  #   enabled:
+  #     type: boolean
+  #     default: false
+  #   minReplicas:
+  #     type: integer
+  #     format: int32
+  #     default: 1
+  #   maxReplicas:
+  #     type: integer
+  #     format: int32
+  #     default: 100
+  #   targetCPUUtilizationPercentage:
+  #     type: integer
+  #     format: int32
+  #     default: 80
+  #   targetMemoryUtilizationPercentage:
+  #     type: integer
+  #     format: int32
+  #     default: 80
+  # @schema
   # -- Horizontal Pod Autoscaler configuration for OAuth2 Proxy
   autoscaling:
     # -- Enable horizontal pod autoscaling for OAuth2 Proxy
@@ -448,6 +1367,9 @@ oauthProxy:
     # -- Target CPU utilization percentage for OAuth2 Proxy scaling
     targetCPUUtilizationPercentage: 80
 
+  # @schema
+  # type: [array,null]
+  # @schema
   # -- Additional volumes on the OAuth2 Proxy Deployment definition
   volumes: []
   # - name: foo
@@ -455,21 +1377,53 @@ oauthProxy:
   #     secretName: mysecret
   #     optional: false
 
+  # @schema
+  # type: [array,null]
+  # @schema
   # -- Additional volumeMounts on the OAuth2 Proxy Deployment definition
   volumeMounts: []
   # - name: foo
   #   mountPath: "/etc/foo"
   #   readOnly: true
 
+  # @schema
+  # type: [object,null]
+  # @schema
   # -- Node labels for OAuth2 Proxy pod assignment
   nodeSelector: {}
 
+  # @schema
+  # type: [array,null]
+  # @schema
   # -- Tolerations for OAuth2 Proxy pod assignment
   tolerations: []
 
+  # @schema
+  # type: [object,null]
+  # @schema
   # -- Map of node/pod affinities for OAuth2 Proxy
-  affinity: {}
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 1
+        preference:
+          matchExpressions:
+          - key: sas.com/deployment
+            operator: In
+            values:
+            - sas-retrieval-agent-manager
+      - weight: 2
+        preference:
+          matchExpressions:
+          - key: workload.sas.com/class
+            operator: In
+            values:
+            - ram
 
+# @schema
+# type: object
+# additionalProperties: true
+# @schema
 # -- Mail server configuration
 # (optional email service for development)
 mail:
@@ -485,9 +1439,6 @@ mail:
   pod:
     # -- Security context for mail server pod
     securityContext:
-      # runAsGroup: 10001
-      # runAsNonRoot: true
-      # runAsUser: 1001
       # -- Seccomp profile for mail server pod
       seccompProfile:
         type: RuntimeDefault
@@ -500,15 +1451,6 @@ mail:
         # -- Seccomp profile for postfix container
         seccompProfile:
           type: RuntimeDefault
-        # allowPrivilegeEscalation: false
-        # capabilities:
-        #   add: []
-        #   drop:
-        #     - ALL
-        # #readOnlyRootFilesystem: true
-        # runAsNonRoot: true
-        # runAsUser: 1001
-        # runAsGroup: 10001
   # -- Mail server configuration settings
   config:
     # -- General mail server settings
@@ -538,56 +1480,214 @@ mail:
       # -- SMTP recipient restrictions
       smtpd_recipient_restrictions: "permit_mynetworks, reject_unauth_destination"
 
+# @schema
+# type: object
+# required: true
+# properties:
+#   stage:
+#     type: [string,null]
+#   domain:
+#     type: [string,null]
+#   image:
+#     type: [object,null]
+#   imagePullSecrets:
+#     type: [array,null]
+#   ingress:
+#     type: [object,null]
+#   configuration:
+#     type: object
+#     required: true
+#   clusterName:
+#     type: [string,null]
+#   clusterUrl:
+#     type: [string,null]
+#   repo:
+#     type: [object,null]
+#     properties:
+#       base:
+#         type: string
+#   syncWindows:
+#     type: [array,null]
+#     items:
+#       type: object
+#       properties:
+#         kind:
+#           type: string
+#           enum: [allow,deny]
+#         schedule:
+#           type: string
+#           format: cron
+#         duration:
+#           type: string
+#         timezone:
+#           type: string
+#           default: "US/Eastern"
+#         applications:
+#           type: array
+#           items:
+#             type: string
+# @schema
 # -- Global configuration for Keycloak and related services
 global:
+  # @schema
+  # type: object
+  # required: true
+  # properties:
+  #   database:
+  #     type: [object,null]
+  #   application:
+  #     type: [object,null]
+  #   keycloak:
+  #     type: [object]
+  #   swagger:
+  #     type: [object,null]
+  #   postgrest:
+  #     type: [object,null]
+  #   gpg:
+  #     type: [object,null]
+  #   api:
+  #     type: [object,null]
+  #   eval:
+  #     type: [object,null]
+  #   plugin:
+  #     type: [object,null]
+  #   kueue:
+  #     type: [object,null]
+  #   vhub:
+  #     type: [object,null]
+  #   migration:
+  #     type: [object,null]
+  #   vectorizationJob:
+  #     type: [object,null]
+  #   ui:
+  #     type: [object,null]
+  #   vectorStore:
+  #     type: [object,null]
+  #   weaviate:
+  #     type: [object,null]
+  # @schema
   # -- Configuration settings
   configuration:
-    # -- Database configuration for Keycloak
-    database:
-      # -- Database username for Keycloak
-      user: ""
-      # -- Database password for Keycloak
-      password: ""
-      # -- Database host for Keycloak
-      host: ""
-      # -- Database port for Keycloak
-      port: "5432"
-      # -- Database name for Keycloak
-      database: "vectorizationhub"
-      # -- SSL mode for database connection
-      sslmode: "require"
-      # -- Whether to create database schema on startup
-      createSchema: true
-      # -- Whether to create database users on startup
-      createUsers: true
-
+    # @schema
+    # type: object
+    # required: true
+    # properties:
+    #   createDB:
+    #     type: [boolean,null]
+    #   createSchema:
+    #     type: [boolean,null]
+    #   createUser:
+    #     type: [boolean,null]
+    #   db:
+    #     type: [string,null]
+    #   schema:
+    #     type: [string,null]
+    #   user:
+    #     type: [string,null]
+    #   password:
+    #     type: [string,null]
+    #   realm:
+    #     type: [string]
+    #   adminRole:
+    #     type: [string]
+    #   userRole:
+    #     type: [string]
+    #   serviceaccountsEnabled:
+    #     type: [boolean]
+    #   theme:
+    #     type: [string]
+    #   proxy:
+    #     type: [string]
+    #   strictHostname:
+    #     type: [boolean]
+    #   appAdmin:
+    #     type: [string]
+    #   appAdminPassword:
+    #     type: [string]
+    #   keycloakAdmin:
+    #     type: [string]
+    #   keycloakAdminPassword:
+    #     type: [string]
+    #   clientId:
+    #     type: [string]
+    #   clientSecret:
+    #     type: [string]
+    #   secret_path:
+    #     type: [string,null]
+    # @schema
     # -- Keycloak-specific configuration
     keycloak:
-      # -- External URL for Keycloak service
-      url: ""
+      # @schema
+      # type: string
+      # required: true
+      # @schema
       # -- Keycloak realm name for the application
       realm: "sas-iot"
+      # @schema
+      # type: string
+      # required: true
+      # @schema
       # -- Admin role name in Keycloak
       adminRole: "sas-iot-admin"
+      # @schema
+      # type: string
+      # required: true
+      # @schema
       # -- User role name in Keycloak
       userRole: "sas-iot-user"
+      # @schema
+      # type: boolean
+      # required: true
+      # @schema
       # -- Whether service accounts are enabled in Keycloak
       serviceaccountsEnabled: false
+      # @schema
+      # type: string
+      # required: true
+      # @schema
       # -- Keycloak theme to use
       theme: sasblue
       # -- Proxy mode configuration (edge, reencrypt, or passthrough)
       proxy: edge
+      # @schema
+      # type: boolean
+      # required: true
+      # @schema
       # -- Whether to enforce strict hostname checking
       strictHostname: true
+      # @schema
+      # type: string
+      # required: true
+      # @schema
       # -- Application admin username
       appAdmin: AppAdmin
+      # @schema
+      # type: string
+      # required: true
+      # @schema
       # -- Application admin password
       appAdminPassword: ""
+      # @schema
+      # type: string
+      # required: true
+      # @schema
       # -- Keycloak admin username
       keycloakAdmin: kcAdmin
+      # @schema
+      # type: string
+      # required: true
+      # @schema
       # -- Keycloak admin password
       keycloakAdminPassword: ""
+      # @schema
+      # type: string
+      # required: true
+      # @schema
       # -- OAuth2 client ID for the application
-      clientId: "sas-retagentmgr-app"
+      clientId: "sas-ram-app"
+      # @schema
+      # type: string
+      # required: true
+      # @schema
       # -- OAuth2 client secret for the application
       clientSecret: ""

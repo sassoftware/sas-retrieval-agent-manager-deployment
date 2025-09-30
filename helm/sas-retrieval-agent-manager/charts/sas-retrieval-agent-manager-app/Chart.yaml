@@ -14,7 +14,7 @@ annotations:
       repository: local
   artifacthub.io/images: |
     - name: sas-retrieval-agent-manager-app
-      image: cr.sas.com/cdp-release-x64_oci_linux_2-docker-latest/sas-retrieval-agent-manager-app:latest
+      image: cr.sas.com/viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-app:latest
       whitelisted: true
     - name: nginx
       image: nginx:1.25-alpine
@@ -129,6 +129,6 @@ maintainers:
 name: sas-retrieval-agent-manager-app
 sources:
 - https://github.com/sas-institute-rnd-internal/tmp-viya-iot-ram-helm
-- https://cr.sas.com/cdp-release-x64_oci_linux_2-docker-latest/sas-retrieval-agent-manager-app
+- https://cr.sas.com/viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-app
 type: application
 version: 1.1.0

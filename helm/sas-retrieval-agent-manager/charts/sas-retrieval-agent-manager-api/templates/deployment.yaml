@@ -1,11 +1,9 @@
 {{- $repo_base := "" -}}
-{{- $repo_path := "" -}}
-{{- if .Values.image.repo.useGlobal | default false -}}
+{{- if and (hasKey .Values "global") (hasKey .Values.global "image") (hasKey .Values.global.image "repo") (hasKey .Values.global.image.repo "base") -}}
   {{- $repo_base = .Values.global.image.repo.base | default .Values.image.repo.base -}}
 {{- else -}}
   {{- $repo_base = .Values.image.repo.base -}}
 {{- end -}}
-{{- $repo_path = .Values.image.repo.path -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -42,7 +40,7 @@ spec:
         - name: {{ .Chart.Name }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ $repo_base }}/{{ $repo_path }}:{{ .Values.image.tag }}"
+          image: "{{ $repo_base }}/{{ .Values.image.repo.path }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
             {{- if $.Values.global.configuration.swagger.enabled }}
@@ -120,11 +118,13 @@ spec:
                 configMapKeyRef:
                   name: api-config
                   key: base_path
+            {{- if .Values.global.configuration.vhub.postgreSQLCertSecret | default .Values.global.configuration.vhub.awsCertSecret | quote }}
             - name: AWS_CERT_SECRET
               valueFrom:
                 configMapKeyRef:
                   name: vhub-config
-                  key: aws_cert_secret
+                  key: postgresql_cert_secret
+            {{- end }}
             - name: SSL_VERIFY
               value: '{{ index .Values.global.configuration.api "sslVerify" }}'
             - name: LOG_LEVEL

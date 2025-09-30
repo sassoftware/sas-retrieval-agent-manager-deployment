@@ -3,15 +3,20 @@ Thank you for installing the SAS Retrieval Agent Manager Helm chart!
 
 You can now access your environment at:
 
-  https://{{ if (index .Values "sas-retrieval-agent-manager-app").ingress.useGlobal | default false }}{{ .Values.global.domain }}{{ else }}{{ (index (index .Values "sas-retrieval-agent-manager-app").ingress.hosts 0).host }}{{ end }}{{ if (index .Values "sas-retrieval-agent-manager-app").ingress.useGlobal | default false }}{{ (index (index .Values "sas-retrieval-agent-manager-app").ingress.paths 0).path }}{{ else }}{{ (index (index (index .Values "sas-retrieval-agent-manager-app").ingress.hosts 0).paths 0).path }}{{ end }}
+  {{- $app := index .Values "sas-retrieval-agent-manager-app" -}}
+  {{- $ingress := (index $app "ingress") -}}
+  https://{{ if $ingress.useGlobal | default false }}{{ .Values.global.domain }}{{ else }}{{- $hosts := default (list) (index $ingress "hosts") -}}{{ if gt (len $hosts) 0 }}{{ (index $hosts 0).host }}{{ else }}<no-host-configured>{{ end }}{{ end }}{{ if $ingress.useGlobal | default false }}{{- $paths := default (list) (index $ingress "paths") -}}{{ if gt (len $paths) 0 }}{{ (index $paths 0).path }}{{ else }}<no-path-configured>{{ end }}{{ else }}{{- $hosts := default (list) (index $ingress "hosts") -}}{{ if gt (len $hosts) 0 }}{{- $paths := default (list) (index (index $hosts 0) "paths") -}}{{ if gt (len $paths) 0 }}{{ (index $paths 0).path }}{{ else }}<no-path-configured>{{ end }}{{ else }}<no-path-configured>{{ end }}{{ end }}
 
 Login with account:
 
   {{ .Values.global.configuration.keycloak.appAdmin }}
 
+
 For user management, access Keycloak at:
 
-  https://{{ if .Values.keycloak.ingress.useGlobal | default false }}{{ .Values.global.domain }}{{ else }}{{ (index .Values.keycloak.ingress.hosts 0).host }}{{ end }}{{ if .Values.keycloak.ingress.useGlobal | default false }}{{ (index .Values.keycloak.ingress.paths 0).path }}{{ else }}{{ (index (index .Values.keycloak.ingress.hosts 0).paths 0).path }}{{ end }}
+  {{- $keycloak := .Values.keycloak -}}
+  {{- $kcingress := (index $keycloak "ingress") -}}
+  https://{{ if $kcingress.useGlobal | default false }}{{ .Values.global.domain }}{{ else }}{{- $kchosts := default (list) (index $kcingress "hosts") -}}{{ if gt (len $kchosts) 0 }}{{ (index $kchosts 0).host }}{{ else }}<no-host-configured>{{ end }}{{ end }}{{ if $kcingress.useGlobal | default false }}{{- $kcpaths := default (list) (index $kcingress "paths") -}}{{ if gt (len $kcpaths) 0 }}{{ (index $kcpaths 0).path }}{{ else }}<no-path-configured>{{ end }}{{ else }}{{- $kchosts := default (list) (index $kcingress "hosts") -}}{{ if gt (len $kchosts) 0 }}{{- $kcpaths := default (list) (index (index $kchosts 0) "paths") -}}{{ if gt (len $kcpaths) 0 }}{{ (index $kcpaths 0).path }}{{ else }}<no-path-configured>{{ end }}{{ else }}<no-path-configured>{{ end }}{{ end }}
 
 Login with account:
 

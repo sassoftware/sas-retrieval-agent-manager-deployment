@@ -1,3 +1,19 @@
+{{- $globalEnabled := false }}
+{{- if hasKey .Values "global" }}
+{{- if hasKey .Values.global "ingress" }}
+{{- if .Values.global.ingress.enabled }}
+{{- $globalEnabled = true }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- $keycloakPath := "" -}}
+{{- if $globalEnabled }}
+{{- $keycloakPath = regexReplaceAll "\\(.*" (first .Values.ingress.paths).path "" }}
+{{- else }}
+{{- if (len .Values.ingress.hosts) }}
+{{- $keycloakPath = regexReplaceAll "\\(.*" (first (first .Values.ingress.hosts).paths).path "" }}
+{{- end }}
+{{- end }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -27,12 +43,12 @@ data:
       "meta.helm.sh/release-name={{ .Release.Name }}"
       "meta.helm.sh/release-namespace={{ .Release.Namespace }}"
     )
-    while [ $(curl -sw '%{http_code}' "http://{{ include "keycloak.fullname" . }}:{{ .Values.service.port }}{{ with (first .Values.ingress.hosts) }}{{ with (first .paths) }}{{ regexReplaceAll "\\(.*" .path "" }}{{ end }}{{ end }}/realms/{{ .Values.global.configuration.keycloak.realm }}" -o /dev/null) -ne 200 ]; do
+    while [ $(curl -sw '%{http_code}' -L "http://{{ include "keycloak.fullname" . }}:{{ .Values.service.port }}{{ $keycloakPath }}/realms/{{ .Values.global.configuration.keycloak.realm }}" -o /dev/null) -ne 200 ]; do
       echo "Waiting for ID provider to reach ready state...";
       sleep 15;
     done
-    echo http://{{ include "keycloak.fullname" . }}:{{ .Values.service.port }}{{ with (first .Values.ingress.hosts) }}{{ with (first .paths) }}{{ regexReplaceAll "\\(.*" .path "" }}{{ end }}{{ end }}/realms/{{ .Values.global.configuration.keycloak.realm }}/protocol/openid-connect/certs
-    curl -s http://{{ include "keycloak.fullname" . }}:{{ .Values.service.port }}{{ with (first .Values.ingress.hosts) }}{{ with (first .paths) }}{{ regexReplaceAll "\\(.*" .path "" }}{{ end }}{{ end }}/realms/{{ .Values.global.configuration.keycloak.realm }}/protocol/openid-connect/certs > $CERTS_FILE
+    echo http://{{ include "keycloak.fullname" . }}:{{ .Values.service.port }}{{ $keycloakPath }}/realms/{{ .Values.global.configuration.keycloak.realm }}/protocol/openid-connect/certs
+    curl -sL http://{{ include "keycloak.fullname" . }}:{{ .Values.service.port }}{{ $keycloakPath }}/realms/{{ .Values.global.configuration.keycloak.realm }}/protocol/openid-connect/certs > $CERTS_FILE
     cat $CERTS_FILE
 
     # Create the secret YAML

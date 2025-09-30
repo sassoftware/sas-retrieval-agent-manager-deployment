@@ -1,0 +1,25 @@
+{{- if .Values.metrics.enabled -}}
+{{- $chart := "mail" -}}
+{{- $fullName := include (print $chart ".fullname") . -}}
+{{- $labels := include (print $chart ".labels") . -}}
+{{- $selectorLabels := include (print $chart ".selectorLabels") . -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ print $fullName "-metrics" | quote }}
+  labels:
+    {{- $labels | nindent 4 }}
+    {{- with .Values.metrics.service.labels }}{{ toYaml . | nindent 4 }}{{ end }}
+  {{ with .Values.metrics.service.annotations }}annotations:
+    {{ toYaml . | nindent 4 }}
+  {{ end }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.metrics.port }}
+      targetPort: metrics
+      protocol: TCP
+      name: metrics
+  selector:
+    {{- $selectorLabels | nindent 4 }}
+{{- end -}}

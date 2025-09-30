@@ -1,30 +1,21 @@
 {{- $keycloak_repo_base := "" -}}
-{{- $keycloak_repo_path := "" -}}
 {{- $postgres_repo_base := "" -}}
-{{- $postgres_repo_path := "" -}}
 {{- $theme_repo_base := "" -}}
-{{- $theme_repo_path := "" -}}
- {{/* keycloak image */}}
-{{- if .Values.image.keycloak.repo.useGlobal | default false -}}
+{{- if and (hasKey .Values "global") (hasKey .Values.global "image") (hasKey .Values.global.image "repo") (hasKey .Values.global.image.repo "base") -}}
+  {{/* Keycloak image if mirrored repository is used*/}}
   {{- $keycloak_repo_base = .Values.global.image.repo.base | default .Values.image.keycloak.repo.base -}}
-{{- else -}}
-  {{- $keycloak_repo_base = .Values.image.keycloak.repo.base -}}
-{{- end -}}
-{{- $keycloak_repo_path = .Values.image.keycloak.repo.path -}}
- {{/* postgres image */}}
-{{- if .Values.image.postgres.repo.useGlobal | default false -}}
+  {{/* Postgres image if mirrored repository is used*/}}
   {{- $postgres_repo_base = .Values.global.image.repo.base | default .Values.image.postgres.repo.base -}}
-{{- else -}}
-  {{- $postgres_repo_base = .Values.image.postgres.repo.base -}}
-{{- end -}}
-{{- $postgres_repo_path = .Values.image.postgres.repo.path -}}
- {{/* theme image */}}
-{{- if .Values.image.theme.repo.useGlobal | default false }}
+  {{/* Keycloak Theme image if mirrored repository is used*/}}
   {{- $theme_repo_base = .Values.global.image.repo.base | default .Values.image.theme.repo.base -}}
 {{- else -}}
+  {{/* Keycloak image if mirrored repository is not used*/}}
+  {{- $keycloak_repo_base = .Values.image.keycloak.repo.base -}}
+  {{/* Postgres image if mirrored repository is not used*/}}
+  {{- $postgres_repo_base = .Values.image.postgres.repo.base -}}
+  {{/* Keycloak Theme image if mirrored repository is not used*/}}
   {{- $theme_repo_base = .Values.image.theme.repo.base -}}
 {{- end -}}
-{{- $theme_repo_path = .Values.image.theme.repo.path -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -59,7 +50,7 @@ spec:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       initContainers:
         - name: check-db-ready
-          image: "{{ $postgres_repo_base }}/{{ $postgres_repo_path }}:{{ .Values.image.postgres.tag }}"
+          image: "{{ $postgres_repo_base }}/{{ .Values.image.postgres.repo.path }}:{{ .Values.image.postgres.tag }}"
           imagePullPolicy: IfNotPresent
           command: [
             'sh','-c', 
@@ -100,7 +91,7 @@ spec:
               name: kc-scripts
               readOnly: false
         - name: copy-keycloak-theme
-          image: "{{ $theme_repo_base }}/{{ $theme_repo_path }}:{{ .Values.image.theme.tag }}"
+          image: "{{ $theme_repo_base }}/{{ .Values.image.theme.repo.path }}:{{ .Values.image.theme.tag }}"
           imagePullPolicy: IfNotPresent
           command: ['sh', '-c', 
              'cp /opt/sas/viya/home/sas-iot-keycloak-theme-*.jar /opt/keycloak/providers']
@@ -113,7 +104,7 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
         - name: keycloak-build
-          image: "{{ $keycloak_repo_base }}/{{ $keycloak_repo_path }}:{{ .Values.image.keycloak.tag }}"
+          image: "{{ $keycloak_repo_base }}/{{ .Values.image.keycloak.repo.path }}:{{ .Values.image.keycloak.tag }}"
           imagePullPolicy: {{ .Values.image.keycloak.pullPolicy }}
           env:
             - name: KC_NS
@@ -165,7 +156,7 @@ spec:
           command: ["/bin/bash", "-c"]
           args:
             - |
-              cp -r /opt/keycloak/* /keycloak &&
+              cp -rf /opt/keycloak/* /keycloak/ &&
               cd /keycloak &&
               ls -laR &&
               ./bin/kc.sh build --features=token-exchange
@@ -180,14 +171,15 @@ spec:
             - name: keycloak
               mountPath: /keycloak
               readOnly: false
-            - mountPath: /opt/keycloak/data/import
-              name: realm-config
-              readOnly: true
+            - name: realm-config
+              mountPath: /opt/keycloak/data/import/realm-export.json
+              subPath: realm-export.json
+              readOnly: false
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ $keycloak_repo_base }}/{{ $keycloak_repo_path }}:{{ .Values.image.keycloak.tag }}"
+          image: "{{ $keycloak_repo_base }}/{{ .Values.image.keycloak.repo.path }}:{{ .Values.image.keycloak.tag }}"
           imagePullPolicy: {{ .Values.image.keycloak.pullPolicy }}
           args:
             - start

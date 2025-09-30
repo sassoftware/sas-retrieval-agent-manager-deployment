@@ -1,19 +1,13 @@
 {{- if (not (or .Values.global.configuration.gpg.publicKey .Values.global.configuration.gpg.privateKey)) }}
 {{- $gpg_repo_base := "" -}}
-{{- $gpg_repo_path := "" -}}
 {{- $kubectl_repo_base := "" -}}
-{{- $kubectl_repo_path := "" -}}
-{{/*- if hasKey .Values.global "repo" -}}
-  {{- $gpg_repo_base = .Values.global.repo.base | default .Values.image.gpg.repo.base -}}
-  {{- $gpg_repo_path = .Values.global.repo.path | default .Values.image.gpg.repo.path -}}
-  {{- $kubectl_repo_base = .Values.global.repo.base | default .Values.image.kubectl.repo.base -}}
-  {{- $kubectl_repo_path = .Values.global.repo.path | default .Values.image.kubectl.repo.path -}}
-{{- else -*/}}
+{{- if and (hasKey .Values "global") (hasKey .Values.global "image") (hasKey .Values.global.image "repo") (hasKey .Values.global.image.repo "base") -}}
+  {{- $gpg_repo_base = .Values.global.image.repo.base | default .Values.image.gpg.repo.base -}}
+  {{- $kubectl_repo_base = .Values.global.image.repo.base | default .Values.image.kubectl.repo.base -}}
+{{- else -}}
   {{- $gpg_repo_base = .Values.image.gpg.repo.base -}}
-  {{- $gpg_repo_path = .Values.image.gpg.repo.path -}}
   {{- $kubectl_repo_base = .Values.image.kubectl.repo.base -}}
-  {{- $kubectl_repo_path = .Values.image.kubectl.repo.path -}}
-{{/*- end -*/}}
+{{- end -}}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -48,7 +42,7 @@ spec:
             - "/bin/sh"
             - "-c"
             - "sh /scripts/check_secrets_exist.sh"
-          image: "{{ $kubectl_repo_base }}/{{ $kubectl_repo_path }}:{{ .Values.image.kubectl.tag }}"
+          image: "{{ $kubectl_repo_base }}/{{ .Values.image.kubectl.repo.path }}:{{ .Values.image.kubectl.tag }}"
           imagePullPolicy: {{ .Values.image.kubectl.pullPolicy }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
@@ -65,7 +59,7 @@ spec:
             - "/bin/sh"
             - "-c"
             - "sh /scripts/generate_gpg_keys.sh"
-          image: "{{ $gpg_repo_base }}/{{ $gpg_repo_path }}:{{ .Values.image.gpg.tag }}"
+          image: "{{ $gpg_repo_base }}/{{ .Values.image.gpg.repo.path }}:{{ .Values.image.gpg.tag }}"
           imagePullPolicy: {{ .Values.image.gpg.pullPolicy }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
@@ -118,7 +112,7 @@ spec:
             - "/bin/sh"
             - "-c"
             - "sh /scripts/apply_secrets.sh"
-          image: "{{ $kubectl_repo_base }}/{{ $kubectl_repo_path }}:{{ .Values.image.kubectl.tag }}"
+          image: "{{ $kubectl_repo_base }}/{{ .Values.image.kubectl.repo.path }}:{{ .Values.image.kubectl.tag }}"
           imagePullPolicy: {{ .Values.image.kubectl.pullPolicy }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}

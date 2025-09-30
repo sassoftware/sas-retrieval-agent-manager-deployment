@@ -3,7 +3,7 @@
 {{- if hasKey .Values "global" -}}
 {{- if hasKey .Values.global "ingress" -}}
 {{- if .Values.global.ingress.enabled -}}
-{{- $globalEnabled := true -}}
+{{- $globalEnabled = true -}}
 {{- end -}}
 {{- end -}}
 {{- end -}}
@@ -32,7 +32,7 @@ metadata:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
-{{- if .Values.ingress.useGlobal | default false }}
+{{- if $globalEnabled | default false }}
   {{- if and (.Values.global.ingress.className | default .Values.ingress.className) (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion) }}
   ingressClassName: {{ .Values.global.ingress.className | default .Values.ingress.className  }}
   {{- end }}

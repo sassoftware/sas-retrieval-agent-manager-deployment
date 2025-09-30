@@ -1,0 +1,13 @@
+apiVersion: v2
+appVersion: v4.4.0
+description: An outgoing SMTP mail relay for your applications in Kubernetes cluster
+home: https://github.com/bokysan/docker-postfix
+icon: https://bokysan.github.io/docker-postfix/postfix.png
+maintainers:
+- name: Bokysan
+  url: https://github.com/bokysan
+name: mail
+sources:
+- https://github.com/bokysan/docker-postfix
+type: application
+version: v4.4.0

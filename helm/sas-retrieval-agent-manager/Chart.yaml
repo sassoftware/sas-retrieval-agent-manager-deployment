@@ -24,7 +24,7 @@ annotations:
   security.runAsNonRoot: "true"
   support.url: https://support.sas.com
 apiVersion: v2
-appVersion: 2025.8.0
+appVersion: 2025.9.0
 dependencies:
 - name: filebrowser
   repository: file://../filebrowser
@@ -112,4 +112,4 @@ name: sas-retrieval-agent-manager
 sources:
 - https://github.com/sas-institute-rnd-internal/tmp-viya-iot-ram-helm
 type: application
-version: 2025.9.50
+version: 2025.9.51

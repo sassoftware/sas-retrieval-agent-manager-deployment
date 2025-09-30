@@ -22,10 +22,7 @@ annotations:
       condition: ingress.enabled
   artifacthub.io/images: |
     - name: sas-retrieval-agent-manager
-      image: cr.sas.com/cdp-release-x64_oci_linux_2-docker-latest/sas-retrieval-agent-manager:latest
-      whitelisted: true
-    - name: sas-retrieval-agent-manager-api
-      image: cr.sas.com/cdp-release-x64_oci_linux_2-docker-latest/sas-retrieval-agent-manager-api:latest
+      image: cr.sas.com/viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager:latest
       whitelisted: true
   artifacthub.io/license: SAS Proprietary
   artifacthub.io/links: |
@@ -117,6 +114,6 @@ maintainers:
 name: sas-retrieval-agent-manager-api
 sources:
 - https://github.com/sas-institute-rnd-internal/tmp-viya-iot-ram-helm
-- https://cr.sas.com/cdp-release-x64_oci_linux_2-docker-latest/sas-retrieval-agent-manager
+- https://cr.sas.com/viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager
 type: application
 version: 1.1.0
