@@ -237,7 +237,7 @@ Customize your RAM Values file based on the deployment template for your specifi
 #### Deploy with Helm
 
 ```bash
-helm install my-sas-retrieval-agent-manager <path-to-repo>/helm/sas-retrieval-agent-manager.tgz \
+helm install my-sas-retrieval-agent-manager <path-to-repo>/helm/sas-retrieval-agent-manager \
   --values <RAM Values file>
 ```
 

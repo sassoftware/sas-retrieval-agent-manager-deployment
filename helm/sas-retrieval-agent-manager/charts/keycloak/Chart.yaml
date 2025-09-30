@@ -75,7 +75,7 @@ appVersion: 1.16.0
 dependencies:
 - condition: mail.enabled
   name: mail
-  repository: https://bokysan.github.io/docker-postfix/
+  repository: ""
   tags:
   - email
   - notifications

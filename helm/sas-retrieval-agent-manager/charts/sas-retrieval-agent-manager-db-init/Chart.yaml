@@ -124,6 +124,5 @@ name: sas-retrieval-agent-manager-db-init
 sources:
 - https://github.com/sas-institute-rnd-internal/tmp-viya-iot-ram-helm
 - https://www.postgresql.org/
-- https://cr.sas.com/cdp-release-x64_oci_linux_2-docker-latest/sas-postgresql
 type: application
 version: 1.1.0

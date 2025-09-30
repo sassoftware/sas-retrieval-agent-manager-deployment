@@ -1,3 +1,12 @@
+{{- $dot := . -}}
+{{- $globalEnabled := false -}}
+{{- if hasKey .Values "global" -}}
+{{- if hasKey .Values.global "ingress" -}}
+{{- if .Values.global.ingress.enabled -}}
+{{- $globalEnabled = true -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
 {{- if .Values.swagger.enabled }}
 ---
 apiVersion: apps/v1
@@ -39,13 +48,13 @@ spec:
             - name: VALIDATOR_URL
               value: "none"
             - name: URL
-              value: {{ if .Values.ingress.useGlobal -}}
+              value: {{ if $globalEnabled -}}
                         "https://{{ .Values.global.domain }}/postgrest"
                      {{- else -}}
                         "https://{{ with (first .Values.ingress.hosts) }}{{ .host }}{{ with (first .paths) }}/{{ regexReplaceAll "\\(.*" .path "" }}{{ end }}{{ end }}"
                      {{- end }}
             - name: URLS
-              value: {{ if .Values.ingress.useGlobal -}}
+              value: {{ if $globalEnabled -}}
                         '[{"name":"PostgREST","url":"https://{{ .Values.global.domain }}/postgrest"}]'
                      {{- else -}}
                         '[{"name":"PostgREST","url":"https://{{ with (first .Values.ingress.hosts) }}{{ .host }}{{ with (first .paths) }}/{{ regexReplaceAll "\\(.*" .path "" }}{{ end }}{{ end }}"}]'

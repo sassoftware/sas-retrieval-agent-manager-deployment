@@ -1,25 +1,12 @@
 {{- $postgres_repo_base := "" -}}
-{{- $postgres_repo_path := "" -}}
 {{- $goose_repo_base := "" -}}
-{{- $goose_repo_path := "" -}}
-{{- if hasKey .Values.global "repo" -}}
-  {{- if .Values.image.postgres.repo.useGlobal | default false -}}
-    {{- $postgres_repo_base = .Values.global.repo.base | default .Values.image.postgres.repo.base -}}
-  {{- else -}}
-    {{- $postgres_repo_base = .Values.image.postgres.repo.base -}}
-  {{- end -}}
-  {{- $postgres_repo_path = .Values.image.postgres.repo.path -}}
-  {{- if .Values.image.goose.repo.useGlobal | default false -}}
-    {{- $goose_repo_base = .Values.global.repo.base | default .Values.image.goose.repo.base -}}
-  {{- else -}}
-    {{- $goose_repo_base = .Values.image.goose.repo.base -}}
-  {{- end -}}
+{{- if and (hasKey .Values "global") (hasKey .Values.global "image") (hasKey .Values.global.image "repo") (hasKey .Values.global.image.repo "base") -}}
+  {{- $postgres_repo_base = .Values.global.image.repo.base | default .Values.image.postgres.repo.base -}}
+  {{- $goose_repo_base = .Values.global.image.repo.base | default .Values.image.goose.repo.base -}}
 {{- else -}}
   {{- $postgres_repo_base = .Values.image.postgres.repo.base -}}
   {{- $goose_repo_base = .Values.image.goose.repo.base -}}
 {{- end -}}
-{{- $postgres_repo_path = .Values.image.postgres.repo.path -}}
-{{- $goose_repo_path = .Values.image.goose.repo.path -}}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -54,7 +41,7 @@ spec:
             - "/bin/sh"
             - "-c"
             - "/scripts/wait_for_database.sh"
-          image: "{{ $postgres_repo_base }}/{{ $postgres_repo_path }}:{{ .Values.image.postgres.tag }}"
+          image: "{{ $postgres_repo_base }}/{{ .Values.image.postgres.repo.path }}:{{ .Values.image.postgres.tag }}"
           imagePullPolicy: {{ .Values.image.postgres.pullPolicy }}
           env:
             - name: DB_USER
@@ -97,7 +84,7 @@ spec:
               readOnly: true
       containers:
         - name: db-initialization
-          image: "{{ $goose_repo_base }}/{{ $goose_repo_path }}:{{ .Values.image.goose.tag | default "15" }}"
+          image: "{{ $goose_repo_base }}/{{ .Values.image.goose.repo.path }}:{{ .Values.image.goose.tag | default "15" }}"
           imagePullPolicy: {{ .Values.image.goose.pullPolicy }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}

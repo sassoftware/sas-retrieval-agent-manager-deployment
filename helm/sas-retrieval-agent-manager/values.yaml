@@ -26,6 +26,9 @@
 # -- • probes: Health checks for container lifecycle management
 # -- • affinity/nodeSelector/tolerations: Advanced pod scheduling
 
+# vim: set ft=yaml:
+# yaml-language-server: $schema=values.schema.json
+
 # @schema
 # type: array
 # description: Additional Kubernetes objects to create alongside the main chart resources

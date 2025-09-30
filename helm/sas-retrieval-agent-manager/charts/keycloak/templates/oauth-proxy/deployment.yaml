@@ -1,21 +1,36 @@
 {{- $oauthProxy_repo_base := "" -}}
-{{- $oauthProxy_repo_path := "" -}}
 {{- $kubectl_repo_base := "" -}}
-{{- $kubectl_repo_path := "" -}}
- {{/* oauthProxy image */}}
-{{- if .Values.oauthProxy.image.repo.useGlobal | default false -}}
+{{- if and (hasKey .Values "global") (hasKey .Values.global "image") (hasKey .Values.global.image "repo") (hasKey .Values.global.image.repo "base") -}}
   {{- $oauthProxy_repo_base = .Values.global.image.repo.base | default .Values.oauthProxy.image.repo.base -}}
-{{- else -}}
-  {{- $oauthProxy_repo_base = .Values.oauthProxy.image.repo.base -}}
-{{- end -}}
-{{- $oauthProxy_repo_path = .Values.oauthProxy.image.repo.path -}}
- {{/* kubectl image */}}
-{{- if .Values.image.kubectl.repo.useGlobal | default false -}}
   {{- $kubectl_repo_base = .Values.global.image.repo.base | default .Values.image.kubectl.repo.base -}}
 {{- else -}}
+  {{- $oauthProxy_repo_base = .Values.oauthProxy.image.repo.base -}}
   {{- $kubectl_repo_base = .Values.image.kubectl.repo.base -}}
 {{- end -}}
-{{- $kubectl_repo_path = .Values.image.kubectl.repo.path -}}
+{{- $globalEnabled := false }}
+{{- if hasKey .Values "global" }}
+{{- if hasKey .Values.global "ingress" }}
+{{- if .Values.global.ingress.enabled }}
+{{- $globalEnabled = true }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- $oAuthProxyPath := "" -}}
+{{- if $globalEnabled }}
+{{- $oAuthProxyPath = regexReplaceAll "\\(.*" (first .Values.oauthProxy.ingress.paths).path "" }}
+{{- else }}
+{{- if (len .Values.oauthProxy.ingress.hosts) }}
+{{- $oAuthProxyPath = regexReplaceAll "\\(.*" (first (first .Values.oauthProxy.ingress.hosts).paths).path "" }}
+{{- end }}
+{{- end }}
+{{- $keycloakPath := "" -}}
+{{- if $globalEnabled }}
+{{- $keycloakPath = regexReplaceAll "\\(.*" (first .Values.ingress.paths).path "" }}
+{{- else }}
+{{- if (len .Values.ingress.hosts) }}
+{{- $keycloakPath = regexReplaceAll "\\(.*" (first (first .Values.ingress.hosts).paths).path "" }}
+{{- end }}
+{{- end }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -53,11 +68,11 @@ spec:
             - /bin/sh
             - -c
             - |
-                while [ $(curl -sw '%{http_code}' "http://{{ include "keycloak.fullname" . | lower }}:{{ .Values.service.port }}{{ with (first .Values.ingress.hosts) }}{{ with (first .paths) }}{{ regexReplaceAll "\\(.*" .path "" }}{{ end }}{{ end }}/realms/master" -o /dev/null) -ne 200 ]; do
+                while [ $(curl -sw '%{http_code}' "http://{{ include "keycloak.fullname" . | lower }}:{{ .Values.service.port }}{{ $keycloakPath }}/realms/master" -o /dev/null) -ne 200 ]; do
                   echo "Waiting for ID provider to reach ready state...";
                   sleep 15;
                 done
-          image: "{{ $kubectl_repo_base }}/{{ $kubectl_repo_path }}:{{ .Values.image.kubectl.tag }}"
+          image: "{{ $kubectl_repo_base }}/{{ .Values.image.kubectl.repo.path }}:{{ .Values.image.kubectl.tag }}"
           imagePullPolicy: {{ .Values.image.kubectl.pullPolicy }}
           name: idp-ready
           resources:
@@ -73,7 +88,7 @@ spec:
         - name: oauth2-proxy
           securityContext:
             {{- toYaml .Values.oauthProxy.securityContext | nindent 12 }}
-          image: "{{ $oauthProxy_repo_base }}/{{ $oauthProxy_repo_path }}:{{ .Values.oauthProxy.image.tag | default .Chart.AppVersion }}"
+          image: "{{ $oauthProxy_repo_base }}/{{ .Values.oauthProxy.image.repo.path }}:{{ .Values.oauthProxy.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.oauthProxy.image.pullPolicy }}
           args:
             - --config=/config/oauth2-proxy.cfg

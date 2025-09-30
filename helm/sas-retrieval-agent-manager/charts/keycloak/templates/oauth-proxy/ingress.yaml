@@ -3,7 +3,7 @@
 {{- if hasKey .Values "global" -}}
 {{- if hasKey .Values.global "ingress" -}}
 {{- if .Values.global.ingress.enabled -}}
-{{- $globalEnabled := true -}}
+{{- $globalEnabled = true -}}
 {{- end -}}
 {{- end -}}
 {{- end -}}
@@ -28,7 +28,7 @@ metadata:
   labels:
     {{- include "keycloak.labels" . | nindent 4 }}
   annotations:
-    nginx.ingress.kubernetes.io/cors-allow-origin: {{ if .Values.ingress.useGlobal -}}
+    nginx.ingress.kubernetes.io/cors-allow-origin: {{ if $globalEnabled -}}
           "https://{{ .Values.global.domain }}"
        {{- else -}}
           "https://{{ with (first .Values.oauthProxy.ingress.hosts) }}{{ .host }}{{ end }}"
@@ -37,11 +37,11 @@ metadata:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
-{{- if .Values.oauthProxy.ingress.useGlobal | default false }}
+{{- if $globalEnabled | default false }}
   {{- if and (.Values.global.ingress.className | default .Values.oauthProxy.ingress.className) (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion) }}
   ingressClassName: {{ .Values.global.ingress.className | default .Values.oauthProxy.ingress.className }}
   {{- end }}
-  {{- if .Values.global.ingress.tls.enabled | default false }}
+  {{- if (((.Values.global).ingress).tls).enabled | default false }}
   tls:
     - hosts:
       - {{ .Values.global.domain | quote }}

@@ -1,69 +1,256 @@
+# vim: set ft=yaml:
+# yaml-language-server: $schema=values.schema.json
 
 # Default values for sas-retrieval-agent-manager-db-migration.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
+# @schema
+# required: true
+# type: object
+# @schema
 # -- Container image configuration for database migration
 image:
+  # @schema
+  # required: true
+  # type: object
+  # @schema
   # -- PostgreSQL container image configuration
   postgres:
+    # @schema
+    # required: true
+    # type: object
+    # @schema
+    # -- Container image configuration for postgres
     repo:
+      # @schema
+      # required: true
+      # type: string
+      # default: docker.io
+      # @schema
       # -- Container registry base URL for PostgreSQL
       base: docker.io
+      # @schema
+      # required: true
+      # type: string
+      # default: postgres
+      # @schema
       # -- Container image path/name for PostgreSQL
       path: postgres
-      # -- Use global registry configuration instead of local
-      useGlobal: false
+    # @schema
+    # default: IfNotPresent
+    # enum: [Always,Never,IfNotPresent]
+    # @schema
     # -- Image pull policy for PostgreSQL container
     pullPolicy: IfNotPresent
+    # @schema
+    # required: true
+    # type: string
+    # @schema
     # -- PostgreSQL container image tag
     tag: "15-alpine"
+  # @schema
+  # required: true
+  # type: object
+  # @schema
   # -- Goose database migration tool container image configuration
   goose:
+    # @schema
+    # required: true
+    # type: object
+    # @schema
+    # -- Container image configuration for goose
     repo: 
+      # @schema
+      # required: true
+      # type: string
+      # default: cr.sas.com
+      # @schema
       # -- Container registry base URL for Goose migration tool
       base: cr.sas.com
+      # @schema
+      # required: true
+      # type: string
+      # default: viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-db-migration
+      # @schema
       # -- Container image path/name for Goose migration tool
-      path: cdp-release-x64_oci_linux_2-docker-latest/sas-retrieval-agent-manager-db-migration
-      # -- Use global registry configuration instead of local
-      useGlobal: false
+      path: viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-db-migration
+    # @schema
+    # default: IfNotPresent
+    # enum: [Always,Never,IfNotPresent]
+    # @schema
     # -- Image pull policy for Goose migration container
     pullPolicy: IfNotPresent
+    # @schema
+    # required: true
+    # type: string
+    # @schema
     # -- Goose migration container image tag
-    tag: 1.3.3-20250829.1756487242174
+    tag: 1.4.0-20250910.1757512678252
 
+# @schema
+# type: array
+# items:
+#   type: object
+#   properties:
+#     name:
+#       type: string
+#       example: cr-sas-secret
+# default: []
+# @schema
 # -- Array of imagePullSecrets in the namespace for pulling images from private registries
 imagePullSecrets: []
 
+# @schema
+# required: true
+# type: string
+# default: db-migration
+# @schema
 # -- String to partially override the fullname template with a string (will prepend the release name)
 nameOverride: "db-migration"
 
+# @schema
+# required: true
+# type: string
+# default: sas-retrieval-agent-manager-db-migration
+# @schema
 # -- String to fully override the fullname template with a string
 fullnameOverride: "sas-retrieval-agent-manager-db-migration"
 
+# @schema
+# required: true
+# type: object
+# @schema
 # -- Service account configuration for database migration
 serviceAccount:
+  # @schema
+  # required: true
+  # type: boolean
+  # default: true
+  # @schema
   # -- Specifies whether a service account should be created
   create: true
+  # @schema
+  # required: true
+  # type: boolean
+  # default: true
+  # @schema
   # -- Automatically mount a ServiceAccount's API credentials
   automount: true
+  # @schema
+  # type: object
+  # default: {}
+  # additionalProperties: true
+  # @schema
   # -- Annotations to add to the service account
   annotations: {}
+  # @schema
+  # required: false
+  # type: string
+  # default: ""
+  # @schema
   # -- The name of the service account to use. If not set and create is true, a name is generated using the fullname template
   name: ""
 
+# @schema
+# type: object
+# default: {}
+# additionalProperties: true
+# @schema
 # -- Annotations to add to the pods
 podAnnotations: {}
 
+# @schema
+# type: object
+# default: {"sas.com/deployment":"sas-retrieval-agent-manager","workload.sas.com/class":"ram"}
+# additionalProperties: true
+# @schema
 # -- Labels to add to the pods
 podLabels:
   sas.com/deployment: "sas-retrieval-agent-manager"
   workload.sas.com/class: "ram"
 
+# @schema
+# type: [object,null]
+# default: {"runAsGroup":10001,"runAsNonRoot":true,"runAsUser":10001,"seccompProfile":{"type":"RuntimeDefault"},"fsGroup":10001}
+# properties:
+#   appArmorProfile:
+#     description: appArmorProfile is the AppArmor options to use by the containers in this pod.
+#     type: [object,null]
+#     properties:
+#       localhostProfile:
+#         type: string
+#       type:
+#         enum: [Localhost,RuntimeDefault]
+#   fsGroup:
+#     description: A special supplemental group that applies to all containers in a pod. Some volume types allow the Kubelet to change the ownership of that volume to be owned by the pod:\n\n1. The owning GID will be the FSGroup 2. The setgid bit is set (new files created in the volume will be owned by FSGroup) 3. The permission bits are OR'd with rw-rw----\n\nIf unset, the Kubelet will not modify the ownership and permissions of any volume.
+#     format: int64
+#     type: [integer,null]
+#     default: 10001
+#   fsGroupChangePolicy:
+#     enum:
+#       - OnRootMismatch
+#       - Always
+#     default: Always
+#   runAsGroup:
+#     description: The GID to run the entrypoint of the container process. Uses runtime default if unset. May also be set in SecurityContext.  If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence for that container.
+#     format: int64
+#     type: [integer,null]
+#     default: 10001
+#   runAsNonRoot:
+#     description: Indicates that the container must run as a non-root user. If true, the Kubelet will validate the image at runtime to ensure that it does not run as UID 0 (root) and fail to start the container if it does. If unset or false, no such validation will be performed. May also be set in SecurityContext.  If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.
+#     type: [boolean,null]
+#     default: true
+#   runAsUser:
+#     description: The UID to run the entrypoint of the container process. Defaults to user specified in image metadata if unspecified. May also be set in SecurityContext.  If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence for that container.
+#     format: int64
+#     type: [integer,null]
+#     default: 10001
+#   seLinuxOptions:
+#     description: The SELinux context to be applied to all containers. If unspecified, the container runtime will allocate a random SELinux context for each container.  May also be set in SecurityContext.  If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence for that container.
+#     type: [object,null]
+#     properties:
+#       level:
+#         type: string
+#       role:
+#         type: string
+#       type:
+#         type: string
+#       user:
+#         type: string
+#   seccompProfile:
+#     description: The seccomp options to use by the containers in this pod.
+#     type: [object,null]
+#     properties:
+#       localhostProfile:
+#         type: string
+#       type:
+#         enum: [Localhost,RuntimeDefault]
+#   supplementalGroups:
+#     description: A list of groups applied to the first process run in each container, in addition to the container's primary GID and fsGroup (if specified).  If the SupplementalGroupsPolicy feature is enabled, the supplementalGroupsPolicy field determines whether these are in addition to or instead of any group memberships defined in the container image. If unspecified, no additional groups are added, though group memberships defined in the container image may still be used, depending on the supplementalGroupsPolicy field.
+#     type: [array,null]
+#     items:
+#       format: int64
+#       type: [integer,null]
+#   supplementalGroupsPolicy:
+#     description: Defines how supplemental groups of the first container processes are calculated. Valid values are "Merge" and "Strict". If not specified, "Merge" is used. (Alpha) Using the field requires the SupplementalGroupsPolicy feature gate to be enabled and the container runtime must implement support for this feature.
+#     enum:
+#       - Merge
+#       - Strict
+#     default: Merge
+#   sysctls:
+#     description: Sysctls hold a list of namespaced sysctls used for the pod. Pods with unsupported sysctls (by the container runtime) might fail to launch.
+#     type: [array,null]
+#     items:
+#       type: object
+#       properties:
+#         name:
+#           type: string
+#         value:
+#           type: string
+# @schema
 # -- The security context for the pods
 podSecurityContext:
-  # -- Group ID for file system ownership
-  fsGroup: 10001
   # -- Group ID to run the entrypoint of the container process
   runAsGroup: 10001
   # -- Indicates that the container must be run as a non-root user
@@ -73,8 +260,87 @@ podSecurityContext:
   # -- Seccomp profile for the pod
   seccompProfile:
     type: RuntimeDefault
-  # fsGroup: 2000
+  # -- Group ID for file system ownership
+  fsGroup: 10001
 
+# @schema
+# type: [object,null]
+# default: {"privileged":false,"seccompProfile":{"type":"RuntimeDefault"},"allowPrivilegeEscalation":false,"capabilities":{"add":[],"drop":["ALL"]},"readOnlyRootFilesystem":true,"runAsNonRoot":true,"runAsUser":10001,"runAsGroup":10001}
+# properties:
+#   allowPrivilegeEscalation:
+#     description: AllowPrivilegeEscalation controls whether a process can gain more privileges than its parent process. This bool directly controls if the no_new_privs flag will be set on the container process. AllowPrivilegeEscalation is true always when the container is run as Privileged or has CAP_SYS_ADMIN
+#     type: boolean
+#     default: false
+#   appArmorProfile:
+#     description: appArmorProfile is the AppArmor options to use by this container. If set, this profile overrides the pod's appArmorProfile.
+#     type: [object,null]
+#     properties:
+#       localhostProfile:
+#         type: string
+#       type:
+#         enum: [Localhost,RuntimeDefault]
+#   capabilities:
+#     description: The capabilities to add/drop when running containers. Defaults to the default set of capabilities granted by the container runtime.
+#     type: [object,null]
+#     properties:
+#       add:
+#         description: Added capabilities
+#         type: [array,null]
+#         items:
+#           type: string
+#         default: []
+#       drop:
+#         description: Dropped capabilities
+#         type: [array,null]
+#         items:
+#           type: string
+#         default: [ALL]
+#   privileged:
+#     description: Run container in privileged mode. Processes in privileged containers are essentially equivalent to root on the host.
+#     type: [boolean,null]
+#     default: false
+#   procMount:
+#     description: procMount denotes the type of proc mount to use for the containers. The default value is Default which uses the container runtime defaults for readonly paths and masked paths. This requires the ProcMountType feature flag to be enabled.
+#     type: [string,null]
+#   readOnlyRootFilesystem:
+#     description: Whether this container has a read-only root filesystem. Default is false.
+#     type: [boolean,null]
+#     default: false
+#   runAsGroup:
+#     description: The GID to run the entrypoint of the container process. Uses runtime default if unset. May also be set in SecurityContext.  If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence for that container.
+#     format: int64
+#     type: [integer,null]
+#     default: 10001
+#   runAsNonRoot:
+#     description: Indicates that the container must run as a non-root user. If true, the Kubelet will validate the image at runtime to ensure that it does not run as UID 0 (root) and fail to start the container if it does. If unset or false, no such validation will be performed. May also be set in SecurityContext.  If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.
+#     type: [boolean,null]
+#     default: true
+#   runAsUser:
+#     description: The UID to run the entrypoint of the container process. Defaults to user specified in image metadata if unspecified. May also be set in SecurityContext.  If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence for that container.
+#     format: int64
+#     type: [integer,null]
+#     default: 10001
+#   seLinuxOptions:
+#     description: The SELinux context to be applied to all containers. If unspecified, the container runtime will allocate a random SELinux context for each container.  May also be set in SecurityContext.  If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence for that container.
+#     type: [object,null]
+#     properties:
+#       level:
+#         type: string
+#       role:
+#         type: string
+#       type:
+#         type: string
+#       user:
+#         type: string
+#   seccompProfile:
+#     description: The seccomp options to use by the containers in this pod.
+#     type: [object,null]
+#     properties:
+#       localhostProfile:
+#         type: string
+#       type:
+#         enum: [Localhost,RuntimeDefault]
+# @schema
 # -- The security context for the application container
 securityContext:
   # -- Seccomp profile for the container
@@ -94,6 +360,24 @@ securityContext:
   # -- User ID to run the entrypoint of the container process
   runAsUser: 10001
 
+# @schema
+# type: object
+# required: true
+# properties:
+#   claims:
+#     type: array
+#     items:
+#       type: object
+#       properties:
+#         name:
+#           type: string
+#         request:
+#           type: string
+#   limits:
+#     type: object
+#   requests:
+#     type: object
+# @schema
 # -- The resources to allocate for the database migration container
 resources:
   # -- Resource limits for the container
@@ -109,12 +393,21 @@ resources:
     # -- Memory request
     memory: 128Mi
 
+# @schema
+# type: [object,null]
+# @schema
 # -- Node labels for pod assignment
 nodeSelector: {}
 
+# @schema
+# type: [array,null]
+# @schema
 # -- Tolerations for pod assignment
 tolerations: []
 
+# @schema
+# type: [object,null]
+# @schema
 # -- Map of node/pod affinities
 affinity:
   nodeAffinity:
@@ -134,18 +427,160 @@ affinity:
           values:
           - ram
 
+# @schema
+# type: object
+# required: true
+# properties:
+#   stage:
+#     type: [string,null]
+#   domain:
+#     type: [string,null]
+#   image:
+#     type: [object,null]
+#   imagePullSecrets:
+#     type: [array,null]
+#   ingress:
+#     type: [object,null]
+#   configuration:
+#     type: object
+#     required: true
+#   clusterName:
+#     type: [string,null]
+#   clusterUrl:
+#     type: [string,null]
+#   repo:
+#     type: [object,null]
+#     properties:
+#       base:
+#         type: string
+#   syncWindows:
+#     type: [array,null]
+#     items:
+#       type: object
+#       properties:
+#         kind:
+#           type: string
+#           enum: [allow,deny]
+#         schedule:
+#           type: string
+#           format: cron
+#         duration:
+#           type: string
+#         timezone:
+#           type: string
+#           default: "US/Eastern"
+#         applications:
+#           type: array
+#           items:
+#             type: string
+# @schema
 # -- Global configuration for database migration
 global:
+  # @schema
+  # type: array
+  # items:
+  #   type: object
+  #   properties:
+  #     name:
+  #       type: string
+  #       example: cr-sas-secret
+  # default: []
+  # @schema
   # -- Array of imagePullSecrets for global use
   imagePullSecrets: []
-
+  # @schema
+  # type: object
+  # required: true
+  # properties:
+  #   database:
+  #     type: [object,null]
+  #   application:
+  #     type: [object,null]
+  #   keycloak:
+  #     type: [object,null]
+  #   swagger:
+  #     type: [object,null]
+  #   postgrest:
+  #     type: [object,null]
+  #   gpg:
+  #     type: [object,null]
+  #   api:
+  #     type: [object,null]
+  #   eval:
+  #     type: [object,null]
+  #   plugin:
+  #     type: [object,null]
+  #   kueue:
+  #     type: [object,null]
+  #   vhub:
+  #     type: [object,null]
+  #   migration:
+  #     type: [object,null]
+  #   vectorizationJob:
+  #     type: [object,null]
+  #   ui:
+  #     type: [object,null]
+  #   vectorStore:
+  #     type: [object]
+  #   weaviate:
+  #     type: [object]
+  # @schema
   # -- Configuration settings
   configuration:
+    # @schema
+    # type: object
+    # required: true
+    # properties:
+    #   enabled:
+    #     type:
+    #       - boolean
+    #       - null
+    #   createDB:
+    #     type:
+    #       - boolean
+    #       - null
+    #   createSchema:
+    #     type:
+    #       - boolean
+    #       - null
+    #   createUser:
+    #     type:
+    #       - boolean
+    #       - null
+    #   db:
+    #     type:
+    #       - string
+    #       - null
+    #   schema:
+    #     type:
+    #       - string
+    #       - null
+    #   user:
+    #     type:
+    #       - string
+    #       - null
+    #   password:
+    #     type:
+    #       - string
+    #       - null
+    # @schema
     # -- Vector store configuration
     vectorStore:
+      # @schema
+      # type: boolean
+      # required: true
+      # @schema
       # -- Whether vector store migrations are enabled
       enabled: true
+    # @schema
+    # type: object
+    # required: true
+    # @schema
     # -- Weaviate vector database configuration
     weaviate:
+      # @schema
+      # type: boolean
+      # required: true
+      # @schema
       # -- Whether Weaviate-related migrations are enabled
       enabled: true

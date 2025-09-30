@@ -1,3 +1,13 @@
+{{- $dot := . -}}
+{{- $globalEnabled := false -}}
+{{- if hasKey .Values "global" -}}
+{{- if hasKey .Values.global "ingress" -}}
+{{- if .Values.global.ingress.enabled -}}
+{{- $globalEnabled = true -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+---
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -8,12 +18,12 @@ data:
   namespace: {{ .Release.Namespace }}
   service: {{ include "sas-retrieval-agent-manager-api.fullname" . }}
   noauth-service: '{{ include "sas-retrieval-agent-manager-api.fullname" . }}-noauth'
-  url: {{ if .Values.ingress.useGlobal -}}
+  url: {{ if $globalEnabled -}}
           "https://{{ .Values.global.domain }}{{ regexReplaceAll "\\(.*" (first .Values.ingress.paths).path "" }}"
        {{- else -}}
           "https://{{ with (first .Values.ingress.hosts) }}{{ .host }}/{{ with (first .paths) }}{{ regexReplaceAll "\\(.*" .path "" }}{{ end }}{{ end }}"
        {{- end }}
-  docsUrl: {{ if .Values.ingress.useGlobal -}}
+  docsUrl: {{ if $globalEnabled -}}
           "https://{{ .Values.global.domain }}{{ regexReplaceAll "\\(.*" (first .Values.ingress.paths).path "" }}/docs"
        {{- else -}}
           "https://{{ with (first .Values.ingress.hosts) }}{{ .host }}/{{ with (first .paths) }}{{ regexReplaceAll "\\(.*" .path "" }}{{ end }}{{ end }}/docs"
