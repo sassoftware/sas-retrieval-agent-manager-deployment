@@ -249,7 +249,9 @@ Customize your RAM Values file based on the deployment template for your specifi
 
 ```bash
 helm install my-sas-retrieval-agent-manager <path-to-repo>/helm/sas-retrieval-agent-manager \
-  --values <RAM Values file>
+  --values <RAM Values file> \
+  -n retagentmgr \
+  --create-namespace
 ```
 
 Note: Until an official repository is created, a tarball installation will be required. Also, if something fails and you need to redeploy, you'll have to run `kubectl delete ns retagentmgr` first.

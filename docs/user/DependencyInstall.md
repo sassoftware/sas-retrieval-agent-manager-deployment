@@ -20,7 +20,7 @@ helm install cert-manager ./helm/cert-manager/charts/cert-manager-v1.18.2.tgz \
   --create-namespace
 
 # Install trust manager with the tarball provided 
-helm install trust-manager .\helm\cert-manager\charts\trust-manager-v0.18.0.tgz \
+helm install trust-manager ./helm/cert-manager/charts/trust-manager-v0.18.0.tgz \
   --set crds.enabled=true \
   -n cert-manager
 
@@ -48,7 +48,7 @@ cluster with the following commands:
 
 ```bash
 
-helm install linkerd ./helm/linkerd\ \
+helm install linkerd ./helm/linkerd \
   -f ./helm/linkerd/values.yaml  \
   -n linkerd \
   --create-namespace
