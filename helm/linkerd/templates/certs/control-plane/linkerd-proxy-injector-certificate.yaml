@@ -1,0 +1,22 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: linkerd-proxy-injector
+  namespace: {{ .Release.Namespace }}
+spec:
+  secretName: linkerd-proxy-injector-k8s-tls
+  secretTemplate:
+    labels:
+      app.kubernetes.io/part-of: Linkerd
+  duration: 168h    # 7 days duration.
+  renewBefore: 24h  # Renew 1 day before expiration.
+  issuerRef:
+    name: linkerd-webhook-issuer
+    kind: ClusterIssuer
+  commonName: linkerd-proxy-injector.{{ .Release.Namespace }}.svc
+  dnsNames:
+    - linkerd-proxy-injector.{{ .Release.Namespace }}.svc
+    - linkerd-proxy-injector.{{ .Release.Namespace }}.svc.cluster.local
+  isCA: false
+  usages:
+    - server auth

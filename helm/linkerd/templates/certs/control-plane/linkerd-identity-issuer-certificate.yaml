@@ -1,0 +1,27 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: linkerd-identity-issuer
+  namespace: {{ .Release.Namespace }}
+spec:
+  secretName: linkerd-identity-issuer
+  secretTemplate:
+    labels:
+      app.kubernetes.io/part-of: Linkerd
+  duration: 168h    # 7 days duration.
+  renewBefore: 24h  # Renew 1 day before expiration.
+  issuerRef:
+    name: linkerd-trust-anchor
+    kind: ClusterIssuer
+  commonName: identity.{{ .Release.Namespace }}.cluster.local
+  dnsNames:
+    - identity.{{ .Release.Namespace }}.cluster.local
+  isCA: true
+  privateKey:
+    rotationPolicy: Always
+    algorithm: ECDSA
+  usages:
+    - cert sign
+    - crl sign
+    - server auth
+    - client auth

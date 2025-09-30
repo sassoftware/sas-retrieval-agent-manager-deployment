@@ -1,0 +1,22 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: linkerd-trust-anchor
+spec:
+  isCA: true
+  duration: 8760h    # One year duration.
+  renewBefore: 1440h # Renew 60 days before expiration.
+  issuerRef:
+    name: linkerd-self-signed
+    kind: ClusterIssuer
+  secretName: linkerd-trust-anchor
+  secretTemplate:
+    labels:
+      app.kubernetes.io/part-of: Linkerd
+  commonName: identity.linkerd.cluster.local
+  dnsNames:
+    - identity.linkerd.cluster.local
+  privateKey:
+    rotationPolicy: Always
+    algorithm: ECDSA
+    size: 256

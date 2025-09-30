@@ -1,0 +1,22 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: linkerd-sp-validator
+  namespace: {{ .Release.Namespace }}
+spec:
+  secretName: linkerd-sp-validator-k8s-tls
+  secretTemplate:
+    labels:
+      app.kubernetes.io/part-of: Linkerd
+  duration: 168h    # 7 days duration.
+  renewBefore: 24h  # Renew 1 day before expiration.
+  issuerRef:
+    name: linkerd-webhook-issuer
+    kind: ClusterIssuer
+  commonName: linkerd-sp-validator.{{ .Release.Namespace }}.svc
+  dnsNames:
+    - linkerd-sp-validator.{{ .Release.Namespace }}.svc
+    - linkerd-sp-validator.{{ .Release.Namespace }}.svc.cluster.local
+  isCA: false
+  usages:
+    - server auth

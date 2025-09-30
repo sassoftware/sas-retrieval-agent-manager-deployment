@@ -1,0 +1,14 @@
+apiVersion: v2
+name: cert-manager
+description: Cert-Manager chart for Kubernetes
+icon: https://cert-manager.io/favicons/favicon-32x32.png
+type: application
+version: 1.0.1
+appVersion: "0.0.1"
+dependencies:
+  - name: cert-manager
+    version: "v1.18.2"
+    repository: "https://charts.jetstack.io"
+  - name: trust-manager
+    version: "v0.18.0"
+    repository: "https://charts.jetstack.io"

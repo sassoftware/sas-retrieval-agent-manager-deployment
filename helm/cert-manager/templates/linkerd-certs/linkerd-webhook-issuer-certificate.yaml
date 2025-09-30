@@ -1,0 +1,21 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: linkerd-webhook-issuer
+spec:
+  isCA: true
+  duration: 1440h    # 60 days duration.
+  renewBefore: 720h  # Renew 30 days before expiration.
+  issuerRef:
+    name: linkerd-self-signed
+    kind: ClusterIssuer
+  secretName: linkerd-webhook-issuer
+  secretTemplate:
+    labels:
+      app.kubernetes.io/part-of: Linkerd
+  commonName: webhook.linkerd.cluster.local
+  dnsNames:
+    - webhook.linkerd.cluster.local
+  privateKey:
+    algorithm: ECDSA
+    size: 256

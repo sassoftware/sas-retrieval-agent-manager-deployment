@@ -1,0 +1,85 @@
+
+# -- Linkerd Control Plane Configuration
+linkerd-control-plane:  
+  # -- Linkerd Identity Configuration
+  identity:
+    # -- Allows use of external CA
+    externalCA: true
+    # -- Certificate issuer configuration
+    issuer:
+      # -- The scheme used for certificate issuance
+      scheme: kubernetes.io/tls
+
+  # -- Configuration for Linkerd data plane proxies
+  proxy:
+    # -- Enables a shutdown endpoint on the proxy for graceful termination
+    enableShutdownEndpoint: false
+    # -- Use Kubernetes native sidecar containers (requires Kubernetes 1.29+)
+    nativeSidecar: true
+    # -- CPU and memory resource requests and limits for proxy containers
+    resources:
+      # -- CPU resource requirements for proxy containers
+      cpu:
+        # -- Minimum CPU resources required by the proxy
+        request: "200m"
+        # -- Maximum CPU resources allowed for the proxy
+        limit: "200m"
+      # -- Memory resource requirements for proxy containers
+      memory:
+        # -- Minimum memory resources required by the proxy
+        request: "128Mi"
+        # -- Maximum memory resources allowed for the proxy
+        limit: "128Mi"
+
+  # -- Configuration for the proxy-init container that sets up iptables rules
+  proxyInit:
+    # -- Whether the proxy-init container should run as root
+    runAsRoot: false
+  # -- Creates PodDisruptionBudgets for control plane components
+  enablePodDisruptionBudget: true
+
+  # -- Configuration for control plane component deployment strategy
+  deploymentStrategy:
+    # -- Parameters for rolling update deployment strategy
+    rollingUpdate:
+      # -- Maximum number of pods that can be unavailable during the update process
+      maxUnavailable: "25%"
+      # -- Maximum number of pods that can be created above the desired number of pods
+      maxSurge: "25%"
+
+  # -- Configuration for the proxy injector admission webhook
+  proxyInjector:
+    # -- Use an external secret for TLS certificates instead of generating them automatically
+    externalSecret: true
+    # -- Reference to external CA certificate in format 'namespace/secret-name'
+    injectCaFrom: linkerd/linkerd-proxy-injector
+
+  # -- Configuration for the service profile validator admission webhook
+  profileValidator:
+    # -- Use an external secret for TLS certificates instead of generating them automatically
+    externalSecret: true
+    # -- Reference to external CA certificate in format 'namespace/secret-name'
+    injectCaFrom: linkerd/linkerd-sp-validator
+
+  # -- Configuration for the network policy validator admission webhook
+  policyValidator:
+    # -- Use an external secret for TLS certificates instead of generating them automatically
+    externalSecret: true
+    # -- Reference to external CA certificate in format 'namespace/secret-name'
+    injectCaFrom: linkerd/linkerd-policy-validator
+  # -- Enable pod anti-affinity rules to prevent control plane pods from being scheduled on the same node
+  enablePodAntiAffinity: true
+
+  # -- Number of replicas for the Linkerd controller deployment
+  controllerReplicas: 2
+  # -- Policy for handling webhook failures
+  webhookFailurePolicy: Fail
+
+# -- Configuration for Linkerd Jaeger integration for distributed tracing
+linkerd-jaeger:
+  # -- Configuration for the Jaeger injector admission webhook
+  webhook:
+    # -- Use an external secret for TLS certificates instead of generating them automatically
+    externalSecret: true
+    # -- Reference to external CA certificate in format 'namespace/secret-name'
+    injectCaFrom: linkerd/jaeger-injector

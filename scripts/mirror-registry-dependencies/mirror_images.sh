@@ -16,6 +16,7 @@ IMAGES=(
     "docker.io/boky/postfix:latest"
     "docker.io/vladgh/gpg:1.3.6"
     "quay.io/oauth2-proxy/oauth2-proxy:v7.12.0"
+    "quay.io/keycloak/keycloak:26.3.2"
 )
 
 # Check if registry argument is provided
