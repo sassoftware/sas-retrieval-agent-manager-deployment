@@ -1,0 +1,49 @@
+---
+# -- Service configuration for Weaviate HTTP endpoint
+# -- Exposes the Weaviate REST API for client connections
+service:
+  # -- Service name for Weaviate HTTP endpoint
+  name: weaviate
+  
+  # -- Service ports configuration for HTTP traffic
+  ports:
+    # -- HTTP port configuration for REST API
+    - name: http
+      protocol: TCP
+      port: 80
+  
+  # -- Service type for internal cluster communication
+  # -- ClusterIP restricts access to within the Kubernetes cluster
+  type: ClusterIP
+
+# -- gRPC service configuration for Weaviate
+# -- Provides gRPC endpoint for high-performance client communication
+grpcService:
+  # -- Enable gRPC service for Weaviate
+  # -- Controls whether the gRPC service is created
+  enabled: true
+  
+  # -- Service name for Weaviate gRPC endpoint
+  name: weaviate-grpc
+  
+  # -- Service ports configuration for gRPC traffic
+  ports:
+    # -- gRPC port configuration for client connections
+    - name: grpc
+      protocol: TCP
+      port: 50051
+  
+  # -- Service type for internal cluster communication
+  # -- ClusterIP restricts access to within the Kubernetes cluster
+  type: ClusterIP
+
+# -- Persistent storage configuration for Weaviate data
+# -- Defines the storage volume for vector database persistence
+storage:
+  # -- Persistent volume size for Weaviate data storage
+  # -- Allocates disk space for vector indices and object data
+  size: 32Gi
+  
+  # -- Storage class name for dynamic volume provisioning
+  # -- Uses cloud provider's managed storage class for reliability
+  storageClassName: managed

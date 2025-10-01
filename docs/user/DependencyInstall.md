@@ -1,6 +1,8 @@
 # Dependency Installations
 
-## Certificate and Trust Management
+## Required Dependencies
+
+### Certificate and Trust Management
 
 SAS Retrieval Agent Manager requires TLS certificates for secure communication. You can use cert-manager to automate the
 management and issuance of TLS certificates. The provided chart:
@@ -29,7 +31,7 @@ kubectl apply -f helm/cert-manager/templates/linkerd-certs/ \
 
 ```
 
-## Service Mesh
+### Service Mesh
 
 SAS Retrieval Agent Manager uses Linkerd to enable mutual TLS (mTLS) for secure internal communication between its
 components. The provided chart sets up the necessary configurations to enable mTLS within the application with automated
@@ -55,7 +57,7 @@ helm install linkerd ./helm/linkerd \
 
 ```
 
-## Kueue
+### Kueue
 
 SAS Retrieval Agent Manager requires Kueue for workload management of vectorization jobs.
 
@@ -72,7 +74,7 @@ helm install kueue oci://registry.k8s.io/kueue/charts/kueue \
   --create-namespace
 ```
 
-## Ingress-Nginx
+### Ingress-Nginx
 
 SAS Retrieval Agent Manager requires the NGINX Ingress controller for managing incoming traffic.
 
@@ -92,4 +94,27 @@ helm install nginx-ingress-nginx-controller \
     --namespace ingress-nginx \
     -f <nginx_values_file> \
     --create-namespace
+```
+
+## Optional Components
+
+### Weaviate
+
+SAS Retrieval Agent Manager supports Weaviate as an alternative to PGVector storage.
+
+Here is an [Example Weaviate Values File](../../examples/weaviate.yaml). You can edit it as you'd like to fit your deployment.
+
+You can install it onto your cluster with the following commands:
+
+```bash
+# Add the Helm repo that contains Weaviate
+helm repo add weaviate https://weaviate.github.io/weaviate-helm
+helm repo update
+
+# Install Weaviate using your custom values file
+helm install weaviate weaviate/weaviate \
+  --version=v17.3.3 \
+  --namespace weaviate \
+  -f <weaviate_values_file> \
+  --create-namespace
 ```

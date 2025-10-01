@@ -16,6 +16,8 @@
       - [Manual Database Setup (Optional)](#manual-database-setup-optional)
   - [Application Deployment Guides](#application-deployment-guide)
     - [Retrieve License](#retrieve-license)
+    - [Install Required Dependencies](#install-required-dependencies)
+    - [Optional Components](#optional-components)
   - [Backup and Restore Guide](#backup-and-restore-guide)
   - [Troubleshooting](#troubleshooting)
     - [Common Issues](#common-issues)
@@ -227,9 +229,17 @@ After you have access to the Kubernetes cluster, you must install the necessary 
 > 2. The service mesh (Linkerd) must be installed second, as it depends on the certificates and issuers created during the
 >    first step.
 >
-> 3. Other dependencies can be installed in any order after that. They do not have hard dependencies on each other, but
+> 3. Other dependencies or optional components can be installed in any order after that. They do not have hard dependencies on each other, but
 >    do require the previous two steps to be completed to ensure internal traffic is properly secured.
 > Note: It is critical to provide an `azure-dns-label` for Azure NGINX Controller deployments. This is documented at the top of the example NGINX values file given.
+
+### Optional Components
+
+SAS has partnered with Weaviate and supports it as an alternative to PGVector storage. This installation is not required but is compatible with RAM.
+
+| Component |    Version    | Example Values File |                                   Installation Instructions                                 |
+|-----------|---------------|---------------------|---------------------------------------------------------------------------------------------|
+| **Weaviate**     |v17.3.3 |[weaviate.yaml](./examples/weaviate.yaml)   | [instructions](./docs/user/DependencyInstall.md#weaviate)            |
 
 ### Install SAS Retrieval Agent Manager
 
