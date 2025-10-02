@@ -235,7 +235,7 @@ After you have access to the Kubernetes cluster, you must install the necessary 
 
 ### Optional Components
 
-SAS has partnered with Weaviate and supports it as an alternative to PGVector storage. This installation is not required but is compatible with RAM.
+SAS has partnered with [Weaviate](https://weaviate.io/) and supports it as a vector database alternative to PGVector storage. This installation is not required but is compatible with RAM.
 
 | Component |    Version    | Example Values File |                                   Installation Instructions                                 |
 |-----------|---------------|---------------------|---------------------------------------------------------------------------------------------|
