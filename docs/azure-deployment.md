@@ -99,7 +99,7 @@ sudo docker run --rm \
 
 ## Application Deployment
 
-Return to the [Dependency Installation](../README.md#install-required-dependencies) and [Application Deployment](../README.md#install-sas-retrieval-agent-manager) sections of the documentation to continue the deployment.
+Return to the [Application Deployment Guide](../README.md#application-deployment-guide) section of the documentation to continue the deployment.
 
 ## Troubleshooting
 
