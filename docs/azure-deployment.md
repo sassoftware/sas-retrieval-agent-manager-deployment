@@ -44,10 +44,11 @@ This guide describes deploying an Azure infrastructure on which to deploy SAS Re
 
 ### Hardware Requirements
 
-| Node Size             | Status                     |
-|-----------------------|----------------------------|
-| **Standard_D16ds_v4** | Recommended                |
-| **Standard_D8ds_v4**  | Usable but not recommended |
+|       Node Size      | Minimum Nodes | Maximum Nodes |   Deployment Size  |
+|----------------------|---------------|---------------|--------------------|
+| **Standard_E8s_v5**  |       1       |       3       |      Small         |
+| **Standard_E8s_v5**  |       2       |       6       |      Medium        |
+| **Standard_E16s_v5** |       2       |       8       |      Large         |
 
 ### Infrastructure Requirements
 
