@@ -44,10 +44,10 @@ global:
 
   # -- Global container image repository configuration
   # -- When sub-charts have useGlobal=true, images are pulled from this base repository
-  image:
-    repo:
-      # -- Base container registry URL (SAS Container Registry)
-      base: 'cr.sas.com'
+  # image:
+  #   repo:
+  #     # -- Base container registry URL (SAS Container Registry)
+  #     base: 'cr.sas.com'
 
   # -- Global image pull secrets for accessing private container registries
   # -- Applied to all sub-charts that reference private registries
@@ -164,7 +164,7 @@ global:
       keycloakAdmin: kcAdmin
       # -- Keycloak admin password
       # -- Note: This password must include at least 1 special character
-      keycloakAdminPassword: ""
+      keycloakAdminPassword: <your-keycloak-admin-password>
       # -- OAuth2 client ID for application
       clientId: "sas-ram-app"
       # -- OAuth2 client secret
