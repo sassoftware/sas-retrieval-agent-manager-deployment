@@ -52,7 +52,7 @@ This guide describes deploying an Azure infrastructure on which to deploy SAS Re
 
 ### Infrastructure Requirements
 
-- AKS version: 1.30.14
+- AKS version: 1.32
 
 ## Getting Started
 
