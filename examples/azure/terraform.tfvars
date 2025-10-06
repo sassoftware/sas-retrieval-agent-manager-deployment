@@ -26,17 +26,17 @@ tags = {} # for example: { "owner|email" = "<you>@<domain>.<com>", "key1" = "val
 postgres_servers = {
   default = {
 # ****************  REQUIRED VARIABLES  ****************
-    administrator_login          = "<admin-username>"
-    administrator_password       = "<admin-password>"
+    administrator_login          = "ram_admin"
+    administrator_password       = "1tsAB3aut1fulDay"
 # ****************  REQUIRED VARIABLES  ***************
     # Small Deployment DB Size
-    sku_name                     = "Standard_D4ds_v5"
+    sku_name                       = "GP_Standard_D4ds_v5"
 
     # Medium Deployment DB Size
-    # sku_name                     = "Standard_D8ds_v5"
+    # sku_name                     = "GP_Standard_D8ds_v5"
 
     # Large Deployment DB Size
-    # sku_name                     = "Standard_D16ds_v5"
+    # sku_name                     = "GP_Standard_D16ds_v5"
 
     version                      = "15"
    # Necessary extensions for RAM to function
