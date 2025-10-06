@@ -41,11 +41,13 @@ This guide describes deploying an AWS infrastructure on which to deploy SAS Retr
 
 ## Requirements
 
-### Hardware Requirements
+### Hardware Recommendations
 
-| Node Size        | Status      |
-|------------------|-------------|
-| **r6in.2xlarge** | Recommended |
+|       Node Size      | Minimum Nodes | Maximum Nodes |   Deployment Size  |
+|----------------------|---------------|---------------|--------------------|
+| **Standard_E8s_v5**  |       1       |       3       |      Small         |
+| **Standard_E8s_v5**  |       2       |       6       |      Medium        |
+| **Standard_E16s_v5** |       2       |       8       |      Large         |
 
 ### Infrastructure Requirements
 
