@@ -34,10 +34,12 @@ filebrowser:
   enabled: false
   # -- Filebrowser persistent storage configuration
   rootDir:
-    # -- Filebrowser storage type - default recommended if using viya iac scripts
+    # -- Vectorized documents PVC storage type - default recommended if using viya iac scripts
     # -- If not using viya iac, ensure the storageClassName matches your environment storage (NFS, managed-sci, etc...)
     pvc:
       storageClassName: "default"
+      # -- Size of persistent volume claim for vectorized documents
+      size: <total_gigabytes_purchased> # ex: 20Gi
 
 # ============================================================================
 # GLOBAL CONFIGURATION

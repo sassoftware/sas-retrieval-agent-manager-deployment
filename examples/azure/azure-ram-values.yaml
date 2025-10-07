@@ -31,6 +31,13 @@ keycloak:
 # -- Enable File Browser for file management
 filebrowser:
   enabled: true
+  # -- Size of persistent volume claim for vectorized documents
+  rootDir:
+    pvc:
+      # -- Vectorized documents PVC storage type - default recommended if using viya iac scripts
+      storageClassName: "azurefile-sas"
+      # -- Size of persistent volume claim for vectorized documents
+      size: <total_gigabytes_purchased> # ex: 20Gi
 
 # ============================================================================
 # GLOBAL CONFIGURATION

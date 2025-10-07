@@ -38,6 +38,8 @@ filebrowser:
       storageClassName: "efs-sc"
       # -- Must be false for AWS EFS
       createStorageClass: false
+      # -- Size of persistent volume claim for vectorized documents
+      size: <total_gigabytes_purchased> # ex: 20Gi
 
 # ============================================================================
 # GLOBAL CONFIGURATION
