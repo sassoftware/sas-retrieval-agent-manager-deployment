@@ -283,7 +283,7 @@ To backup and restore the data you use RAM for, visit the [backup and restore pa
 
 **Increasing Vectorization or Embedding PVCs:**
 
-Once you have deployed RAM, if you decide that you need more storage in either your embedding-pvc or vhub-pvc, you can change the sizes of them in the values file with the following fields:
+Once you have deployed RAM, you will need to set the PVC sizes equal to the amount of GiB purchased in your order. For the embedding-pvc or vhub-pvc, you can change the sizes of them in the values file with the following fields:
 
 Vectorization Hub PVC:
 
@@ -292,7 +292,7 @@ Vectorization Hub PVC:
 filebrowser:
   rootDir:
     pvc:
-      size: <your_desired_size> # ex: 20Gi
+      size: <total_gigabytes_purchased> # ex: 20Gi
 
 ```
 
@@ -304,7 +304,7 @@ global:
   configuration:
     embedding:
       pvc:
-        size: <your_desired_size> # ex: 20Gi
+        size: <total_gigabytes_purchased> # ex: 20Gi
 
 ```
 
