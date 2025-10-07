@@ -281,9 +281,9 @@ To backup and restore the data you use RAM for, visit the [backup and restore pa
 
 ### Common Issues
 
-**Increasing Vectorization or Embedding PVCs:**
+**Increasing Vectorization or Embedding PVC Sizes:**
 
-Once you have deployed RAM, you will need to set the PVC sizes equal to the amount of GiB purchased in your order. For the embedding-pvc or vhub-pvc, you can change the sizes of them in the values file with the following fields:
+Before you deploy RAM, you will need to set the Vectorization Hub PVC size equal to the amount of gigabytes purchased in your order. If you purchase more storage afterwards, you will have to upgrade the vectorization hub PVC. For the embedding-pvc or vhub-pvc, you can change the sizes of them in the values file with the following fields:
 
 Vectorization Hub PVC:
 
@@ -304,7 +304,7 @@ global:
   configuration:
     embedding:
       pvc:
-        size: <total_gigabytes_purchased> # ex: 20Gi
+        size: <desired_pvc_size> # ex: 20Gi
 
 ```
 
