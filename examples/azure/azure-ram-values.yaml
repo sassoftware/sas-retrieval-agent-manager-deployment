@@ -225,6 +225,13 @@ global:
         # -- Key expiration (0 = never expires)
         expire: "0"
 
+    # -- Embedding service configuration
+    embedding:
+      # -- Persistent storage configuration for embeddings
+      pvc:
+        # -- PVC Size for embedding storage
+        size: 20Gi
+
     # -- Main API service configuration
     # -- Controls the core RAM backend service behavior
     api:
