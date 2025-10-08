@@ -38,6 +38,8 @@ filebrowser:
       storageClassName: "efs-sc"
       # -- Must be false for AWS EFS
       createStorageClass: false
+      # -- Size of persistent volume claim for vectorized documents
+      size: <total_gigabytes_purchased> # ex: 20Gi
 
 # ============================================================================
 # GLOBAL CONFIGURATION
@@ -171,7 +173,7 @@ global:
       keycloakAdmin: kcAdmin
       # -- Keycloak admin password
       # -- Note: This password must include at least 1 special character
-      keycloakAdminPassword: ""
+      keycloakAdminPassword: <your-kc-admin-password>
       # -- OAuth2 client ID for application
       clientId: "sas-ram-app"
       # -- OAuth2 client secret
@@ -237,7 +239,13 @@ global:
       # -- Verify SSL certificates for external API calls
       sslVerify: 'True'
       # -- SAS license content
-      license: ""
+      license: <your-ram-license-content>
+      # -- Embedding service user credentials
+      embedding:
+        # -- Embedding service database user
+        user: 'sas_ram_embedding_user'
+        # -- Embedding service database user password
+        password: "Orion123!"
       
     # -- Evaluation service configuration
     # eval:

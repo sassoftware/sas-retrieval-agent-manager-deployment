@@ -281,6 +281,46 @@ To backup and restore the data you use RAM for, visit the [backup and restore pa
 
 ### Common Issues
 
+**Increasing Vectorization or Embedding PVC Sizes:**
+
+Before you deploy RAM, you will need to set the Vectorization Hub PVC size equal to the amount of gigabytes purchased in your order. If you purchase more storage afterwards, you will have to upgrade the vectorization hub PVC. For the embedding-pvc or vhub-pvc, you can change the sizes of them in the values file with the following fields:
+
+Vectorization Hub PVC:
+
+```yaml
+
+filebrowser:
+  rootDir:
+    pvc:
+      size: <total_gigabytes_purchased> # ex: 20Gi
+
+```
+
+Embedding PVC (RAM Version 2025.9.60+):
+
+```yaml
+
+global:
+  configuration:
+    embedding:
+      pvc:
+        size: <desired_pvc_size> # ex: 20Gi
+
+```
+
+Once you override the desired fields in your values file, upgrade your RAM installation with the following command to apply the changes:
+
+```sh
+
+helm upgrade my-sas-retrieval-agent-manager oci://ghcr.io/sassoftware/sas-retrieval-agent-manager-deployment/sas-retrieval-agent-manager \
+  --version <RAM Version> \
+  --values <RAM Values file> \
+  -n retagentmgr
+
+```
+
+> Note: Once you increase a PVC size, you cannot decrease it with an upgrade. You will have to uninstall RAM completely and reinstall from scratch to lower it at that point.
+
 **Database Connection Issues:**
 
 - Check firewall rules and security groups
