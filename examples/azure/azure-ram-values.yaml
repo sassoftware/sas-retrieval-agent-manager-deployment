@@ -30,7 +30,7 @@ keycloak:
           
 # -- Enable File Browser for file management
 filebrowser:
-  enabled: true
+  enabled: false
   # -- Size of persistent volume claim for vectorized documents
   rootDir:
     pvc:

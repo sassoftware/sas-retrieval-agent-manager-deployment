@@ -23,9 +23,9 @@ keycloak:
   mail:
     config:
       postfix:
-        # -- Default domain/host
+        # -- Example: my-ram-deployment.eastus.cloudapp.azure.com
         myhostname:
-          ""
+          <your-domain>
 
 # -- Filebrowser deployment configuration
 filebrowser:
