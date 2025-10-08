@@ -1,6 +1,3 @@
--- Copyright © 2024, SAS Institute Inc., Cary, NC, USA.  All Rights Reserved.
--- SPDX-License-Identifier: Apache-2.0
-
 -- +goose Up
 -- +goose StatementBegin
 
@@ -67,6 +64,19 @@ DO $$
 -- +goose ENVSUB OFF
     END
 $$;
+
+-- Create embedding model user
+DO $$
+    BEGIN
+-- +goose ENVSUB ON
+        IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = '${EMBEDDING_DB_USERNAME}') THEN
+            CREATE ROLE "${EMBEDDING_DB_USERNAME}" LOGIN NOINHERIT CREATEDB NOCREATEROLE NOSUPERUSER PASSWORD '${EMBEDDING_DB_PASSWORD}';
+        ELSE
+            ALTER ROLE "${EMBEDDING_DB_USERNAME}" PASSWORD '${EMBEDDING_DB_PASSWORD}';
+        END IF;
+-- +goose ENVSUB OFF
+    END
+$$;
 -- END Create Users
 
 -- START Create Roles
@@ -113,6 +123,10 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto" SCHEMA "${APP_DB_SCHEMA}";
 -- ASSIGN PERMISSIONS TO SCHEMAS
 -- +goose ENVSUB ON
 GRANT USAGE ON SCHEMA "${APP_DB_SCHEMA}" TO "${VJOB_DB_USERNAME}";
+-- +goose ENVSUB OFF
+
+-- +goose ENVSUB ON
+GRANT USAGE ON SCHEMA "${APP_DB_SCHEMA}" TO "${EMBEDDING_DB_USERNAME}";
 -- +goose ENVSUB OFF
 
 -- +goose ENVSUB ON
