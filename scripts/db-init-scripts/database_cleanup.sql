@@ -1,6 +1,3 @@
--- Copyright © 2024, SAS Institute Inc., Cary, NC, USA.  All Rights Reserved.
--- SPDX-License-Identifier: Apache-2.0
-
 -- +goose Up
 -- +goose StatementBegin
 
@@ -19,6 +16,7 @@ DROP ROLE "${MIGRATE_DB_USERNAME}";
 DROP ROLE "${KC_DB_USERNAME}";
 DROP ROLE "${PGREST_DB_USERNAME}";
 DROP ROLE "${VJOB_DB_USERNAME}";
+DROP ROLE "${EMBEDDING_DB_USERNAME}";
 DROP ROLE "${DB_AUTH_ROLE_ADMINS}";
 DROP ROLE "${DB_AUTH_ROLE_USERS}";
 
