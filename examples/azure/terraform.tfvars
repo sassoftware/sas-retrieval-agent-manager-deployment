@@ -62,17 +62,17 @@ kubernetes_version         = "1.32"
 # Small Deployment Defaults
 default_nodepool_min_nodes = 1
 default_nodepool_max_nodes = 3
-default_nodepool_vm_type   = "Standard_E8s_v5"
+default_nodepool_vm_type   = "Standard_d8s_v5"
 
 # Medium Deployment Defaults
 # default_nodepool_min_nodes = 2
 # default_nodepool_max_nodes = 6
-# default_nodepool_vm_type   = "Standard_E8s_v5"
+# default_nodepool_vm_type   = "Standard_d8s_v5"
 
 # Large Deployment Defaults
 # default_nodepool_min_nodes = 2
 # default_nodepool_max_nodes = 8
-# default_nodepool_vm_type   = "Standard_E16s_v5"
+# default_nodepool_vm_type   = "Standard_d16s_v5"
 
 
 aks_network_plugin         = "azure"
