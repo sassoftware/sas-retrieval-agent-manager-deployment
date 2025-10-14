@@ -133,11 +133,11 @@ docker build -t viya4-iac-aws .
 # Deploy the cluster
 sudo docker run --rm \
     --env-file=aws.env \
-    --volume=$HOME/.ssh:/.ssh
-    --volume=$(pwd):/workspace
+    --volume=$HOME/.ssh:/.ssh \
+    --volume=$(pwd):/workspace \
     viya4-iac-aws \
     apply -auto-approve \
-          -var-file=/workspace/terraform.tfvars
+    -var-file=/workspace/terraform.tfvars
 ```
 
 > [Example Terraform Values File](../examples/aws/terraform.tfvars)

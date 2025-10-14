@@ -112,8 +112,8 @@ docker build -t viya4-iac-k8s .
 # Deploy the cluster
 sudo docker run --rm -it \
   --env-file $(pwd)/.bare_metal_creds.env \
-  --volume=$HOME/.ssh:/.ssh
-  --volume=$(pwd):/workspace
+  --volume=$HOME/.ssh:/.ssh \
+  --volume=$(pwd):/workspace \
   viya4-iac-k8s \
   setup install
 ```
