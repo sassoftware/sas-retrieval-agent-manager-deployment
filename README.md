@@ -19,6 +19,7 @@
     - [Install Required Dependencies](#install-required-dependencies)
     - [Optional Components](#optional-components)
   - [Backup and Restore Guide](#backup-and-restore-guide)
+  - [Connect an LLM](#connecting-different-llms)
   - [Troubleshooting](#troubleshooting)
     - [Common Issues](#common-issues)
     - [Debug Commands](#debug-commands)
@@ -275,7 +276,11 @@ kubectl get pods -n retagentmgr
 
 ## Backup and Restore Guide
 
-To backup and restore the data you use RAM for, visit the [backup and restore page](./docs/backup-restore/README.md).
+To backup and restore the data you use RAM for, visit the [Backup and Restore page](./docs/backup-restore/README.md).
+
+## Connecting different LLMS
+
+To add different LLMs for RAM to use, visit the [Connecting an LLM page](./docs/connect-llm/README.md).
 
 ## Troubleshooting
 
