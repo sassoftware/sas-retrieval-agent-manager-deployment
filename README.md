@@ -332,11 +332,16 @@ helm upgrade my-sas-retrieval-agent-manager oci://ghcr.io/sassoftware/sas-retrie
 - Verify TLS certificate validity
 - Check that controller references correct certificate
 - Confirm DNS resolution
+- If on Azure, verify that you have `10.0.0.0/8` in your nginx loadBalancerSourceRange list for intra-cluster services
 
-**API Server or PostgREST Not Responding:**
+**API Server or PostgREST Not Responding on login:**
 
 - Run the `sas-retagentmgr-fetch-keycloak-certs` cronjob
-- Delete API, PostgREST, and OAuth-proxy pods and let them spin back up
+- Delete API, PostgREST, and Oauth-proxy pods and let them spin back up
+
+**Unauthorized when adding a source**:
+
+- Delete Oauth-proxy and PostgREST pods and let them spin back up
 
 ### Debug Commands
 
