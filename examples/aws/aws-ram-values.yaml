@@ -53,10 +53,10 @@ global:
 
   # -- Global container image repository configuration
   # -- When sub-charts have useGlobal=true, images are pulled from this base repository
-  image:
-    repo:
-      # -- Base container registry URL (SAS Container Registry)
-      base: 'cr.sas.com'
+  # image:
+  #   repo:
+  #     # -- Base container registry URL (SAS Container Registry)
+  #     base: 'cr.sas.com'
 
   # -- Global image pull secrets for accessing private container registries
   # -- Applied to all sub-charts that reference private registries
