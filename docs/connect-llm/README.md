@@ -4,7 +4,7 @@ This folder provides documentation and instructions for adding various LLMs into
 
 ## Contents
 
-- [azure foundry.md](./azure-openai.md): Steps to integrate the azure openai foundry resource with RAM
+- [azure-openai.md](./azure-openai.md): Steps to integrate the azure openai foundry resource with RAM
 - [ollama.md](./ollama.md): Steps to integrate an ollama deployment with RAM
 - [amazon bedrock.md](./bedrock.md): Steps to integrate the amazon bedrock resource with RAM
 - [openai.md](./openai.md): Steps to connect an openai endpoint with RAM
