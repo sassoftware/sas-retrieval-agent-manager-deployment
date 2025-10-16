@@ -280,7 +280,7 @@ To backup and restore the data you use RAM for, visit the [Backup and Restore pa
 
 ## Connecting different LLMS
 
-To add different LLMs for RAM to use, visit the [Connecting an LLM page](./docs/connect-llm/README.md).
+To add different LLMs for RAM to use, visit the [Connecting an LLM page](./docs/llm-connection/README.md).
 
 ## Troubleshooting
 

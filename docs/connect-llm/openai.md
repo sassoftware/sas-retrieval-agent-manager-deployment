@@ -1,2 +1,0 @@
-# OpenAI Connection to RAM
-

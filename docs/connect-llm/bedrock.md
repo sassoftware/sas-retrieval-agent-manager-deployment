@@ -1,2 +1,0 @@
-# Bedrock Connection to RAM
-

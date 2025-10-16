@@ -28,13 +28,14 @@ After navigating to the homepage of your Azure OpenAI resource, go to the `Netwo
 
 To connect RAM to the Azure OpenAI Resource after you've added the IP address to the firewall whitelist, follow these steps:
 
-- Opening the Settings panel in the top right of the UI
-- Selecting the Azure OpenAI model type
-- Inserting the desired name and deployment that you have deployed in Azure OpenAI
-- Inserting your Azure OpenAI endpoint into the `URI` field
+- Open the Settings panel in the top right of the UI
+- Select the Azure OpenAI model type
+- Insert the desired name and deployment that you have deployed in Azure OpenAI
+- Insert your Azure OpenAI endpoint into the `URI` field
 
     > Example: `https://my-azure-OpenAI-resource.azure.com/`
 
-- Inserting the API key in the `API Key` field
+- Insert the API key in the `API Key` field
+- Select which groups will have access to this LLM
 
 At this point it should be ready to be queried by the user via agents or chat.

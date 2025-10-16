@@ -22,15 +22,16 @@ helm install ollama otwld/ollama -f <your_ollama_values> --version 1.12.0 --name
 
 ## Connection
 
-After you have installed Ollama using the commands above, you can add it to the RAM cluster by:
+After you have installed Ollama using the commands above, you can add it to the RAM cluster by following these steps:
 
-- Opening the Settings panel in the top right of the UI
-- Selecting the ollama model type
-- Inserting the desired name and model that Ollama supports
-- Inserting the `http://<ollama_namespace>.<ollama_service_name>:<ollama_port_number>` into the URI field
+- Open the Settings panel in the top right of the UI
+- Select the ollama model type
+- Insert the desired name and model that Ollama supports
+- Insert the `http://<ollama_namespace>.<ollama_service_name>:<ollama_port_number>` into the URI field
 
     > Example: `http://ollama.ollama:11434`
 
-- Waiting for the model to be loaded in by Ollama
+- Select which groups will have access to this LLM
+- Wait for the model to be loaded in by Ollama
 
 At this point it should be ready to be queried by the user via agents or chat.
