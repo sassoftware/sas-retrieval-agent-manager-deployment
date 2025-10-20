@@ -241,6 +241,7 @@ SAS has partnered with [Weaviate](https://weaviate.io/) and supports it as a vec
 | Component |    Version    | Example Values File |                                   Installation Instructions                                 |
 |-----------|---------------|---------------------|---------------------------------------------------------------------------------------------|
 | **Weaviate**     |v17.3.3 |[weaviate.yaml](./examples/weaviate.yaml)   | [instructions](./docs/user/DependencyInstall.md#weaviate)            |
+| **Ollama**       |v1.12.0 |[ollama.yaml](./examples/ollama.yaml)       | [instructions](./docs/llm-connection/ollama.md)                      |
 
 ### Install SAS Retrieval Agent Manager
 
