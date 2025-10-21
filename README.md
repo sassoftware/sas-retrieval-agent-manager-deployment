@@ -19,6 +19,7 @@
     - [Install Required Dependencies](#install-required-dependencies)
     - [Optional Components](#optional-components)
   - [Backup and Restore Guide](#backup-and-restore-guide)
+  - [Connect an LLM](#connecting-different-llms)
   - [Troubleshooting](#troubleshooting)
     - [Common Issues](#common-issues)
     - [Debug Commands](#debug-commands)
@@ -240,6 +241,7 @@ SAS has partnered with [Weaviate](https://weaviate.io/) and supports it as a vec
 | Component |    Version    | Example Values File |                                   Installation Instructions                                 |
 |-----------|---------------|---------------------|---------------------------------------------------------------------------------------------|
 | **Weaviate**     |v17.3.3 |[weaviate.yaml](./examples/weaviate.yaml)   | [instructions](./docs/user/DependencyInstall.md#weaviate)            |
+| **Ollama**       |v1.12.0 |[ollama.yaml](./examples/ollama.yaml)       | [instructions](./docs/llm-connection/ollama.md)                      |
 
 ### Install SAS Retrieval Agent Manager
 
@@ -275,7 +277,11 @@ kubectl get pods -n retagentmgr
 
 ## Backup and Restore Guide
 
-To backup and restore the data you use RAM for, visit the [backup and restore page](./docs/backup-restore/README.md).
+To backup and restore the data you use RAM for, visit the [Backup and Restore page](./docs/backup-restore/README.md).
+
+## Connecting different LLMS
+
+To add different LLMs for RAM to use, visit the [Connecting an LLM page](./docs/llm-connection/README.md).
 
 ## Troubleshooting
 
