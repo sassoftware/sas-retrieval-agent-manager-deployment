@@ -2,7 +2,7 @@ controller:
   deleteAccessPointRootDir: true
   serviceAccount:
     annotations:
-      eks.amazonaws.com/role-arn: <IAM_ROLE_ARN>
+      eks.amazonaws.com/role-arn: <EFS_DRIVER_IAM_ROLE_ARN>
 storageClasses:
 - annotations:
     storageclass.kubernetes.io/is-default-class: 'true'

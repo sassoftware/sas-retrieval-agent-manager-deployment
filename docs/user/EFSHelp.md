@@ -44,3 +44,5 @@ helm install aws-efs-csi-driver aws-efs-csi-driver/aws-efs-csi-driver -n kube-sy
 ```
 
 > [Note: you can find an example EFS values file here](../../examples/aws/efs.yaml)
+
+[Back to AWS Deployment Guide](../aws-deployment.md#deploy-rds-ssl-certificate)
