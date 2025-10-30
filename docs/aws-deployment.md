@@ -166,6 +166,9 @@ aws rds describe-db-instances --query 'DBInstances[*].[DBInstanceIdentifier,Avai
 After downloading the SSL bundle, upload it as a secret with the key of `cert.pem`. This can be done with the following command:
 
 ```bash
+# The correct namespace to store all SAS RAM Resources
+kubectl create ns retagentmgr
+
 # Create a secret with the RDS SSL Bundle you downloaded
 kubectl create secret generic rds-ssl-cert --from-file=cert.pem=<your-ssl-bundle>.pem -n retagentmgr
 ```

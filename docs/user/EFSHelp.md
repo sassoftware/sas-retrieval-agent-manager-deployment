@@ -7,7 +7,7 @@ Start by creating the EFS with the following command:
 ```bash
 # Creates the EFS
 aws efs create-file-system \
-    --creation-token my-efs-token \
+    --creation-token <your-efs-name> \
     --performance-mode generalPurpose \
     --tags Key=Name,Value=RAM_EFS
 ```
@@ -19,17 +19,29 @@ After this, copy [this](../../examples/aws/trust-policy.json) trust-policy into 
 ```bash
 # Creates the Role
 aws iam create-role \
-    --role-name EFS-CSI-Driver-Role \
+    --role-name <RAM-EFS-Driver-Role> \
     --assume-role-policy-document file://trust-policy.json
 ```
 
-Finally, attach the role policy to the role with the following command:
+Attach the role policy to the role with the following command:
 
 ```bash
 # Attaches the Role Policy to the Role
 aws iam attach-role-policy \
-    --role-name EFS-CSI-Driver-Role \
+    --role-name <RAM-EFS-Driver-Role> \
     --policy-arn arn:aws:iam::aws:policy/service-role/AmazonEFSCSIDriverPolicy
+```
+
+Finally, attach the EFS role policy to the node-group role:
+
+```bash
+aws iam attach-role-policy \ 
+    --role-name <Your-Node-Role-ARN> \
+    --policy-arn arn:aws:iam::aws:policy/service-role/AmazonEFSCSIDriverPolicy
+
+# Note: You can find your node role ARN by using the following commands
+NODE_ROLE_ARN=$(aws iam list-roles --query 'Roles[?RoleName==<your-node-group-name>].Arn' --output text)
+echo "Node Role ARN: $NODE_ROLE_ARN"
 ```
 
 After you create the EFS, Role, and Policy resources in AWS, you can deploy the EFS operator using the following commands:
