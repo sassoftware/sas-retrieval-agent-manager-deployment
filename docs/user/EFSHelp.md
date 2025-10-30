@@ -43,4 +43,4 @@ helm repo update
 helm install aws-efs-csi-driver aws-efs-csi-driver/aws-efs-csi-driver -n kube-system -f efs-values.yaml
 ```
 
-> [Note: you can find an example EFS values file here](../examples/aws/efs.yaml)
+> [Note: you can find an example EFS values file here](../../examples/aws/efs.yaml)
