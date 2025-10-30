@@ -9,7 +9,7 @@
             "Action": "sts:AssumeRoleWithWebIdentity",
             "Condition": {
                 "StringEquals": {
-                    "oidc.eks.<region>.1.amazonaws.com/id/<user-id>:aud": "sts.amazonaws.com",
+                    "oidc.eks.<region>.amazonaws.com/id/<user-id>:aud": "sts.amazonaws.com",
                     "oidc.eks.<region>.amazonaws.com/id/<user-id>:sub": "system:serviceaccount:kube-system:efs-csi-controller-sa"
                 }
             }
