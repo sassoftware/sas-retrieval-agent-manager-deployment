@@ -35,13 +35,7 @@ aws iam attach-role-policy \
 Finally, attach the EFS role policy to the node-group role:
 
 ```bash
-aws iam attach-role-policy \ 
-    --role-name <Your-Node-Role-ARN> \
-    --policy-arn arn:aws:iam::aws:policy/service-role/AmazonEFSCSIDriverPolicy
-
-# Note: You can find your node role ARN by using the following commands
-NODE_ROLE_ARN=$(aws iam list-roles --query 'Roles[?RoleName==<your-node-group-name>].Arn' --output text)
-echo "Node Role ARN: $NODE_ROLE_ARN"
+aws iam attach-role-policy --role-name <cluster_name_prefix>-default-eks-node-group --policy-arn arn:aws:iam::aws:policy/service-role/AmazonEFSCSIDriverPolicy
 ```
 
 After you create the EFS, Role, and Policy resources in AWS, you can deploy the EFS operator using the following commands:
