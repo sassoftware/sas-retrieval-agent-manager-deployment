@@ -16,3 +16,8 @@
         }
     ]
 }
+
+// Commands to get each field:
+// - Account: aws sts get-caller-identity --query Account --output text
+// - user-id: aws eks describe-cluster --name <cluster_name> --query "cluster.identity.oidc.issuer" --output text | cut -d '/' -f 5
+// - region:  aws configure get region
