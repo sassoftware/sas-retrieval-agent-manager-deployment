@@ -24,6 +24,7 @@ keycloak:
     config:
       postfix:
         # -- Example: my-ram-deployment.eastus.cloudapp.azure.com
+        # aws eks describe-cluster --name <ram_cluster_name> --query "cluster.endpoint" --output text (without https://)
         myhostname:
           <your-domain>
 
@@ -49,6 +50,7 @@ global:
   # -- Default domain/host for ingress resources when useGlobal=true
   # -- If not set, each chart uses its own host configuration
   # -- Example: my-ram-deployment.eastus.cloudapp.azure.com
+  # kubectl get svc -n ingress-nginx
   domain: <your-domain>
 
   # -- Global container image repository configuration
@@ -88,6 +90,7 @@ global:
       # -- Create database users during initialization
       createUsers: true
       # -- PostgreSQL server hostname/IP (required for external DB)
+      # aws rds describe-db-instances --db-instance-identifier <ram_db_name> --query 'DBInstances[0].Endpoint.Address' --output text
       host: <your-db-host>
       # -- PostgreSQL server port
       port: "5432"
@@ -252,7 +255,7 @@ global:
         # -- Embedding service database user
         user: 'sas_ram_embedding_user'
         # -- Embedding service database user password
-        password: "Orion123!"
+        password: <embedding_user_password>
       
     # -- Evaluation service configuration
     # eval:

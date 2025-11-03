@@ -250,7 +250,7 @@ global:
         # -- Embedding service database user
         user: 'sas_ram_embedding_user'
         # -- Embedding service database user password
-        password: "Orion123!"
+        password: <embedding_user_password>
         
     # -- Evaluation service configuration
     # eval:
