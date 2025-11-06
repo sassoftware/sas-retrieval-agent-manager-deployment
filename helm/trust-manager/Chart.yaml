@@ -1,13 +1,13 @@
 apiVersion: v2
-name: cert-manager
+name: trust-manager
 description: >
-  Cert-Manager chart for SAS Retrieval Agent Manager.
-  Deploys cert-manager and configures required issuers.
+  Trust-Manager chart for SAS Retrieval Agent Manager.
+  Deploys trust-manager and configures required trust bundles.
 icon: https://cert-manager.io/favicons/favicon-32x32.png
 type: application
 version: 1.0.1
 appVersion: "0.0.1"
 dependencies:
-  - name: cert-manager
-    version: "v1.18.2"
+  - name: trust-manager
+    version: "v0.18.0"
     repository: "https://charts.jetstack.io"
