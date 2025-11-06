@@ -118,6 +118,9 @@ An alternative to configuring the SSO would be to have a credentials file in a s
 # Install terraform
 sudo apt install terraform
 
+# Initialize terraform in the iac directory
+terraform init
+
 # Deploy all terraform resources in terraform.tfvars
 terraform apply
 ```
