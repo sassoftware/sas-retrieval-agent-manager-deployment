@@ -9,7 +9,7 @@ spec:
     labels:
       app.kubernetes.io/part-of: Linkerd
   duration: 168h    # 7 days duration.
-  renewBefore: 24h  # Renew 1 day before expiration.
+  renewBefore: 72h  # Renew 3 days before expiration.
   issuerRef:
     name: linkerd-trust-anchor
     kind: ClusterIssuer
