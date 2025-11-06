@@ -2,8 +2,8 @@
 # type: object
 # required: true
 # @schema
-# -- Cert-Manager configuration for certificate management
-cert-manager:
+# -- Trust-Manager configuration for trust bundle management
+trust-manager:
   # @schema
   # type: object
   # required: true
@@ -15,5 +15,5 @@ cert-manager:
     # default: true
     # required: true
     # @schema
-    # -- Whether to install Cert-Manager CRDs
+    # -- Whether to install Trust-Manager CRDs
     enabled: true
