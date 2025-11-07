@@ -14,17 +14,16 @@ management and issuance of TLS certificates. The provided chart:
 You can install both applications onto your cluster and create service mesh prerequisites with the following commands:
 
 ```bash
-
 # Install cert manager, creating issuers
 # and certificates for subsequent use.
-helm install cert-manager ./helm/cert-manager/charts/cert-manager-v1.18.2.tgz \
+helm install cert-manager ./helm/cert-manager/ \
   --namespace cert-manager \
   --create-namespace \
   --atomic
 
 # Install trust manager, creating trust anchor
 # bundle for subsequent use.
-helm install trust-manager ./helm/trust-manager/charts/trust-manager-v0.18.0.tgz \
+helm install trust-manager ./helm/trust-manager/ \
   --namespace cert-manager \
   --atomic
 
