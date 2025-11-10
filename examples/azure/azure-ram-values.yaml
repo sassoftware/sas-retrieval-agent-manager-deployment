@@ -227,6 +227,10 @@ global:
 
     # -- Embedding service configuration
     embedding:
+      # -- Embedding service database user
+      user: 'sas_ram_embedding_user'
+      # -- Embedding service database user password
+      password: <embedding_user_password>
       # -- Persistent storage configuration for embeddings
       pvc:
         # -- PVC Size for embedding storage
@@ -245,12 +249,6 @@ global:
       sslVerify: 'True'
       # -- SAS license content
       license: <your-ram-license-content>
-      # -- Embedding service user credentials
-      embedding:
-        # -- Embedding service database user
-        user: 'sas_ram_embedding_user'
-        # -- Embedding service database user password
-        password: <embedding_user_password>
         
     # -- Evaluation service configuration
     # eval:
