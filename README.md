@@ -20,6 +20,7 @@
     - [Optional Components](#optional-components)
   - [Backup and Restore Guide](#backup-and-restore-guide)
   - [Connect an LLM](#connecting-different-llms)
+  - [Monitoring and Logging](#monitoring-and-logging)
   - [Troubleshooting](#troubleshooting)
     - [Common Issues](#common-issues)
     - [Debug Commands](#debug-commands)
@@ -282,6 +283,10 @@ To backup and restore the data you use RAM for, visit the [Backup and Restore pa
 ## Connecting different LLMS
 
 To add different LLMs for RAM to use, visit the [Connecting an LLM page](./docs/llm-connection/README.md).
+
+## Monitoring and Logging
+
+To monitor and log agent and LLM activity, visit the [Monitoring setup page](./docs/monitoring/README.md)
 
 ## Troubleshooting
 
