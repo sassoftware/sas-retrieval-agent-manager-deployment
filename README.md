@@ -223,6 +223,7 @@ After you have access to the Kubernetes cluster, you must install the necessary 
 | Linkerd                     | 2.17 (edge-24.11.8) | [example](./docs/user/DependencyInstall.md#service-mesh)                     | [docs](https://linkerd.io/2/tasks/install-helm/)                                                                                                           |
 | Ingress-Nginx               | 4.12.3              | [example](./docs/user/DependencyInstall.md#ingress-nginx)                    | [docs](https://kubernetes.github.io/ingress-nginx/deploy/)                                                                                                 |
 | Kueue                       | 0.12.1              | [example](./docs/user/DependencyInstall.md#kueue)                            | [docs](https://kueue.sigs.k8s.io/docs/installation/)                                                                                                       |
+| Vector                      | 0.46.0              | [example](./docs/monitoring/README.md)                                       | [docs](https://vector.dev/installation/)                                                                                                                   |
 
 > Note: order of installation matters for some dependencies, namely:
 >
@@ -239,10 +240,11 @@ After you have access to the Kubernetes cluster, you must install the necessary 
 
 SAS has partnered with [Weaviate](https://weaviate.io/) and supports it as a vector database alternative to PGVector storage. This installation is not required but is compatible with RAM.
 
-| Component |    Version    | Example Values File |                                   Installation Instructions                                 |
-|-----------|---------------|---------------------|---------------------------------------------------------------------------------------------|
-| **Weaviate**     |v17.3.3 |[weaviate.yaml](./examples/weaviate.yaml)   | [instructions](./docs/user/DependencyInstall.md#weaviate)            |
-| **Ollama**       |v1.12.0 |[ollama.yaml](./examples/ollama.yaml)       | [instructions](./docs/llm-connection/ollama.md)                      |
+| Component |    Version    | Example Values File |                                   Installation Instructions                                  |
+|-----------|---------------|---------------------|----------------------------------------------------------------------------------------------|
+| **Weaviate**      |v17.3.3 |[weaviate.yaml](./examples/weaviate.yaml)     | [instructions](./docs/user/DependencyInstall.md#weaviate)          |
+| **Ollama**        |v1.12.0 |[ollama.yaml](./examples/ollama.yaml)         | [instructions](./docs/llm-connection/ollama.md)                    |
+| **Phoenix**       |v4.0.7  |[phoenix.yaml](./examples/phoenix.yaml)       | [instructions](./docs/monitoring/traces.md)                        |
 
 ### Install SAS Retrieval Agent Manager
 

@@ -215,6 +215,7 @@ customConfig:
             }]
           }
 
+      # Removes unecessary fields from logs to be inserted via postgrest
       sanitize_logs:
         type: remap
         inputs:
@@ -224,40 +225,41 @@ customConfig:
           del(.source_type)
           del(.stream)
 
-    # Sends otel metrics to postgres via postgrest
-    metrics_postgrest:
-      type: http
-      inputs:
-        - otel.metrics
-      uri: "http://sas-retrieval-agent-manager-postgrest.retagentmgr.svc.cluster.local:3002/metrics"
-      headers:
-        Content-Type: "Application/json"
-      encoding:
-        codec: json
-
-    # Sends kubernetes logs to postgres via postgrest
-    logs_postgrest:
-      type: http
-      inputs:
-        - sanitize_logs
-      # Could be different URL depending on postgrest settings
-      uri: "http://sas-retrieval-agent-manager-postgrest.retagentmgr.svc.cluster.local:3002/logs"
-      headers:
-        Content-Type: "Application/json"
-      encoding:
-        codec: json
-
-    # Requires Phoenix deployment in cluster
-    phoenix:
-      inputs: 
-        - rebuild_otlp_format
-      protocol:
-        compression: none
-        encoding:
-          codec: otlp
+    sinks:
+      # Sends otel metrics to postgres via postgrest
+      metrics_postgrest:
         type: http
-        uri: http://phoenix-svc.phoenix.svc.cluster.local:6006/v1/traces
-      type: opentelemetry
+        inputs:
+          - otel.metrics
+        uri: "http://sas-retrieval-agent-manager-postgrest.retagentmgr.svc.cluster.local:3002/metrics"
+        headers:
+          Content-Type: "Application/json"
+        encoding:
+          codec: json
+
+      # Sends kubernetes logs to postgres via postgrest
+      logs_postgrest:
+        type: http
+        inputs:
+          - sanitize_logs
+        # Could be different URL depending on postgrest settings
+        uri: "http://sas-retrieval-agent-manager-postgrest.retagentmgr.svc.cluster.local:3002/logs"
+        headers:
+          Content-Type: "Application/json"
+        encoding:
+          codec: json
+
+      # Requires Phoenix deployment in cluster
+      phoenix:
+        inputs: 
+          - rebuild_otlp_format
+        protocol:
+          compression: none
+          encoding:
+            codec: otlp
+          type: http
+          uri: http://phoenix-svc.phoenix.svc.cluster.local:6006/v1/traces
+        type: opentelemetry
 
   # Requires account and API key creation in langfuse
   # Requires a public langfuse account
