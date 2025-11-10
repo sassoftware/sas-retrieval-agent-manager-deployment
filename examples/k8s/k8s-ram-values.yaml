@@ -79,6 +79,11 @@ global:
   # -- Global application configuration
   # -- Contains database, authentication, and service-specific settings
   configuration:
+    # -- Enable root ingress path routing
+    # Set to false if deploying with SAS Viya
+    ui:
+      enableRootIngress: true
+
     # -- PostgreSQL Database configuration for RAM initialization
     # -- Controls initial database setup and connection parameters
     database:
