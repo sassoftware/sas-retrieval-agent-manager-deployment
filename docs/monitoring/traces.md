@@ -180,33 +180,6 @@ The `rebuild_otlp_format` transform is critical for ensuring traces conform to t
 
 ## Testing
 
-### Send Test Trace
-
-Test the OTLP endpoint with OpenTelemetry SDK:
-
-```python
-from opentelemetry import trace
-from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor
-
-# Configure OTLP exporter to Vector
-exporter = OTLPSpanExporter(
-    endpoint="http://vector-svc.vector.svc.cluster.local:4318/v1/traces"
-)
-
-# Set up tracing
-provider = TracerProvider()
-processor = BatchSpanProcessor(exporter)
-provider.add_span_processor(processor)
-trace.set_tracer_provider(provider)
-
-# Create a test trace
-tracer = trace.get_tracer(__name__)
-with tracer.start_as_current_span("test-span"):
-    print("Test trace sent to Vector")
-```
-
 ### Verify Vector is Running
 
 ```bash
