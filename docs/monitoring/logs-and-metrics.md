@@ -82,7 +82,6 @@ The `kubernetes` JSONB column includes the following context:
 
 - `pod_ip`, `pod_owner`
 
-
 ### Metrics Pipeline
 
 Metrics collection follows a similar pattern but does not need transformations:
@@ -106,6 +105,19 @@ sinks:
       Content-Type: "Application/json"
     encoding:
       codec: json
+```
+
+## Installation
+
+To install Vector, edit the [example Vector values file](../../examples/vector.yaml) to your desired settings and run the following commands:
+
+```sh
+helm repo add vector https://helm.vector.dev
+helm repo update
+
+helm install vector vector/vector \
+    -n vector -f .\values.yaml \
+    --create-namespace --version 0.46.0
 ```
 
 ## PostgREST Integration

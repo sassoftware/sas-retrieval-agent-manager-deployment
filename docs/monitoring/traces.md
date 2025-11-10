@@ -134,6 +134,24 @@ The `rebuild_otlp_format` transform is critical for ensuring traces conform to t
 - **Resource Attributes**: Restructures resource metadata into OTLP format
 - **Span Structure**: Builds the complete `resourceSpans` → `scopeSpans` → `spans` hierarchy
 
+## Installation
+
+To install Vector, edit the [example Vector values file](../../examples/vector.yaml) to your desired settings and run the following commands:
+
+```sh
+helm install vector vector/vector \
+    -n vector -f .\values.yaml \
+    --create-namespace --version 0.46.0
+```
+
+To install Phoenix, edit the [example Phoenix values file](../../examples/phoenix.yaml) to your desired settings and run the following commands:
+
+```sh
+helm install phoenix oci://registry-1.docker.io/arizephoenix/phoenix-helm \
+    -f .\values.yaml --version 4.0.7 \
+    -n phoenix --create-namespace
+```
+
 ## Observability Backends
 
 ### Phoenix

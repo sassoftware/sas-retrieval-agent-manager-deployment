@@ -76,7 +76,7 @@ helm install kueue oci://registry.k8s.io/kueue/charts/kueue \
 
 SAS Retrieval Agent Manager requires the NGINX Ingress controller for managing incoming traffic.
 
-Here is an [Example NGINX Controller Values File](../../examples/nginx.yaml).
+Here is an [Example NGINX Controller Values File](../../examples/nginx.yaml). You can edit it as you'd like to fit your deployment.
 
 You can install it onto your cluster with the following commands:
 
@@ -93,6 +93,14 @@ helm install nginx-ingress-nginx-controller \
     -f <nginx_values_file> \
     --create-namespace
 ```
+
+### Vector
+
+SAS Retrieval Agent Manager requires Vector for collecting, viewing, and managing logs/metrics.
+
+Here is an [Example Vector Values File](../../examples/vector.yaml). You can edit it as you'd like to fit your deployment.
+
+You can install it onto your cluster by reading the [installation instructions found here](../monitoring/logs-and-metrics.md#installation).
 
 ## Optional Components
 
@@ -116,3 +124,11 @@ helm install weaviate weaviate/weaviate \
   -f <weaviate_values_file> \
   --create-namespace
 ```
+
+### Phoenix
+
+SAS Retrieval Agent Manager supports [Phoenix](https://github.com/Arize-ai/phoenix), an open-source observability platform for LLM applications.
+
+Here is an [Example Phoenix Values File](../../examples/phoenix.yaml). You can edit it as you'd like to fit your deployment.
+
+You can look at [installation instructions here](../monitoring/traces.md#installation).
