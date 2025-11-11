@@ -42,6 +42,27 @@ filebrowser:
       # -- Size of persistent volume claim for vectorized documents
       size: <total_gigabytes_purchased> # ex: 20Gi
 
+# Aws-specific annotations that are needed
+sas-retrieval-agent-manager-api:
+  ingress:
+    annotations:
+      nginx.ingress.kubernetes.io/auth-url:
+        http://sas-retrieval-agent-manager-oauth2-proxy.retagentmgr.svc.cluster.local:4180/SASRetrievalAgentManager/oauth2/auth
+
+# Aws-specific annotations that are needed
+sas-retrieval-agent-manager-app:
+  ingress:
+    annotations:
+      nginx.ingress.kubernetes.io/auth-url:
+        http://sas-retrieval-agent-manager-oauth2-proxy.retagentmgr.svc.cluster.local:4180/SASRetrievalAgentManager/oauth2/auth
+
+# Aws-specific annotations that are needed
+postgrest:
+  ingress:
+    annotations:
+      nginx.ingress.kubernetes.io/auth-url:
+        http://sas-retrieval-agent-manager-oauth2-proxy.retagentmgr.svc.cluster.local:4180/SASRetrievalAgentManager/oauth2/auth
+
 # ============================================================================
 # GLOBAL CONFIGURATION
 # ============================================================================
@@ -243,6 +264,9 @@ global:
       password: <embedding_user_password>
       # -- Persistent storage configuration for embeddings
       pvc:
+        storageClassName: "efs-sc"
+        # -- Must be false for AWS EFS
+        createStorageClass: false
         # -- PVC Size for embedding storage
         size: 20Gi
 
