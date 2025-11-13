@@ -40,6 +40,9 @@ postgres_servers = {
 
     version                      = "15"
    # Necessary extensions for RAM to function
+   # Extensions:
+   #  - PGCRYPTO: Required for basic app functionality
+   #  - VECTOR:   Optional - Needed if not using weaviate / other vector db solution
     postgresql_configurations    = [
        {
          name  = "azure.extensions"

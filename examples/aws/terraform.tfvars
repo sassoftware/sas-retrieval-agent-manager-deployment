@@ -26,6 +26,9 @@ tags = {} # for example: { "owner|email" = "<you>@<domain>.<com>", "key1" = "val
 #                   Default networking option: Public access (allowed IP addresses) is enabled
 #                   If you do not need an external database server remove the 'postgres_servers'
 #                   block below.
+# Extensions:
+#  - PGCRYPTO: Required for basic app functionality
+#  - VECTOR:   Optional - Needed if not using weaviate / other vector db solution
 postgres_servers = {
   default = {
     administrator_login      = "<admin-username>"
