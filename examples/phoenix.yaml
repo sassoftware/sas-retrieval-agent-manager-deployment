@@ -1,0 +1,309 @@
+# Phoenix Helm Chart Values
+# This file contains configuration values for deploying Phoenix via Helm.
+# Each value corresponds to an environment variable described in https://arize.com/docs/phoenix/self-hosting/configuration.
+extraObjects: []
+  ### REQUIRED ###
+  # -- Ingress TLS secret for RAM HTTPS termination
+  # -- TLS Certificate for secure external access
+  # - apiVersion: v1
+  #   kind: Secret
+  #   metadata:
+  #     name: ingress-tls
+  #     namespace: retagentmgr
+  #   data:
+  #     tls.crt: >-
+  #       <base64_encoded_certificate>
+  #     tls.key: >-
+  #       <base64_encoded_private_key>
+  #   type: kubernetes.io/tls
+
+# Replica count
+# -- Number of Phoenix pod replicas
+replicaCount: 1
+
+# Deployment strategy
+deployment:
+  # -- Deployment strategy
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: "25%"
+      maxSurge: "25%"
+
+  # -- Tolerations, nodeSelector and affinity
+  # For Pod scheduling strategy on the nodes
+  tolerations: []
+  nodeSelector: {}
+  affinity: {}
+
+postgresql:
+  # -- Enable PostgreSQL deployment. Set to false if you have your own postgres instance (e.g., RDS, CloudSQL)
+  # When disabled, you must configure database.url or database.postgres settings to point to your external database
+  # IMPORTANT: Cannot be enabled simultaneously with persistence.enabled=true (for SQLite)
+  # Choose one persistence strategy:
+  #   - groundhog2k PostgreSQL: postgresql.enabled=true, persistence.enabled=false
+  #   - SQLite: postgresql.enabled=false, persistence.enabled=true
+  #   - External DB: postgresql.enabled=false, persistence.enabled=false, database.url configured
+  enabled: false
+
+ingress:
+  # -- Annotations to add to the ingress resource
+  annotations: {}
+
+  # -- Path prefix for the Phoenix API
+  apiPath: <desired_phoenix_path>
+
+  # -- Enable ingress controller for external access
+  enabled: true
+
+  # -- Hostname for ingress
+  host: <your_host_name>
+
+  # -- Labels to add to the ingress resource
+  labels: {}
+
+  # -- Ingress path type (Prefix, Exact, or ImplementationSpecific)
+  pathType: "Prefix"
+
+  tls:
+    # -- Enable TLS/HTTPS for ingress
+    enabled: true
+    secretName: <ingress_tls_name>
+
+server:
+  # -- Annotations to add to the Phoenix service
+  annotations: {}
+
+  # -- Enable Prometheus metrics endpoint on port 9090
+  enablePrometheus: false
+
+  # -- Port for OpenTelemetry gRPC collector (PHOENIX_GRPC_PORT)
+  grpcPort: 4317
+
+  # -- Host IP to bind Phoenix server (PHOENIX_HOST)
+  host: "0.0.0.0"
+
+  # -- Root path prefix for Phoenix UI and API (PHOENIX_HOST_ROOT_PATH)
+  hostRootPath: ""
+
+  # -- Labels to add to the Phoenix service
+  labels: {}
+
+  # -- Port for Phoenix web UI and HTTP API (PHOENIX_PORT)
+  port: 6006
+
+  rootUrl: <your_host_name>
+
+  # -- The working directory for saving, loading, and exporting data (PHOENIX_WORKING_DIR)
+  # Set to empty string to use container's $HOME directory (not recommended for persistence)
+  # Use `/data` as a default for volume mount - enables proper permissions in both strict and normal security contexts
+  # IMPORTANT: When persistence.enabled=true, this directory must be writable by the Phoenix container (UID 65532)
+  # The fsGroup setting in securityContext.pod ensures proper permissions when enabled
+  workingDir: "/data"
+
+  # -- Allows calls to external resources, like Google Fonts in the web interface (PHOENIX_ALLOW_EXTERNAL_RESOURCES)
+  # Set to false in air-gapped environments to prevent external requests that can cause UI loading delays
+  allowExternalResources: true
+
+# Service configuration
+service:
+  # -- Service type for Phoenix service (ClusterIP, NodePort, LoadBalancer, or ExternalName)
+  # Use ClusterIP for service mesh deployments (Istio, Linkerd, etc.)
+  # Use NodePort for direct external access without ingress
+  type: "ClusterIP"
+
+  # -- Annotations to add to the Phoenix service (useful for service mesh configurations)
+  annotations:
+    {}
+    # For Istio service mesh, you might want:
+    # service.istio.io/canonical-name: phoenix
+    # service.istio.io/canonical-revision: stable
+
+  # -- Labels to add to the Phoenix service
+  labels:
+    {}
+    # For service mesh deployments, you might want:
+    # app: phoenix
+    # version: stable
+
+# Persistence configuration for Phoenix home directory
+persistence:
+  enabled: false
+
+
+database:
+  # -- Storage allocation in GiB for the database persistent volume
+  allocatedStorageGiB: 20
+
+  # -- Default retention policy for traces in days (PHOENIX_DEFAULT_RETENTION_POLICY_DAYS)
+  # Set to 0 to disable automatic trace cleanup. When set to a positive value,
+  # traces older than this many days will be automatically removed from the database.
+  defaultRetentionPolicyDays: 0
+
+  postgres:
+    # -- Name of the PostgreSQL database (PHOENIX_POSTGRES_DB)
+    db: "SASRetrievalAgentManagerMonitoring"
+
+    # -- Postgres Host (PHOENIX_POSTGRES_HOST)
+    # Default points to the groundhog2k PostgreSQL service when postgresql.enabled=true
+    # IMPORTANT: Only change this when using external PostgreSQL (postgresql.enabled=false, database.url empty)
+    # Examples: "localhost", "postgres.example.com", "your-rds-endpoint.region.rds.amazonaws.com"
+    host: <your_db_name>
+
+    # -- PostgreSQL password (should match auth.secret."PHOENIX_POSTGRES_PASSWORD", PHOENIX_POSTGRES_PASSWORD)
+    password: <your_db_password>
+
+    # -- Port number for PostgreSQL connections (PHOENIX_POSTGRES_PORT)
+    port: 5432
+
+    # -- PostgreSQL schema to use (PHOENIX_SQL_DATABASE_SCHEMA)
+    schema: "phoenix"
+
+    # -- PostgreSQL username (PHOENIX_POSTGRES_USER)
+    user: <your_db_username>
+
+  # -- Full database connection URL (overrides postgres settings if provided)
+  # IMPORTANT: Only set this for external databases (Strategy 3)
+  # - When using SQLite (Strategy 1): MUST be empty - SQLite auto-uses persistent volume
+  # - When using built-in PostgreSQL (Strategy 2): MUST be empty - auto-configured
+  # - When using external database (Strategy 3): MUST be configured with full connection string
+  #
+  # Examples for external databases:
+  # PostgreSQL: "postgresql://username:password@your-rds-endpoint.region.rds.amazonaws.com:5432/phoenix"
+  # SQLite: "sqlite:///path/to/database.db" (only for external SQLite files, not recommended)
+  #
+  # WARNING: Setting this will override all database.postgres.* settings and disable built-in PostgreSQL validation
+  # url: ""
+
+# Authentication and security
+auth:
+  # -- Duration in minutes before access tokens expire and require renewal (PHOENIX_ACCESS_TOKEN_EXPIRY_MINUTES)
+  accessTokenExpiryMinutes: 60
+
+  # FIX: Add your domain to CORS/CSRF
+  allowedOrigins:
+    - <your_host_name>
+    - "http://localhost:6006"
+  
+  csrfTrustedOrigins:
+    - <your_host_name>
+    - "http://localhost:6006"
+  
+  defaultAdminPassword: "iotorion123!"
+  
+  enableAuth: false
+
+  # -- Name of the Kubernetes secret containing authentication credentials
+  name: "phoenix-secret"
+
+  # -- Duration in minutes before password reset tokens expire (PHOENIX_PASSWORD_RESET_TOKEN_EXPIRY_MINUTES)
+  passwordResetTokenExpiryMinutes: 60
+
+  # -- Duration in minutes before refresh tokens expire (PHOENIX_REFRESH_TOKEN_EXPIRY_MINUTES)
+  refreshTokenExpiryMinutes: 43200
+
+  secret:
+    # -- Environment variable name for the main Phoenix secret key used for encryption
+    - key: "PHOENIX_SECRET"
+      # -- Autogenerated if empty
+      value: ""
+      # -- Use this for existing Secrets / Configmaps, takes precedence over auth.secret[].value
+      # valueFrom:
+      #   secretKeyRef:
+      #     name: my-secret
+      #     key: phoenix-secret-key
+
+    # -- Environment variable name for the admin secret key
+    - key: "PHOENIX_ADMIN_SECRET"
+      # -- Autogenerated if empty
+      value: ""
+
+    # -- Environment variable name for the PostgreSQL password
+    - key: "PHOENIX_POSTGRES_PASSWORD"
+      # -- If using postgres in this chart, password must match with database.postgres.password
+      value: "iotorion123!"
+
+    # -- Environment variable name for the SMTP password
+    - key: "PHOENIX_SMTP_PASSWORD"
+      # -- Autogenerated if empty
+      value: ""
+
+    # -- Environment variable name for the default admin password
+    - key: "PHOENIX_DEFAULT_ADMIN_INITIAL_PASSWORD"
+      # -- Default password for the admin user on initial setup, uses defaultAdminPassword if empty
+      value: <default_phoenix_password>
+
+  # -- Enable secure cookies (should be true when using HTTPS)
+  useSecureCookies: false
+
+  # OAuth2/OIDC Identity Provider Configuration
+  # Configure OAuth2 identity providers for authentication
+  oauth2:
+    # -- Enable OAuth2/OIDC authentication
+    enabled: false
+
+    # -- List of OAuth2 identity providers to configure
+    # Each provider requires client_id, client_secret, and oidc_config_url
+    # Optional settings include display_name, allow_sign_up, and auto_login
+    # You can also define corresponding ENVs via auth.secrets[].valueFrom to use existing secrets
+    # ENVs: PHOENIX_OAUTH2_{{ $provider_upper }}_{{ setting }}, e.g. PHOENIX_OAUTH2_GOOGLE_CLIENT_SECRET
+    providers:
+      # Example Google configuration:
+      # google:
+      #   client_id: "your-google-client-id"
+      #   client_secret: "your-google-client-secret"
+      #   oidc_config_url: "https://accounts.google.com/.well-known/openid-configuration"
+      #   display_name: "Google"  # Optional, defaults to provider name
+      #   allow_sign_up: true     # Optional, defaults to true
+      #   auto_login: false       # Optional, defaults to false
+      
+      # Example AWS Cognito configuration:
+      # aws_cognito:
+      #   client_id: "your-aws-cognito-client-id"
+      #   client_secret: "your-aws-cognito-client-secret"
+      #   oidc_config_url: "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_xxxxx/.well-known/openid-configuration"
+      #   display_name: "AWS Cognito"
+      #   allow_sign_up: true
+      #   auto_login: false
+      
+      # Example Microsoft Entra ID configuration:
+      # microsoft_entra_id:
+      #   client_id: "your-microsoft-entra-id-client-id"
+      #   client_secret: "your-microsoft-entra-id-client-secret"
+      #   oidc_config_url: "https://login.microsoftonline.com/your-tenant-id/v2.0/.well-known/openid-configuration"
+      #   display_name: "Microsoft Entra ID"
+      #   allow_sign_up: true
+      #   auto_login: false
+      
+      # Example Keycloak configuration:
+      # keycloak:
+      #   client_id: "phoenix"
+      #   client_secret: "your-keycloak-client-secret"
+      #   oidc_config_url: "https://your-keycloak-server/realms/your-realm/.well-known/openid-configuration"
+      #   display_name: "Keycloak"
+      #   allow_sign_up: true
+      #   auto_login: false
+
+
+# Logging
+logging:
+  # -- Database logging level (debug, info, warning, error) PHOENIX_DB_LOGGING_LEVEL
+  dbLevel: "warning"
+
+  # -- Application logging level (debug, info, warning, error) PHOENIX_LOGGING_LEVEL
+  level: "info"
+
+  # -- Enable logging of database migration operations (PHOENIX_LOG_MIGRATIONS)
+  logMigrations: true
+
+  # -- Logging mode configuration - PHOENIX_LOGGING_MODE (default|structured)
+  mode: "default"
+
+# Instrumentation
+instrumentation:
+  # -- OpenTelemetry collector gRPC endpoint for sending traces (PHOENIX_SERVER_INSTRUMENTATION_OTLP_TRACE_COLLECTOR_GRPC_ENDPOINT)
+  otlpTraceCollectorGrpcEndpoint: ""
+
+  # -- OpenTelemetry collector HTTP endpoint for sending traces (PHOENIX_SERVER_INSTRUMENTATION_OTLP_TRACE_COLLECTOR_HTTP_ENDPOINT)
+  otlpTraceCollectorHttpEndpoint: ""
+
