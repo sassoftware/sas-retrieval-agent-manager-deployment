@@ -1,14 +1,21 @@
 {{- if .Values.enabled -}}
 {{- $dot := . -}}
-{{- $globalEnabled := false -}}
-{{- if hasKey .Values "global" -}}
-{{- if hasKey .Values.global "ingress" -}}
-{{- if .Values.global.ingress.enabled -}}
-{{- $globalEnabled = true -}}
+{{- $globalEnabled := ((include "testValuesPath" (list .Values "global" "ingress" "enabled")) | eq "true") -}}
+{{- $globalClassName := "" -}}
+{{- if $globalEnabled -}}
+{{- $globalClassName = .Values.global.ingress.className | default "" -}}
+{{- end -}}
+{{- $isRouteClassName := false -}}
+{{- if $globalEnabled -}}
+{{- if eq $globalClassName "route" -}}
+{{- $isRouteClassName = true -}}
+{{- end -}}
+{{- else if .Values.ingress.enabled -}}
+{{- if eq (.Values.ingress.className | default "") "route" -}}
+{{- $isRouteClassName = true -}}
 {{- end -}}
 {{- end -}}
-{{- end -}}
-{{- if or .Values.ingress.enabled $globalEnabled -}}
+{{- if and (or .Values.ingress.enabled $globalEnabled) (not $isRouteClassName) -}}
 {{- $fullName := include "filebrowser.fullname" . | lower -}}
 {{- $svcPort := .Values.service.port -}}
 {{- if and .Values.ingress.className (not (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion)) }}

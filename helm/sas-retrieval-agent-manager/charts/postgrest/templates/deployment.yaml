@@ -1,7 +1,7 @@
 {{- $pgrest_repo_base := "" -}}
 {{- $postgres_repo_base := "" -}}
 {{- $kubectl_repo_base := "" -}}
-{{- if and (hasKey .Values "global") (hasKey .Values.global "image") (hasKey .Values.global.image "repo") (hasKey .Values.global.image.repo "base") -}}
+{{- if ((include "testValuesPath" (list .Values "global" "image" "repo" "base")) | eq "true") -}}
   {{/* Postgrest image if mirrored repository is used */}}
   {{- $pgrest_repo_base = .Values.global.image.repo.base | default .Values.image.postgrest.repo.base -}}
   {{/* Postgres image if mirrored repository is used */}}
@@ -25,6 +25,10 @@ metadata:
 spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  {{- with .Values.strategy }}
+  strategy:
+    {{- toYaml . | nindent 4 }}
   {{- end }}
   selector:
     matchLabels:

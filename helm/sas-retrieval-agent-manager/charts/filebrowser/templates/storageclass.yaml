@@ -1,11 +1,13 @@
-{{- if .Values.rootDir.pvc.createStorageClass }}
-{{- $storageClassName := .Values.rootDir.pvc.storageClassName }}
-{{- $storageClass := lookup "storage.k8s.io/v1" "StorageClass" "" $storageClassName }}
-{{- if not $storageClass }}
+{{- $scParts := include "filebrowser.storageConfig" . | splitList "|" }}
+{{- $storageClass := index $scParts 0 }}
+{{- $createSC := index $scParts 1 }}
+{{- if $createSC }}
+{{- $existingSC := lookup "storage.k8s.io/v1" "StorageClass" "" $storageClass }}
+{{- if not $existingSC }}
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-  name: {{ $storageClassName }}
+  name: {{ $storageClass }}
 provisioner: file.csi.azure.com
 allowVolumeExpansion: true
 mountOptions:

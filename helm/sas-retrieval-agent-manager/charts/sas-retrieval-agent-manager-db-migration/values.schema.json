@@ -301,6 +301,17 @@
             "array",
             "null"
           ]
+        },
+        "targetPlatform": {
+          "default": "azure",
+          "enum": [
+            "kubernetes",
+            "openshift",
+            "aws",
+            "azure",
+            "gcp"
+          ],
+          "required": []
         }
       },
       "required": [],

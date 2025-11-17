@@ -1,0 +1,10 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "sas-retrieval-agent-manager-api.fullname" . }}-pdb
+  namespace: {{ .Release.Namespace }}
+spec:
+  minAvailable: 10%
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: api

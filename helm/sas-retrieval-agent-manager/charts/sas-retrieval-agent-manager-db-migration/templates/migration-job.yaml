@@ -1,6 +1,6 @@
 {{- $postgres_repo_base := "" -}}
 {{- $goose_repo_base := "" -}}
-{{- if and (hasKey .Values "global") (hasKey .Values.global "image") (hasKey .Values.global.image "repo") (hasKey .Values.global.image.repo "base") -}}
+{{- if ((include "testValuesPath" (list .Values "global" "image" "repo" "base")) | eq "true") -}}
   {{- $postgres_repo_base = .Values.global.image.repo.base | default .Values.image.postgres.repo.base -}}
   {{- $goose_repo_base = .Values.global.image.repo.base | default .Values.image.goose.repo.base -}}
 {{- else -}}
@@ -90,6 +90,10 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: embedding-models
+              mountPath: "/mnt/embedding_models"
+              readOnly: false
           env:
             - name: DB_HOST
               valueFrom:
@@ -106,6 +110,16 @@ spec:
                 configMapKeyRef:
                   key: sslmode
                   name: db-connection
+            - name: EMBEDDING_DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  key: user
+                  name: embedding-db-credentials
+            - name: MODELS_DESTINATION_PATH
+              valueFrom:
+                configMapKeyRef:
+                  key: models_destination_dir
+                  name: embedding-config
             - name: APP_DB_NAME
               valueFrom:
                 configMapKeyRef:
@@ -203,4 +217,7 @@ spec:
           configMap:
             name: {{ .Chart.Name }}-scripts
             defaultMode: 0777
+        - name: embedding-models
+          persistentVolumeClaim:
+            claimName: embedding-pv
   backoffLimit: 1000

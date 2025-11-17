@@ -60,3 +60,22 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{/*
+Check if a nested path exists in .Values
+Usage: {{ include "testValuesPath" (list .Values "x" "y" "z") }}
+*/}}
+{{- define "testValuesPath" -}}
+{{- $root := index . 0 -}}
+{{- $keys := rest . -}}
+{{- $current := $root -}}
+{{- $exists := true -}}
+{{- range $key := $keys }}
+  {{- if and $exists (kindIs "map" $current) (hasKey $current $key) }}
+    {{- $current = index $current $key -}}
+  {{- else }}
+    {{- $exists = false -}}
+  {{- end }}
+{{- end }}
+{{- $exists }}
+{{- end }}

@@ -94,6 +94,12 @@ data:
     VJOB_USER=$(<"$VJOB_USER_FILE")
     VJOB_PASSWORD=$(<"$VJOB_PASSWORD_FILE")
 
+    EMBEDDING_USER_FILE="/secret/embedding/user"
+    EMBEDDING_PASSWORD_FILE="/secret/embedding/password"
+
+    EMBEDDING_USER=$(<"$EMBEDDING_USER_FILE")
+    EMBEDDING_PASSWORD=$(<"$EMBEDDING_PASSWORD_FILE")
+
     POSTGREST_ROLES_PATH="/config/application-roles"
 
     # Set environment variables for PostgreSQL connection
@@ -183,6 +189,30 @@ data:
     \$\$;
     EOF
     echo "Vectorization Job user '$VJOB_USER' present."
+
+    # Create the Embedding user if it does not exist
+    echo "Creating Embedding user if it does not exist..."
+    echo "Embedding User: $EMBEDDING_USER"
+    $PSQL -h "$DB_HOST" -p "$DB_PORT" -U "$USER" -d "$DB_NAME" <<EOF
+    DO \$\$
+    BEGIN
+      IF NOT EXISTS (
+          SELECT FROM pg_catalog.pg_roles WHERE rolname = '${EMBEDDING_USER}'
+      ) THEN
+          EXECUTE format(
+              'CREATE ROLE %I LOGIN NOINHERIT CREATEDB NOCREATEROLE NOSUPERUSER PASSWORD %L',
+              '${EMBEDDING_USER}', '${EMBEDDING_PASSWORD}'
+          );
+      ELSE
+          EXECUTE format(
+              'ALTER ROLE %I WITH PASSWORD %L',
+              '${EMBEDDING_USER}', '${EMBEDDING_PASSWORD}'
+          );
+      END IF;
+    END
+    \$\$;
+    EOF
+    echo "Embedding user '$EMBEDDING_USER' present."
     {{- end }}
     {{- if .Values.global.configuration.application.createSchema }}
 
@@ -212,6 +242,11 @@ data:
     echo "Granting privileges to user '$VJOB_USER' on schema '$DB_SCHEMA' in database '$DB_NAME'..."
     $PSQL -h "$DB_HOST" -p "$DB_PORT" -U "$USER" -d "$DB_NAME" -c "GRANT USAGE ON SCHEMA \"$DB_SCHEMA\" TO \"${VJOB_USER}\";"
     echo "User '$VJOB_USER' granted privileges on schema '$DB_SCHEMA'."
+
+    # Grant privileges to the Embedding user
+    echo "Granting privileges to user '$EMBEDDING_USER' on schema '$DB_SCHEMA' in database '$DB_NAME'..."
+    $PSQL -h "$DB_HOST" -p "$DB_PORT" -U "$USER" -d "$DB_NAME" -c "GRANT USAGE ON SCHEMA \"$DB_SCHEMA\" TO \"${EMBEDDING_USER}\";"
+    echo "User '$EMBEDDING_USER' granted privileges on schema '$DB_SCHEMA'."
     {{- end }}
 
     # Create and Grant the PostgREST roles if they do not exist

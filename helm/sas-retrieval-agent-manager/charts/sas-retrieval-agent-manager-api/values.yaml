@@ -44,7 +44,7 @@ image:
   # type: string
   # @schema
   # -- API container image tag
-  tag:  1.5.0-20250923.1758633906615
+  tag:  1.6.7-20251028.1761671221282
   # @schema
   # default: IfNotPresent
   # enum: [Always,Never,IfNotPresent]
@@ -90,6 +90,7 @@ fullnameOverride: "sas-retrieval-agent-manager-api"
 serviceAccount:
   # @schema
   # type: object
+  # additionalProperties: true
   # default: {}
   # @schema
   # -- Annotations to add to the service account
@@ -119,12 +120,14 @@ serviceAccount:
 # @schema
 # type: object
 # default: {}
+# additionalProperties: true
 # @schema
 # -- Annotations to add to the pods
 podAnnotations: {}
 
 # @schema
 # type: object
+# additionalProperties: true
 # default: {"sas.com/deployment":"sas-retrieval-agent-manager","workload.sas.com/class":"ram"}
 # @schema
 # -- Labels to add to the pods
@@ -360,13 +363,6 @@ ingress:
   # @schema
   # required: true
   # type: boolean
-  # default: false
-  # @schema
-  # -- Use global ingress configuration instead of local hosts configuration
-  useGlobal: false
-  # @schema
-  # required: true
-  # type: boolean
   # default: true
   # @schema
   # -- Enable ingress for external access to API
@@ -380,6 +376,7 @@ ingress:
   className: nginx
   # @schema
   # type: object
+  # additionalProperties: true
   # default:
   #   kubernetes.io/ingress.allow-http: 'false'
   #   kubernetes.io/tls-acme: 'true'
@@ -431,7 +428,7 @@ ingress:
   #             default: ImplementationSpecific
   #             required: true
   # @schema
-  # -- Hosts configuration (ignored if useGlobal is true)
+  # -- Hosts configuration
   hosts: []
   # - host: chart-example.local
   #   paths:
@@ -460,7 +457,7 @@ ingress:
   #             default: ImplementationSpecific
   #             required: true
   # @schema
-  # -- Hosts configuration (ignored if useGlobal is true)
+  # -- Hosts configuration
   paths:
   - path: /SASRetrievalAgentManager/api(/|$)(.*)
     pathType: ImplementationSpecific
@@ -511,15 +508,51 @@ resources:
   # -- Resource limits for the container
   limits:
     # -- CPU limit
-    cpu: 6
+    cpu: 4
     # -- Memory limit
-    memory: 35Gi
+    memory: 10Gi
   # -- Resource requests for the container
   requests:
     # -- CPU request
     cpu: 500m
     # -- Memory request
-    memory: 20Gi
+    memory: 4Gi
+
+# @schema
+# type: object
+# properties:
+#   type:
+#     type: string
+#     enum: [RollingUpdate, Recreate]
+#     description: Type of deployment strategy. RollingUpdate gradually replaces old pods with new ones. Recreate terminates all old pods before creating new ones.
+#   rollingUpdate:
+#     type: object
+#     description: Rolling update configuration parameters. Only applicable when type is RollingUpdate.
+#     properties:
+#       maxUnavailable:
+#         oneOf:
+#           - type: integer
+#             minimum: 0
+#             description: Maximum number of pods that can be unavailable during the update as an absolute number
+#           - type: string
+#             pattern: "^[0-9]+%?$"
+#             description: Maximum number of pods that can be unavailable during the update as a percentage
+#       maxSurge:
+#         oneOf:
+#           - type: integer
+#             minimum: 0
+#             description: Maximum number of pods that can be created above the desired replica count as an absolute number
+#           - type: string
+#             pattern: "^[0-9]+%?$"
+#             description: Maximum number of pods that can be created above the desired replica count as a percentage
+# required: [type]
+# additionalProperties: false
+# @schema
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 0
+    maxSurge: 1
 
 # @schema
 # type: [object,null]
@@ -625,6 +658,7 @@ volumeMounts: []
 
 # @schema
 # type: [object,null]
+# additionalProperties: true
 # @schema
 # -- Node labels for pod assignment
 nodeSelector: {}
@@ -637,9 +671,14 @@ tolerations: []
 
 # @schema
 # type: [object,null]
+# additionalProperties: true
 # @schema
 # -- Map of node/pod affinities
 affinity:
+  # @schema
+  # type: [object,null]
+  # additionalProperties: true
+  # @schema
   nodeAffinity:
     preferredDuringSchedulingIgnoredDuringExecution:
     - weight: 1
@@ -661,6 +700,9 @@ affinity:
 # type: object
 # required: true
 # properties:
+#   targetPlatform:
+#     enum: [kubernetes,openshift,aws,azure,gcp]
+#     default: azure
 #   stage:
 #     type: [string,null]
 #   domain:
@@ -723,6 +765,8 @@ global:
   #   gpg:
   #     type: [object]
   #   api:
+  #     type: [object]
+  #   embedding:
   #     type: [object]
   #   eval:
   #     type: [object]
@@ -974,6 +1018,127 @@ global:
     #     type: object
     #     properties:
     #       repo:
+    #         type: object
+    #         properties:
+    #           base:
+    #             type: string
+    #             default: ghcr.io
+    #             required: true
+    #           path:
+    #             type: string
+    #             default: huggingface/text-embeddings-inference
+    #             required: true
+    #       tag_cpu:
+    #         type: string
+    #         default: "cpu-1.8"
+    #       useGlobal:
+    #         type: boolean
+    #         default: false
+    #   pvc:
+    #     type: object
+    #     properties:
+    #       name:
+    #         type: string
+    #         default: embedding-pv
+    #       storageClassName:
+    #         type: string
+    #         default: azurefile-sas
+    #       createStorageClass:
+    #         type: boolean
+    #         default: true
+    #       accessModes:
+    #         type: array
+    #         items:
+    #           type: string
+    #         default: [ReadWriteMany]
+    #       size:
+    #         type: string
+    #         default: 40Gi
+    #       existingClaim:
+    #         type: string
+    #         default: ""
+    # @schema
+    # -- Embedding model inference configuration
+    embedding:
+      # @schema
+      # required: true
+      # type: object
+      # @schema
+      # -- Container image configuration for embedding model inference
+      image:
+        # @schema
+        # required: true
+        # type: object
+        # @schema
+        repo:
+          # @schema
+          # required: true
+          # type: string
+          # default: docker.io
+          # @schema
+          # -- Container registry base URL for embedding model inference
+          base: ghcr.io
+          # @schema
+          # required: true
+          # type: string
+          # default: huggingface/text-embeddings-inference
+          # @schema
+          # -- Container image path/name for embedding model inference
+          path: huggingface/text-embeddings-inference
+        # @schema
+        # required: true
+        # type: string
+        # @schema
+        # -- Container image tag for embedding model inference with CPU
+        tag_cpu: cpu-1.8
+      # @schema
+      # type: object
+      # required: true
+      # @schema
+      # -- Embedding persistence configuration
+      pvc:
+        # @schema
+        # type: string
+        # required: true
+        # @schema
+        # -- Storage class name for the embedding PVC
+        storageClassName: "azurefile-sas"
+        # @schema
+        # type: boolean
+        # required: true
+        # @schema
+        # -- Whether to create the storage class if it doesn't exist
+        createStorageClass: true
+        # @schema
+        # type: array
+        # items:
+        #   type: string
+        # required: true
+        # @schema
+        # -- Access modes for the embedding PVC
+        accessModes:
+          - ReadWriteMany
+        # @schema
+        # type: string
+        # required: true
+        # @schema
+        # -- Size for the embedding PVC
+        size: 40Gi
+        # @schema
+        # type: [string, null]
+        # required: true
+        # @schema
+        # -- Existing claim name for the embedding PVC (if not creating a new one)
+        existingClaim: ""
+
+    # @schema
+    # required: true
+    # type: object
+    # properties:
+    #   image:
+    #     type: object
+    #     properties:
+    #       repo:
     #         type: string
     #         default: cr.sas.com
     #         required: true
@@ -1017,7 +1182,7 @@ global:
         # type: string
         # @schema
         # -- Container image tag for evaluation service
-        tag: 1.4.0-20250923.1758633873448
+        tag: 1.5.2-20251014.1760470349106
 
     # @schema
     # required: true
@@ -1070,7 +1235,7 @@ global:
         # type: string
         # @schema
         # -- Container image tag for plugin agent
-        tag: 1.4.1-20250910.1757512703913
+        tag: 1.5.1-20251014.1760470326449
 
     # @schema
     # required: true
@@ -1109,7 +1274,7 @@ global:
     #         properties:
     #           default:
     #             type: integer
-    #             default: 6
+    #             default: 4
     #           max:
     #             type: integer
     #             default: 6
@@ -1236,7 +1401,7 @@ global:
         # -- CPU requirements for jobs
         job_req_cpu:
           # -- Default CPU allocation for jobs
-          default: 6
+          default: 4
           # -- Maximum CPU allocation for jobs
           max: 6
           # -- Minimum CPU allocation for jobs
@@ -1393,7 +1558,7 @@ global:
         # type: string
         # @schema
         # -- Container image tag for vectorization hub
-        tag: 1.4.0-20250910.1757510909689
+        tag: 1.5.3-20251014.1760470114584
       # @schema
       # type: array
       # items:

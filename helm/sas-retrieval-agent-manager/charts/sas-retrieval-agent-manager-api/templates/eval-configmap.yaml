@@ -11,5 +11,5 @@ metadata:
   labels:
     {{- include "sas-retrieval-agent-manager-api.labels" . | nindent 4 }}
 data:
-  eval_runner_repo: "{{ $repo_base }}/{{ .Values.global.configuration.eval.image.repo.path }}"
-  eval_runner_tag: {{ .Values.global.configuration.eval.image.tag }}
+  eval_runner_repo: {{ printf "%s/%s" $repo_base .Values.global.configuration.eval.image.repo.path }}
+  eval_runner_tag: {{ .Values.global.configuration.eval.image.tag  | quote }}

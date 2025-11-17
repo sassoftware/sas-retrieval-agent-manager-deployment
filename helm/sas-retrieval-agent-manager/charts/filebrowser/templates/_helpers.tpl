@@ -80,3 +80,32 @@ Usage: {{ include "testValuesPath" (list .Values "x" "y" "z") }}
 {{- end }}
 {{- $exists }}
 {{- end }}
+
+{{/*
+Implement logic to determine storage class
+and whether to create it based on target platform
+*/}}
+{{- define "filebrowser.storageConfig" -}}
+{{- $platform := .Values.global.targetPlatform }}
+{{- $userSC := .Values.rootDir.pvc.storageClassName | default "" }}
+{{- $storageClass := $userSC }}
+{{- $createSC := .Values.rootDir.pvc.createStorageClass | default false }}
+
+{{- if or (eq $userSC "") (eq $userSC nil) }}
+  {{- if eq $platform "azure" }}
+    {{- $storageClass = "azurefile-sas" }}
+    {{- $createSC = true }}
+  {{- else if or (eq $platform "openshift") (eq $platform "kubernetes") }}
+    {{- $storageClass = "nfs-client" }}
+    {{- $createSC = false }}
+  {{- else if eq $platform "aws" }}
+    {{- $storageClass = "efs" }}
+    {{- $createSC = false }}
+  {{- else if eq $platform "gcp" }}
+    {{- $storageClass = "filestore" }}
+    {{- $createSC = false }}
+  {{- end }}
+{{- end }}
+
+{{- printf "%s|%t" $storageClass $createSC }}
+{{- end }}

@@ -342,6 +342,17 @@
             "array",
             "null"
           ]
+        },
+        "targetPlatform": {
+          "default": "azure",
+          "enum": [
+            "kubernetes",
+            "openshift",
+            "aws",
+            "azure",
+            "gcp"
+          ],
+          "required": []
         }
       },
       "required": [],
@@ -703,7 +714,7 @@
           "type": "boolean"
         },
         "hosts": {
-          "description": "Hosts configuration (ignored if useGlobal is true)",
+          "description": "Hosts configuration",
           "items": {
             "properties": {
               "host": {
@@ -751,7 +762,7 @@
               "pathType": "ImplementationSpecific"
             }
           ],
-          "description": "Paths configuration (used when useGlobal is true)",
+          "description": "Paths configuration",
           "items": {
             "properties": {
               "path": {
@@ -807,17 +818,9 @@
             "array",
             "null"
           ]
-        },
-        "useGlobal": {
-          "default": false,
-          "description": "Use global ingress configuration instead of local hosts configuration",
-          "required": [],
-          "title": "useGlobal",
-          "type": "boolean"
         }
       },
       "required": [
-        "useGlobal",
         "enabled",
         "className",
         "admin"
@@ -2543,7 +2546,7 @@
               "type": "boolean"
             },
             "hosts": {
-              "description": "Hosts configuration for OAuth2 Proxy (ignored if useGlobal is true)",
+              "description": "Hosts configuration for OAuth2 Proxy",
               "items": {
                 "properties": {
                   "host": {
@@ -2678,17 +2681,9 @@
                 "array",
                 "null"
               ]
-            },
-            "useGlobal": {
-              "default": false,
-              "description": "Use global ingress configuration instead of local hosts for OAuth2 Proxy",
-              "required": [],
-              "title": "useGlobal",
-              "type": "boolean"
             }
           },
           "required": [
-            "useGlobal",
             "enabled",
             "className"
           ],
@@ -3316,6 +3311,66 @@
             "automount"
           ],
           "title": "serviceAccount",
+          "type": "object"
+        },
+        "strategy": {
+          "additionalProperties": false,
+          "properties": {
+            "rollingUpdate": {
+              "description": "Rolling update configuration parameters. Only applicable when type is RollingUpdate.",
+              "properties": {
+                "maxSurge": {
+                  "oneOf": [
+                    {
+                      "description": "Maximum number of pods that can be created above the desired replica count as an absolute number",
+                      "minimum": 0,
+                      "required": [],
+                      "type": "integer"
+                    },
+                    {
+                      "description": "Maximum number of pods that can be created above the desired replica count as a percentage",
+                      "pattern": "^[0-9]+%?$",
+                      "required": [],
+                      "type": "string"
+                    }
+                  ],
+                  "required": []
+                },
+                "maxUnavailable": {
+                  "oneOf": [
+                    {
+                      "description": "Maximum number of pods that can be unavailable during the update as an absolute number",
+                      "minimum": 0,
+                      "required": [],
+                      "type": "integer"
+                    },
+                    {
+                      "description": "Maximum number of pods that can be unavailable during the update as a percentage",
+                      "pattern": "^[0-9]+%?$",
+                      "required": [],
+                      "type": "string"
+                    }
+                  ],
+                  "required": []
+                }
+              },
+              "required": [],
+              "type": "object"
+            },
+            "type": {
+              "description": "Type of deployment strategy. RollingUpdate gradually replaces old pods with new ones. Recreate terminates all old pods before creating new ones.",
+              "enum": [
+                "RollingUpdate",
+                "Recreate"
+              ],
+              "required": [],
+              "type": "string"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "title": "strategy",
           "type": "object"
         },
         "tolerations": {
@@ -3960,6 +4015,66 @@
         "automount"
       ],
       "title": "serviceAccount",
+      "type": "object"
+    },
+    "strategy": {
+      "additionalProperties": false,
+      "properties": {
+        "rollingUpdate": {
+          "description": "Rolling update configuration parameters. Only applicable when type is RollingUpdate.",
+          "properties": {
+            "maxSurge": {
+              "oneOf": [
+                {
+                  "description": "Maximum number of pods that can be created above the desired replica count as an absolute number",
+                  "minimum": 0,
+                  "required": [],
+                  "type": "integer"
+                },
+                {
+                  "description": "Maximum number of pods that can be created above the desired replica count as a percentage",
+                  "pattern": "^[0-9]+%?$",
+                  "required": [],
+                  "type": "string"
+                }
+              ],
+              "required": []
+            },
+            "maxUnavailable": {
+              "oneOf": [
+                {
+                  "description": "Maximum number of pods that can be unavailable during the update as an absolute number",
+                  "minimum": 0,
+                  "required": [],
+                  "type": "integer"
+                },
+                {
+                  "description": "Maximum number of pods that can be unavailable during the update as a percentage",
+                  "pattern": "^[0-9]+%?$",
+                  "required": [],
+                  "type": "string"
+                }
+              ],
+              "required": []
+            }
+          },
+          "required": [],
+          "type": "object"
+        },
+        "type": {
+          "description": "Type of deployment strategy. RollingUpdate gradually replaces old pods with new ones. Recreate terminates all old pods before creating new ones.",
+          "enum": [
+            "RollingUpdate",
+            "Recreate"
+          ],
+          "required": [],
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "strategy",
       "type": "object"
     },
     "tolerations": {

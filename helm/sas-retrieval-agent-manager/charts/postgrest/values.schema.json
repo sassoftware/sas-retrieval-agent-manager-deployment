@@ -33,11 +33,11 @@
       "type": "object"
     },
     "affinity": {
-      "additionalProperties": false,
+      "additionalProperties": true,
       "description": "Map of node/pod affinities",
       "properties": {
         "nodeAffinity": {
-          "additionalProperties": false,
+          "additionalProperties": true,
           "properties": {
             "preferredDuringSchedulingIgnoredDuringExecution": {
               "items": {
@@ -200,12 +200,13 @@
             "preferredDuringSchedulingIgnoredDuringExecution"
           ],
           "title": "nodeAffinity",
-          "type": "object"
+          "type": [
+            "object",
+            "null"
+          ]
         }
       },
-      "required": [
-        "nodeAffinity"
-      ],
+      "required": [],
       "title": "affinity",
       "type": [
         "object",
@@ -372,6 +373,17 @@
             "array",
             "null"
           ]
+        },
+        "targetPlatform": {
+          "default": "azure",
+          "enum": [
+            "kubernetes",
+            "openshift",
+            "aws",
+            "azure",
+            "gcp"
+          ],
+          "required": []
         }
       },
       "required": [],
@@ -688,7 +700,7 @@
           "type": "boolean"
         },
         "hosts": {
-          "description": "Hosts configuration (used when useGlobal is false)",
+          "description": "Hosts configuration",
           "items": {
             "properties": {
               "host": {
@@ -730,7 +742,7 @@
           ]
         },
         "paths": {
-          "description": "Paths configuration (used when useGlobal is true)",
+          "description": "Paths configuration",
           "items": {
             "anyOf": [
               {
@@ -794,17 +806,9 @@
             "array",
             "null"
           ]
-        },
-        "useGlobal": {
-          "default": false,
-          "description": "Use global ingress configuration instead of local hosts configuration",
-          "required": [],
-          "title": "useGlobal",
-          "type": "boolean"
         }
       },
       "required": [
-        "useGlobal",
         "enabled",
         "className",
         "paths"
@@ -900,7 +904,7 @@
       "type": "string"
     },
     "nodeSelector": {
-      "additionalProperties": false,
+      "additionalProperties": true,
       "description": "Node labels for pod assignment",
       "required": [],
       "title": "nodeSelector",
@@ -910,7 +914,7 @@
       ]
     },
     "podAnnotations": {
-      "additionalProperties": false,
+      "additionalProperties": true,
       "default": {},
       "description": "Annotations to add to the pods",
       "required": [],
@@ -918,7 +922,7 @@
       "type": "object"
     },
     "podLabels": {
-      "additionalProperties": false,
+      "additionalProperties": true,
       "default": {
         "sas.com/deployment": "sas-retrieval-agent-manager",
         "workload.sas.com/class": "ram"
@@ -1481,7 +1485,7 @@
       "description": "Service account configuration",
       "properties": {
         "annotations": {
-          "additionalProperties": false,
+          "additionalProperties": true,
           "default": {},
           "description": "Annotations to add to the service account",
           "required": [],
@@ -1515,6 +1519,66 @@
         "create"
       ],
       "title": "serviceAccount",
+      "type": "object"
+    },
+    "strategy": {
+      "additionalProperties": false,
+      "properties": {
+        "rollingUpdate": {
+          "description": "Rolling update configuration parameters. Only applicable when type is RollingUpdate.",
+          "properties": {
+            "maxSurge": {
+              "oneOf": [
+                {
+                  "description": "Maximum number of pods that can be created above the desired replica count as an absolute number",
+                  "minimum": 0,
+                  "required": [],
+                  "type": "integer"
+                },
+                {
+                  "description": "Maximum number of pods that can be created above the desired replica count as a percentage",
+                  "pattern": "^[0-9]+%?$",
+                  "required": [],
+                  "type": "string"
+                }
+              ],
+              "required": []
+            },
+            "maxUnavailable": {
+              "oneOf": [
+                {
+                  "description": "Maximum number of pods that can be unavailable during the update as an absolute number",
+                  "minimum": 0,
+                  "required": [],
+                  "type": "integer"
+                },
+                {
+                  "description": "Maximum number of pods that can be unavailable during the update as a percentage",
+                  "pattern": "^[0-9]+%?$",
+                  "required": [],
+                  "type": "string"
+                }
+              ],
+              "required": []
+            }
+          },
+          "required": [],
+          "type": "object"
+        },
+        "type": {
+          "description": "Type of deployment strategy. RollingUpdate gradually replaces old pods with new ones. Recreate terminates all old pods before creating new ones.",
+          "enum": [
+            "RollingUpdate",
+            "Recreate"
+          ],
+          "required": [],
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "strategy",
       "type": "object"
     },
     "swagger": {
@@ -1606,14 +1670,14 @@
               "description": "Container image configuration for Swagger",
               "properties": {
                 "base": {
-                  "default": "swaggerapi",
+                  "default": "docker.io",
                   "description": "Container registry base URL for Swagger UI",
                   "required": [],
                   "title": "base",
                   "type": "string"
                 },
                 "path": {
-                  "default": "swagger-ui",
+                  "default": "swaggerapi/swagger-ui",
                   "description": "Container image path/name for Swagger UI",
                   "required": [],
                   "title": "path",
@@ -1771,7 +1835,7 @@
               "type": "boolean"
             },
             "hosts": {
-              "description": "Hosts configuration for Swagger UI (ignored if useGlobal is true)",
+              "description": "Hosts configuration for Swagger UI",
               "items": {
                 "properties": {
                   "host": {
@@ -1886,17 +1950,9 @@
                 "array",
                 "null"
               ]
-            },
-            "useGlobal": {
-              "default": false,
-              "description": "Use global ingress configuration instead of local hosts configuration",
-              "required": [],
-              "title": "useGlobal",
-              "type": "boolean"
             }
           },
           "required": [
-            "useGlobal",
             "enabled",
             "className"
           ],
@@ -1960,7 +2016,7 @@
           ]
         },
         "podAnnotations": {
-          "additionalProperties": false,
+          "additionalProperties": true,
           "default": {},
           "description": "Annotations to add to the Swagger UI pods",
           "required": [],

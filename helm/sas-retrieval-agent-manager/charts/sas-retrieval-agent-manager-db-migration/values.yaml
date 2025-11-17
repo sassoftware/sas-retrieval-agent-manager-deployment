@@ -86,7 +86,7 @@ image:
     # type: string
     # @schema
     # -- Goose migration container image tag
-    tag: 1.4.0-20250910.1757512678252
+    tag: 1.5.2-20251013.1760371724486
 
 # @schema
 # type: array
@@ -431,6 +431,9 @@ affinity:
 # type: object
 # required: true
 # properties:
+#   targetPlatform:
+#     enum: [kubernetes,openshift,aws,azure,gcp]
+#     default: azure
 #   stage:
 #     type: [string,null]
 #   domain:

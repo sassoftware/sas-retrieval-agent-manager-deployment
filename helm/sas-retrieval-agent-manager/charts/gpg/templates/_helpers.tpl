@@ -60,3 +60,79 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{/*
+Check if a nested path exists in .Values
+Usage: {{ include "testValuesPath" (list .Values "x" "y" "z") }}
+*/}}
+{{- define "testValuesPath" -}}
+{{- $root := index . 0 -}}
+{{- $keys := rest . -}}
+{{- $current := $root -}}
+{{- $exists := true -}}
+{{- range $key := $keys }}
+  {{- if and $exists (kindIs "map" $current) (hasKey $current $key) }}
+    {{- $current = index $current $key -}}
+  {{- else }}
+    {{- $exists = false -}}
+  {{- end }}
+{{- end }}
+{{- $exists }}
+{{- end }}
+
+{{/*
+Check if GPG keys need to be generated (when both keys are not provided, or only one is provided)
+*/}}
+{{- define "gpg.shouldGenerateKeys" -}}
+{{- $publicKey := "" -}}
+{{- $privateKey := "" -}}
+{{- if (include "testValuesPath" (list .Values "global" "configuration" "gpg" "publicKey")) | eq "true" -}}
+  {{- if ne .Values.global.configuration.gpg.publicKey "" -}}
+    {{- $publicKey = .Values.global.configuration.gpg.publicKey -}}
+  {{- end -}}
+{{- end -}}
+{{- if (include "testValuesPath" (list .Values "global" "configuration" "gpg" "privateKey")) | eq "true" -}}
+  {{- if ne .Values.global.configuration.gpg.privateKey "" -}}
+    {{- $privateKey = .Values.global.configuration.gpg.privateKey -}}
+  {{- end -}}
+{{- end -}}
+{{- $hasPublic := ne $publicKey "" -}}
+{{- $hasPrivate := ne $privateKey "" -}}
+{{- not (and $hasPublic $hasPrivate) -}}
+{{- end }}
+
+{{/*
+Check if existing GPG public key is available (non-empty)
+*/}}
+{{- define "gpg.hasPublicKey" -}}
+{{- $publicKey := "" -}}
+{{- if (include "testValuesPath" (list .Values "global" "configuration" "gpg" "publicKey")) | eq "true" -}}
+  {{- if ne .Values.global.configuration.gpg.publicKey "" -}}
+    {{- $publicKey = .Values.global.configuration.gpg.publicKey -}}
+  {{- end -}}
+{{- end -}}
+{{- if (include "testValuesPath" (list .Values "gpg" "publicKey")) | eq "true" -}}
+  {{- if ne .Values.gpg.publicKey "" -}}
+    {{- $publicKey = .Values.gpg.publicKey -}}
+  {{- end -}}
+{{- end -}}
+{{- ne $publicKey "" -}}
+{{- end }}
+
+{{/*
+Check if existing GPG private key is available (non-empty)
+*/}}
+{{- define "gpg.hasPrivateKey" -}}
+{{- $privateKey := "" -}}
+{{- if (include "testValuesPath" (list .Values "global" "configuration" "gpg" "privateKey")) | eq "true" -}}
+  {{- if ne .Values.global.configuration.gpg.privateKey "" -}}
+    {{- $privateKey = .Values.global.configuration.gpg.privateKey -}}
+  {{- end -}}
+{{- end -}}
+{{- if (include "testValuesPath" (list .Values "gpg" "privateKey")) | eq "true" -}}
+  {{- if ne .Values.gpg.privateKey "" -}}
+    {{- $privateKey = .Values.gpg.privateKey -}}
+  {{- end -}}
+{{- end -}}
+{{- ne $privateKey "" -}}
+{{- end }}

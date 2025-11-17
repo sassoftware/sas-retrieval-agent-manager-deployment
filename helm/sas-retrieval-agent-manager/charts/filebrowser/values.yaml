@@ -98,6 +98,7 @@ serviceAccount:
   # @schema
   # type: object
   # default: {}
+  # additionalProperties: true
   # @schema
   # -- Annotations to add to the service account
   annotations: {}
@@ -119,6 +120,7 @@ serviceAccount:
 # @schema
 # type: object
 # default: {}
+# additionalProperties: true
 # @schema
 # -- Annotations to add to the pods
 podAnnotations: {}
@@ -126,6 +128,7 @@ podAnnotations: {}
 # @schema
 # type: object
 # default: {"sas.com/deployment":"sas-retrieval-agent-manager","workload.sas.com/class":"ram"}
+# additionalProperties: true
 # @schema
 # -- Labels to add to the pods
 podLabels:
@@ -344,12 +347,18 @@ service:
   type: ClusterIP
   # @schema
   # required: true
-  # description: The port that will be exposed by this service.
   # type: integer
   # default: 80
   # @schema
   # -- Kubernetes Service port
   port: 80
+  # @schema
+  # required: false
+  # type: [integer,null]
+  # default: 30080
+  # @schema
+  # -- Kubernetes Service nodePort when type is nodePort
+  nodePort: 30080
 
 
 # @schema
@@ -358,13 +367,6 @@ service:
 # @schema
 # -- Ingress configuration for external access to Filebrowser
 ingress:
-  # @schema
-  # required: true
-  # type: boolean
-  # default: false
-  # @schema
-  # -- Use global ingress configuration instead of local hosts configuration
-  useGlobal: false
   # @schema
   # required: true
   # type: boolean
@@ -377,10 +379,11 @@ ingress:
   # type: string
   # default: nginx
   # @schema
-  # -- Class name of the Ingress
+  # -- Class name of the Ingress. Set to "route" to create OpenShift Route instead of Kubernetes Ingress
   className: nginx
   # @schema
   # type: object
+  # additionalProperties: true
   # default:
   #   nginx.ingress.kubernetes.io/auth-signin: https://$host/SASRetrievalAgentManager/oauth2/start?rd=$escaped_request_uri
   #   nginx.ingress.kubernetes.io/auth-url: https://$host/SASRetrievalAgentManager/oauth2/auth
@@ -405,10 +408,30 @@ ingress:
     nginx.ingress.kubernetes.io/ssl-redirect: 'true'
 
   # -- Hosts for the ingress
-  # @default -- see [values.yaml](values.yaml)
-
-  # If useGlobal = False
-  # hosts:
+  # @schema
+  # type: [array,null]
+  # items:
+  #   type: object
+  #   properties:
+  #     host:
+  #       type: string
+  #       required: true
+  #     paths:
+  #       type: [array,null]
+  #       items:
+  #         type: object
+  #         properties:
+  #           path:
+  #             type: string
+  #             default: "/files(/|$)(.*)"
+  #             required: true
+  #           pathType:
+  #             type: string
+  #             default: ImplementationSpecific
+  #             required: true
+  # @schema
+  # -- Ingress host configuration
+  hosts: []
   # - host: chart-example.local
   #   paths:
   #     - path: /files(/|$)(.*)
@@ -436,8 +459,7 @@ ingress:
   #             default: ImplementationSpecific
   #             required: true
   # @schema
-  # If useGlobal = True
-  # -- Ingress path configuration when useGlobal is true
+  # -- Ingress path configuration
   paths:
     - path: /SASRetrievalAgentManager/files(/|$)(.*)
       pathType: ImplementationSpecific
@@ -497,6 +519,7 @@ resources: {}
 
 # @schema
 # type: [object,null]
+# additionalProperties: true
 # @schema
 # -- Node labels for pod assignment
 nodeSelector: {}
@@ -562,6 +585,61 @@ rootDir:
   # @schema
   # type: object
   # required: true
+  # anyOf:
+  #   - if:
+  #       properties:
+  #         global:
+  #           properties:
+  #             targetPlatform:
+  #               const: azure
+  #     then:
+  #       properties:
+  #         storageClassName:
+  #           type: string
+  #           default: azurefile-sas
+  #         createStorageClass:
+  #           default: true
+  #   - if:
+  #       properties:
+  #         global:
+  #           properties:
+  #             targetPlatform:
+  #               const: gcp
+  #     then:
+  #       properties:
+  #         storageClassName:
+  #           type: string
+  #           default: filestore
+  #         createStorageClass:
+  #           default: false
+  #   - if:
+  #       properties:
+  #         global:
+  #           properties:
+  #             targetPlatform:
+  #               const: aws
+  #     then:
+  #       properties:
+  #         storageClassName:
+  #           type: string
+  #           default: efs
+  #         createStorageClass:
+  #           default: false
+  #   - if:
+  #       properties:
+  #         global:
+  #           properties:
+  #             targetPlatform:
+  #               enum:
+  #                 - kubernetes
+  #                 - openshift
+  #     then:
+  #       properties:
+  #         storageClassName:
+  #           type: string
+  #           default: nfs-client
+  #         createStorageClass:
+  #           default: false
   # @schema
   # -- Persistent Volume Claim configuration (only used when type is 'pvc')
   pvc:
@@ -576,7 +654,7 @@ rootDir:
     # required: true
     # @schema
     # -- Storage class name for the root directory PVC
-    storageClassName: "azurefile-sas"
+    storageClassName: ""
     # @schema
     # type: boolean
     # required: true
@@ -598,6 +676,12 @@ rootDir:
     # @schema
     # -- Size for the root directory PVC
     size: 20Gi
+    # @schema
+    # type: [string, null]
+    # required: true
+    # @schema
+    # -- Existing claim name for the root directory PVC (if not creating a new one)
+    existingClaim: ""
 
 # @schema
 # type: object
@@ -638,18 +722,49 @@ db:
     # @schema
     # -- Size for the database PVC
     size: 256Mi
+    # @schema
+    # type: [string, null]
+    # required: true
+    # @schema
+    # -- Existing claim name for the database PVC (if not creating a new one)
+    existingClaim: ""
 
 # @schema
 # type: object
-# required: true
+# properties:
+#   type:
+#     type: string
+#     enum: [RollingUpdate, Recreate]
+#     description: Type of deployment strategy. RollingUpdate gradually replaces old pods with new ones. Recreate terminates all old pods before creating new ones.
+#   rollingUpdate:
+#     type: object
+#     description: Rolling update configuration parameters. Only applicable when type is RollingUpdate.
+#     properties:
+#       maxUnavailable:
+#         oneOf:
+#           - type: integer
+#             minimum: 0
+#             description: Maximum number of pods that can be unavailable during the update as an absolute number
+#           - type: string
+#             pattern: "^[0-9]+%?$"
+#             description: Maximum number of pods that can be unavailable during the update as a percentage
+#       maxSurge:
+#         oneOf:
+#           - type: integer
+#             minimum: 0
+#             description: Maximum number of pods that can be created above the desired replica count as an absolute number
+#           - type: string
+#             pattern: "^[0-9]+%?$"
+#             description: Maximum number of pods that can be created above the desired replica count as a percentage
+# required: [type]
+# additionalProperties: false
 # @schema
-# -- Deployment strategy to use (Recreate is recommended for stateful applications)
 strategy:
-  # @schema
-  # type: string
-  # required: true
-  # @schema
-  type: Recreate
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 0
+    maxSurge: 1
+
 
 # @schema
 # type: [object,null]
@@ -729,3 +844,58 @@ config:
   # @schema
   # -- Root directory that filebrowser will serve and manage files from
   root: /mnt/data
+
+  
+# @schema
+# type: object
+# required: true
+# properties:
+#   targetPlatform:
+#     enum: [kubernetes,openshift,aws,azure,gcp]
+#     default: azure
+#   stage:
+#     type: [string,null]
+#   domain:
+#     type: [string,null]
+#   image:
+#     type: [object,null]
+#   imagePullSecrets:
+#     type: [array,null]
+#   ingress:
+#     type: [object,null]
+#   configuration:
+#     type: object
+#     required: true
+#   clusterName:
+#     type: [string,null]
+#   clusterUrl:
+#     type: [string,null]
+#   repo:
+#     type: [object,null]
+#     properties:
+#       base:
+#         type: string
+#   syncWindows:
+#     type: [array,null]
+#     items:
+#       type: object
+#       properties:
+#         kind:
+#           type: string
+#           enum: [allow,deny]
+#         schedule:
+#           type: string
+#           format: cron
+#         duration:
+#           type: string
+#         timezone:
+#           type: string
+#           default: "US/Eastern"
+#         applications:
+#           type: array
+#           items:
+#             type: string
+# @schema
+# -- Global configuration for GPG operations
+global:
+  targetPlatform: azure

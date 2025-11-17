@@ -1,5 +1,5 @@
 {{- $repo_base := "" -}}
-{{- if and (hasKey .Values "global") (hasKey .Values.global "image") (hasKey .Values.global.image "repo") (hasKey .Values.global.image.repo "base") -}}
+{{- if ((include "testValuesPath" (list .Values "global" "image" "repo" "base")) | eq "true") -}}
   {{- $repo_base = .Values.global.image.repo.base | default .Values.image.repo.base -}}
 {{- else -}}
   {{- $repo_base = .Values.image.repo.base -}}
@@ -13,6 +13,10 @@ metadata:
 spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  {{- with .Values.strategy }}
+  strategy:
+    {{- toYaml . | nindent 4 }}
   {{- end }}
   selector:
     matchLabels:
@@ -88,6 +92,16 @@ spec:
                 configMapKeyRef:
                   name: plugin-config
                   key: plugin_runner_repo
+            - name: EMB_INFERENCE_RUNNER_REPO
+              valueFrom:
+                configMapKeyRef:
+                  name: embedding-config
+                  key: emb_inference_runner_repo
+            - name: EMB_INFERENCE_RUNNER_TAG_CPU
+              valueFrom:
+                configMapKeyRef:
+                  name: embedding-config
+                  key: emb_inference_runner_tag_cpu
             - name: EVAL_RUNNER_TAG
               valueFrom:
                 configMapKeyRef:
@@ -177,6 +191,9 @@ spec:
             - name: data
               mountPath: "/mnt/data"
               readOnly: false
+            - name: embedding-models
+              mountPath: "/mnt/embedding_models"
+              readOnly: true
             - name: license-volume
               mountPath: {{ .Values.global.configuration.api.license_secret_path }}
               readOnly: true
@@ -189,6 +206,15 @@ spec:
             - name: gpg-passphrase-volume
               mountPath: {{ .Values.global.configuration.gpg.passphrase_path }}
               readOnly: true
+            - name: db-connection-volume
+              mountPath: /mnt/config/db-connection
+              readOnly: true
+            - name: db-application-volume
+              mountPath: /mnt/config/db-application
+              readOnly: true
+            - name: embedding-db-credentials-volume
+              mountPath: /mnt/config/embedding-db-credentials
+              readOnly: true
           {{- with .Values.volumeMounts }}
             {{- toYaml . | nindent 12 }}
           {{- end }}
@@ -198,6 +224,9 @@ spec:
         - name: data
           persistentVolumeClaim:
             claimName: vhub-pv
+        - name: embedding-models
+          persistentVolumeClaim:
+            claimName: embedding-pv
         - name: config-volume
           configMap:
             name: vhub-config
@@ -231,6 +260,20 @@ spec:
             items:
               - key: passphrase
                 path: passphrase.txt
+        - name: db-connection-volume
+          configMap:
+            name: db-connection
+        - name: db-application-volume
+          configMap:
+            name: db-application
+        - name: embedding-db-credentials-volume
+          secret:
+            secretName: embedding-db-credentials
+            items:
+              - key: user
+                path: user
+              - key: password
+                path: password
       {{- with .Values.volumes }}
         {{- toYaml . | nindent 8 }}
       {{- end }}

@@ -18,7 +18,6 @@
 # --
 # -- DEPLOYMENT CONCEPTS:
 # -- ====================
-# -- • useGlobal: Sub-charts inherit global configuration when true
 # -- • imagePullSecrets: Private container registry access credentials
 # -- • ingress: External HTTP/HTTPS access with OAuth2 proxy integration
 # -- • resources: CPU/memory allocation and horizontal pod autoscaling
@@ -86,6 +85,9 @@ fullnameOverride: "sas-retrieval-agent-manager"
 # type: object
 # required: true
 # properties:
+#   targetPlatform:
+#     enum: [kubernetes,openshift,aws,azure]
+#     default: azure
 #   stage:
 #     type: [string,null]
 #   domain:
@@ -130,13 +132,12 @@ fullnameOverride: "sas-retrieval-agent-manager"
 #             type: string
 # @schema
 # -- Global configuration shared across all sub-charts
-# -- Sub-charts with useGlobal=true inherit these values
 global:
 
   # @schema
   # type: [string,null]
   # @schema
-  # -- Default domain/host for ingress resources when useGlobal=true
+  # -- Default domain/host for ingress resources
   # -- If not set, each chart uses its own host configuration
   domain: ""
 
@@ -176,7 +177,7 @@ global:
   # type: object
   # required: true
   # @schema
-  # -- Global ingress configuration applied when sub-charts use useGlobal=true
+  # -- Global ingress configuration
   # -- Provides consistent external access patterns across all services
   ingress:
     # @schema
@@ -225,6 +226,8 @@ global:
   #   gpg:
   #     type: [object]
   #   api:
+  #     type: [object]
+  #   embedding:
   #     type: [object]
   #   eval:
   #     type: [object]
@@ -760,6 +763,82 @@ global:
           # @schema
           # -- Azure AD client ID for authentication (leave blank to disable)
           client_id: ""
+
+    # @schema
+    # required: true
+    # type: object
+    # properties:
+    #   image:
+    #     type: object
+    #     properties:
+    #       repo:
+    #         type: object
+    #         properties:
+    #           base:
+    #             type: string
+    #             default: ghcr.io
+    #             required: true
+    #           path:
+    #             type: string
+    #             default: huggingface/text-embeddings-inference
+    #             required: true
+    #       tag_cpu:
+    #         type: string
+    #         default: "cpu-1.8"
+    #       useGlobal:
+    #         type: boolean
+    #         default: false
+    #   pvc:
+    #     type: object
+    #     properties:
+    #       name:
+    #         type: string
+    #         default: embedding-pv
+    #       storageClassName:
+    #         type: string
+    #         default: azurefile-sas
+    #       createStorageClass:
+    #         type: boolean
+    #         default: true
+    #       accessModes:
+    #         type: array
+    #         items:
+    #           type: string
+    #         default: [ReadWriteMany]
+    #       size:
+    #         type: string
+    #         default: 40Gi
+    #       existingClaim:
+    #         type: string
+    #         default: ""
+    # @schema
+    # -- Embedding model inference configuration
+    embedding:
+      # -- Container image configuration for embedding model inference
+      image:
+        repo:
+          # -- Container registry base URL for embedding model inference
+          base: ghcr.io
+          # -- Container image path/name for embedding model inference
+          path: huggingface/text-embeddings-inference
+        # -- Container image tag for embedding model inference with CPU
+        # tag_cpu: ""
+        # -- Use global registry configuration instead of local
+        useGlobal: false
+      pvc:
+        # -- Name for the PVC
+        name: embedding-pv
+        # -- Storage class name for the embedding PVC
+        storageClassName: "azurefile-sas"
+        # -- Whether to create the storage class if it doesn't exist
+        createStorageClass: true
+        # -- Access modes for the embedding PVC
+        accessModes:
+          - ReadWriteMany
+        # -- Size for the embedding PVC
+        size: 40Gi
+        # -- Existing claim name for the embedding PVC (if not creating a new one)
+        existingClaim: ""
 
     # @schema
     # required: true
@@ -1402,8 +1481,6 @@ filebrowser:
 
   # -- Ingress configuration for external access to Filebrowser
   ingress:
-    # -- Use global ingress configuration instead of local hosts configuration
-    useGlobal: false
     # -- Enable ingress for external access to API
     enabled: true
     # -- Class name of the Ingress
@@ -1426,15 +1503,13 @@ filebrowser:
     # -- Hosts for the ingress
     # @default -- see [values.yaml](values.yaml)
 
-    # If useGlobal = False
     # hosts:
     # - host: chart-example.local
     #   paths:
     #     - path: /files(/|$)(.*)
     #       pathType: ImplementationSpecific
 
-    # If useGlobal = True
-    # -- Ingress path configuration when useGlobal is true
+    # -- Ingress path configuration
     paths:
       - path: /SASRetrievalAgentManager/files(/|$)(.*)
         pathType: ImplementationSpecific
@@ -1504,6 +1579,8 @@ filebrowser:
         - ReadWriteOnce
       # -- Size for the root directory PVC
       size: 20Gi
+      # -- Existing claim name for the root directory PVC (if not creating a new one)
+      existingClaim: ""
 
   # -- Database configuration for Filebrowser
   db:
@@ -1518,10 +1595,44 @@ filebrowser:
         - ReadWriteOnce
       # -- Size for the database PVC
       size: 256Mi
+      # -- Existing claim name for the database PVC (if not creating a new one)
+      existingClaim: ""
 
-  # -- Deployment strategy to use (Recreate is recommended for stateful applications)
+  # @schema
+  # type: object
+  # properties:
+  #   type:
+  #     type: string
+  #     enum: [RollingUpdate, Recreate]
+  #     description: Type of deployment strategy. RollingUpdate gradually replaces old pods with new ones. Recreate terminates all old pods before creating new ones.
+  #   rollingUpdate:
+  #     type: object
+  #     description: Rolling update configuration parameters. Only applicable when type is RollingUpdate.
+  #     properties:
+  #       maxUnavailable:
+  #         oneOf:
+  #           - type: integer
+  #             minimum: 0
+  #             description: Maximum number of pods that can be unavailable during the update as an absolute number
+  #           - type: string
+  #             pattern: "^[0-9]+%?$"
+  #             description: Maximum number of pods that can be unavailable during the update as a percentage
+  #       maxSurge:
+  #         oneOf:
+  #           - type: integer
+  #             minimum: 0
+  #             description: Maximum number of pods that can be created above the desired replica count as an absolute number
+  #           - type: string
+  #             pattern: "^[0-9]+%?$"
+  #             description: Maximum number of pods that can be created above the desired replica count as a percentage
+  # required: [type]
+  # additionalProperties: false
+  # @schema
   strategy:
-    type: Recreate
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
 
   # -- Liveness probe configuration (disabled by default, enable if needed)
   livenessProbe: {}
@@ -1686,8 +1797,6 @@ keycloak:
 
   # -- Ingress configuration for external access to Keycloak
   ingress:
-    # -- Use global ingress configuration instead of local hosts configuration
-    useGlobal: false
     # -- Enable ingress for external access to Keycloak
     enabled: true
     # -- Class name of the Ingress
@@ -1701,14 +1810,14 @@ keycloak:
       # -- Force SSL redirect
       nginx.ingress.kubernetes.io/ssl-redirect: 'true'
 
-    # -- Hosts configuration (ignored if useGlobal is true)
+    # -- Hosts configuration
     hosts: []
     #   - host: chart-example.local
     #     paths:
     #       - path: "/SASRetrievalAgentManager/auth(/(realms|resources)/(.*))$"
     #         pathType: ImplementationSpecific
 
-    # -- Paths configuration (used when useGlobal is true)
+    # -- Paths configuration
     paths:
       - path: "/SASRetrievalAgentManager/auth(/(realms|resources)/(.*))$"
         pathType: ImplementationSpecific
@@ -1721,7 +1830,7 @@ keycloak:
       sourceRange: []
       #   - "192.0.2.0/24" # Example CIDR block (TEST-NET-1, see RFC 5737)
 
-      # -- Admin interface host (ignored if useGlobal is true)
+      # -- Admin interface host
       host: ""
       # -- Admin interface path
       path: /SASRetrievalAgentManager/auth/admin
@@ -1856,8 +1965,6 @@ keycloak:
 
     # -- OAuth2 Proxy ingress configuration
     ingress:
-      # -- Use global ingress configuration instead of local hosts for OAuth2 Proxy
-      useGlobal: false
       # -- Enable ingress for OAuth2 Proxy
       enabled: true
       # -- Class name of the OAuth2 Proxy Ingress
@@ -1874,7 +1981,7 @@ keycloak:
         nginx.ingress.kubernetes.io/enable-cors: 'true'
         # -- Session cookie SameSite attribute
         nginx.ingress.kubernetes.io/session-cookie-samesite: lax
-      # -- Hosts configuration for OAuth2 Proxy (ignored if useGlobal is true)
+      # -- Hosts configuration for OAuth2 Proxy
       hosts: []
 
       # -- OAuth2 authentication paths
@@ -1903,7 +2010,7 @@ keycloak:
       # -- Image pull policy for OAuth2 Proxy container
       pullPolicy: Always
       # -- OAuth2 Proxy container image tag
-      tag: "v7.12.0"
+      # tag: ""
 
     # -- Array of imagePullSecrets for OAuth2 Proxy
     imagePullSecrets:
@@ -2344,8 +2451,6 @@ postgrest:
 
   # -- Ingress configuration for external access to PostgREST
   ingress:
-    # -- Use global ingress configuration instead of local hosts configuration
-    useGlobal: false
     # -- Enable ingress for external access
     enabled: true
     # -- Class name of the Ingress
@@ -2371,13 +2476,13 @@ postgrest:
       # -- URL rewrite rule to strip the prefix path
       nginx.ingress.kubernetes.io/rewrite-target: /$2
 
-    # -- Hosts configuration (used when useGlobal is false)
+    # -- Hosts configuration
     hosts:
     - host: chart-example.local
       paths:
         - path: /SASRetrievalAgentManager/postgrest(/|$)(.*) 
           pathType: ImplementationSpecific
-    # -- Paths configuration (used when useGlobal is true)
+    # -- Paths configuration
     paths:
     - path: /SASRetrievalAgentManager/postgrest(/|$)(.*) 
       pathType: ImplementationSpecific
@@ -2585,8 +2690,6 @@ postgrest:
 
     # -- Swagger UI ingress configuration
     ingress:
-      # -- Use global ingress configuration instead of local hosts configuration
-      useGlobal: false
       # -- Enable ingress for external access
       enabled: true
       # -- Class name of the Ingress
@@ -2612,7 +2715,7 @@ postgrest:
         # -- URL rewrite rule to strip the prefix path
         nginx.ingress.kubernetes.io/rewrite-target: /$2
 
-      # -- Hosts configuration for Swagger UI (ignored if useGlobal is true)
+      # -- Hosts configuration for Swagger UI
       hosts: []
       # - host: chart-example.local
       #   paths:
@@ -2706,8 +2809,6 @@ sas-retrieval-agent-manager-api:
   #     base: ""
   #     # -- SAS API image
   #     path: ""
-  #     # -- Use global SAS registry
-  #     useGlobal: false
   #   # -- Image tag (defaults to chart appVersion)
   #   tag: ""
   #   # -- Image pull policy
@@ -2791,8 +2892,6 @@ sas-retrieval-agent-manager-api:
 
   # -- Ingress configuration for external access to API
   ingress:
-    # -- Use global ingress configuration instead of local hosts configuration
-    useGlobal: false
     # -- Enable ingress for external access to API
     enabled: true
     # -- Class name of the Ingress
@@ -2816,14 +2915,14 @@ sas-retrieval-agent-manager-api:
       # -- Force SSL redirect
       nginx.ingress.kubernetes.io/ssl-redirect: 'true'
 
-    # -- Hosts configuration (ignored if useGlobal is true)
+    # -- Hosts configuration
     hosts: []
     # - host: chart-example.local
     #   paths:
     #   - path: /SASRetrievalAgentManager/api(/|$)(.*)
     #     pathType: ImplementationSpecific
 
-    # -- Hosts configuration (ignored if useGlobal is true)
+    # -- Hosts configuration
     paths:
     - path: /SASRetrievalAgentManager/api(/|$)(.*)
       pathType: ImplementationSpecific
@@ -2839,15 +2938,15 @@ sas-retrieval-agent-manager-api:
     # -- Resource limits for the container
     limits:
       # -- CPU limit
-      cpu: 6
+      cpu: 4
       # -- Memory limit
-      memory: 35Gi
+      memory: 10Gi
     # -- Resource requests for the container
     requests:
       # -- CPU request
       cpu: 500m
       # -- Memory request
-      memory: 20Gi
+      memory: 4Gi
 
   # -- Liveness probe configuration for API
   livenessProbe:
@@ -3156,8 +3255,6 @@ sas-retrieval-agent-manager-app:
 
   # -- Ingress configuration for external access to the web application
   ingress:
-    # -- Use global ingress configuration instead of local hosts configuration
-    useGlobal: false
     # -- Enable ingress for external access
     enabled: true
     # -- Class name of the Ingress
@@ -3181,14 +3278,14 @@ sas-retrieval-agent-manager-app:
       # -- Force SSL redirect
       nginx.ingress.kubernetes.io/ssl-redirect: 'true'
 
-    # -- Hosts configuration (used when useGlobal is false)
+    # -- Hosts configuration
     hosts: []
     # - host: chart-example.local
     #   paths:
     #   - path: /SASRetrievalAgentManager(/|$)(.*)
     #     pathType: ImplementationSpecific
 
-    # -- Paths configuration (used when useGlobal is true)
+    # -- Paths configuration
     paths:
     - path: /SASRetrievalAgentManager(/|$)(.*)
       pathType: ImplementationSpecific
