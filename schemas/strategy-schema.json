@@ -1,0 +1,47 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "type": {
+      "type": "string",
+      "enum": ["RollingUpdate", "Recreate"],
+      "description": "Type of deployment strategy. RollingUpdate gradually replaces old pods with new ones. Recreate terminates all old pods before creating new ones."
+    },
+    "rollingUpdate": {
+      "type": ["object", "null"],
+      "description": "Rolling update configuration parameters. Only applicable when type is RollingUpdate.",
+      "properties": {
+        "maxUnavailable": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Maximum number of pods that can be unavailable during the update as an absolute number"
+            },
+            {
+              "type": "string",
+              "pattern": "^[0-9]+%?$",
+              "description": "Maximum number of pods that can be unavailable during the update as a percentage"
+            }
+          ]
+        },
+        "maxSurge": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Maximum number of pods that can be created above the desired replica count as an absolute number"
+            },
+            {
+              "type": "string",
+              "pattern": "^[0-9]+%?$",
+              "description": "Maximum number of pods that can be created above the desired replica count as a percentage"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "required": ["type"]
+}

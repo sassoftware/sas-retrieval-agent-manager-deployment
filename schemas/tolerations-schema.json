@@ -1,0 +1,34 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": ["array", "null"],
+  "description": "Tolerations allow pods to schedule onto nodes with matching taints",
+  "items": {
+    "type": "object",
+    "properties": {
+      "key": {
+        "type": "string",
+        "description": "The taint key that the toleration applies to"
+      },
+      "operator": {
+        "type": "string",
+        "description": "Operator represents a key's relationship to the value",
+        "enum": ["Exists", "Equal"],
+        "default": "Equal"
+      },
+      "value": {
+        "type": "string",
+        "description": "The taint value the toleration matches to (used when operator is Equal)"
+      },
+      "effect": {
+        "type": "string",
+        "description": "The taint effect to match",
+        "enum": ["NoSchedule", "PreferNoSchedule", "NoExecute", ""]
+      },
+      "tolerationSeconds": {
+        "type": ["integer", "null"],
+        "description": "How long to tolerate the taint (only for NoExecute effect)",
+        "minimum": 0
+      }
+    }
+  }
+}

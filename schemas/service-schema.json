@@ -1,0 +1,201 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": ["object", "null"],
+  "description": "Kubernetes Service configuration",
+  "properties": {
+    "type": {
+      "type": "string",
+      "description": "Service type determines how the service is exposed",
+      "enum": ["ClusterIP", "NodePort", "LoadBalancer", "ExternalName"],
+      "default": "ClusterIP"
+    },
+    "port": {
+      "type": "integer",
+      "description": "Service port number",
+      "minimum": 1,
+      "maximum": 65535,
+      "default": 80
+    },
+    "targetPort": {
+      "oneOf": [
+        {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        {
+          "type": "string"
+        }
+      ],
+      "description": "Target port on the pod (can be port number or named port)"
+    },
+    "nodePort": {
+      "type": ["integer", "null"],
+      "description": "NodePort to expose on each node (only used when type is NodePort or LoadBalancer)",
+      "minimum": 30000,
+      "maximum": 32767
+    },
+    "protocol": {
+      "type": "string",
+      "description": "Protocol for the service port",
+      "enum": ["TCP", "UDP", "SCTP"],
+      "default": "TCP"
+    },
+    "clusterIP": {
+      "type": ["string", "null"],
+      "description": "ClusterIP to be assigned to the service (use 'None' for headless service)"
+    },
+    "clusterIPs": {
+      "type": ["array", "null"],
+      "description": "List of IP addresses assigned to this service (for dual-stack)",
+      "items": {
+        "type": "string"
+      }
+    },
+    "externalIPs": {
+      "type": ["array", "null"],
+      "description": "List of external IPs for which nodes will accept traffic",
+      "items": {
+        "type": "string",
+        "format": "ipv4"
+      }
+    },
+    "loadBalancerIP": {
+      "type": ["string", "null"],
+      "description": "IP address of the load balancer (deprecated in favor of loadBalancerClass)",
+      "format": "ipv4"
+    },
+    "loadBalancerClass": {
+      "type": ["string", "null"],
+      "description": "Class of the load balancer implementation"
+    },
+    "loadBalancerSourceRanges": {
+      "type": ["array", "null"],
+      "description": "Restrict traffic through load balancer to specified client IPs",
+      "items": {
+        "type": "string"
+      }
+    },
+    "externalName": {
+      "type": ["string", "null"],
+      "description": "External reference that discovery mechanisms will return as an alias (only for type ExternalName)"
+    },
+    "externalTrafficPolicy": {
+      "type": ["string", "null"],
+      "description": "Denotes if this Service desires to route external traffic to node-local or cluster-wide endpoints",
+      "enum": ["Cluster", "Local"]
+    },
+    "internalTrafficPolicy": {
+      "type": ["string", "null"],
+      "description": "Specifies if the cluster internal traffic should be routed to all endpoints or node-local endpoints only",
+      "enum": ["Cluster", "Local"]
+    },
+    "sessionAffinity": {
+      "type": ["string", "null"],
+      "description": "Session affinity configuration",
+      "enum": ["None", "ClientIP"],
+      "default": "None"
+    },
+    "sessionAffinityConfig": {
+      "type": ["object", "null"],
+      "description": "Session affinity configuration options",
+      "properties": {
+        "clientIP": {
+          "type": "object",
+          "properties": {
+            "timeoutSeconds": {
+              "type": "integer",
+              "description": "Timeout in seconds for ClientIP session affinity",
+              "minimum": 1,
+              "maximum": 86400
+            }
+          }
+        }
+      }
+    },
+    "publishNotReadyAddresses": {
+      "type": ["boolean", "null"],
+      "description": "Whether to publish addresses of not ready pods"
+    },
+    "ipFamilies": {
+      "type": ["array", "null"],
+      "description": "List of IP families (e.g. IPv4, IPv6) assigned to this service",
+      "items": {
+        "type": "string",
+        "enum": ["IPv4", "IPv6"]
+      }
+    },
+    "ipFamilyPolicy": {
+      "type": ["string", "null"],
+      "description": "Represents the dual-stack-ness requested or required by this Service",
+      "enum": ["SingleStack", "PreferDualStack", "RequireDualStack"]
+    },
+    "allocateLoadBalancerNodePorts": {
+      "type": ["boolean", "null"],
+      "description": "Whether to automatically allocate NodePorts for LoadBalancer type services"
+    },
+    "annotations": {
+      "type": ["object", "null"],
+      "description": "Annotations to add to the service",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "labels": {
+      "type": ["object", "null"],
+      "description": "Labels to add to the service",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "ports": {
+      "type": ["array", "null"],
+      "description": "Additional ports to expose on the service",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of this port"
+          },
+          "port": {
+            "type": "integer",
+            "description": "Service port number",
+            "minimum": 1,
+            "maximum": 65535
+          },
+          "targetPort": {
+            "oneOf": [
+              {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 65535
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "description": "Target port on the pod"
+          },
+          "nodePort": {
+            "type": ["integer", "null"],
+            "description": "NodePort for this port",
+            "minimum": 30000,
+            "maximum": 32767
+          },
+          "protocol": {
+            "type": "string",
+            "description": "Protocol for this port",
+            "enum": ["TCP", "UDP", "SCTP"],
+            "default": "TCP"
+          },
+          "appProtocol": {
+            "type": ["string", "null"],
+            "description": "Application protocol for this port"
+          }
+        },
+        "required": ["port"]
+      }
+    }
+  }
+}

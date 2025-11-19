@@ -1,0 +1,131 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": ["object", "null"],
+  "additionalProperties": false,
+  "properties": {
+    "enabled": {
+      "type": "boolean",
+      "description": "Enable ingress resource for external access",
+      "default": true
+    },
+    "className": {
+      "type": ["string", "null"],
+      "description": "IngressClass that will be used to implement the Ingress. Set to 'route' to create OpenShift Route instead of Kubernetes Ingress"
+    },
+    "annotations": {
+      "type": ["object", "null"],
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "Annotations to add to the Ingress resource. Common annotations include ingress controller specific settings for SSL, authentication, rewrites, etc."
+    },
+    "hosts": {
+      "type": ["array", "null"],
+      "description": "List of hosts for the Ingress resource",
+      "items": {
+        "type": "object",
+        "properties": {
+          "host": {
+            "type": "string",
+            "description": "Hostname for the Ingress rule"
+          },
+          "paths": {
+            "type": ["array", "null"],
+            "description": "List of paths that map requests to backends",
+            "items": {
+              "type": "object",
+              "properties": {
+                "path": {
+                  "type": "string",
+                  "description": "Path pattern for routing",
+                  "default": "/"
+                },
+                "pathType": {
+                  "type": "string",
+                  "enum": ["Exact", "Prefix", "ImplementationSpecific"],
+                  "description": "How the path matching should be interpreted",
+                  "default": "Prefix"
+                },
+                "backend": {
+                  "type": ["object", "null"],
+                  "description": "Backend service reference (optional, usually auto-generated)",
+                  "properties": {
+                    "service": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "port": {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": "string"
+                            },
+                            "number": {
+                              "type": "integer"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "required": ["path"]
+            }
+          }
+        },
+        "required": ["host"]
+      }
+    },
+    "paths": {
+      "type": ["array", "null"],
+      "description": "List of path patterns for routing (used when hosts is not specified)",
+      "items": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Path pattern for routing",
+            "default": "/"
+          },
+          "pathType": {
+            "type": "string",
+            "enum": ["Exact", "Prefix", "ImplementationSpecific"],
+            "description": "How the path matching should be interpreted",
+            "default": "Prefix"
+          }
+        },
+        "required": ["path"]
+      }
+    },
+    "tls": {
+      "type": ["array", "null"],
+      "description": "TLS configuration for the Ingress",
+      "items": {
+        "type": "object",
+        "properties": {
+          "secretName": {
+            "type": "string",
+            "description": "Name of the Secret containing TLS certificate and key"
+          },
+          "hosts": {
+            "type": ["array", "null"],
+            "description": "List of hosts included in the TLS certificate",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "labels": {
+      "type": ["object", "null"],
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "Additional labels to add to the Ingress resource"
+    }
+  }
+}
