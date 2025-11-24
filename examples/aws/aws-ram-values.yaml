@@ -206,8 +206,12 @@ global:
       # -- OAuth2 client ID for application
       clientId: "sas-ram-app"
       # -- OAuth2 client secret
+      # Note: This is a random string. 
+      # Example: plI1xWllgmSNnUZLprWkpSHldFhpWmBRVVnYW2YCcYZ
       clientSecret: <your-client-secret>
       # -- OAuth2 cookie secret
+      # Note: This is a random string. 
+      # Example: plI1xWllgmSNnUZLprWkpSHldFhpWmBRVVnYW2YCcYZ
       cookieSecret: <your-cookie-secret>
 
     # -- Swagger/OpenAPI documentation configuration
