@@ -185,7 +185,7 @@ global:
       clientSecret: <your-client-secret>
       # -- OAuth2 cookie secret
       # Note: This is a random string. 
-      # Example: plI1xWllgmSNnUZLprWkpSHldFhpWmBRVVnYW2YCcYZ
+      # Example: ZNmYgcS1pWHkmpRYplUlBrdLVhnFIYVZWSW2lnlxWpC
       cookieSecret: <your-cookie-secret>
 
     # -- Swagger/OpenAPI documentation configuration

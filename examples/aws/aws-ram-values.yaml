@@ -202,7 +202,7 @@ global:
       keycloakAdmin: kcAdmin
       # -- Keycloak admin password
       # -- Note: This password must include at least 1 special character
-      keycloakAdminPassword: <your-kc-admin-password>
+      keycloakAdminPassword: <your-keycloak-admin-password>
       # -- OAuth2 client ID for application
       clientId: "sas-ram-app"
       # -- OAuth2 client secret
@@ -211,7 +211,7 @@ global:
       clientSecret: <your-client-secret>
       # -- OAuth2 cookie secret
       # Note: This is a random string. 
-      # Example: plI1xWllgmSNnUZLprWkpSHldFhpWmBRVVnYW2YCcYZ
+      # Example: ZNmYgcS1pWHkmpRYplUlBrdLVhnFIYVZWSW2lnlxWpC
       cookieSecret: <your-cookie-secret>
 
     # -- Swagger/OpenAPI documentation configuration
