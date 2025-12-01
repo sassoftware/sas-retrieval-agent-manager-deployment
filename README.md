@@ -58,7 +58,7 @@ All deployment types require:
 **Required Tools:**
 
 - kubectl
-- Helm
+- Helm v3
 - Docker
 - Platform-specific CLI tools (Azure CLI, AWS CLI, etc.)
 
