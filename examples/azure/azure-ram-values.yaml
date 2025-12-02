@@ -300,7 +300,7 @@ global:
     # -- Vectorization Hub (VHub) configuration
     vhub:
       # -- Your database certificate secret name for secure DB connections during a vectorization
-      postgreSQLCertSecret: <your-PSQL-cert-secret>
+      # postgreSQLCertSecret: <your-PSQL-cert-secret>
       # -- Available hardware configuration for processing
       availableHardware:
         # -- Execution providers for ML/AI processing
