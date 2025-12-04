@@ -242,6 +242,8 @@ global:
       password: <embedding_user_password>
       # -- Persistent storage configuration for embeddings
       pvc:
+        # -- Embedding PVC storage type - default recommended if using viya iac scripts
+        storageClassName: "azurefile-sas"
         # -- PVC Size for embedding storage
         size: 20Gi
 
