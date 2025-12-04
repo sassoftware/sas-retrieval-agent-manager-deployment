@@ -243,6 +243,8 @@ global:
       password: <embedding_user_password>
       # -- Persistent storage configuration for embeddings
       pvc:
+        # -- If not using viya iac, ensure the storageClassName matches your environment storage (NFS, managed-sci, etc...)
+        storageClassName: "default"
         # -- PVC Size for embedding storage
         size: 20Gi
 
