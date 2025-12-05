@@ -62,14 +62,3 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
-
-{{/*
-Create a full repo from repo_base and repo_path, can have it default to something in the future
-*/}}
-{{- define "sas-retrieval-agent-manager.repository" -}}
-{{- if and .Values.global.repo_base .Values.global.repo_path -}}
-{{- printf "%s/%s" .Values.global.repo_base .Values.global.repo_path -}}
-{{- else -}}
-{{- fail "Both repo_base and repo_path must be provided" -}}
-{{- end -}}
-{{- end -}}

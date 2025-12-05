@@ -1,5 +1,5 @@
 {{- $repo_base := "" -}}
-{{- if and (hasKey .Values "global") (hasKey .Values.global "image") (hasKey .Values.global.image "repo") (hasKey .Values.global.image.repo "base") -}}
+{{- if ((include "testValuesPath" (list .Values "global" "image" "repo" "base")) | eq "true") -}}
   {{- $repo_base = .Values.global.image.repo.base | default .Values.image.repo.base -}}
 {{- else -}}
   {{- $repo_base = .Values.image.repo.base -}}
@@ -31,6 +31,10 @@ spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
   {{- end }}
+  {{- with .Values.strategy }}
+  strategy:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   selector:
     matchLabels:
       {{- include "sas-retrieval-agent-manager-ui.selectorLabels" . | nindent 6 }}
@@ -60,6 +64,11 @@ spec:
           image: "{{ $repo_base }}/{{ .Values.image.repo.path }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
+            - name: LOGOUT_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: oauth-proxy-config
+                  key: logoutUrl
             - name: POSTGREST_SERVICE
               valueFrom:
                 configMapKeyRef:

@@ -1,0 +1,21 @@
+{{- if not .Values.global.configuration.embedding.pvc.existingClaim }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: embedding-pv
+  labels:
+    {{- include "sas-retrieval-agent-manager-api.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/resource-policy: keep
+spec:
+  accessModes:
+    {{- range .Values.global.configuration.embedding.pvc.accessModes }}
+    - {{ . | quote }}
+    {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.global.configuration.embedding.pvc.size | quote }}
+  {{- if .Values.global.configuration.embedding.pvc.storageClassName }}
+  storageClassName: {{ .Values.global.configuration.embedding.pvc.storageClassName }}
+  {{- end }}
+{{- end }}

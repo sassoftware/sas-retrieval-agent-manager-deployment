@@ -182,6 +182,14 @@
         "null"
       ]
     },
+    "annotations": {
+      "additionalProperties": true,
+      "default": {},
+      "description": "Annotations to add to the service account",
+      "required": [],
+      "title": "annotations",
+      "type": "object"
+    },
     "fullnameOverride": {
       "default": "sas-retrieval-agent-manager-db-init",
       "description": "String to fully override the fullname template with a string",
@@ -301,6 +309,17 @@
             "array",
             "null"
           ]
+        },
+        "targetPlatform": {
+          "default": "azure",
+          "enum": [
+            "kubernetes",
+            "openshift",
+            "aws",
+            "azure",
+            "gcp"
+          ],
+          "required": []
         }
       },
       "required": [],
@@ -343,19 +362,11 @@
                   "required": [],
                   "title": "path",
                   "type": "string"
-                },
-                "useGlobal": {
-                  "default": false,
-                  "description": "Use global registry configuration instead of local",
-                  "required": [],
-                  "title": "useGlobal",
-                  "type": "boolean"
                 }
               },
               "required": [
                 "base",
-                "path",
-                "useGlobal"
+                "path"
               ],
               "title": "repo",
               "type": "object"
@@ -407,19 +418,11 @@
                   "required": [],
                   "title": "path",
                   "type": "string"
-                },
-                "useGlobal": {
-                  "default": false,
-                  "description": "Use global registry configuration instead of local",
-                  "required": [],
-                  "title": "useGlobal",
-                  "type": "boolean"
                 }
               },
               "required": [
                 "base",
-                "path",
-                "useGlobal"
+                "path"
               ],
               "title": "repo",
               "type": "object"
@@ -472,7 +475,7 @@
       "type": "string"
     },
     "nodeSelector": {
-      "additionalProperties": false,
+      "additionalProperties": true,
       "description": "Node labels for pod assignment",
       "required": [],
       "title": "nodeSelector",
@@ -724,16 +727,25 @@
         },
         "limits": {
           "required": [],
-          "type": "object"
+          "type": [
+            "object",
+            "null"
+          ]
         },
         "requests": {
           "required": [],
-          "type": "object"
+          "type": [
+            "object",
+            "null"
+          ]
         }
       },
       "required": [],
       "title": "resources",
-      "type": "object"
+      "type": [
+        "object",
+        "null"
+      ]
     },
     "securityContext": {
       "additionalProperties": false,

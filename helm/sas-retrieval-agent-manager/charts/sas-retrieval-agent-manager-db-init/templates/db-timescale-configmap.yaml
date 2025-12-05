@@ -1,0 +1,10 @@
+{{- if .Values.global.configuration.timescale.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: db-timescale
+  labels:
+    {{- include "sas-retrieval-agent-manager-db-init.labels" . | nindent 4 }}
+data:
+  enabled: {{ .Values.global.configuration.timescale.enabled | quote }}
+{{- end }}

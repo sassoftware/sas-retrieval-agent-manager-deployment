@@ -479,13 +479,6 @@ ingress:
   # @schema
   # required: true
   # type: boolean
-  # default: false
-  # @schema
-  # -- Use global ingress configuration instead of local hosts configuration
-  useGlobal: false
-  # @schema
-  # required: true
-  # type: boolean
   # default: true
   # @schema
   # -- Enable ingress for external access to Keycloak
@@ -534,7 +527,7 @@ ingress:
   #             default: ImplementationSpecific
   #             required: true
   # @schema
-  # -- Hosts configuration (ignored if useGlobal is true)
+  # -- Hosts configuration
   hosts: []
   #   - host: chart-example.local
   #     paths:
@@ -558,7 +551,7 @@ ingress:
   #   - path: "/SASRetrievalAgentManager/auth(/(realms|resources)/(.*))$"
   #     pathType: ImplementationSpecific
   # @schema
-  # -- Paths configuration (used when useGlobal is true)
+  # -- Paths configuration
   paths:
     - path: "/SASRetrievalAgentManager/auth(/(realms|resources)/(.*))$"
       pathType: ImplementationSpecific
@@ -593,7 +586,7 @@ ingress:
     sourceRange: []
     #   - "192.0.2.0/24" # Example CIDR block (TEST-NET-1, see RFC 5737)
 
-    # -- Admin interface host (ignored if useGlobal is true)
+    # -- Admin interface host
     host: ""
     # -- Admin interface path
     path: /SASRetrievalAgentManager/auth/admin
@@ -655,6 +648,42 @@ resources:
     cpu: 50m
     # -- Memory request
     memory: 256Mi
+
+# @schema
+# type: object
+# properties:
+#   type:
+#     type: string
+#     enum: [RollingUpdate, Recreate]
+#     description: Type of deployment strategy. RollingUpdate gradually replaces old pods with new ones. Recreate terminates all old pods before creating new ones.
+#   rollingUpdate:
+#     type: object
+#     description: Rolling update configuration parameters. Only applicable when type is RollingUpdate.
+#     properties:
+#       maxUnavailable:
+#         oneOf:
+#           - type: integer
+#             minimum: 0
+#             description: Maximum number of pods that can be unavailable during the update as an absolute number
+#           - type: string
+#             pattern: "^[0-9]+%?$"
+#             description: Maximum number of pods that can be unavailable during the update as a percentage
+#       maxSurge:
+#         oneOf:
+#           - type: integer
+#             minimum: 0
+#             description: Maximum number of pods that can be created above the desired replica count as an absolute number
+#           - type: string
+#             pattern: "^[0-9]+%?$"
+#             description: Maximum number of pods that can be created above the desired replica count as a percentage
+# required: [type]
+# additionalProperties: false
+# @schema
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 0
+    maxSurge: 1
 
 # @schema
 # type: [object,null]
@@ -879,13 +908,6 @@ oauthProxy:
     # @schema
     # required: true
     # type: boolean
-    # default: false
-    # @schema
-    # -- Use global ingress configuration instead of local hosts for OAuth2 Proxy
-    useGlobal: false
-    # @schema
-    # required: true
-    # type: boolean
     # default: true
     # @schema
     # -- Enable ingress for OAuth2 Proxy
@@ -940,7 +962,7 @@ oauthProxy:
     #             default: ImplementationSpecific
     #             required: true
     # @schema
-    # -- Hosts configuration for OAuth2 Proxy (ignored if useGlobal is true)
+    # -- Hosts configuration for OAuth2 Proxy
     hosts: []
 
     # @schema
@@ -1274,6 +1296,42 @@ oauthProxy:
     runAsUser: 10001
 
   # @schema
+  # type: object
+  # properties:
+  #   type:
+  #     type: string
+  #     enum: [RollingUpdate, Recreate]
+  #     description: Type of deployment strategy. RollingUpdate gradually replaces old pods with new ones. Recreate terminates all old pods before creating new ones.
+  #   rollingUpdate:
+  #     type: object
+  #     description: Rolling update configuration parameters. Only applicable when type is RollingUpdate.
+  #     properties:
+  #       maxUnavailable:
+  #         oneOf:
+  #           - type: integer
+  #             minimum: 0
+  #             description: Maximum number of pods that can be unavailable during the update as an absolute number
+  #           - type: string
+  #             pattern: "^[0-9]+%?$"
+  #             description: Maximum number of pods that can be unavailable during the update as a percentage
+  #       maxSurge:
+  #         oneOf:
+  #           - type: integer
+  #             minimum: 0
+  #             description: Maximum number of pods that can be created above the desired replica count as an absolute number
+  #           - type: string
+  #             pattern: "^[0-9]+%?$"
+  #             description: Maximum number of pods that can be created above the desired replica count as a percentage
+  # required: [type]
+  # additionalProperties: false
+  # @schema
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+
+  # @schema
   # type: [object,null]
   # required: true
   # additionalProperties: true
@@ -1484,6 +1542,9 @@ mail:
 # type: object
 # required: true
 # properties:
+#   targetPlatform:
+#     enum: [kubernetes,openshift,aws,azure,gcp]
+#     default: azure
 #   stage:
 #     type: [string,null]
 #   domain:

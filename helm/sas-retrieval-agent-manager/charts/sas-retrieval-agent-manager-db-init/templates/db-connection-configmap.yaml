@@ -6,5 +6,5 @@ metadata:
     {{- include "sas-retrieval-agent-manager-db-init.labels" . | nindent 4 }}
 data:
   host: {{ .Values.global.configuration.database.host | quote  }}
-  port: {{ .Values.global.configuration.database.port | quote }}
+  port: {{ .Values.global.configuration.database.port | default "5432" | quote }}
   sslmode: {{ .Values.global.configuration.database.sslmode | toString }}

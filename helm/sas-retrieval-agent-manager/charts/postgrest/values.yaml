@@ -171,6 +171,7 @@ fullnameOverride: "sas-retrieval-agent-manager-postgrest"
 serviceAccount:
   # @schema
   # type: object
+  # additionalProperties: true
   # default: {}
   # @schema
   # -- Annotations to add to the service account
@@ -200,12 +201,14 @@ serviceAccount:
 # @schema
 # type: object
 # default: {}
+# additionalProperties: true
 # @schema
 # -- Annotations to add to the pods
 podAnnotations: {}
 
 # @schema
 # type: object
+# additionalProperties: true
 # default: {"sas.com/deployment":"sas-retrieval-agent-manager","workload.sas.com/class":"ram"}
 # @schema
 # -- Labels to add to the pods
@@ -464,13 +467,6 @@ ingress:
   # @schema
   # required: true
   # type: boolean
-  # default: false
-  # @schema
-  # -- Use global ingress configuration instead of local hosts configuration
-  useGlobal: false
-  # @schema
-  # required: true
-  # type: boolean
   # default: true
   # @schema
   # -- Enable ingress for external access
@@ -537,15 +533,19 @@ ingress:
   #             default: ImplementationSpecific
   #             required: true
   # @schema
-  # -- Hosts configuration (used when useGlobal is false)
+  # -- Hosts configuration
   hosts:
   - host: chart-example.local
     paths:
       - path: /SASRetrievalAgentManager/postgrest(/|$)(.*) 
         pathType: ImplementationSpecific
-  # -- Paths configuration (used when useGlobal is true)
+      - path: /SASRetrievalAgentManager/postgrest/monitoring(/|$)(.*) 
+        pathType: ImplementationSpecific
+  # -- Paths configuration
   paths:
   - path: /SASRetrievalAgentManager/postgrest(/|$)(.*) 
+    pathType: ImplementationSpecific
+  - path: /SASRetrievalAgentManager/postgrest/monitoring(/|$)(.*)
     pathType: ImplementationSpecific
   # @schema
   # type: [array,null]
@@ -604,6 +604,42 @@ resources:
     memory: 128Mi
 
 # @schema
+# type: object
+# properties:
+#   type:
+#     type: string
+#     enum: [RollingUpdate, Recreate]
+#     description: Type of deployment strategy. RollingUpdate gradually replaces old pods with new ones. Recreate terminates all old pods before creating new ones.
+#   rollingUpdate:
+#     type: object
+#     description: Rolling update configuration parameters. Only applicable when type is RollingUpdate.
+#     properties:
+#       maxUnavailable:
+#         oneOf:
+#           - type: integer
+#             minimum: 0
+#             description: Maximum number of pods that can be unavailable during the update as an absolute number
+#           - type: string
+#             pattern: "^[0-9]+%?$"
+#             description: Maximum number of pods that can be unavailable during the update as a percentage
+#       maxSurge:
+#         oneOf:
+#           - type: integer
+#             minimum: 0
+#             description: Maximum number of pods that can be created above the desired replica count as an absolute number
+#           - type: string
+#             pattern: "^[0-9]+%?$"
+#             description: Maximum number of pods that can be created above the desired replica count as a percentage
+# required: [type]
+# additionalProperties: false
+# @schema
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 0
+    maxSurge: 1
+
+# @schema
 # type: [object,null]
 # required: true
 # additionalProperties: true
@@ -632,6 +668,30 @@ livenessProbe:
 # required: true
 # additionalProperties: true
 # @schema
+# -- Liveness probe configuration for PostgREST
+livenessProbeMonitoring:
+  # -- HTTP GET probe configuration for liveness
+  httpGet:
+    # -- Path to probe for liveness
+    path: /live
+    # -- Port to probe on
+    port: admin-monitor
+    # -- HTTP scheme to use
+    scheme: HTTP
+  # -- Timeout for the probe
+  timeoutSeconds: 1
+  # -- How often to perform the probe
+  periodSeconds: 10
+  # -- Minimum consecutive successes for the probe to be considered successful
+  successThreshold: 1
+  # -- Number of consecutive failures required to mark container as not ready
+  failureThreshold: 3
+
+# @schema
+# type: [object,null]
+# required: true
+# additionalProperties: true
+# @schema
 # -- Readiness probe configuration for PostgREST
 readinessProbe:
   # -- HTTP GET probe configuration for readiness
@@ -640,6 +700,30 @@ readinessProbe:
     path: /ready
     # -- Port to probe on
     port: admin
+    # -- HTTP scheme to use
+    scheme: HTTP
+  # -- Timeout for the probe
+  timeoutSeconds: 1
+  # -- How often to perform the probe
+  periodSeconds: 10
+  # -- Minimum consecutive successes for the probe to be considered successful
+  successThreshold: 1
+  # -- Number of consecutive failures required to mark container as not ready
+  failureThreshold: 3
+
+# @schema
+# type: [object,null]
+# required: true
+# additionalProperties: true
+# @schema
+# -- Readiness probe configuration for PostgREST
+readinessProbeMonitoring:
+  # -- HTTP GET probe configuration for readiness
+  httpGet:
+    # -- Path to probe for readiness
+    path: /ready
+    # -- Port to probe on
+    port: admin-monitor
     # -- HTTP scheme to use
     scheme: HTTP
   # -- Timeout for the probe
@@ -709,6 +793,7 @@ volumeMounts: []
 
 # @schema
 # type: [object,null]
+# additionalProperties: true
 # @schema
 # -- Node labels for pod assignment
 nodeSelector: {}
@@ -721,9 +806,14 @@ tolerations: []
 
 # @schema
 # type: [object,null]
+# additionalProperties: true
 # @schema
 # -- Map of node/pod affinities
 affinity:
+  # @schema
+  # type: [object,null]
+  # additionalProperties: true
+  # @schema
   nodeAffinity:
     preferredDuringSchedulingIgnoredDuringExecution:
     - weight: 1
@@ -757,6 +847,7 @@ swagger:
 
   # @schema
   # type: integer
+  # default: 1
   # required: true
   # @schema
   # -- Number of Swagger UI replicas
@@ -777,17 +868,17 @@ swagger:
       # @schema
       # required: true
       # type: string
-      # default: swaggerapi
+      # default: docker.io
       # @schema
       # -- Container registry base URL for Swagger UI
-      base: swaggerapi
+      base: docker.io
       # @schema
       # required: true
       # type: string
-      # default: swagger-ui
+      # default: swaggerapi/swagger-ui
       # @schema
       # -- Container image path/name for Swagger UI
-      path: swagger-ui
+      path: swaggerapi/swagger-ui
     # @schema
     # default: IfNotPresent
     # enum: [Always,Never,IfNotPresent]
@@ -867,6 +958,7 @@ swagger:
   # @schema
   # type: object
   # default: {}
+  # additionalProperties: true
   # @schema
   # -- Annotations to add to the Swagger UI pods
   podAnnotations: {}
@@ -1106,13 +1198,6 @@ swagger:
     # @schema
     # required: true
     # type: boolean
-    # default: false
-    # @schema
-    # -- Use global ingress configuration instead of local hosts configuration
-    useGlobal: false
-    # @schema
-    # required: true
-    # type: boolean
     # default: true
     # @schema
     # -- Enable ingress for external access
@@ -1179,7 +1264,7 @@ swagger:
     #             default: ImplementationSpecific
     #             required: true
     # @schema
-    # -- Hosts configuration for Swagger UI (ignored if useGlobal is true)
+    # -- Hosts configuration for Swagger UI
     hosts: []
     # - host: chart-example.local
     #   paths:
@@ -1372,6 +1457,9 @@ swagger:
 # type: object
 # required: true
 # properties:
+#   targetPlatform:
+#     enum: [kubernetes,openshift,aws,azure,gcp]
+#     default: azure
 #   stage:
 #     type: [string,null]
 #   domain:
@@ -1456,6 +1544,16 @@ global:
   # @schema
   # -- Global configuration
   configuration:
+    # @schema
+    # type: string
+    # @schema
+    # -- the database for storing logs/metrics
+    db: SASRetrievalAgentManagerMonitoring
+    # @schema
+    # type: string
+    # @schema
+    # -- the schema for storing logs/metrics
+    schema: monitoring
 
     # @schema
     # type: object
@@ -1517,31 +1615,57 @@ global:
 
     # @schema
     # type: object
-    # required: true
     # @schema
-    # -- PostgREST-specific configuration
+    # -- PostgREST API configuration
+    # -- Controls REST API generation from PostgreSQL database
     postgrest:
       # @schema
-      # type: integer
-      # required: true
+      # type: string
       # @schema
-      # -- Port for PostgREST admin server
-      admin-server-port: 3001
+      # -- the database for storing logs/metrics
+      db: SASRetrievalAgentManagerMonitoring
       # @schema
-      # type: integer
-      # required: true
+      # type: string
       # @schema
-      # -- Port for PostgREST main server
-      server-port: 3000
+      # -- the schema for storing logs/metrics
+      schema: monitoring
+      # @schema
+      # type: object
+      # @schema
+      # -- the postgrest for the normal application database
+      base:
+        # @schema
+        # type: integer
+        # @schema
+        # -- Port for PostgREST admin server
+        admin-server-port: 3001
+        # @schema
+        # type: integer
+        # @schema
+        # -- Port for PostgREST main server
+        server-port: 3000
+      # @schema
+      # type: object
+      # @schema
+      # -- the postgrest for the monitoring database
+      monitoring:
+        # @schema
+        # type: integer
+        # @schema
+        # -- Port for PostgREST montoring admin server
+        admin-server-port: 3003
+        # @schema
+        # type: integer
+        # @schema
+        # -- Port for PostgREST montoring main server
+        server-port: 3002
       # @schema
       # type: boolean
-      # required: true
       # @schema
       # -- Whether OpenAPI security is active
       openapi-security-active: true
       # @schema
       # type: string
-      # required: true
       # @schema
       # -- OpenAPI mode configuration
       openapi-mode: "follow-privileges"
@@ -1553,10 +1677,10 @@ global:
       log-level: "info"
       # @schema
       # type: string
-      # required: true
       # @schema
       # -- JWT role claim key configuration (uses value from keycloak.clientId)
       jwt-role-claim-key: '.resource_access."sas-ram-app".roles[0]'
+
     # @schema
     # type: object
     # required: true

@@ -1,7 +1,7 @@
-{{- if (not (or .Values.global.configuration.gpg.publicKey .Values.global.configuration.gpg.privateKey)) }}
+{{- if include "gpg.shouldGenerateKeys" . }}
 {{- $gpg_repo_base := "" -}}
 {{- $kubectl_repo_base := "" -}}
-{{- if and (hasKey .Values "global") (hasKey .Values.global "image") (hasKey .Values.global.image "repo") (hasKey .Values.global.image.repo "base") -}}
+{{- if ((include "testValuesPath" (list .Values "global" "image" "repo" "base")) | eq "true") -}}
   {{- $gpg_repo_base = .Values.global.image.repo.base | default .Values.image.gpg.repo.base -}}
   {{- $kubectl_repo_base = .Values.global.image.repo.base | default .Values.image.kubectl.repo.base -}}
 {{- else -}}
@@ -29,7 +29,11 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
     spec:
-      {{- with uniq (concat (.Values.imagePullSecrets | default (list)) (.Values.global.imagePullSecrets | default (list))) }}
+      {{- $globalImagePullSecrets := list -}}
+      {{- if ((include "testValuesPath" (list .Values "global" "imagePullSecrets")) | eq "true") -}}
+      {{- $globalImagePullSecrets = .Values.global.imagePullSecrets | default (list) -}}
+      {{- end -}}
+      {{- with uniq (concat (.Values.imagePullSecrets | default (list)) $globalImagePullSecrets) }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}

@@ -1,4 +1,10 @@
 {{- if .Values.enabled -}}
+{{- $repo_base := "" -}}
+{{- if ((include "testValuesPath" (list .Values "global" "image" "repo" "base")) | eq "true") -}}
+  {{- $repo_base = .Values.global.image.repo.base | default .Values.image.repo.base -}}
+{{- else -}}
+  {{- $repo_base = .Values.image.repo.base -}}
+{{- end -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -16,15 +22,18 @@ spec:
       {{- include "filebrowser.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      annotations:
-        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
       {{- with .Values.podAnnotations }}
+      annotations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
         {{- include "filebrowser.selectorLabels" . | nindent 8 }}
     spec:
-      {{- with .Values.imagePullSecrets }}
+      {{- $globalImagePullSecrets := list -}}
+      {{- if ((include "testValuesPath" (list .Values "global" "imagePullSecrets")) | eq "true") -}}
+      {{- $globalImagePullSecrets = .Values.global.imagePullSecrets | default (list) -}}
+      {{- end -}}
+      {{- with uniq (concat (.Values.imagePullSecrets | default (list)) $globalImagePullSecrets) }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
@@ -33,7 +42,7 @@ spec:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       initContainers:
         - name: init-db
-          image: busybox
+          image: "{{ $repo_base }}/busybox"
           command: ["sh", "-c", "touch /db/filebrowser.db && chown 1000:1000 /db/filebrowser.db"]
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
@@ -50,14 +59,14 @@ spec:
         - name: {{ .Chart.Name }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.image.repo.base }}/{{ .Values.image.repo.path }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          image: "{{ $repo_base }}/{{ .Values.image.repo.path }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
-            {{- if .Values.securityContext.runAsUser }}
+            {{- if ((include "testValuesPath" (list .Values "securityContext" "runAsUser")) | eq "true") }}
             - name: PUID
               value: {{ .Values.securityContext.runAsUser | quote }}
             {{- end }}
-            {{- if .Values.securityContext.runAsGroup }}
+            {{- if ((include "testValuesPath" (list .Values "securityContext" "runAsGroup")) | eq "true") }}
             - name: PGID
               value: {{ .Values.securityContext.runAsGroup | quote }}
             {{- end }}

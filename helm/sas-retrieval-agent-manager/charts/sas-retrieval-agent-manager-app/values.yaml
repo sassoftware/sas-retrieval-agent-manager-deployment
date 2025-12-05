@@ -43,7 +43,7 @@ image:
   # type: string
   # @schema
   # -- Container image tag
-  tag: 1.0.22-20250922.1758553227551
+  tag: 1.3.14-20251202.1764706210147
   # @schema
   # default: IfNotPresent
   # enum: [Always,Never,IfNotPresent]
@@ -357,13 +357,6 @@ ingress:
   # @schema
   # required: true
   # type: boolean
-  # default: false
-  # @schema
-  # -- Use global ingress configuration instead of local hosts configuration
-  useGlobal: false
-  # @schema
-  # required: true
-  # type: boolean
   # default: true
   # @schema
   # -- Enable ingress for external access
@@ -427,7 +420,7 @@ ingress:
   #             default: ImplementationSpecific
   #             required: true
   # @schema
-  # -- Hosts configuration (used when useGlobal is false)
+  # -- Hosts configuration
   hosts: []
   # - host: chart-example.local
   #   paths:
@@ -456,7 +449,7 @@ ingress:
   #             default: ImplementationSpecific
   #             required: true
   # @schema
-  # -- Paths configuration (used when useGlobal is true)
+  # -- Paths configuration
   paths:
   - path: "/SASRetrievalAgentManager(/|$)(.*)"
     pathType: ImplementationSpecific
@@ -513,6 +506,42 @@ resources:
     cpu: 100m
     # -- Memory request
     memory: 256Mi
+
+# @schema
+# type: object
+# properties:
+#   type:
+#     type: string
+#     enum: [RollingUpdate, Recreate]
+#     description: Type of deployment strategy. RollingUpdate gradually replaces old pods with new ones. Recreate terminates all old pods before creating new ones.
+#   rollingUpdate:
+#     type: object
+#     description: Rolling update configuration parameters. Only applicable when type is RollingUpdate.
+#     properties:
+#       maxUnavailable:
+#         oneOf:
+#           - type: integer
+#             minimum: 0
+#             description: Maximum number of pods that can be unavailable during the update as an absolute number
+#           - type: string
+#             pattern: "^[0-9]+%?$"
+#             description: Maximum number of pods that can be unavailable during the update as a percentage
+#       maxSurge:
+#         oneOf:
+#           - type: integer
+#             minimum: 0
+#             description: Maximum number of pods that can be created above the desired replica count as an absolute number
+#           - type: string
+#             pattern: "^[0-9]+%?$"
+#             description: Maximum number of pods that can be created above the desired replica count as a percentage
+# required: [type]
+# additionalProperties: false
+# @schema
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 0
+    maxSurge: 1
 
 # @schema
 # type: [object,null]
@@ -648,6 +677,9 @@ affinity:
 # type: object
 # required: true
 # properties:
+#   targetPlatform:
+#     enum: [kubernetes,openshift,aws,azure,gcp]
+#     default: azure
 #   stage:
 #     type: [string,null]
 #   domain:
@@ -696,7 +728,7 @@ global:
   # @schema
   # type: [string,null]
   # @schema
-  # -- Default domain/host for ingress resources when useGlobal=true
+  # -- Default domain/host for ingress resources
   # -- If not set, each chart uses its own host configuration
   domain: ""
   # @schema

@@ -1,11 +1,13 @@
-{{- if .Values.rootDir.pvc.createStorageClass }}
-{{- $storageClassName := .Values.rootDir.pvc.storageClassName }}
+{{- if .Values.global.configuration.embedding.pvc.createStorageClass }}
+{{- $storageClassName :=.Values.global.configuration.embedding.pvc.storageClassName }}
 {{- $storageClass := lookup "storage.k8s.io/v1" "StorageClass" "" $storageClassName }}
 {{- if not $storageClass }}
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
   name: {{ $storageClassName }}
+  annotations:
+    helm.sh/hook: pre-install
 provisioner: file.csi.azure.com
 allowVolumeExpansion: true
 mountOptions:

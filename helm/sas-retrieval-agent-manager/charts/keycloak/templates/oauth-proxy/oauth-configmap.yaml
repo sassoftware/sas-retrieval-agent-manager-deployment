@@ -59,7 +59,9 @@ data:
     ]
     {{- end }}
     cookie_samesite = "lax"
-    cookie_csrf_per_request = true
+
+    cookie_csrf_per_request       = true
+    cookie_csrf_per_request_limit = 10
 
     # Auth Response Headers
     set_authorization_header  = true

@@ -319,6 +319,16 @@
                   "title": "enabled",
                   "type": "boolean"
                 },
+                "existingClaim": {
+                  "default": "",
+                  "description": "Existing claim name for the database PVC (if not creating a new one)",
+                  "required": [],
+                  "title": "existingClaim",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
                 "size": {
                   "default": "256Mi",
                   "description": "Size for the database PVC",
@@ -431,7 +441,7 @@
           "type": "array"
         },
         "ingress": {
-          "additionalProperties": false,
+          "additionalProperties": true,
           "description": "Ingress configuration for external access to Filebrowser",
           "properties": {
             "annotations": {
@@ -962,6 +972,16 @@
                   "title": "createStorageClass",
                   "type": "boolean"
                 },
+                "existingClaim": {
+                  "default": "",
+                  "description": "Existing claim name for the root directory PVC (if not creating a new one)",
+                  "required": [],
+                  "title": "existingClaim",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
                 "name": {
                   "default": "vhub-pv",
                   "description": "Name for the PVC",
@@ -1208,7 +1228,7 @@
           ]
         },
         "service": {
-          "additionalProperties": false,
+          "additionalProperties": true,
           "description": "Kubernetes Service configuration",
           "properties": {
             "port": {
@@ -1267,12 +1287,55 @@
         },
         "strategy": {
           "additionalProperties": false,
-          "description": "Deployment strategy to use (Recreate is recommended for stateful applications)",
           "properties": {
-            "type": {
-              "default": "Recreate",
+            "rollingUpdate": {
+              "description": "Rolling update configuration parameters. Only applicable when type is RollingUpdate.",
+              "properties": {
+                "maxSurge": {
+                  "oneOf": [
+                    {
+                      "description": "Maximum number of pods that can be created above the desired replica count as an absolute number",
+                      "minimum": 0,
+                      "required": [],
+                      "type": "integer"
+                    },
+                    {
+                      "description": "Maximum number of pods that can be created above the desired replica count as a percentage",
+                      "pattern": "^[0-9]+%?$",
+                      "required": [],
+                      "type": "string"
+                    }
+                  ],
+                  "required": []
+                },
+                "maxUnavailable": {
+                  "oneOf": [
+                    {
+                      "description": "Maximum number of pods that can be unavailable during the update as an absolute number",
+                      "minimum": 0,
+                      "required": [],
+                      "type": "integer"
+                    },
+                    {
+                      "description": "Maximum number of pods that can be unavailable during the update as a percentage",
+                      "pattern": "^[0-9]+%?$",
+                      "required": [],
+                      "type": "string"
+                    }
+                  ],
+                  "required": []
+                }
+              },
               "required": [],
-              "title": "type",
+              "type": "object"
+            },
+            "type": {
+              "description": "Type of deployment strategy. RollingUpdate gradually replaces old pods with new ones. Recreate terminates all old pods before creating new ones.",
+              "enum": [
+                "RollingUpdate",
+                "Recreate"
+              ],
+              "required": [],
               "type": "string"
             }
           },
@@ -1306,7 +1369,7 @@
     },
     "global": {
       "additionalProperties": false,
-      "description": "============================================================================\nGLOBAL CONFIGURATION\n============================================================================\nGlobal configuration shared across all sub-charts\nSub-charts with useGlobal=true inherit these values",
+      "description": "============================================================================\nGLOBAL CONFIGURATION\n============================================================================\nGlobal configuration shared across all sub-charts",
       "properties": {
         "clusterName": {
           "required": [],
@@ -1416,6 +1479,16 @@
             "array",
             "null"
           ]
+        },
+        "targetPlatform": {
+          "default": "azure",
+          "enum": [
+            "kubernetes",
+            "openshift",
+            "aws",
+            "azure"
+          ],
+          "required": []
         }
       },
       "required": [],
@@ -5455,6 +5528,64 @@
               "title": "serviceAccount",
               "type": "object"
             },
+            "strategy": {
+              "additionalProperties": false,
+              "properties": {
+                "rollingUpdate": {
+                  "description": "Rolling update configuration parameters. Only applicable when type is RollingUpdate.",
+                  "properties": {
+                    "maxSurge": {
+                      "oneOf": [
+                        {
+                          "description": "Maximum number of pods that can be created above the desired replica count as an absolute number",
+                          "minimum": 0,
+                          "required": [],
+                          "type": "integer"
+                        },
+                        {
+                          "description": "Maximum number of pods that can be created above the desired replica count as a percentage",
+                          "pattern": "^[0-9]+%?$",
+                          "required": [],
+                          "type": "string"
+                        }
+                      ],
+                      "required": []
+                    },
+                    "maxUnavailable": {
+                      "oneOf": [
+                        {
+                          "description": "Maximum number of pods that can be unavailable during the update as an absolute number",
+                          "minimum": 0,
+                          "required": [],
+                          "type": "integer"
+                        },
+                        {
+                          "description": "Maximum number of pods that can be unavailable during the update as a percentage",
+                          "pattern": "^[0-9]+%?$",
+                          "required": [],
+                          "type": "string"
+                        }
+                      ],
+                      "required": []
+                    }
+                  },
+                  "required": [],
+                  "type": "object"
+                },
+                "type": {
+                  "description": "Type of deployment strategy. RollingUpdate gradually replaces old pods with new ones. Recreate terminates all old pods before creating new ones.",
+                  "enum": [
+                    "RollingUpdate",
+                    "Recreate"
+                  ],
+                  "required": [],
+                  "type": "string"
+                }
+              },
+              "required": [],
+              "title": "strategy",
+              "type": "object"
+            },
             "tolerations": {
               "description": "Tolerations for OAuth2 Proxy pod assignment",
               "items": {
@@ -6068,6 +6199,64 @@
           },
           "required": [],
           "title": "serviceAccount",
+          "type": "object"
+        },
+        "strategy": {
+          "additionalProperties": false,
+          "properties": {
+            "rollingUpdate": {
+              "description": "Rolling update configuration parameters. Only applicable when type is RollingUpdate.",
+              "properties": {
+                "maxSurge": {
+                  "oneOf": [
+                    {
+                      "description": "Maximum number of pods that can be created above the desired replica count as an absolute number",
+                      "minimum": 0,
+                      "required": [],
+                      "type": "integer"
+                    },
+                    {
+                      "description": "Maximum number of pods that can be created above the desired replica count as a percentage",
+                      "pattern": "^[0-9]+%?$",
+                      "required": [],
+                      "type": "string"
+                    }
+                  ],
+                  "required": []
+                },
+                "maxUnavailable": {
+                  "oneOf": [
+                    {
+                      "description": "Maximum number of pods that can be unavailable during the update as an absolute number",
+                      "minimum": 0,
+                      "required": [],
+                      "type": "integer"
+                    },
+                    {
+                      "description": "Maximum number of pods that can be unavailable during the update as a percentage",
+                      "pattern": "^[0-9]+%?$",
+                      "required": [],
+                      "type": "string"
+                    }
+                  ],
+                  "required": []
+                }
+              },
+              "required": [],
+              "type": "object"
+            },
+            "type": {
+              "description": "Type of deployment strategy. RollingUpdate gradually replaces old pods with new ones. Recreate terminates all old pods before creating new ones.",
+              "enum": [
+                "RollingUpdate",
+                "Recreate"
+              ],
+              "required": [],
+              "type": "string"
+            }
+          },
+          "required": [],
+          "title": "strategy",
           "type": "object"
         },
         "tolerations": {
@@ -7533,6 +7722,64 @@
           },
           "required": [],
           "title": "serviceAccount",
+          "type": "object"
+        },
+        "strategy": {
+          "additionalProperties": false,
+          "properties": {
+            "rollingUpdate": {
+              "description": "Rolling update configuration parameters. Only applicable when type is RollingUpdate.",
+              "properties": {
+                "maxSurge": {
+                  "oneOf": [
+                    {
+                      "description": "Maximum number of pods that can be created above the desired replica count as an absolute number",
+                      "minimum": 0,
+                      "required": [],
+                      "type": "integer"
+                    },
+                    {
+                      "description": "Maximum number of pods that can be created above the desired replica count as a percentage",
+                      "pattern": "^[0-9]+%?$",
+                      "required": [],
+                      "type": "string"
+                    }
+                  ],
+                  "required": []
+                },
+                "maxUnavailable": {
+                  "oneOf": [
+                    {
+                      "description": "Maximum number of pods that can be unavailable during the update as an absolute number",
+                      "minimum": 0,
+                      "required": [],
+                      "type": "integer"
+                    },
+                    {
+                      "description": "Maximum number of pods that can be unavailable during the update as a percentage",
+                      "pattern": "^[0-9]+%?$",
+                      "required": [],
+                      "type": "string"
+                    }
+                  ],
+                  "required": []
+                }
+              },
+              "required": [],
+              "type": "object"
+            },
+            "type": {
+              "description": "Type of deployment strategy. RollingUpdate gradually replaces old pods with new ones. Recreate terminates all old pods before creating new ones.",
+              "enum": [
+                "RollingUpdate",
+                "Recreate"
+              ],
+              "required": [],
+              "type": "string"
+            }
+          },
+          "required": [],
+          "title": "strategy",
           "type": "object"
         },
         "swagger": {
@@ -9893,6 +10140,64 @@
           "title": "serviceAccount",
           "type": "object"
         },
+        "strategy": {
+          "additionalProperties": false,
+          "properties": {
+            "rollingUpdate": {
+              "description": "Rolling update configuration parameters. Only applicable when type is RollingUpdate.",
+              "properties": {
+                "maxSurge": {
+                  "oneOf": [
+                    {
+                      "description": "Maximum number of pods that can be created above the desired replica count as an absolute number",
+                      "minimum": 0,
+                      "required": [],
+                      "type": "integer"
+                    },
+                    {
+                      "description": "Maximum number of pods that can be created above the desired replica count as a percentage",
+                      "pattern": "^[0-9]+%?$",
+                      "required": [],
+                      "type": "string"
+                    }
+                  ],
+                  "required": []
+                },
+                "maxUnavailable": {
+                  "oneOf": [
+                    {
+                      "description": "Maximum number of pods that can be unavailable during the update as an absolute number",
+                      "minimum": 0,
+                      "required": [],
+                      "type": "integer"
+                    },
+                    {
+                      "description": "Maximum number of pods that can be unavailable during the update as a percentage",
+                      "pattern": "^[0-9]+%?$",
+                      "required": [],
+                      "type": "string"
+                    }
+                  ],
+                  "required": []
+                }
+              },
+              "required": [],
+              "type": "object"
+            },
+            "type": {
+              "description": "Type of deployment strategy. RollingUpdate gradually replaces old pods with new ones. Recreate terminates all old pods before creating new ones.",
+              "enum": [
+                "RollingUpdate",
+                "Recreate"
+              ],
+              "required": [],
+              "type": "string"
+            }
+          },
+          "required": [],
+          "title": "strategy",
+          "type": "object"
+        },
         "tolerations": {
           "description": "Tolerations for pod assignment",
           "items": {
@@ -11208,6 +11513,64 @@
           "title": "serviceAccount",
           "type": "object"
         },
+        "strategy": {
+          "additionalProperties": false,
+          "properties": {
+            "rollingUpdate": {
+              "description": "Rolling update configuration parameters. Only applicable when type is RollingUpdate.",
+              "properties": {
+                "maxSurge": {
+                  "oneOf": [
+                    {
+                      "description": "Maximum number of pods that can be created above the desired replica count as an absolute number",
+                      "minimum": 0,
+                      "required": [],
+                      "type": "integer"
+                    },
+                    {
+                      "description": "Maximum number of pods that can be created above the desired replica count as a percentage",
+                      "pattern": "^[0-9]+%?$",
+                      "required": [],
+                      "type": "string"
+                    }
+                  ],
+                  "required": []
+                },
+                "maxUnavailable": {
+                  "oneOf": [
+                    {
+                      "description": "Maximum number of pods that can be unavailable during the update as an absolute number",
+                      "minimum": 0,
+                      "required": [],
+                      "type": "integer"
+                    },
+                    {
+                      "description": "Maximum number of pods that can be unavailable during the update as a percentage",
+                      "pattern": "^[0-9]+%?$",
+                      "required": [],
+                      "type": "string"
+                    }
+                  ],
+                  "required": []
+                }
+              },
+              "required": [],
+              "type": "object"
+            },
+            "type": {
+              "description": "Type of deployment strategy. RollingUpdate gradually replaces old pods with new ones. Recreate terminates all old pods before creating new ones.",
+              "enum": [
+                "RollingUpdate",
+                "Recreate"
+              ],
+              "required": [],
+              "type": "string"
+            }
+          },
+          "required": [],
+          "title": "strategy",
+          "type": "object"
+        },
         "tolerations": {
           "description": "Tolerations for pod assignment",
           "items": {
@@ -11410,6 +11773,14 @@
             "null"
           ]
         },
+        "annotations": {
+          "additionalProperties": true,
+          "default": {},
+          "description": "Annotations to add to the service account",
+          "required": [],
+          "title": "annotations",
+          "type": "object"
+        },
         "fullnameOverride": {
           "default": "sas-retrieval-agent-manager-db-init",
           "description": "String to fully override the fullname template with a string",
@@ -11529,6 +11900,17 @@
                 "array",
                 "null"
               ]
+            },
+            "targetPlatform": {
+              "default": "azure",
+              "enum": [
+                "kubernetes",
+                "openshift",
+                "aws",
+                "azure",
+                "gcp"
+              ],
+              "required": []
             }
           },
           "required": [],
@@ -11571,13 +11953,6 @@
                       "required": [],
                       "title": "path",
                       "type": "string"
-                    },
-                    "useGlobal": {
-                      "default": false,
-                      "description": "Use global registry configuration instead of local",
-                      "required": [],
-                      "title": "useGlobal",
-                      "type": "boolean"
                     }
                   },
                   "required": [],
@@ -11628,13 +12003,6 @@
                       "required": [],
                       "title": "path",
                       "type": "string"
-                    },
-                    "useGlobal": {
-                      "default": false,
-                      "description": "Use global registry configuration instead of local",
-                      "required": [],
-                      "title": "useGlobal",
-                      "type": "boolean"
                     }
                   },
                   "required": [],
@@ -11683,7 +12051,7 @@
           "type": "string"
         },
         "nodeSelector": {
-          "additionalProperties": false,
+          "additionalProperties": true,
           "description": "Node labels for pod assignment",
           "required": [],
           "title": "nodeSelector",
@@ -11932,16 +12300,25 @@
             },
             "limits": {
               "required": [],
-              "type": "object"
+              "type": [
+                "object",
+                "null"
+              ]
             },
             "requests": {
               "required": [],
-              "type": "object"
+              "type": [
+                "object",
+                "null"
+              ]
             }
           },
           "required": [],
           "title": "resources",
-          "type": "object"
+          "type": [
+            "object",
+            "null"
+          ]
         },
         "securityContext": {
           "additionalProperties": false,

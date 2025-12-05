@@ -1,25 +1,13 @@
 {{- if .Values.global.configuration.database.initializeDb -}}
 {{- $postgres_repo_base := "" -}}
-{{- $postgres_repo_path := "" -}}
 {{- $kubectl_repo_base := "" -}}
-{{- $kubectl_repo_path := "" -}}
-{{- if hasKey .Values.global "repo" -}}
-  {{- if .Values.image.postgres.useGlobal -}}
-    {{- $postgres_repo_base = .Values.global.repo.base | default .Values.image.postgres.repo.base -}}
-  {{- else -}}
-    {{- $postgres_repo_base = .Values.image.postgres.repo.base -}}
-  {{- end -}}
-  {{- if .Values.image.kubectl.useGlobal -}}
+{{- if ((include "testValuesPath" (list .Values "global" "image" "repo" "base")) | eq "true") -}}
+    {{- $postgres_repo_base = .Values.global.image.repo.base | default .Values.image.postgres.repo.base -}}
     {{- $kubectl_repo_base = .Values.global.image.repo.base | default .Values.image.kubectl.repo.base -}}
-  {{- else -}}
-    {{- $kubectl_repo_base = .Values.image.kubectl.repo.base -}}
-  {{- end -}}
 {{- else -}}
   {{- $postgres_repo_base = .Values.image.postgres.repo.base -}}
   {{- $kubectl_repo_base = .Values.image.kubectl.repo.base -}}
 {{- end -}}
-{{- $postgres_repo_path = .Values.image.postgres.repo.path -}}
-{{- $kubectl_repo_path = .Values.image.kubectl.repo.path -}}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -28,6 +16,9 @@ metadata:
     {{- include "sas-retrieval-agent-manager-db-init.labels" . | nindent 4 }}
   annotations:
     argocd.argoproj.io/sync-options: Skip
+    {{- with .Values.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
 spec:
   template:
     metadata:
@@ -54,7 +45,7 @@ spec:
             - "/bin/sh"
             - "-c"
             - "/scripts/initialize_database.sh"
-          image: "{{ $postgres_repo_base }}/{{ $postgres_repo_path }}:{{ .Values.image.postgres.tag }}"
+          image: "{{ $postgres_repo_base }}/{{ .Values.image.postgres.repo.path }}:{{ .Values.image.postgres.tag }}"
           imagePullPolicy: {{ .Values.image.postgres.pullPolicy }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
@@ -68,6 +59,9 @@ spec:
             - name: db-admin-credentials
               mountPath: /secret/admin
               readOnly: true
+            - name: db-embedding-credentials
+              mountPath: /secret/embedding
+              readOnly: true
             - name: db-keycloak-connection
               mountPath: /config/keycloak
             - name: db-keycloak-credentials
@@ -78,6 +72,11 @@ spec:
               readOnly: true
             - name: db-application-connection
               mountPath: /config/postgrest
+            - name: db-monitoring
+              mountPath: /config/monitoring
+            - name: db-otel-credentials
+              mountPath: /secret/otel
+              readOnly: true
             - name: db-application-credentials
               mountPath: /secret/postgrest
               readOnly: true
@@ -101,7 +100,7 @@ spec:
             - "/bin/sh"
             - "-c"
             - "/scripts/clean_admin_secret.sh"
-          image: "{{ $kubectl_repo_base }}/{{ $kubectl_repo_path }}:{{ .Values.image.kubectl.tag }}"
+          image: "{{ $kubectl_repo_base }}/{{ .Values.image.kubectl.repo.path }}:{{ .Values.image.kubectl.tag }}"
           imagePullPolicy: {{ .Values.image.kubectl.pullPolicy }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
@@ -138,6 +137,9 @@ spec:
         - name: db-admin-credentials
           secret:
             secretName: admin-db-credentials
+        - name: db-embedding-credentials
+          secret:
+            secretName: embedding-db-credentials
         - name: db-keycloak-connection
           configMap:
             name: db-keycloak
@@ -150,6 +152,12 @@ spec:
         - name: db-application-connection
           configMap:
             name: db-application
+        - name: db-monitoring
+          configMap:
+            name: db-monitoring
+        - name: db-otel-credentials
+          secret:
+            secretName: otel-db-credentials
         - name: db-application-credentials
           secret:
             secretName: application-db-credentials

@@ -11,5 +11,9 @@ spec:
       targetPort: admin
       protocol: TCP
       name: admin
+    - port: {{ index .Values.global.configuration.postgrest.monitoring "admin-server-port" }}
+      targetPort: admin-monitor
+      protocol: TCP
+      name: admin-monitor
   selector:
     {{- include "postgrest.selectorLabels" . | nindent 4 }}
