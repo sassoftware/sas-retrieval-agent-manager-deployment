@@ -37,13 +37,6 @@ image:
       # @schema
       # -- Container image path/name for PostgreSQL
       path: postgres
-      # @schema
-      # required: true
-      # type: boolean
-      # default: false
-      # @schema
-      # -- Use global registry configuration instead of local
-      useGlobal: false
     # @schema
     # default: IfNotPresent
     # enum: [Always,Never,IfNotPresent]
@@ -82,13 +75,6 @@ image:
       # @schema
       # -- Container image path/name for kubectl
       path: alpine/k8s
-      # @schema
-      # required: true
-      # type: boolean
-      # default: false
-      # @schema
-      # -- Use global registry configuration instead of local
-      useGlobal: false
     # @schema
     # default: IfNotPresent
     # enum: [Always,Never,IfNotPresent]
@@ -130,6 +116,14 @@ nameOverride: "initialization"
 # @schema
 # -- String to fully override the fullname template with a string
 fullnameOverride: "sas-retrieval-agent-manager-db-init"
+
+# @schema
+# type: object
+# default: {}
+# additionalProperties: true
+# @schema
+# -- Annotations to add to the service account
+annotations: {}
 
 # @schema
 # required: true
@@ -375,7 +369,7 @@ securityContext:
   runAsUser: 10001
 
 # @schema
-# type: object
+# type: [object,null]
 # required: true
 # properties:
 #   claims:
@@ -388,9 +382,9 @@ securityContext:
 #         request:
 #           type: string
 #   limits:
-#     type: object
+#     type: [object,null]
 #   requests:
-#     type: object
+#     type: [object,null]
 # @schema
 # -- The resources to allocate for the database initialization container
 resources:
@@ -409,6 +403,7 @@ resources:
 
 # @schema
 # type: [object,null]
+# additionalProperties: true
 # @schema
 # -- Node labels for pod assignment
 nodeSelector: {}
@@ -445,6 +440,9 @@ affinity:
 # type: object
 # required: true
 # properties:
+#   targetPlatform:
+#     enum: [kubernetes,openshift,aws,azure,gcp]
+#     default: azure
 #   stage:
 #     type: [string,null]
 #   domain:
@@ -698,6 +696,44 @@ global:
     # @schema
     # type: object
     # required: true
+    # @schema
+    # -- Embedding user configuration
+    embedding:
+      # @schema
+      # type: string
+      # required: true
+      # @schema
+      # -- Embedding user name
+      user: "sas_ram_embedding_user"
+      # @schema
+      # type: string
+      # required: true
+      # @schema
+      # -- Embedding user password
+      password: ""
+
+    # @schema
+    # type: object
+    # required: true
+    # @schema
+    # -- OpenTelemetry user configuration
+    otel:
+      # @schema
+      # type: string
+      # required: true
+      # @schema
+      # -- OpenTelemetry user name
+      user: "sas_ram_otel_user"
+      # @schema
+      # type: string
+      # required: true
+      # @schema
+      # -- OpenTelemetry user password
+      password: ""
+
+    # @schema
+    # type: object
+    # required: true
     # properties:
     #   createDB:
     #     type: [boolean]
@@ -807,6 +843,42 @@ global:
       # @schema
       # -- Vectorization job user password
       password: ""
+
+
+    # @schema
+    # type: object
+    # @schema
+    # -- PostgREST API configuration
+    # -- Controls REST API generation from PostgreSQL database
+    postgrest:
+      # @schema
+      # type: string
+      # @schema
+      # -- the database for storing logs/metrics
+      db: "SASRetrievalAgentManagerMonitoring"
+      # @schema
+      # type: string
+      # @schema
+      # -- the schema for storing logs/metrics
+      schema: "monitoring"
+
+    # @schema
+    # type: object
+    # required: true
+    # properties:
+    #   enabled:
+    #     type:
+    #       - boolean
+    #       - null
+    # @schema
+    # -- TimescaleDB configuration
+    timescale:
+      # @schema
+      # type: boolean
+      # required: true
+      # @schema
+      # -- Whether TimescaleDB is enabled
+      enabled: false
 
     # @schema
     # type: object

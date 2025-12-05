@@ -31,7 +31,7 @@ rules:
     verbs: ["create", "get", "list", "watch", "delete", "patch"]
   - apiGroups: ["apps"]
     resources: ["deployments", "deployments/status"]
-    verbs: ["create", "get", "list", "watch", "delete"]
+    verbs: ["create", "get", "list", "watch", "delete", "patch"]
 
   # - apiGroups: ["", "batch", "apps"]
   #   resources: ["pods", "services", "jobs", "configmaps", "jobs/status", "pods/log", "deployments", "cronjobs"]

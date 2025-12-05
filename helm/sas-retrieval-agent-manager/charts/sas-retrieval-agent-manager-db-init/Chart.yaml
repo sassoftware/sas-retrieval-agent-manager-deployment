@@ -1,19 +1,54 @@
+apiVersion: v2
+name: sas-retrieval-agent-manager-db-init
+description: A Helm chart for SAS Retrieval Agent Manager Database Initialization - PostgreSQL database setup and schema creation for AI/ML workloads
+type: application
+version: 1.1.0
+appVersion: "1.16.0"
+
+# Chart metadata and repository information
+home: https://www.sas.com/
+sources:
+  - https://github.com/sas-institute-rnd-internal/tmp-viya-iot-ram-helm
+  - https://www.postgresql.org/
+icon: https://www.sas.com/content/dam/SAS/sasbrand/Images/Logos/sas-logo-midnight.png
+
+# Chart categorization and discovery
+keywords:
+  - sas
+  - retrieval-agent-manager
+  - database
+  - initialization
+  - postgresql
+  - schema-creation
+  - database-setup
+  - migration
+  - sql
+  - data-initialization
+  - bootstrap
+  - setup-job
+  - database-migration
+  - ai-database
+  - vector-database
+  - kubernetes
+  - init-container
+
+# Maintainer information
+maintainers:
+  - name: SAS Institute
+    email: support@sas.com
+    url: https://www.sas.com
+  - name: SAS IoT Team
+    email: iot-support@sas.com
+    url: https://www.sas.com/en_us/software/iot.html
+
+# Enhanced Artifact Hub annotations
 annotations:
-  ai.embedding.support: "true"
-  ai.indexing.vector: "true"
-  ai.similarity.search: "true"
-  ai.vector.extensions: pgvector
-  artifacthub.io/images: |
-    - name: postgresql
-      image: postgres:15-alpine
-      whitelisted: true
-    - name: postgresql
-      image: postgres:15-alpine
-      whitelisted: true
-    - name: k8s
-      image: alpine/k8s:1.31.12
-      whitelisted: true
-  artifacthub.io/license: SAS Proprietary
+  # Licensing and legal information
+  artifacthub.io/license: "SAS Proprietary"
+  artifacthub.io/operator: "false"
+  artifacthub.io/prerelease: "false"
+  
+  # Chart documentation and links
   artifacthub.io/links: |
     - name: PostgreSQL Documentation
       url: https://www.postgresql.org/docs/
@@ -25,104 +60,109 @@ annotations:
       url: https://www.postgresql.org/docs/current/backup-dump.html
     - name: SAS Container Registry
       url: https://cr.sas.com/
-  artifacthub.io/operator: "false"
-  artifacthub.io/prerelease: "false"
-  authentication.methods: md5,scram-sha-256
-  backup.dump.supported: "true"
-  backup.incremental.supported: "true"
-  category: Database
-  compliance.audit.logging: "true"
-  compliance.data.governance: "true"
-  compliance.retention.policies: "true"
-  config.configmap.support: "true"
-  config.environment.variables: "true"
-  config.secrets.management: "true"
-  config.volume.mounts: "true"
-  database.extensions.supported: "true"
-  database.roles.creation: "true"
-  database.schemas.creation: "true"
-  database.type: postgresql
-  database.users.creation: "true"
+  
+  # Container images used by this chart
+  artifacthub.io/images: |
+    - name: postgresql
+      image: postgres:15-alpine
+      whitelisted: true
+    - name: postgresql
+      image: postgres:15-alpine
+      whitelisted: true
+    - name: k8s
+      image: alpine/k8s:1.31.12
+      whitelisted: true
+  
+  # Resource allocation recommendations for database jobs
+  resources.cpu.min: "100m"
+  resources.cpu.max: "2"
+  resources.memory.min: "256Mi"
+  resources.memory.max: "2Gi"
+  
+  # Database initialization capabilities
+  database.type: "postgresql"
   database.version.min: "12.0"
   database.version.recommended: "15.0"
-  governance.schema.versioning: "true"
-  ha.multi.master: supported
-  ha.read.replicas: supported
-  helm.version.min: 3.8.0
-  init.data.seeding: "true"
-  init.database.creation: "true"
-  init.extension.installation: "true"
-  init.role.creation: "true"
-  init.schema.creation: "true"
-  init.user.creation: "true"
-  job.backoff.limit: "5"
-  job.completion.mode: once
-  job.deadline.seconds: "1800"
-  job.restart.policy: Never
-  job.retry.policy: OnFailure
-  job.type: initialization
-  kubernetes.version.max: 1.30.0
-  kubernetes.version.min: 1.20.0
-  logging.initialization.detailed: "true"
+  database.extensions.supported: "true"
+  database.schemas.creation: "true"
+  database.users.creation: "true"
+  database.roles.creation: "true"
+  
+  # AI/ML database features
+  ai.vector.extensions: "pgvector"
+  ai.embedding.support: "true"
+  ai.similarity.search: "true"
+  ai.indexing.vector: "true"
+  ml.data.preparation: "true"
+  
+  # Security and authentication for database
+  security.ssl.required: "true"
+  security.encryption.at-rest: "true"
+  security.rbac.database: "true"
+  security.password.policy: "strict"
+  authentication.methods: "md5,scram-sha-256"
+  
+  # Migration and backup capabilities
+  migration.schema.supported: "true"
   migration.data.supported: "true"
   migration.rollback.supported: "true"
-  migration.schema.supported: "true"
-  ml.data.preparation: "true"
-  monitoring.connection.metrics: "true"
-  monitoring.database.health: "true"
-  monitoring.job.status: "true"
-  observability.job.tracing: "true"
-  performance.connection.pooling: supported
+  backup.dump.supported: "true"
+  backup.incremental.supported: "true"
+  
+  # Job execution patterns
+  job.type: "initialization"
+  job.completion.mode: "once"
+  job.retry.policy: "OnFailure"
+  job.backoff.limit: "5"
+  job.deadline.seconds: "1800"
+  job.restart.policy: "Never"
+  
+  # Initialization capabilities
+  init.database.creation: "true"
+  init.schema.creation: "true"
+  init.user.creation: "true"
+  init.role.creation: "true"
+  init.extension.installation: "true"
+  init.data.seeding: "true"
+  
+  # Performance and optimization
+  performance.connection.pooling: "supported"
   performance.indexing.optimization: "true"
   performance.query.optimization: "true"
   performance.vacuum.automation: "true"
-  reliability.atomic.operations: "true"
+  
+  # Monitoring and observability
+  monitoring.job.status: "true"
+  monitoring.database.health: "true"
+  monitoring.connection.metrics: "true"
+  logging.initialization.detailed: "true"
+  observability.job.tracing: "true"
+  
+  # Configuration management
+  config.environment.variables: "true"
+  config.secrets.management: "true"
+  config.configmap.support: "true"
+  config.volume.mounts: "true"
+  
+  # High availability and reliability
   reliability.idempotent: "true"
+  reliability.atomic.operations: "true"
   reliability.transaction.safety: "true"
-  resources.cpu.max: "2"
-  resources.cpu.min: 100m
-  resources.memory.max: 2Gi
-  resources.memory.min: 256Mi
-  security.encryption.at-rest: "true"
-  security.password.policy: strict
-  security.rbac.database: "true"
-  security.ssl.required: "true"
-  subcategory: Initialization
-  use-case: Database Setup and Migration
-apiVersion: v2
-appVersion: 1.16.0
-description: A Helm chart for SAS Retrieval Agent Manager Database Initialization
-  - PostgreSQL database setup and schema creation for AI/ML workloads
-home: https://www.sas.com/
-icon: https://www.sas.com/content/dam/SAS/sasbrand/Images/Logos/sas-logo-midnight.png
-keywords:
-- sas
-- retrieval-agent-manager
-- database
-- initialization
-- postgresql
-- schema-creation
-- database-setup
-- migration
-- sql
-- data-initialization
-- bootstrap
-- setup-job
-- database-migration
-- ai-database
-- vector-database
-- kubernetes
-- init-container
-maintainers:
-- email: support@sas.com
-  name: SAS Institute
-  url: https://www.sas.com
-- email: iot-support@sas.com
-  name: SAS IoT Team
-  url: https://www.sas.com/en_us/software/iot.html
-name: sas-retrieval-agent-manager-db-init
-sources:
-- https://github.com/sas-institute-rnd-internal/tmp-viya-iot-ram-helm
-- https://www.postgresql.org/
-type: application
-version: 1.1.0
+  ha.multi.master: "supported"
+  ha.read.replicas: "supported"
+  
+  # Compliance and governance
+  compliance.data.governance: "true"
+  compliance.audit.logging: "true"
+  compliance.retention.policies: "true"
+  governance.schema.versioning: "true"
+  
+  # Compatibility and version information
+  kubernetes.version.min: "1.20.0"
+  kubernetes.version.max: "1.30.0"
+  helm.version.min: "3.8.0"
+  
+  # Chart category and classification
+  category: "Database"
+  subcategory: "Initialization"
+  use-case: "Database Setup and Migration"

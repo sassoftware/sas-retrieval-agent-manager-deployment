@@ -11,5 +11,9 @@ spec:
       targetPort: http
       protocol: TCP
       name: http
+    - port: {{ index .Values.global.configuration.postgrest.monitoring "server-port" }}
+      targetPort: http-monitor
+      protocol: TCP
+      name: http-monitor
   selector:
     {{- include "postgrest.selectorLabels" . | nindent 4 }}

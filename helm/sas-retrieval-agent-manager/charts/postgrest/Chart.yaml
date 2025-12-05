@@ -1,44 +1,53 @@
+apiVersion: v2
+name: postgrest
+description: A Helm chart for PostgREST - RESTful API for PostgreSQL databases with automatic API generation
+type: application
+version: 1.1.0
+appVersion: "1.16.0"
+
+# Chart metadata and repository information
+home: https://postgrest.org/
+sources:
+  - https://github.com/PostgREST/postgrest
+  - https://github.com/sas-institute-rnd-internal/tmp-viya-iot-ram-helm
+  - https://hub.docker.com/r/postgrest/postgrest
+icon: https://www.sas.com/content/dam/SAS/sasbrand/Images/Logos/sas-logo-midnight.png
+
+# Chart categorization and discovery
+keywords:
+  - postgrest
+  - postgresql
+  - rest-api
+  - database-api
+  - auto-generated-api
+  - openapi
+  - swagger
+  - database
+  - sql
+  - api-gateway
+  - microservices
+  - backend
+  - kubernetes
+  - sas
+  - data-access
+
+# Maintainer information
+maintainers:
+  - name: SAS Institute
+    email: support@sas.com
+    url: https://www.sas.com
+  - name: PostgREST Team
+    email: contact@postgrest.org
+    url: https://postgrest.org/
+
+# Enhanced Artifact Hub annotations
 annotations:
-  api.crud.supported: "true"
-  api.filtering.supported: "true"
-  api.openapi.supported: "true"
-  api.pagination.supported: "true"
-  api.rpc.supported: "true"
-  api.sorting.supported: "true"
-  api.stored-procedures.supported: "true"
-  api.swagger.supported: "true"
-  api.versioning.supported: "true"
-  api.views.supported: "true"
-  artifacthub.io/crds: |
-    - kind: CustomResourceDefinition
-      version: v1
-      name: postgrestapis.data.sas.com
-      displayName: PostgREST API Custom Resource
-      description: Custom resource for managing PostgREST API configurations
-    - kind: CustomResourceDefinition
-      version: v1
-      name: postgrestschemas.data.sas.com
-      displayName: PostgREST Schema Custom Resource
-      description: Custom resource for managing database schema exposures
-  artifacthub.io/dependencies: |
-    - name: postgresql
-      version: ">=12.0.0"
-      repository: https://charts.bitnami.com/bitnami
-    - name: ingress-nginx
-      version: ">=4.0.0"
-      repository: https://kubernetes.github.io/ingress-nginx
-      condition: ingress.enabled
-  artifacthub.io/images: |
-    - name: postgrest
-      image: postgrest/postgrest:v11.2.0
-      whitelisted: true
-    - name: postgrest-alpine
-      image: postgrest/postgrest:v11.2.0-alpine
-      whitelisted: true
-    - name: postgres
-      image: postgres:15
-      whitelisted: true
-  artifacthub.io/license: MIT
+  # Licensing and legal information
+  artifacthub.io/license: "MIT"
+  artifacthub.io/operator: "false"
+  artifacthub.io/prerelease: "false"
+  
+  # Chart documentation and links
   artifacthub.io/links: |
     - name: PostgREST Documentation
       url: https://postgrest.org/en/stable/
@@ -50,73 +59,98 @@ annotations:
       url: https://postgrest.org/en/stable/auth.html
     - name: Source Repository
       url: https://github.com/PostgREST/postgrest
-  artifacthub.io/operator: "false"
-  artifacthub.io/prerelease: "false"
-  authentication.basic.supported: "true"
-  authentication.bearer.supported: "true"
-  category: Database
+  
+  # Container images used by this chart
+  artifacthub.io/images: |
+    - name: postgrest
+      image: postgrest/postgrest:v11.2.0
+      whitelisted: true
+    - name: postgrest-alpine
+      image: postgrest/postgrest:v11.2.0-alpine
+      whitelisted: true
+    - name: postgres
+      image: postgres:15
+      whitelisted: true
+  
+  # Resource requirements documentation
+  artifacthub.io/crds: |
+    - kind: CustomResourceDefinition
+      version: v1
+      name: postgrestapis.data.sas.com
+      displayName: PostgREST API Custom Resource
+      description: Custom resource for managing PostgREST API configurations
+    - kind: CustomResourceDefinition
+      version: v1
+      name: postgrestschemas.data.sas.com
+      displayName: PostgREST Schema Custom Resource
+      description: Custom resource for managing database schema exposures
+  
+  # Deployment requirements and dependencies
+  artifacthub.io/dependencies: |
+    - name: postgresql
+      version: ">=12.0.0"
+      repository: https://charts.bitnami.com/bitnami
+    - name: ingress-nginx
+      version: ">=4.0.0"
+      repository: https://kubernetes.github.io/ingress-nginx
+      condition: ingress.enabled
+  
+  # Resource allocation recommendations
+  resources.cpu.min: "100m"
+  resources.cpu.max: "1"
+  resources.memory.min: "128Mi"
+  resources.memory.max: "512Mi"
+  
+  # Database and API requirements
   database.required: "true"
-  database.type: postgresql
+  database.type: "postgresql"
   database.version.min: "12.0"
   database.version.recommended: "15.0"
-  helm.version.min: 3.8.0
-  kubernetes.version.max: 1.30.0
-  kubernetes.version.min: 1.20.0
-  monitoring.health-checks.supported: "true"
-  monitoring.logging.supported: "true"
-  monitoring.metrics.supported: "true"
-  network.cors.supported: "true"
-  network.ingress.supported: "true"
-  network.tls.supported: "true"
-  observability.tracing.supported: "true"
-  performance.caching.supported: "true"
-  performance.pooling.supported: "true"
-  resources.cpu.max: "1"
-  resources.cpu.min: 100m
-  resources.memory.max: 512Mi
-  resources.memory.min: 128Mi
-  scaling.horizontal.supported: "true"
-  scaling.replicas.max: "20"
-  scaling.replicas.min: "1"
-  scaling.replicas.recommended: "3"
+  api.openapi.supported: "true"
+  api.swagger.supported: "true"
+  api.versioning.supported: "true"
+  
+  # Security and authentication
   security.jwt.supported: "true"
   security.rbac.supported: "true"
   security.rls.supported: "true"
-  subcategory: API Gateway
-  use-case: Database REST API
-apiVersion: v2
-appVersion: 1.16.0
-description: A Helm chart for PostgREST - RESTful API for PostgreSQL databases with
-  automatic API generation
-home: https://postgrest.org/
-icon: https://www.sas.com/content/dam/SAS/sasbrand/Images/Logos/sas-logo-midnight.png
-keywords:
-- postgrest
-- postgresql
-- rest-api
-- database-api
-- auto-generated-api
-- openapi
-- swagger
-- database
-- sql
-- api-gateway
-- microservices
-- backend
-- kubernetes
-- sas
-- data-access
-maintainers:
-- email: support@sas.com
-  name: SAS Institute
-  url: https://www.sas.com
-- email: contact@postgrest.org
-  name: PostgREST Team
-  url: https://postgrest.org/
-name: postgrest
-sources:
-- https://github.com/PostgREST/postgrest
-- https://github.com/sas-institute-rnd-internal/tmp-viya-iot-ram-helm
-- https://hub.docker.com/r/postgrest/postgrest
-type: application
-version: 1.1.0
+  authentication.bearer.supported: "true"
+  authentication.basic.supported: "true"
+  
+  # Performance and scaling
+  scaling.horizontal.supported: "true"
+  scaling.replicas.min: "1"
+  scaling.replicas.max: "20"
+  scaling.replicas.recommended: "3"
+  performance.caching.supported: "true"
+  performance.pooling.supported: "true"
+  
+  # API features and capabilities
+  api.crud.supported: "true"
+  api.rpc.supported: "true"
+  api.stored-procedures.supported: "true"
+  api.views.supported: "true"
+  api.filtering.supported: "true"
+  api.sorting.supported: "true"
+  api.pagination.supported: "true"
+  
+  # Monitoring and observability
+  monitoring.health-checks.supported: "true"
+  monitoring.metrics.supported: "true"
+  monitoring.logging.supported: "true"
+  observability.tracing.supported: "true"
+  
+  # Network and connectivity
+  network.ingress.supported: "true"
+  network.tls.supported: "true"
+  network.cors.supported: "true"
+  
+  # Compatibility and version information
+  kubernetes.version.min: "1.20.0"
+  kubernetes.version.max: "1.30.0"
+  helm.version.min: "3.8.0"
+  
+  # Chart category and classification
+  category: "Database"
+  subcategory: "API Gateway"
+  use-case: "Database REST API"

@@ -19,7 +19,13 @@ data:
     db-aggregates-enabled = "true"
 
     {{- range $k, $v := .Values.global.configuration.postgrest }}
+    {{- if eq $k "base" }}
+    {{- range $bk, $bv := $v }}
+    {{ $bk }} = {{ $bv | toString | quote }}
+    {{- end }}
+    {{- else if and (ne $k "monitoring") (ne $k "db") (ne $k "schema") }}
     {{ $k }} = {{ $v | toString | quote }}
+    {{- end }}
     {{- end }}
 
     {{ if $globalEnabled -}}

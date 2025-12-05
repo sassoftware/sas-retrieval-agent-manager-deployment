@@ -1,16 +1,75 @@
+apiVersion: v2
+name: keycloak
+description: A Helm chart for Keycloak Identity and Access Management with OAuth2/OIDC support
+type: application
+version: 1.1.0
+appVersion: "1.16.0"
+
+# Chart metadata and repository information
+home: https://www.keycloak.org/
+sources:
+  - https://github.com/keycloak/keycloak
+  - https://github.com/sas-institute-rnd-internal/tmp-viya-iot-ram-helm
+  - https://quay.io/repository/keycloak/keycloak
+icon: https://www.sas.com/content/dam/SAS/sasbrand/Images/Logos/sas-logo-midnight.png
+
+# Chart categorization and discovery
+keywords:
+  - keycloak
+  - identity
+  - access-management
+  - oauth2
+  - oidc
+  - authentication
+  - authorization
+  - sso
+  - single-sign-on
+  - iam
+  - security
+  - federation
+  - saml
+  - jwt
+  - kubernetes
+  - sas
+
+# Maintainer information
+maintainers:
+  - name: SAS Institute
+    email: support@sas.com
+    url: https://www.sas.com
+  - name: Keycloak Team
+    email: keycloak-dev@lists.jboss.org
+    url: https://www.keycloak.org/
+
+# Chart dependencies
+dependencies:
+  - name: mail
+    version: "v4.4.0"
+    # repository: "https://bokysan.github.io/docker-postfix/"
+    condition: mail.enabled
+    tags:
+      - email
+      - notifications
+
+# Enhanced Artifact Hub annotations
 annotations:
-  artifacthub.io/dependencies: |
-    - name: postgresql
-      version: ">=12.0.0"
-      repository: https://charts.bitnami.com/bitnami
-    - name: ingress-nginx
-      version: ">=4.0.0"
-      repository: https://kubernetes.github.io/ingress-nginx
-      condition: ingress.enabled
-    - name: mail
-      version: "v4.4.0"
-      repository: https://bokysan.github.io/docker-postfix/
-      condition: mail.enabled
+  # Licensing and legal information
+  artifacthub.io/license: "Apache-2.0"
+  artifacthub.io/operator: "false"
+  artifacthub.io/prerelease: "false"
+  
+  # Chart documentation and links
+  artifacthub.io/links: |
+    - name: Keycloak Documentation
+      url: https://www.keycloak.org/documentation
+    - name: Keycloak Server Administration Guide
+      url: https://www.keycloak.org/docs/latest/server_admin/
+    - name: OAuth2/OIDC Configuration
+      url: https://www.keycloak.org/docs/latest/securing_apps/
+    - name: Source Repository
+      url: https://github.com/keycloak/keycloak
+  
+  # Container images used by this chart
   artifacthub.io/images: |
     - name: keycloak
       image: quay.io/keycloak/keycloak:22.0.5
@@ -27,91 +86,62 @@ annotations:
     - name: sas-keycloak-theme
       image: cr.sas.com/sas-iot-keycloak-theme:latest
       whitelisted: true
-  artifacthub.io/license: Apache-2.0
-  artifacthub.io/links: |
-    - name: Keycloak Documentation
-      url: https://www.keycloak.org/documentation
-    - name: Keycloak Server Administration Guide
-      url: https://www.keycloak.org/docs/latest/server_admin/
-    - name: OAuth2/OIDC Configuration
-      url: https://www.keycloak.org/docs/latest/securing_apps/
-    - name: Source Repository
-      url: https://github.com/keycloak/keycloak
-  artifacthub.io/operator: "false"
-  artifacthub.io/prerelease: "false"
-  authentication.federation.supported: "true"
-  authentication.mfa.supported: "true"
-  category: Security
+  
+  # Deployment requirements and dependencies
+  artifacthub.io/dependencies: |
+    - name: postgresql
+      version: ">=12.0.0"
+      repository: https://charts.bitnami.com/bitnami
+    - name: ingress-nginx
+      version: ">=4.0.0"
+      repository: https://kubernetes.github.io/ingress-nginx
+      condition: ingress.enabled
+    - name: mail
+      version: "v4.4.0"
+      repository: https://bokysan.github.io/docker-postfix/
+      condition: mail.enabled
+  
+  # Resource allocation recommendations
+  resources.cpu.min: "500m"
+  resources.cpu.max: "2"
+  resources.memory.min: "1Gi"
+  resources.memory.max: "4Gi"
+  
+  # Database and storage requirements
   database.required: "true"
-  database.type: postgresql
+  database.type: "postgresql"
   database.version.min: "12.0"
   database.version.recommended: "15.0"
-  helm.version.min: 3.8.0
-  kubernetes.version.max: 1.30.0
-  kubernetes.version.min: 1.20.0
-  network.ingress.required: "true"
-  network.tls.recommended: "true"
-  network.tls.supported: "true"
-  resources.cpu.max: "2"
-  resources.cpu.min: 500m
-  resources.memory.max: 4Gi
-  resources.memory.min: 1Gi
-  scaling.horizontal.supported: "true"
-  scaling.replicas.max: "10"
-  scaling.replicas.min: "1"
-  scaling.replicas.recommended: "2"
-  security.ldap.supported: "true"
+  storage.required: "true"
+  storage.size.min: "1Gi"
+  storage.size.recommended: "10Gi"
+  
+  # Security and authentication requirements
   security.oauth2.supported: "true"
   security.oidc.supported: "true"
   security.saml.supported: "true"
+  security.ldap.supported: "true"
   security.social.supported: "true"
-  storage.required: "true"
-  storage.size.min: 1Gi
-  storage.size.recommended: 10Gi
-  subcategory: Identity and Access Management
-  use-case: Authentication and Authorization
-apiVersion: v2
-appVersion: 1.16.0
-dependencies:
-- condition: mail.enabled
-  name: mail
-  repository: ""
-  tags:
-  - email
-  - notifications
-  version: v4.4.0
-description: A Helm chart for Keycloak Identity and Access Management with OAuth2/OIDC
-  support
-home: https://www.keycloak.org/
-icon: https://www.sas.com/content/dam/SAS/sasbrand/Images/Logos/sas-logo-midnight.png
-keywords:
-- keycloak
-- identity
-- access-management
-- oauth2
-- oidc
-- authentication
-- authorization
-- sso
-- single-sign-on
-- iam
-- security
-- federation
-- saml
-- jwt
-- kubernetes
-- sas
-maintainers:
-- email: support@sas.com
-  name: SAS Institute
-  url: https://www.sas.com
-- email: keycloak-dev@lists.jboss.org
-  name: Keycloak Team
-  url: https://www.keycloak.org/
-name: keycloak
-sources:
-- https://github.com/keycloak/keycloak
-- https://github.com/sas-institute-rnd-internal/tmp-viya-iot-ram-helm
-- https://quay.io/repository/keycloak/keycloak
-type: application
-version: 1.1.0
+  authentication.mfa.supported: "true"
+  authentication.federation.supported: "true"
+  
+  # Performance and scaling
+  scaling.horizontal.supported: "true"
+  scaling.replicas.min: "1"
+  scaling.replicas.max: "10"
+  scaling.replicas.recommended: "2"
+  
+  # Network and connectivity
+  network.ingress.required: "true"
+  network.tls.supported: "true"
+  network.tls.recommended: "true"
+  
+  # Compatibility and version information
+  kubernetes.version.min: "1.20.0"
+  kubernetes.version.max: "1.30.0"
+  helm.version.min: "3.8.0"
+  
+  # Chart category and classification
+  category: "Security"
+  subcategory: "Identity and Access Management"
+  use-case: "Authentication and Authorization"

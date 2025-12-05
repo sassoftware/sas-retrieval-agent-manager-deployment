@@ -1,6 +1,6 @@
 {{- $postgres_repo_base := "" -}}
 {{- $goose_repo_base := "" -}}
-{{- if and (hasKey .Values "global") (hasKey .Values.global "image") (hasKey .Values.global.image "repo") (hasKey .Values.global.image.repo "base") -}}
+{{- if ((include "testValuesPath" (list .Values "global" "image" "repo" "base")) | eq "true") -}}
   {{- $postgres_repo_base = .Values.global.image.repo.base | default .Values.image.postgres.repo.base -}}
   {{- $goose_repo_base = .Values.global.image.repo.base | default .Values.image.goose.repo.base -}}
 {{- else -}}
@@ -82,6 +82,52 @@ spec:
             - mountPath: "/scripts"
               name: scripts
               readOnly: true
+        - name: wait-for-monitoring-db
+          command:
+            - "/bin/sh"
+            - "-c"
+            - "/scripts/wait_for_database.sh"
+          image: "{{ $postgres_repo_base }}/{{ .Values.image.postgres.repo.path }}:{{ .Values.image.postgres.tag }}"
+          imagePullPolicy: {{ .Values.image.postgres.pullPolicy }}
+          env:
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  key: user
+                  name: migration-db-credentials
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: password
+                  name: migration-db-credentials
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  key: host
+                  name: db-connection
+            - name: DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  key: port
+                  name: db-connection
+            - name: DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  key: db
+                  name: db-monitoring
+            - name: DB_SCHEMA
+              valueFrom:
+                configMapKeyRef:
+                  key: schema
+                  name: db-monitoring
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - mountPath: "/scripts"
+              name: scripts
+              readOnly: true
       containers:
         - name: db-initialization
           image: "{{ $goose_repo_base }}/{{ .Values.image.goose.repo.path }}:{{ .Values.image.goose.tag | default "15" }}"
@@ -90,6 +136,10 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: embedding-models
+              mountPath: "/mnt/embedding_models"
+              readOnly: false
           env:
             - name: DB_HOST
               valueFrom:
@@ -106,6 +156,16 @@ spec:
                 configMapKeyRef:
                   key: sslmode
                   name: db-connection
+            - name: EMBEDDING_DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  key: user
+                  name: embedding-db-credentials
+            - name: MODELS_DESTINATION_PATH
+              valueFrom:
+                configMapKeyRef:
+                  key: models_destination_dir
+                  name: embedding-config
             - name: APP_DB_NAME
               valueFrom:
                 configMapKeyRef:
@@ -116,6 +176,16 @@ spec:
                 configMapKeyRef:
                   key: schema
                   name: db-application
+            - name: MONITORING_DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  key: db
+                  name: db-monitoring
+            - name: MONITORING_DB_SCHEMA
+              valueFrom:
+                configMapKeyRef:
+                  key: schema
+                  name: db-monitoring
             - name: DB_SECRETS_PUBLIC_KEY
               valueFrom:
                 configMapKeyRef:
@@ -131,6 +201,11 @@ spec:
                 secretKeyRef:
                   key: password
                   name: migration-db-credentials
+            - name: OTEL_DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  key: user
+                  name: otel-db-credentials
             - name: PGREST_DB_USERNAME
               valueFrom:
                 secretKeyRef:
@@ -151,6 +226,13 @@ spec:
                 configMapKeyRef:
                   key: userRole
                   name: application-roles
+            {{- if .Values.global.configuration.timescale.enabled }}
+            - name: ENABLE_TIMESCALE
+              valueFrom:
+                configMapKeyRef:
+                  key: enabled
+                  name: db-timescale
+            {{- end }}
             {{- if .Values.global.configuration.vectorStore.enabled }}
             - name: ENABLE_VECTOR_STORE
               valueFrom:
@@ -203,4 +285,7 @@ spec:
           configMap:
             name: {{ .Chart.Name }}-scripts
             defaultMode: 0777
+        - name: embedding-models
+          persistentVolumeClaim:
+            claimName: embedding-pv
   backoffLimit: 1000

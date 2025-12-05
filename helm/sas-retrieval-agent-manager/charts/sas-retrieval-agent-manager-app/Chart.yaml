@@ -1,25 +1,54 @@
+apiVersion: v2
+name: sas-retrieval-agent-manager-app
+description: A Helm chart for SAS Retrieval Agent Manager App - React-based frontend web application for AI-powered document retrieval and query management
+type: application
+version: 1.1.0
+appVersion: "1.16.0"
+
+# Chart metadata and repository information
+home: https://www.sas.com/
+sources:
+  - https://github.com/sas-institute-rnd-internal/tmp-viya-iot-ram-helm
+  - https://cr.sas.com/viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-app
+icon: https://www.sas.com/content/dam/SAS/sasbrand/Images/Logos/sas-logo-midnight.png
+
+# Chart categorization and discovery
+keywords:
+  - sas
+  - retrieval-agent-manager
+  - frontend
+  - react
+  - web-application
+  - user-interface
+  - query-hub
+  - document-search
+  - ai-interface
+  - machine-learning-ui
+  - retrieval-interface
+  - search-ui
+  - enterprise-ui
+  - spa
+  - single-page-application
+  - kubernetes
+  - web-frontend
+
+# Maintainer information
+maintainers:
+  - name: SAS Institute
+    email: support@sas.com
+    url: https://www.sas.com
+  - name: SAS IoT Team
+    email: iot-support@sas.com
+    url: https://www.sas.com/en_us/software/iot.html
+
+# Enhanced Artifact Hub annotations
 annotations:
-  api.caching.client-side: "true"
-  api.offline.support: "true"
-  api.real-time.updates: "true"
-  api.rest.client: "true"
-  api.websocket.supported: "true"
-  artifacthub.io/dependencies: |
-    - name: ingress-nginx
-      version: ">=4.0.0"
-      repository: https://kubernetes.github.io/ingress-nginx
-      condition: ingress.enabled
-    - name: sas-retrieval-agent-manager-api
-      version: ">=1.0.0"
-      repository: local
-  artifacthub.io/images: |
-    - name: sas-retrieval-agent-manager-app
-      image: cr.sas.com/viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-app:latest
-      whitelisted: true
-    - name: nginx
-      image: nginx:1.25-alpine
-      whitelisted: true
-  artifacthub.io/license: SAS Proprietary
+  # Licensing and legal information
+  artifacthub.io/license: "SAS Proprietary"
+  artifacthub.io/operator: "false"
+  artifacthub.io/prerelease: "false"
+  
+  # Chart documentation and links
   artifacthub.io/links: |
     - name: SAS Viya Platform
       url: https://www.sas.com/en_us/software/viya.html
@@ -31,104 +60,117 @@ annotations:
       url: https://reactjs.org/docs/getting-started.html
     - name: SAS Container Registry
       url: https://cr.sas.com/
-  artifacthub.io/operator: "false"
-  artifacthub.io/prerelease: "false"
-  availability.multi-zone: "true"
-  caching.browser: optimized
-  caching.edge: supported
-  category: Web Applications
-  cdn.compatible: "true"
-  cdn.static-assets: "true"
-  compression.assets: "true"
-  deployment.blue-green: supported
-  deployment.canary: supported
-  deployment.zero-downtime: "true"
-  development.hot-reload: "true"
-  frontend.build-tool: webpack
-  frontend.framework: react
-  frontend.package-manager: npm
-  frontend.typescript: "true"
-  frontend.version: 18.x
-  helm.version.min: 3.8.0
-  kubernetes.version.max: 1.30.0
-  kubernetes.version.min: 1.20.0
-  monitoring.error.tracking: "true"
-  monitoring.health-checks.supported: "true"
-  monitoring.performance.metrics: "true"
-  monitoring.user-analytics: "true"
-  observability.real-user.monitoring: "true"
-  performance.bundling: optimized
-  performance.code-splitting: "true"
-  performance.lazy-loading: "true"
-  performance.minification: "true"
-  performance.tree-shaking: "true"
-  pwa.installable: "true"
-  pwa.offline: "true"
-  pwa.push-notifications: "true"
-  pwa.service-worker: "true"
-  pwa.supported: "true"
+  
+  # Container images used by this chart
+  artifacthub.io/images: |
+    - name: sas-retrieval-agent-manager-app
+      image: cr.sas.com/viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-app:latest
+      whitelisted: true
+    - name: nginx
+      image: nginx:1.25-alpine
+      whitelisted: true
+  
+  # Deployment requirements and dependencies
+  artifacthub.io/dependencies: |
+    - name: ingress-nginx
+      version: ">=4.0.0"
+      repository: https://kubernetes.github.io/ingress-nginx
+      condition: ingress.enabled
+    - name: sas-retrieval-agent-manager-api
+      version: ">=1.0.0"
+      repository: local
+  
+  # Resource allocation recommendations for web frontend
+  resources.cpu.min: "100m"
   resources.cpu.max: "1"
-  resources.cpu.min: 100m
-  resources.memory.max: 512Mi
-  resources.memory.min: 128Mi
-  scaling.horizontal.supported: "true"
-  scaling.replicas.max: "20"
-  scaling.replicas.min: "2"
-  scaling.replicas.recommended: "3"
-  scaling.traffic-based: "true"
-  security.content-policy: strict
+  resources.memory.min: "128Mi"
+  resources.memory.max: "512Mi"
+  
+  # Frontend technology stack
+  frontend.framework: "react"
+  frontend.version: "18.x"
+  frontend.build-tool: "webpack"
+  frontend.package-manager: "npm"
+  frontend.typescript: "true"
+  
+  # Web server and delivery
+  webserver.type: "nginx"
+  webserver.static-assets: "true"
+  webserver.compression: "gzip,brotli"
+  webserver.caching: "aggressive"
+  webserver.spa-routing: "true"
+  
+  # Security features for web applications
   security.csrf.protected: "true"
+  security.xss.protected: "true"
   security.headers.security: "true"
+  security.content-policy: "strict"
   security.oauth2.supported: "true"
   security.sso.supported: "true"
-  security.xss.protected: "true"
-  subcategory: Frontend
-  ui.accessibility: wcag-2.1
-  ui.dark-mode: "true"
-  ui.internationalization: "true"
-  ui.mobile-support: "true"
+  
+  # Performance and optimization
+  performance.lazy-loading: "true"
+  performance.code-splitting: "true"
+  performance.tree-shaking: "true"
+  performance.minification: "true"
+  performance.bundling: "optimized"
+  
+  # UI/UX capabilities
   ui.responsive: "true"
-  ui.theming: sas-brand
-  use-case: Enterprise Web Interface
-  webserver.caching: aggressive
-  webserver.compression: gzip,brotli
-  webserver.spa-routing: "true"
-  webserver.static-assets: "true"
-  webserver.type: nginx
-apiVersion: v2
-appVersion: 1.16.0
-description: A Helm chart for SAS Retrieval Agent Manager App - React-based frontend
-  web application for AI-powered document retrieval and query management
-home: https://www.sas.com/
-icon: https://www.sas.com/content/dam/SAS/sasbrand/Images/Logos/sas-logo-midnight.png
-keywords:
-- sas
-- retrieval-agent-manager
-- frontend
-- react
-- web-application
-- user-interface
-- query-hub
-- document-search
-- ai-interface
-- machine-learning-ui
-- retrieval-interface
-- search-ui
-- enterprise-ui
-- spa
-- single-page-application
-- kubernetes
-- web-frontend
-maintainers:
-- email: support@sas.com
-  name: SAS Institute
-  url: https://www.sas.com
-- email: iot-support@sas.com
-  name: SAS IoT Team
-  url: https://www.sas.com/en_us/software/iot.html
-name: sas-retrieval-agent-manager-app
-sources:
-- https://github.com/sas-institute-rnd-internal/tmp-viya-iot-ram-helm
-- https://cr.sas.com/viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-app
-type: application
-version: 1.1.0
+  ui.accessibility: "wcag-2.1"
+  ui.internationalization: "true"
+  ui.theming: "sas-brand"
+  ui.dark-mode: "true"
+  ui.mobile-support: "true"
+  
+  # API integration capabilities
+  api.rest.client: "true"
+  api.websocket.supported: "true"
+  api.real-time.updates: "true"
+  api.offline.support: "true"
+  api.caching.client-side: "true"
+  
+  # Monitoring and analytics for web apps
+  monitoring.health-checks.supported: "true"
+  monitoring.user-analytics: "true"
+  monitoring.performance.metrics: "true"
+  monitoring.error.tracking: "true"
+  observability.real-user.monitoring: "true"
+  
+  # Scaling and availability for web traffic
+  scaling.horizontal.supported: "true"
+  scaling.replicas.min: "2"
+  scaling.replicas.max: "20"
+  scaling.replicas.recommended: "3"
+  scaling.traffic-based: "true"
+  availability.multi-zone: "true"
+  
+  # Content delivery and caching
+  cdn.compatible: "true"
+  cdn.static-assets: "true"
+  caching.browser: "optimized"
+  caching.edge: "supported"
+  compression.assets: "true"
+  
+  # Progressive Web App features
+  pwa.supported: "true"
+  pwa.offline: "true"
+  pwa.push-notifications: "true"
+  pwa.installable: "true"
+  pwa.service-worker: "true"
+  
+  # Development and deployment
+  deployment.zero-downtime: "true"
+  deployment.blue-green: "supported"
+  deployment.canary: "supported"
+  development.hot-reload: "true"
+  
+  # Compatibility and version information
+  kubernetes.version.min: "1.20.0"
+  kubernetes.version.max: "1.30.0"
+  helm.version.min: "3.8.0"
+  
+  # Chart category and classification
+  category: "Web Applications"
+  subcategory: "Frontend"
+  use-case: "Enterprise Web Interface"

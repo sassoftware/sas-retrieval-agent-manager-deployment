@@ -86,7 +86,7 @@ image:
     # type: string
     # @schema
     # -- Goose migration container image tag
-    tag: 1.4.0-20250910.1757512678252
+    tag: 1.6.5-20251121.1763756456747
 
 # @schema
 # type: array
@@ -431,6 +431,9 @@ affinity:
 # type: object
 # required: true
 # properties:
+#   targetPlatform:
+#     enum: [kubernetes,openshift,aws,azure,gcp]
+#     default: azure
 #   stage:
 #     type: [string,null]
 #   domain:
@@ -564,6 +567,14 @@ global:
     #       - string
     #       - null
     # @schema
+    # -- TimescaleDB configuration
+    timescale:
+      # @schema
+      # type: boolean
+      # required: true
+      # @schema
+      # -- Whether timescale migrations are enabled
+      enabled: true
     # -- Vector store configuration
     vectorStore:
       # @schema

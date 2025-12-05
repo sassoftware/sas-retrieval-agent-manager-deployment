@@ -1,6 +1,6 @@
 {{- $oauthProxy_repo_base := "" -}}
 {{- $kubectl_repo_base := "" -}}
-{{- if and (hasKey .Values "global") (hasKey .Values.global "image") (hasKey .Values.global.image "repo") (hasKey .Values.global.image.repo "base") -}}
+{{- if ((include "testValuesPath" (list .Values "global" "image" "repo" "base")) | eq "true") -}}
   {{- $oauthProxy_repo_base = .Values.global.image.repo.base | default .Values.oauthProxy.image.repo.base -}}
   {{- $kubectl_repo_base = .Values.global.image.repo.base | default .Values.image.kubectl.repo.base -}}
 {{- else -}}
@@ -40,6 +40,10 @@ metadata:
 spec:
   {{- if not .Values.oauthProxy.autoscaling.enabled }}
   replicas: {{ .Values.oauthProxy.replicaCount }}
+  {{- end }}
+  {{- with .Values.oauthProxy.strategy }}
+  strategy:
+    {{- toYaml . | nindent 4 }}
   {{- end }}
   selector:
     matchLabels:

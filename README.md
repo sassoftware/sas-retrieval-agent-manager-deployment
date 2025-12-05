@@ -268,6 +268,8 @@ helm install my-sas-retrieval-agent-manager oci://ghcr.io/sassoftware/sas-retrie
   --values <RAM Values file> \
   -n retagentmgr \
   --create-namespace
+  --wait # used in version .11 and later
+  --timeout 10m
 ```
 
 Note: Use the package section of this repository to find an installable version. Also, if something fails and you need to redeploy, you'll have to run `kubectl delete ns retagentmgr` first.

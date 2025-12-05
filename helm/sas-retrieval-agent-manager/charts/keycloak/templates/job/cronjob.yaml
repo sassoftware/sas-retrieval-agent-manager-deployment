@@ -1,5 +1,5 @@
 {{- $kubectl_repo_base := "" -}}
-{{- if and (hasKey .Values "global") (hasKey .Values.global "image") (hasKey .Values.global.image "repo") (hasKey .Values.global.image.repo "base") -}}
+{{- if ((include "testValuesPath" (list .Values "global" "image" "repo" "base")) | eq "true") -}}
   {{- $kubectl_repo_base = .Values.global.image.repo.base | default .Values.image.kubectl.repo.base -}}
 {{- else -}}
   {{- $kubectl_repo_base = .Values.image.kubectl.repo.base -}}

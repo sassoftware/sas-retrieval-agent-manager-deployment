@@ -456,6 +456,9 @@ affinity:
 # type: object
 # required: true
 # properties:
+#   targetPlatform:
+#     enum: [kubernetes,openshift,aws,azure,gcp]
+#     default: azure
 #   stage:
 #     type: [string,null]
 #   domain:

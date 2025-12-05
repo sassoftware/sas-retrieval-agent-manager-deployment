@@ -301,6 +301,17 @@
             "array",
             "null"
           ]
+        },
+        "targetPlatform": {
+          "default": "azure",
+          "enum": [
+            "kubernetes",
+            "openshift",
+            "aws",
+            "azure",
+            "gcp"
+          ],
+          "required": []
         }
       },
       "required": [],
@@ -353,7 +364,7 @@
               "type": "object"
             },
             "tag": {
-              "default": "1.4.0-20250910.1757512678252",
+              "default": "1.6.5-20251121.1763756456747",
               "description": "Goose migration container image tag",
               "required": [],
               "title": "tag",

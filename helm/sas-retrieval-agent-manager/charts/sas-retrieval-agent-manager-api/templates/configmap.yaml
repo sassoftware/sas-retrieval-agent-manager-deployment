@@ -7,6 +7,10 @@
 {{- end -}}
 {{- end -}}
 {{- end -}}
+{{- $basePathWithLeadingSlash := .Values.global.configuration.api.base_path | toString | trimSuffix "/" }}
+{{- if eq $basePathWithLeadingSlash "/" }}
+{{- $basePathWithLeadingSlash = "" }}
+{{- end }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -28,4 +32,6 @@ data:
        {{- else -}}
           "https://{{ with (first .Values.ingress.hosts) }}{{ .host }}/{{ with (first .paths) }}{{ regexReplaceAll "\\(.*" .path "" }}{{ end }}{{ end }}/docs"
        {{- end }}
-  base_path: {{ .Values.global.configuration.api.base_path }}
+  base_path: {{ $basePathWithLeadingSlash | quote }}
+  inClusterUrl: "http://{{ include "sas-retrieval-agent-manager-api.fullname" . }}:{{ .Values.service.port }}{{ $basePathWithLeadingSlash }}/{{ .Values.global.configuration.api.latest_version }}"
+  noauthInClusterUrl: "http://{{ include "sas-retrieval-agent-manager-api.fullname" . }}-noauth:{{ .Values.service.port }}{{ $basePathWithLeadingSlash }}/{{ .Values.global.configuration.api.latest_version }}"
