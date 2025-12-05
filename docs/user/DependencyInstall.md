@@ -29,6 +29,8 @@ helm install trust-manager ./helm/trust-manager/ \
 
 ```
 
+> Note: If cert-manager is already installed on the cluster, you'll have to run `kubectl apply -f ./helm/cert-manager/templates/linkerd-certs/ -n cert-manager` instead for the expected result
+
 ### Service Mesh
 
 SAS Retrieval Agent Manager uses Linkerd to enable mutual TLS (mTLS) for secure internal communication between its
