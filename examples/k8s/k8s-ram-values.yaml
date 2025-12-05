@@ -248,6 +248,13 @@ global:
         # -- PVC Size for embedding storage
         size: 20Gi
 
+    # -- OpenTelemetry user configuration
+    otel:
+      # -- OpenTelemetry user name
+      user: "sas_ram_otel_user"
+      # -- OpenTelemetry user password
+      password: <otel_user_password>
+
     # -- Main API service configuration
     # -- Controls the core RAM backend service behavior
     api:
