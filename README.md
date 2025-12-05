@@ -20,6 +20,7 @@
     - [Optional Components](#optional-components)
   - [Backup and Restore Guide](#backup-and-restore-guide)
   - [Connect an LLM](#connecting-different-llms)
+  - [Monitoring and Logging](#monitoring-and-logging)
   - [Troubleshooting](#troubleshooting)
     - [Common Issues](#common-issues)
     - [Debug Commands](#debug-commands)
@@ -238,10 +239,12 @@ After you have access to the Kubernetes cluster, you must install the necessary 
 
 SAS has partnered with [Weaviate](https://weaviate.io/) and supports it as a vector database alternative to PGVector storage. This installation is not required but is compatible with RAM.
 
-| Component |    Version    | Example Values File |                                   Installation Instructions                                 |
-|-----------|---------------|---------------------|---------------------------------------------------------------------------------------------|
-| **Weaviate**     |v17.3.3 |[weaviate.yaml](./examples/weaviate.yaml)   | [instructions](./docs/user/DependencyInstall.md#weaviate)            |
-| **Ollama**       |v1.12.0 |[ollama.yaml](./examples/ollama.yaml)       | [instructions](./docs/llm-connection/ollama.md)                      |
+| Component |    Version    | Example Values File |                                   Installation Instructions                                  |
+|-----------|---------------|---------------------|----------------------------------------------------------------------------------------------|
+| **Weaviate**      |v17.3.3 |[weaviate.yaml](./examples/weaviate.yaml)     | [instructions](./docs/user/DependencyInstall.md#weaviate)          |
+| **Ollama**        |v1.12.0 |[ollama.yaml](./examples/ollama.yaml)         | [instructions](./docs/llm-connection/ollama.md)                    |
+| **Vector**        | 0.46.0 |[example](./docs/monitoring/README.md)        | [instructions](https://vector.dev/installation/)                   |
+| **Phoenix**       |v4.0.7  |[phoenix.yaml](./examples/phoenix.yaml)       | [instructions](./docs/monitoring/traces.md)                        |
 
 ### Install SAS Retrieval Agent Manager
 
@@ -282,6 +285,10 @@ To backup and restore the data you use RAM for, visit the [Backup and Restore pa
 ## Connecting different LLMS
 
 To add different LLMs for RAM to use, visit the [Connecting an LLM page](./docs/llm-connection/README.md).
+
+## Monitoring and Logging
+
+To monitor and log agent and LLM activity, visit the [Monitoring setup page](./docs/monitoring/README.md)
 
 ## Troubleshooting
 

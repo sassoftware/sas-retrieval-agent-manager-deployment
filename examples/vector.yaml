@@ -1,0 +1,282 @@
+# extraObjects -- Create extra manifests via values. Would be passed through `tpl` for templating.
+extraObjects:
+  - apiVersion: rbac.authorization.k8s.io/v1
+    kind: ClusterRole
+    metadata:
+      name: vector
+    rules:
+      - apiGroups: ["*"]
+        resources: ["*"]
+        verbs: ["*"]
+      - nonResourceURLs: ["*"]
+        verbs: ["*"]
+
+  - apiVersion: rbac.authorization.k8s.io/v1
+    kind: ClusterRoleBinding
+    metadata:
+      name: vector
+    roleRef:
+      apiGroup: rbac.authorization.k8s.io
+      kind: ClusterRole
+      name: vector
+    subjects:
+      - kind: ServiceAccount
+        name: vector
+        namespace: vector
+# Default values for Vector
+# See Vector helm documentation to learn more:
+# https://vector.dev/docs/setup/installation/package-managers/helm/
+
+# nameOverride -- Override the name of resources.
+nameOverride: ""
+
+# fullnameOverride -- Override the full name of resources.
+fullnameOverride: ""
+
+# role -- [Role](https://vector.dev/docs/setup/deployment/roles/) for this Vector instance, valid options are:
+# "Agent", "Aggregator", and "Stateless-Aggregator".
+
+# Each role is created with the following workloads:
+# Agent = DaemonSet
+# Aggregator = StatefulSet
+# Stateless-Aggregator = Deployment
+role: "Agent"
+
+# rollWorkload -- Add a checksum of the generated ConfigMap to workload annotations.
+rollWorkload: true
+
+# rollWorkloadSecrets -- Add a checksum of the generated Secret to workload annotations.
+rollWorkloadSecrets: false
+
+# rollWorkloadExtraObjects -- Add a checksum of the generated ExtraObjects to workload annotations.
+rollWorkloadExtraObjects: false
+
+# commonLabels -- Add additional labels to all created resources.
+commonLabels: {}
+
+# Define the Vector image to use.
+image:
+  # image.repository -- Override default registry and name for Vector's image.
+  repository: timberio/vector
+  # image.pullPolicy -- The [pullPolicy](https://kubernetes.io/docs/concepts/containers/images/#image-pull-policy) for
+  # Vector's image.
+  pullPolicy: IfNotPresent
+  # image.pullSecrets -- The [imagePullSecrets](https://kubernetes.io/docs/concepts/containers/images/#specifying-imagepullsecrets-on-a-pod)
+  # to reference for the Vector Pods.
+  pullSecrets: []
+  # image.tag -- The tag to use for Vector's image.
+  # @default -- Derived from the Chart's appVersion.
+  tag: "nightly-2025-10-25-debian"
+  # image.sha -- The SHA to use for Vector's image.
+  sha: ""
+  # image.base -- The base distribution to use for vector. If set, then the base in appVersion will be replaced with this base alongside the version.
+  # For example: with a `base` of `debian` `0.38.0-distroless-libc` becomes `0.38.0-debian`
+  base: ""
+
+# replicas -- Specify the number of Pods to create. Valid for the "Aggregator" and "Stateless-Aggregator" roles.
+replicas: 1
+
+# Adding additional entries with hostAliases
+hostAliases: []
+# - ip: "127.0.0.1"
+#   hostnames:
+#   - "foo.local"
+#   - "bar.local"
+
+
+# podManagementPolicy -- Specify the [podManagementPolicy](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#pod-management-policies)
+# for the StatefulSet. Valid for the "Aggregator" role.
+podManagementPolicy: OrderedReady
+
+# Create a Secret resource for Vector to use.
+secrets:
+  # secrets.generic -- Each Key/Value will be added to the Secret's data key, each value should be raw and NOT base64
+  # encoded. Any secrets can be provided here. It's commonly used for credentials and other access related values.
+  # **NOTE: Don't commit unencrypted secrets to git!**
+  generic: {}
+    # my_variable: "my-secret-value"
+    # datadog_api_key: "api-key"
+    # awsAccessKeyId: "access-key"
+    # awsSecretAccessKey: "secret-access-key"
+
+
+# args -- Override Vector's default arguments.
+args:
+  - --config-dir
+  - "/etc/vector/"
+
+# env -- Set environment variables for Vector containers.
+env:
+  - name: VECTOR_LOG
+    value: info
+  - name: VECTOR_SELF_NODE_NAME
+    valueFrom:
+      fieldRef:
+        apiVersion: v1
+        fieldPath: spec.nodeName
+
+service:
+  enabled: true
+  type: ClusterIP
+  ports:
+    # Add these OpenTelemetry ports
+    - name: otel-http
+      port: 4318
+      targetPort: 4318
+      protocol: TCP
+    - name: otel-grpc
+      port: 4317
+      targetPort: 4317
+      protocol: TCP
+    # Keep the API port
+    - name: api
+      port: 8686
+      targetPort: 8686
+      protocol: TCP
+
+# customConfig -- Override Vector's default configs, if used **all** options need to be specified. This section supports
+# using helm templates to populate dynamic values. See Vector's [configuration documentation](https://vector.dev/docs/reference/configuration/)
+# for all options.
+customConfig:
+  data_dir: /vector-data-dir
+  api:
+    enabled: true
+    address: 0.0.0.0:8686
+    playground: false
+  
+    sources:
+      # Collects traces, logs, and metrics from ram. Accessible through otel.logs, otel.metrics, and otel.traces
+      otel:
+        type: opentelemetry
+        grpc:
+          address: 0.0.0.0:4317
+        http:
+          address: 0.0.0.0:4318
+
+      # Collects logs from Kubernetes
+      kube_logs:
+        type: kubernetes_logs
+        auto_partial_merge: true
+        timezone: local
+
+    # Transforms otel.traces into an otel-compliant form
+    transforms:
+      rebuild_otlp_format:
+        type: remap
+        inputs: 
+          - otel.traces
+        source: |
+          start_time_nanos = to_unix_timestamp(parse_timestamp!(.start_time_unix_nano, format: "%+"), unit: "nanoseconds")
+          end_time_nanos = to_unix_timestamp(parse_timestamp!(.end_time_unix_nano, format: "%+"), unit: "nanoseconds")
+
+          attrs = []
+          for_each(object!(.attributes)) -> |key, val| {
+            if is_string(val) {
+              attrs = push(attrs, {"key": key, "value": {"stringValue": to_string!(val)}})
+            } else if is_integer(val) {
+              attrs = push(attrs, {"key": key, "value": {"intValue": to_string!(val)}})
+            } else if is_float(val) {
+              attrs = push(attrs, {"key": key, "value": {"doubleValue": to_string!(val)}})
+            } else if is_boolean(val) {
+              attrs = push(attrs, {"key": key, "value": {"boolValue": to_string!(val)}})
+            } else {
+              attrs = push(attrs, {"key": key, "value": {"stringValue": to_string!(val)}})
+            }
+          }
+          
+          # Convert resources to OTLP attribute array format
+          resource_attrs = []
+          for_each(object!(.resources)) -> |key, value| {
+            resource_attrs = push(resource_attrs, {"key": key, "value": {"stringValue": string!(value)}})
+          }
+          
+          # Build OTLP structure
+          . = {
+            "resourceSpans": [{
+              "resource": {
+                "attributes": resource_attrs
+              },
+              "scopeSpans": [{
+                "spans": [{
+                  "traceId": .trace_id,
+                  "spanId": .span_id,
+                  "parentSpanId": .parent_span_id,
+                  "name": .name,
+                  "kind": .kind,
+                  "startTimeUnixNano": start_time_nanos,
+                  "endTimeUnixNano": end_time_nanos,
+                  "attributes": attrs,
+                  "status": .status,
+                  "droppedAttributesCount": .dropped_attributes_count,
+                  "droppedEventsCount": .dropped_events_count,
+                  "droppedLinksCount": .dropped_links_count
+                }]
+              }]
+            }]
+          }
+
+      # Removes unecessary fields from logs to be inserted via postgrest
+      sanitize_logs:
+        type: remap
+        inputs:
+          - kube_logs
+        source: |
+          # Remove fields that don't exist in the database schema
+          del(.source_type)
+          del(.stream)
+
+    sinks:
+      # Sends otel metrics to postgres via postgrest
+      metrics_postgrest:
+        type: http
+        inputs:
+          - otel.metrics
+        uri: "http://sas-retrieval-agent-manager-postgrest.retagentmgr.svc.cluster.local:3002/metrics"
+        headers:
+          Content-Type: "Application/json"
+        encoding:
+          codec: json
+
+      # Sends kubernetes logs to postgres via postgrest
+      logs_postgrest:
+        type: http
+        inputs:
+          - sanitize_logs
+        # Could be different URL depending on postgrest settings
+        uri: "http://sas-retrieval-agent-manager-postgrest.retagentmgr.svc.cluster.local:3002/logs"
+        headers:
+          Content-Type: "Application/json"
+        encoding:
+          codec: json
+
+      # Requires Phoenix deployment in cluster
+      phoenix:
+        inputs: 
+          - rebuild_otlp_format
+        protocol:
+          compression: none
+          encoding:
+            codec: otlp
+          type: http
+          uri: http://phoenix-svc.phoenix.svc.cluster.local:6006/v1/traces
+        type: opentelemetry
+
+  # Requires account and API key creation in langfuse
+  # Requires a public langfuse account
+  langfuse:
+    inputs: 
+      - rebuild_otlp_format
+    protocol:
+      compression: none
+      encoding:
+        codec: otlp
+      type: http
+      uri: https://us.cloud.langfuse.com/api/public/otel/v1/traces
+      headers:
+        Accept: "*/*"
+        Authorization: "Basic <b64_encoded_pk:sk>"
+    type: opentelemetry
+
+extraVolumeMounts: []
+
+extraVolumes: []
