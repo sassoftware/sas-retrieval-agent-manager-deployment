@@ -143,139 +143,139 @@ customConfig:
     enabled: true
     address: 0.0.0.0:8686
     playground: false
-  
-    sources:
-      # Collects traces, logs, and metrics from ram. Accessible through otel.logs, otel.metrics, and otel.traces
-      otel:
-        type: opentelemetry
-        grpc:
-          address: 0.0.0.0:4317
-        http:
-          address: 0.0.0.0:4318
 
-      # Collects logs from Kubernetes
-      kube_logs:
-        type: kubernetes_logs
-        auto_partial_merge: true
-        timezone: local
+  sources:
+    # Collects traces, logs, and metrics from ram. Accessible through otel.logs, otel.metrics, and otel.traces
+    otel:
+      type: opentelemetry
+      grpc:
+        address: 0.0.0.0:4317
+      http:
+        address: 0.0.0.0:4318
 
-    # Transforms otel.traces into an otel-compliant form
-    transforms:
-      rebuild_otlp_format:
-        type: remap
-        inputs: 
-          - otel.traces
-        source: |
-          start_time_nanos = to_unix_timestamp(parse_timestamp!(.start_time_unix_nano, format: "%+"), unit: "nanoseconds")
-          end_time_nanos = to_unix_timestamp(parse_timestamp!(.end_time_unix_nano, format: "%+"), unit: "nanoseconds")
+    # Collects logs from Kubernetes
+    kube_logs:
+      type: kubernetes_logs
+      auto_partial_merge: true
+      timezone: local
 
-          attrs = []
-          for_each(object!(.attributes)) -> |key, val| {
-            if is_string(val) {
-              attrs = push(attrs, {"key": key, "value": {"stringValue": to_string!(val)}})
-            } else if is_integer(val) {
-              attrs = push(attrs, {"key": key, "value": {"intValue": to_string!(val)}})
-            } else if is_float(val) {
-              attrs = push(attrs, {"key": key, "value": {"doubleValue": to_string!(val)}})
-            } else if is_boolean(val) {
-              attrs = push(attrs, {"key": key, "value": {"boolValue": to_string!(val)}})
-            } else {
-              attrs = push(attrs, {"key": key, "value": {"stringValue": to_string!(val)}})
-            }
+  # Transforms otel.traces into an otel-compliant form
+  transforms:
+    rebuild_otlp_format:
+      type: remap
+      inputs: 
+        - otel.traces
+      source: |
+        start_time_nanos = to_unix_timestamp(parse_timestamp!(.start_time_unix_nano, format: "%+"), unit: "nanoseconds")
+        end_time_nanos = to_unix_timestamp(parse_timestamp!(.end_time_unix_nano, format: "%+"), unit: "nanoseconds")
+
+        attrs = []
+        for_each(object!(.attributes)) -> |key, val| {
+          if is_string(val) {
+            attrs = push(attrs, {"key": key, "value": {"stringValue": to_string!(val)}})
+          } else if is_integer(val) {
+            attrs = push(attrs, {"key": key, "value": {"intValue": to_string!(val)}})
+          } else if is_float(val) {
+            attrs = push(attrs, {"key": key, "value": {"doubleValue": to_string!(val)}})
+          } else if is_boolean(val) {
+            attrs = push(attrs, {"key": key, "value": {"boolValue": to_string!(val)}})
+          } else {
+            attrs = push(attrs, {"key": key, "value": {"stringValue": to_string!(val)}})
           }
-          
-          # Convert resources to OTLP attribute array format
-          resource_attrs = []
-          for_each(object!(.resources)) -> |key, value| {
-            resource_attrs = push(resource_attrs, {"key": key, "value": {"stringValue": string!(value)}})
-          }
-          
-          # Build OTLP structure
-          . = {
-            "resourceSpans": [{
-              "resource": {
-                "attributes": resource_attrs
-              },
-              "scopeSpans": [{
-                "spans": [{
-                  "traceId": .trace_id,
-                  "spanId": .span_id,
-                  "parentSpanId": .parent_span_id,
-                  "name": .name,
-                  "kind": .kind,
-                  "startTimeUnixNano": start_time_nanos,
-                  "endTimeUnixNano": end_time_nanos,
-                  "attributes": attrs,
-                  "status": .status,
-                  "droppedAttributesCount": .dropped_attributes_count,
-                  "droppedEventsCount": .dropped_events_count,
-                  "droppedLinksCount": .dropped_links_count
-                }]
+        }
+        
+        # Convert resources to OTLP attribute array format
+        resource_attrs = []
+        for_each(object!(.resources)) -> |key, value| {
+          resource_attrs = push(resource_attrs, {"key": key, "value": {"stringValue": string!(value)}})
+        }
+        
+        # Build OTLP structure
+        . = {
+          "resourceSpans": [{
+            "resource": {
+              "attributes": resource_attrs
+            },
+            "scopeSpans": [{
+              "spans": [{
+                "traceId": .trace_id,
+                "spanId": .span_id,
+                "parentSpanId": .parent_span_id,
+                "name": .name,
+                "kind": .kind,
+                "startTimeUnixNano": start_time_nanos,
+                "endTimeUnixNano": end_time_nanos,
+                "attributes": attrs,
+                "status": .status,
+                "droppedAttributesCount": .dropped_attributes_count,
+                "droppedEventsCount": .dropped_events_count,
+                "droppedLinksCount": .dropped_links_count
               }]
             }]
-          }
+          }]
+        }
 
-      # Removes unecessary fields from logs to be inserted via postgrest
-      sanitize_logs:
-        type: remap
-        inputs:
-          - kube_logs
-        source: |
-          # Remove fields that don't exist in the database schema
-          del(.source_type)
-          del(.stream)
+    # Removes unecessary fields from logs to be inserted via postgrest
+    sanitize_logs:
+      type: remap
+      inputs:
+        - kube_logs
+      source: |
+        # Remove fields that don't exist in the database schema
+        del(.source_type)
+        del(.stream)
 
-    sinks:
-      # Sends otel metrics to postgres via postgrest
-      metrics_postgrest:
-        type: http
-        inputs:
-          - otel.metrics
-        uri: "http://sas-retrieval-agent-manager-postgrest.retagentmgr.svc.cluster.local:3002/metrics"
-        headers:
-          Content-Type: "Application/json"
-        encoding:
-          codec: json
-
-      # Sends kubernetes logs to postgres via postgrest
-      logs_postgrest:
-        type: http
-        inputs:
-          - sanitize_logs
-        # Could be different URL depending on postgrest settings
-        uri: "http://sas-retrieval-agent-manager-postgrest.retagentmgr.svc.cluster.local:3002/logs"
-        headers:
-          Content-Type: "Application/json"
-        encoding:
-          codec: json
-
-      # Requires Phoenix deployment in cluster
-      phoenix:
-        inputs: 
-          - rebuild_otlp_format
-        protocol:
-          compression: none
-          encoding:
-            codec: otlp
-          type: http
-          uri: http://phoenix-svc.phoenix.svc.cluster.local:6006/v1/traces
-        type: opentelemetry
-
-  # Requires account and API key creation in langfuse
-  # Requires a public langfuse account
-  langfuse:
-    inputs: 
-      - rebuild_otlp_format
-    protocol:
-      compression: none
-      encoding:
-        codec: otlp
+  sinks:
+    # Sends otel metrics to postgres via postgrest
+    metrics_postgrest:
       type: http
-      uri: https://us.cloud.langfuse.com/api/public/otel/v1/traces
+      inputs:
+        - otel.metrics
+      uri: "http://sas-retrieval-agent-manager-postgrest.retagentmgr.svc.cluster.local:3002/metrics"
       headers:
-        Accept: "*/*"
-        Authorization: "Basic <b64_encoded_pk:sk>"
-    type: opentelemetry
+        Content-Type: "Application/json"
+      encoding:
+        codec: json
+
+    # Sends kubernetes logs to postgres via postgrest
+    logs_postgrest:
+      type: http
+      inputs:
+        - sanitize_logs
+      # Could be different URL depending on postgrest settings
+      uri: "http://sas-retrieval-agent-manager-postgrest.retagentmgr.svc.cluster.local:3002/logs"
+      headers:
+        Content-Type: "Application/json"
+      encoding:
+        codec: json
+
+    # Requires Phoenix deployment in cluster
+    phoenix:
+      inputs: 
+        - rebuild_otlp_format
+      protocol:
+        compression: none
+        encoding:
+          codec: otlp
+        type: http
+        uri: http://phoenix-svc.phoenix.svc.cluster.local:6006/v1/traces
+      type: opentelemetry
+
+    # Requires account and API key creation in langfuse
+    # Requires a public langfuse account
+    langfuse:
+      inputs: 
+        - rebuild_otlp_format
+      protocol:
+        compression: none
+        encoding:
+          codec: otlp
+        type: http
+        uri: https://us.cloud.langfuse.com/api/public/otel/v1/traces
+        headers:
+          Accept: "*/*"
+          Authorization: "Basic <b64_encoded_pk:sk>"
+      type: opentelemetry
 
 extraVolumeMounts: []
 

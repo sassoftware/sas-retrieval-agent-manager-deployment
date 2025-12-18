@@ -51,6 +51,7 @@ ingress:
   annotations: {}
 
   # -- Path prefix for the Phoenix API
+  # Note: we have tested this with it set to "/" and RAM hosted at /SASRetrievalAgentManager
   apiPath: <desired_phoenix_path>
 
   # -- Enable ingress controller for external access
