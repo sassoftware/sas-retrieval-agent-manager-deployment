@@ -16,25 +16,57 @@ data:
     done;
     echo "The database is ready";
 
-  wait_for_secret.sh: |-
-    #/bin/sh
+  wait_for_database.sh: |-
+    #!/bin/bash
+    PSQL=`which psql`
 
-    KUBECTL=`which kubectl`
-    cd /workdir
+    export PGPASSWORD="$DB_PASSWORD"
 
-    while true; do
-      if ${KUBECTL} get secret -n {{ .Release.Namespace }} keycloak-certs; then
-        echo "Secret found!"
-        break
-      fi
-      echo "Waiting for secret..."
-      sleep 5
+    until pg_isready -h $DB_HOST -p $DB_PORT -U $DB_USER; 
+    do
+      echo "Waiting for database to be ready ...";
+      sleep 2;
+    done;
+    echo "The database is ready";
+
+    # Wait for the specific database to exist
+    until $PSQL -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -lqt | cut -d \| -f 1 | grep -qw "$DB_NAME"; do
+      echo "Waiting for database '$DB_NAME' to be created..."
+      sleep 2
     done
 
-  # postgrest_entrypoint.sh: |-
-  #   #/bin/sh
+    echo "Database '$DB_NAME' is ready."
 
-  #   export PGRST_DB_URI="postgresql://${DB_USER}:${PGPASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
+    # Wait for the specific schema to exist
+    until $PSQL -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -tAc "SELECT 1 FROM information_schema.schemata WHERE schema_name = '$DB_SCHEMA'" | grep -q 1; do
+      echo "Waiting for schema '$DB_SCHEMA' to be present in database '$DB_NAME'..."
+      sleep 2
+    done
 
-  #   # Start PostgREST
-  #   exec postgrest /postgrest-config/postgrest.conf
+    echo "Schema '$DB_SCHEMA' is present."
+  jwks-fetcher.sh: |-
+    #!/bin/sh
+    set -e
+    CERTS_FILE="/jwks/certs.json"
+    KEYCLOAK_URL="http://{{ include "keycloak.fullname" . }}:{{ .Values.iam.keycloak.service.port }}{{ first .Values.ingress.keycloak.paths }}/realms/{{ .Values.iam.keycloak.config.realm }}/protocol/openid-connect/certs"
+
+    echo "$(date -u +'%Y-%m-%dT%H:%M:%SZ') jwks-fetcher starting, target ${KEYCLOAK_URL}"
+    mkdir -p /jwks
+
+    while true; do
+      echo "$(date -u +'%Y-%m-%dT%H:%M:%SZ') fetching ${KEYCLOAK_URL}"
+      if curl -sL "${KEYCLOAK_URL}" -o "${CERTS_FILE}.tmp"; then
+        if [ ! -f "${CERTS_FILE}" ] || ! cmp -s "${CERTS_FILE}" "${CERTS_FILE}.tmp"; then
+          mv "${CERTS_FILE}.tmp" "${CERTS_FILE}"
+          echo "$(date -u +'%Y-%m-%dT%H:%M:%SZ') certs updated, signalling postgrest"
+          pkill -TERM postgrest || true
+        else
+          rm "${CERTS_FILE}.tmp"
+          echo "$(date -u +'%Y-%m-%dT%H:%M:%SZ') certs unchanged"
+        fi
+      else
+        echo "$(date -u +'%Y-%m-%dT%H:%M:%SZ') failed to fetch certs, sleeping"
+        rm -f "${CERTS_FILE}.tmp" 2>/dev/null || true
+      fi
+      sleep 300
+    done

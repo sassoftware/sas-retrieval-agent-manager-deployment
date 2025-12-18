@@ -1,23 +1,18 @@
-{{- $repo_base := "" -}}
-{{- if and (hasKey (index .Values "sas-retrieval-agent-manager-api") "global") (hasKey .Values.global "image") (hasKey .Values.global.image "repo") (hasKey .Values.global.image.repo "base") -}}
-  {{- $repo_base = .Values.global.image.repo.base | default .Values.global.configuration.vhub.image.repo.base -}}
-{{- else -}}
-  {{- $repo_base = .Values.global.configuration.vhub.image.repo.base -}}
-{{- end -}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: vhub-config
+  name: {{ printf "%s-vector-hub-config" (include "api.fullname" .) }}
   labels:
-    {{- include "sas-retrieval-agent-manager-api.labels" . | nindent 4 }}
+    {{- include "api.labels" . | nindent 4 }}
 data:
-  vhub_repository: "{{ $repo_base }}/{{ .Values.global.configuration.vhub.image.repo.path }}"
-  vhub_tag: "{{ .Values.global.configuration.vhub.image.tag }}"
+  vhub_repository: "{{- include "images.vectorizationHub.repo.base" . -}}/{{- include "images.vectorizationHub.repo.path" . -}}"
+  vhub_tag: "{{- include "images.vectorizationHub.tag" . -}}"
   
-  {{- with first (uniq (concat ((index .Values "sas-retrieval-agent-manager-api").imagePullSecrets | default (list)) (.Values.global.imagePullSecrets | default (list)))) }}
-  vhub_pull_secret: {{  .name }}
+  {{- with .Values.images.imagePullSecrets }}
+  vhub_pull_secret: {{ (index . 0).name }}
   {{- end }}
-  available_hardware: {{ index .Values.global.configuration.vhub "availableHardware" | toJson | quote }}
-  {{- if .Values.global.configuration.vhub.postgreSQLCertSecret | default .Values.global.configuration.vhub.awsCertSecret | quote }}
-  postgresql_cert_secret: {{ .Values.global.configuration.vhub.postgreSQLCertSecret | default .Values.global.configuration.vhub.awsCertSecret | quote }}
+  available_hardware: {{ .Values.vectorizationHub.config.availableHardware | toJson | quote }}
+  vectorization_job_db_credentials: {{ printf "%s-vector-job-db-credentials" (include "retrieval-agent-manager.fullname" .) }}
+  {{- if .Values.vectorizationHub.config.postgreSQLCertSecret | default .Values.vectorizationHub.config.awsCertSecret | quote }}
+  postgresql_cert_secret: {{ .Values.vectorizationHub.config.postgreSQLCertSecret | default .Values.vectorizationHub.config.awsCertSecret | quote }}
   {{- end }}

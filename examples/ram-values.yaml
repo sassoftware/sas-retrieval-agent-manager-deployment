@@ -1,0 +1,140 @@
+#######################################################################################
+##### NOTICE: YOU MUST CHANGE ANY FIELD ECLOSED WITH <>                           #####
+##### For a more detailed explanation, see the Values.yaml in the helm directory. #####
+#######################################################################################
+
+# -- Ingress TLS secret for RAM HTTPS termination
+# -- TLS Certificate for secure access
+extraObjects:
+  - apiVersion: v1
+    kind: Secret
+    metadata:
+      name: ingress-tls
+    data:
+      tls.crt:
+        <base64-encoded TLS certificate>
+      tls.key:
+        <base64-encoded TLS private key>
+    type: kubernetes.io/tls
+
+# -- Platform we are deploying on (azure, aws, kubernetes, openshift)
+platform: "<your_platform_here>"
+
+# -- Ingress configuration for RAM, including domain and TLS settings
+ingress:
+  domain: <your_ingress_domain_here>
+  enableRootIngress: true
+  tls:
+    secretName: ingress-tls
+
+# -- User configuration for RAM components, including database credentials, Keycloak credentials, and application users
+users:
+  application:
+    admin:
+      # This will be used to login to the RAM application
+      username: <your_application_username_here>
+      # Password requirements: Minimum 8 characters, at least one uppercase letter, one lowercase letter, one number and one special character
+      password: <your_secure_password_here>
+  monitoring:
+    username: sas_ram_mon_pgrest_user
+    password: <your_secure_password_here>
+  keycloak:
+    admin:
+      # This will be used to login to the Keycloak deployment
+      username: <your_keycloak_username_here>
+      # Password requirements: Minimum 8 characters, at least one uppercase letter, one lowercase letter, one number and one special character
+      password: <your_secure_password_here>
+    user:
+      username: sas_ram_keycloak_user
+      password: <your_secure_password_here>
+  database:
+    admin:
+      username: <your_psql_admin_username_here>
+      password: <your_psql_admin_password_here>
+  embedding:
+    username: sas_ram_embedding_user
+    password: <your_secure_password_here>
+  postgrest:
+    username: sas_ram_pgrest_user
+    password: <your_secure_password_here>
+  migration:
+    username: sas_ram_migration_user
+    password: <your_secure_password_here>
+  otel:
+    username: sas_ram_otel_user
+    password: <your_secure_password_here>
+  vectorizationJob:
+    username: sas_ram_vectorization_user
+    password: <your_secure_password_here>
+  vectorStore:
+    username: sas_ram_vector_store_user
+    password: <your_secure_password_here>
+
+# -- API configuration, including license
+api:
+  config:
+    # Set to 'True' to enable GenAI traces in Vector
+    enable_genai_traces: 'False'
+    license:
+      <your_b64_encoded_license_here>
+
+# -- Database configuration for RAM, including host, port, SSL mode, and credentials for application and monitoring database roles
+db:
+  init:
+    config:
+      database:
+        host: <your_database_host_here>
+        port: '5432'
+        sslmode: require
+      application:
+        adminRole: sas_ram_ram_admin_role
+        userRole: sas_ram_ram_user_role
+      monitoring:
+        adminRole: sas_ram_ram_admin_role
+        userRole: sas_ram_ram_user_role
+      # -- Auto hydration for local Weaviate installation
+      weaviate:
+        enabled: false
+
+# -- Security configuration for RAM, including GPG passphrase for encrypting sensitive data such as database credentials and API license
+security:
+  gpg:
+    config:
+      # MUST BE SET IF UPGRADING RAM TO MAINTAIN DATA ACCESS
+      privateKey: <base64-encoded GPG private key>
+      # MUST BE SET IF UPGRADING RAM TO MAINTAIN DATA ACCESS
+      publicKey: <base64-encoded GPG public key>
+      # MUST BE SET IF UPGRADING RAM TO MAINTAIN DATA ACCESS
+      # Example: passphrase: SomeVeryStrong1000CharPassPhraseThatIsNotUsedAnywhere
+      passphrase: <your_secure_passphrase_here>
+
+# -- IAM configuration for RAM, including Keycloak roles and credentials for admin and user database roles
+iam:
+  keycloak:
+    config:
+      adminRole: sas_ram_ram_admin_role
+      userRole: sas_ram_ram_user_role
+      # Example: plI1xWllgmSNnUZLprWkpSHldFhpWmBRVVnYW2YCcYZ
+      clientSecret: <your_client_secret_here>
+      # Example: ZNmYgcS1pWHkmpRYplUlBrdLVhnFIYVZWSW2lnlxWpC
+      cookieSecret: <your_cookie_secret_here>
+
+# -- Storage configuration for RAM, including PVC sizes for embedding and application storage
+storage:
+  embedding:
+    pvc:
+      size: 40Gi
+  application:
+    pvc:
+      size: 20Gi
+
+# -- Vectorization Hub configuration, including PostgreSQL certificate secret for secure database connectivity
+vectorizationHub:
+  config:
+    # Secret name containing PostgreSQL TLS certificate for secure connectivity to the database if required
+    postgreSQLCertSecret: ''
+
+# -- Pull secret for SAS Registry that was created earlier in the deployment guide
+images:
+  imagePullSecrets:
+    - name: cr-sas-secret

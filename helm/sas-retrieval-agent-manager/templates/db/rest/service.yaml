@@ -5,13 +5,13 @@ metadata:
   labels:
     {{- include "postgrest.labels" . | nindent 4 }}
 spec:
-  type: {{ .Values.postgrest.service.type }}
+  type: {{ .Values.db.rest.service.type }}
   ports:
-    - port: {{ .Values.postgrest.service.port }}
+    - port: {{ .Values.db.rest.service.port }}
       targetPort: oauth2-proxy0
       protocol: TCP
       name: http
-    - port: {{ index .Values.global.configuration.postgrest.monitoring "server-port" }}
+    - port: {{ .Values.db.rest.monitoring.service.port }}
       targetPort: oauth2-proxy1
       protocol: TCP
       name: http-monitor

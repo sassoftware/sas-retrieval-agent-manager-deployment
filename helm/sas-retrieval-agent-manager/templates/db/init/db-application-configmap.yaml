@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: db-application
+  name: {{ printf "%s-db-application" (include "retrieval-agent-manager.fullname" .) }}
   labels:
-    {{- include "sas-retrieval-agent-manager-db-init.labels" . | nindent 4 }}
+    {{- include "db-initialization.labels" . | nindent 4 }}
 data:
-  db: {{ .Values.global.configuration.application.db | quote }}
-  schema: {{ .Values.global.configuration.application.schema | quote }}
+  db: {{ .Values.db.init.config.application.db | quote }}
+  schema: {{ .Values.db.init.config.application.schema | quote }}

@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: application-roles
+  name: {{ printf "%s-app-roles" (include "retrieval-agent-manager.fullname" .) }}
 data:
-  userRole: {{ .Values.global.configuration.application.userRole | quote }}
-  adminRole: {{ .Values.global.configuration.application.adminRole | quote }}
+  userRole: {{ .Values.db.init.config.application.userRole | quote }}
+  adminRole: {{ .Values.db.init.config.application.adminRole | quote }}
