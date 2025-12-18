@@ -243,7 +243,7 @@ SAS has partnered with [Weaviate](https://weaviate.io/) and supports it as a vec
 |-----------|---------------|---------------------|----------------------------------------------------------------------------------------------|
 | **Weaviate**      |v17.3.3 |[weaviate.yaml](./examples/weaviate.yaml)     | [instructions](./docs/user/DependencyInstall.md#weaviate)          |
 | **Ollama**        |v1.12.0 |[ollama.yaml](./examples/ollama.yaml)         | [instructions](./docs/llm-connection/ollama.md)                    |
-| **Vector**        | 0.46.0 |[example](./docs/monitoring/README.md)        | [instructions](https://vector.dev/installation/)                   |
+| **Vector**        | 0.46.0 |[vector.yaml](./examples/vector.yaml)        | [instructions](./docs/monitoring/README.md)                   |
 | **Phoenix**       |v4.0.7  |[phoenix.yaml](./examples/phoenix.yaml)       | [instructions](./docs/monitoring/traces.md)                        |
 
 ### Install SAS Retrieval Agent Manager
