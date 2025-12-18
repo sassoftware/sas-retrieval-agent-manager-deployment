@@ -284,6 +284,8 @@ global:
     # -- Main API service configuration
     # -- Controls the core RAM backend service behavior
     api:
+      # -- Whether to send traces to the observability platform via vector
+      enable_genai_traces: 'False'
       # -- Enable experimental/development features
       enable_dev_mode: 'False'
       # -- Enable performance profiling and metrics
