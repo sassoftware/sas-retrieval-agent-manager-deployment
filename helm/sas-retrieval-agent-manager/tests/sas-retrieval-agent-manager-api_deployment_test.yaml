@@ -1,0 +1,168 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test sas retrieval agent manager api deployment
+templates:
+  - templates/api/deployment.yaml
+tests:
+  - it: should create deployment with correct kind
+    asserts:
+      - isKind:
+          of: Deployment
+      - hasDocuments:
+          count: 1
+
+  - it: should use correct deployment name
+    asserts:
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-api
+
+  - it: should configure replica count
+    set:
+      sas-retrieval-agent-manager-api:
+        replicaCount: 3
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 3
+
+  - it: should not set replicas when autoscaling enabled
+    set:
+      sas-retrieval-agent-manager-api:
+        autoscaling:
+          enabled: true
+    asserts:
+      - notExists:
+          path: spec.replicas
+
+  - it: should use correct container image
+    set:
+      sas-retrieval-agent-manager-api:
+        image:
+          repo:
+            base: "cr.sas.com"
+            path: "viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager"
+          tag: "latest"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "cr.sas.com/viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager:latest"
+
+  - it: should configure container ports
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].ports[0].containerPort
+          value: 8765
+      - equal:
+          path: spec.template.spec.containers[0].ports[0].name
+          value: http
+
+  - it: should include security context
+    asserts:
+      - exists:
+          path: spec.template.spec.securityContext
+      - exists:
+          path: spec.template.spec.containers[0].securityContext
+
+  - it: should configure resource limits
+    set:
+      sas-retrieval-agent-manager-api:
+        resources:
+          limits:
+            cpu: 2000m
+            memory: 4Gi
+          requests:
+            cpu: 1000m
+            memory: 2Gi
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.cpu
+          value: 2000m
+      - equal:
+          path: spec.template.spec.containers[0].resources.requests.memory
+          value: 2Gi
+
+  - it: should configure environment variables
+    asserts:
+      - exists:
+          path: spec.template.spec.containers[0].env
+
+  - it: should mount config volumes
+    asserts:
+      - exists:
+          path: spec.template.spec.volumes
+      - exists:
+          path: spec.template.spec.containers[0].volumeMounts
+
+  - it: should configure liveness probe
+    asserts:
+      - exists:
+          path: spec.template.spec.containers[0].livenessProbe
+
+  - it: should configure readiness probe
+    asserts:
+      - exists:
+          path: spec.template.spec.containers[0].readinessProbe
+
+  - it: should use correct service account
+    asserts:
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: sas-retrieval-agent-manager-api
+
+  - it: should configure node selector
+    set:
+      sas-retrieval-agent-manager-api:
+        nodeSelector:
+          kubernetes.io/os: linux
+    asserts:
+      - equal:
+          path: spec.template.spec.nodeSelector["kubernetes.io/os"]
+          value: linux
+
+  - it: should configure tolerations
+    set:
+      sas-retrieval-agent-manager-api:
+        tolerations:
+          - key: node-role.kubernetes.io/control-plane
+            operator: Exists
+            effect: NoSchedule
+    asserts:
+      - equal:
+          path: spec.template.spec.tolerations[0].key
+          value: node-role.kubernetes.io/control-plane
+
+  - it: should configure affinity
+    set:
+      sas-retrieval-agent-manager-api:
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+                - matchExpressions:
+                    - key: kubernetes.io/arch
+                      operator: In
+                      values:
+                        - amd64
+    asserts:
+      - exists:
+          path: spec.template.spec.affinity.nodeAffinity
+
+  - it: should configure pod annotations
+    set:
+      sas-retrieval-agent-manager-api:
+        podAnnotations:
+          test-annotation: test-value
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations["test-annotation"]
+          value: test-value
+
+  - it: should configure image pull secrets
+    set:
+      sas-retrieval-agent-manager-api:
+        imagePullSecrets:
+          - name: registry-secret
+    asserts:
+      - equal:
+          path: spec.template.spec.imagePullSecrets[0].name
+          value: registry-secret

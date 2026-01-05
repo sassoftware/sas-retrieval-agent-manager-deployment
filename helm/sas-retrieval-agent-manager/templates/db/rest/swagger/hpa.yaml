@@ -1,0 +1,34 @@
+{{- if .Values.postgrest.swagger.enabled }}
+{{- if .Values.postgrest.swagger.autoscaling.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "postgrest.swagger.fullname" . }}
+  labels:
+    {{- include "postgrest.swagger.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "postgrest.swagger.fullname" . }}
+  minReplicas: {{ .Values.postgrest.swagger.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.postgrest.swagger.autoscaling.maxReplicas }}
+  metrics:
+    {{- if .Values.postgrest.swagger.autoscaling.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.postgrest.swagger.autoscaling.targetCPUUtilizationPercentage }}
+    {{- end }}
+    {{- if .Values.postgrest.swagger.autoscaling.targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.postgrest.swagger.autoscaling.targetMemoryUtilizationPercentage }}
+    {{- end }}
+{{- end }}
+{{- end }}

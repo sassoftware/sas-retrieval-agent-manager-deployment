@@ -1,0 +1,292 @@
+{{- $postgres_repo_base := "" -}}
+{{- $goose_repo_base := "" -}}
+{{- if ((include "testValuesPath" (list .Values "global" "image" "repo" "base")) | eq "true") -}}
+  {{- $postgres_repo_base = .Values.global.image.repo.base | default (index .Values "sas-retrieval-agent-manager-db-migration").image.postgres.repo.base -}}
+  {{- $goose_repo_base = .Values.global.image.repo.base | default (index .Values "sas-retrieval-agent-manager-db-migration").image.goose.repo.base -}}
+{{- else -}}
+  {{- $postgres_repo_base = (index .Values "sas-retrieval-agent-manager-db-migration").image.postgres.repo.base -}}
+  {{- $goose_repo_base = (index .Values "sas-retrieval-agent-manager-db-migration").image.goose.repo.base -}}
+{{- end -}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "sas-retrieval-agent-manager-db-migration.fullname" . }}
+  labels:
+    {{- include "sas-retrieval-agent-manager-db-migration.labels" . | nindent 4 }}
+    ram-base-job: "true"
+  annotations:
+    argocd.argoproj.io/sync-options: Skip
+spec:
+  template:
+    metadata:
+      {{- with (index .Values "sas-retrieval-agent-manager-db-migration").podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "sas-retrieval-agent-manager-db-migration.labels" . | nindent 8 }}
+        {{- with (index .Values "sas-retrieval-agent-manager-db-migration").podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with uniq (concat ((index .Values "sas-retrieval-agent-manager-db-migration").imagePullSecrets | default (list)) (.Values.global.imagePullSecrets | default (list))) }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "sas-retrieval-agent-manager-db-migration.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml (index .Values "sas-retrieval-agent-manager-db-migration").podSecurityContext | nindent 8 }}
+      initContainers:
+        - name: wait-for-db
+          command:
+            - "/bin/sh"
+            - "-c"
+            - "/scripts/wait_for_database.sh"
+          image: "{{ $postgres_repo_base }}/{{ (index .Values "sas-retrieval-agent-manager-db-migration").image.postgres.repo.path }}:{{ (index .Values "sas-retrieval-agent-manager-db-migration").image.postgres.tag }}"
+          imagePullPolicy: {{ (index .Values "sas-retrieval-agent-manager-db-migration").image.postgres.pullPolicy }}
+          env:
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  key: user
+                  name: migration-db-credentials
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: password
+                  name: migration-db-credentials
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  key: host
+                  name: db-connection
+            - name: DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  key: port
+                  name: db-connection
+            - name: DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  key: db
+                  name: db-application
+            - name: DB_SCHEMA
+              valueFrom:
+                configMapKeyRef:
+                  key: schema
+                  name: db-application
+          securityContext:
+            {{- toYaml (index .Values "sas-retrieval-agent-manager-db-migration").securityContext | nindent 12 }}
+          resources:
+            {{- toYaml (index .Values "sas-retrieval-agent-manager-db-migration").resources | nindent 12 }}
+          volumeMounts:
+            - mountPath: "/scripts"
+              name: scripts
+              readOnly: true
+        - name: wait-for-monitoring-db
+          command:
+            - "/bin/sh"
+            - "-c"
+            - "/scripts/wait_for_database.sh"
+          image: "{{ $postgres_repo_base }}/{{ (index .Values "sas-retrieval-agent-manager-db-migration").image.postgres.repo.path }}:{{ (index .Values "sas-retrieval-agent-manager-db-migration").image.postgres.tag }}"
+          imagePullPolicy: {{ (index .Values "sas-retrieval-agent-manager-db-migration").image.postgres.pullPolicy }}
+          env:
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  key: user
+                  name: migration-db-credentials
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: password
+                  name: migration-db-credentials
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  key: host
+                  name: db-connection
+            - name: DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  key: port
+                  name: db-connection
+            - name: DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  key: db
+                  name: db-monitoring
+            - name: DB_SCHEMA
+              valueFrom:
+                configMapKeyRef:
+                  key: schema
+                  name: db-monitoring
+          securityContext:
+            {{- toYaml (index .Values "sas-retrieval-agent-manager-db-migration").securityContext | nindent 12 }}
+          resources:
+            {{- toYaml (index .Values "sas-retrieval-agent-manager-db-migration").resources | nindent 12 }}
+          volumeMounts:
+            - mountPath: "/scripts"
+              name: scripts
+              readOnly: true
+      containers:
+        - name: db-initialization
+          image: "{{ $goose_repo_base }}/{{ (index .Values "sas-retrieval-agent-manager-db-migration").image.goose.repo.path }}:{{ (index .Values "sas-retrieval-agent-manager-db-migration").image.goose.tag | default "15" }}"
+          imagePullPolicy: {{ (index .Values "sas-retrieval-agent-manager-db-migration").image.goose.pullPolicy }}
+          securityContext:
+            {{- toYaml (index .Values "sas-retrieval-agent-manager-db-migration").securityContext | nindent 12 }}
+          resources:
+            {{- toYaml (index .Values "sas-retrieval-agent-manager-db-migration").resources | nindent 12 }}
+          volumeMounts:
+            - name: embedding-models
+              mountPath: "/mnt/embedding_models"
+              readOnly: false
+          env:
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  key: host
+                  name: db-connection
+            - name: DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  key: port
+                  name: db-connection
+            - name: DB_SSLMODE
+              valueFrom:
+                configMapKeyRef:
+                  key: sslmode
+                  name: db-connection
+            - name: EMBEDDING_DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  key: user
+                  name: embedding-db-credentials
+            - name: MODELS_DESTINATION_PATH
+              valueFrom:
+                configMapKeyRef:
+                  key: models_destination_dir
+                  name: embedding-config
+            - name: APP_DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  key: db
+                  name: db-application
+            - name: APP_DB_SCHEMA
+              valueFrom:
+                configMapKeyRef:
+                  key: schema
+                  name: db-application
+            - name: MONITORING_DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  key: db
+                  name: db-monitoring
+            - name: MONITORING_DB_SCHEMA
+              valueFrom:
+                configMapKeyRef:
+                  key: schema
+                  name: db-monitoring
+            - name: DB_SECRETS_PUBLIC_KEY
+              valueFrom:
+                configMapKeyRef:
+                  key: public
+                  name: gpg-public-key
+            - name: MIGRATE_DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  key: user
+                  name: migration-db-credentials
+            - name: MIGRATE_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: password
+                  name: migration-db-credentials
+            - name: OTEL_DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  key: user
+                  name: otel-db-credentials
+            - name: PGREST_DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  key: user
+                  name: application-db-credentials
+            - name: VJOB_DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  key: user
+                  name: vectorization-job-db-credentials
+            - name: DB_AUTH_ROLE_ADMINS
+              valueFrom:
+                configMapKeyRef:
+                  key: adminRole
+                  name: application-roles
+            - name: DB_AUTH_ROLE_USERS
+              valueFrom:
+                configMapKeyRef:
+                  key: userRole
+                  name: application-roles
+            {{- if .Values.global.configuration.timescale.enabled }}
+            - name: ENABLE_TIMESCALE
+              valueFrom:
+                configMapKeyRef:
+                  key: enabled
+                  name: db-timescale
+            {{- end }}
+            {{- if .Values.global.configuration.vectorStore.enabled }}
+            - name: ENABLE_VECTOR_STORE
+              valueFrom:
+                configMapKeyRef:
+                  key: enabled
+                  name: db-vector-store
+            - name: VECTOR_DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  key: db
+                  name: db-vector-store
+            - name: VECTOR_DB_SCHEMA
+              valueFrom:
+                configMapKeyRef:
+                  key: schema
+                  name: db-vector-store
+            - name: VECTOR_DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  key: user
+                  name: vector-store-db-credentials
+            - name: VECTOR_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: password
+                  name: vector-store-db-credentials
+            {{- end }}
+            {{- if .Values.global.configuration.weaviate.enabled }}
+            - name: ENABLE_LOCAL_WEAVIATE
+              valueFrom:
+                configMapKeyRef:
+                  key: enabled
+                  name: db-weaviate
+            {{- end }}
+      restartPolicy: OnFailure
+      {{- with (index .Values "sas-retrieval-agent-manager-db-migration").nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with (index .Values "sas-retrieval-agent-manager-db-migration").affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with (index .Values "sas-retrieval-agent-manager-db-migration").tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+        - name: scripts
+          configMap:
+            name: {{ include "sas-retrieval-agent-manager-db-migration.fullname" . }}-scripts
+            defaultMode: 0555
+        - name: embedding-models
+          persistentVolumeClaim:
+            claimName: embedding-pv
+  backoffLimit: 1000

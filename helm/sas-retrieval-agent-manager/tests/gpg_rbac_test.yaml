@@ -1,0 +1,179 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test gpg rbac resources
+tests:
+  - it: should always create service account
+    template: templates/security/gpg/serviceaccount.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: ServiceAccount
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-gpg
+
+  - it: should always create role
+    template: templates/security/gpg/role.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Role
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-gpg
+
+  - it: should always create role binding
+    template: templates/security/gpg/rolebinding.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: RoleBinding
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-gpg
+
+  - it: should create service account with custom release name
+    template: templates/security/gpg/serviceaccount.yaml
+    release:
+      name: custom-release
+    asserts:
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-gpg
+
+  - it: should create role with custom release name
+    template: templates/security/gpg/role.yaml
+    release:
+      name: custom-release
+    asserts:
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-gpg
+
+  - it: should create role binding with custom release name
+    template: templates/security/gpg/rolebinding.yaml
+    release:
+      name: custom-release
+    asserts:
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-gpg
+
+  - it: should create service account with fullnameOverride
+    template: templates/security/gpg/serviceaccount.yaml
+    set:
+      gpg:
+        fullnameOverride: custom-gpg
+    asserts:
+      - equal:
+          path: metadata.name
+          value: custom-gpg
+
+  - it: should create role with fullnameOverride
+    template: templates/security/gpg/role.yaml
+    set:
+      gpg:
+        fullnameOverride: custom-gpg
+    asserts:
+      - equal:
+          path: metadata.name
+          value: custom-gpg
+
+  - it: should create role binding with fullnameOverride
+    template: templates/security/gpg/rolebinding.yaml
+    set:
+      gpg:
+        fullnameOverride: custom-gpg
+    asserts:
+      - equal:
+          path: metadata.name
+          value: custom-gpg
+
+  - it: should include proper labels on service account
+    template: templates/security/gpg/serviceaccount.yaml
+    asserts:
+      - isSubset:
+          path: metadata.labels
+          content:
+            app.kubernetes.io/name: gpg
+            app.kubernetes.io/instance: RELEASE-NAME
+            app.kubernetes.io/managed-by: Helm
+
+  - it: should include proper labels on role
+    template: templates/security/gpg/role.yaml
+    asserts:
+      - isSubset:
+          path: metadata.labels
+          content:
+            app.kubernetes.io/name: gpg
+            app.kubernetes.io/instance: RELEASE-NAME
+            app.kubernetes.io/managed-by: Helm
+
+  - it: should include proper labels on role binding
+    template: templates/security/gpg/rolebinding.yaml
+    asserts:
+      - isSubset:
+          path: metadata.labels
+          content:
+            app.kubernetes.io/name: gpg
+            app.kubernetes.io/instance: RELEASE-NAME
+            app.kubernetes.io/managed-by: Helm
+
+  - it: should configure role binding to reference correct service account
+    template: templates/security/gpg/rolebinding.yaml
+    asserts:
+      - equal:
+          path: subjects[0].kind
+          value: ServiceAccount
+      - equal:
+          path: subjects[0].name
+          value: sas-retrieval-agent-manager-gpg
+      - equal:
+          path: roleRef.kind
+          value: Role
+      - equal:
+          path: roleRef.name
+          value: sas-retrieval-agent-manager-gpg
+
+  - it: should configure role with proper rules for secret and configmap management
+    template: templates/security/gpg/role.yaml
+    asserts:
+      - isNotEmpty:
+          path: rules
+      - contains:
+          path: rules
+          content:
+            apiGroups: [""]
+            resources: ["configmaps", "secrets"]
+            verbs: ["list", "create"]
+      - contains:
+          path: rules
+          content:
+            apiGroups: [""]
+            resourceNames: ["gpg-private-key"]
+            resources: ["secrets"]
+            verbs: ["get"]
+      - contains:
+          path: rules
+          content:
+            apiGroups: [""]
+            resourceNames: ["gpg-public-key"]
+            resources: ["configmaps"]
+            verbs: ["get"]
+
+  - it: should work even when existing keys are provided
+    template: templates/security/gpg/serviceaccount.yaml
+    set:
+      global:
+        configuration:
+          gpg:
+            publicKey: "existing-public-key"
+            privateKey: "existing-private-key"
+            passphrase: "existing-passphrase"
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: ServiceAccount

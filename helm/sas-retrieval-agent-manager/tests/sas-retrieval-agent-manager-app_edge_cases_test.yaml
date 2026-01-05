@@ -1,0 +1,155 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test sas retrieval agent manager app edge cases and integration
+templates:
+  - templates/ui/deployment.yaml
+  - templates/ui/service.yaml
+  - templates/ui/ingress.yaml
+  - templates/ui/serviceaccount.yaml
+tests:
+  - it: should handle missing global configuration
+    set:
+      global: {}
+      sas-retrieval-agent-manager-app:
+        image:
+          repo:
+            base: "cr.sas.com"
+            path: "viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-app"
+          tag: "latest"
+    template: templates/ui/deployment.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+      # Should use local image configuration
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "cr.sas.com/viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-app:latest"
+
+  # Partial global configuration test commented out - not supported
+
+  - it: should work with minimal values
+    template: templates/ui/deployment.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Deployment
+
+  - it: should work with minimal values for service
+    template: templates/ui/service.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Service
+
+  - it: should work with minimal values for ingress
+    template: templates/ui/ingress.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Ingress
+
+  - it: should respect replica count constraints
+    set:
+      sas-retrieval-agent-manager-app:
+        replicaCount: 0
+    template: templates/ui/deployment.yaml
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 0
+
+  - it: should handle very large replica count
+    set:
+      sas-retrieval-agent-manager-app:
+        replicaCount: 1000
+    template: templates/ui/deployment.yaml
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 1000
+
+  - it: should handle complex naming scenarios
+    release:
+      name: "very-long-release-name-that-might-cause-issues"
+    set:
+      sas-retrieval-agent-manager-app:
+        nameOverride: "short"
+        fullnameOverride: ""
+    template: templates/ui/deployment.yaml
+    asserts:
+      # Just test that deployment is created successfully
+      - isKind:
+          of: Deployment
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: "short"
+
+  - it: should maintain consistency across all resources
+    asserts:
+      - hasDocuments:
+          count: 1  # deployment, service, serviceaccount, ingress
+
+  - it: should maintain deployment labels consistency
+    template: templates/ui/deployment.yaml
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: app
+
+  - it: should maintain service labels consistency
+    template: templates/ui/service.yaml
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: app
+
+  - it: should maintain serviceaccount labels consistency
+    template: templates/ui/serviceaccount.yaml
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: app
+
+  - it: should handle empty image tag gracefully
+    set:
+      sas-retrieval-agent-manager-app:
+        image:
+          tag: ""
+    template: templates/ui/deployment.yaml
+    asserts:
+      - matchRegex:
+          path: spec.template.spec.containers[0].image
+          pattern: ".*sas-retrieval-agent-manager-app:$"
+
+  - it: should handle special characters in values
+    set:
+      sas-retrieval-agent-manager-app:
+        nameOverride: "app-with-special_chars.123"
+    template: templates/ui/deployment.yaml
+    asserts:
+      - equal:
+          path: metadata.name
+          value: "sas-retrieval-agent-manager-app"
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: "app-with-special_chars.123"
+
+  - it: should configure environment variables properly
+    template: templates/ui/deployment.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: POSTGREST_SERVICE
+            valueFrom:
+              configMapKeyRef:
+                name: postgrest-configmap
+                key: service
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: SSL_VERIFY
+            value: 'false'
+

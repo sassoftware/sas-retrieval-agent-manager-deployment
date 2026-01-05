@@ -1,0 +1,272 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test postgrest swagger components
+templates:
+  - templates/db/rest/swagger/deployment.yaml
+  - templates/db/rest/swagger/service.yaml
+  - templates/db/rest/swagger/serviceaccount.yaml
+  - templates/db/rest/swagger/hpa.yaml
+  - templates/db/rest/swagger/ingress.yaml
+  - templates/db/rest/swagger/route.yaml
+tests:
+  - it: should create swagger deployment when enabled
+    template: templates/db/rest/swagger/deployment.yaml
+    set:
+      postgrest:
+        swagger:
+          enabled: true
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Deployment
+      - equal:
+          path: metadata.name
+          value: swagger-RELEASE-NAME
+
+  - it: should not create swagger deployment when disabled
+    template: templates/db/rest/swagger/deployment.yaml
+    set:
+      postgrest:
+        swagger:
+          enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should create swagger service when enabled
+    template: templates/db/rest/swagger/service.yaml
+    set:
+      postgrest:
+        swagger:
+          enabled: true
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Service
+      - equal:
+          path: metadata.name
+          value: swagger-RELEASE-NAME
+
+  - it: should not create swagger service when disabled
+    template: templates/db/rest/swagger/service.yaml
+    set:
+      postgrest:
+        swagger:
+          enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should create swagger service account when enabled
+    template: templates/db/rest/swagger/serviceaccount.yaml
+    set:
+      postgrest:
+        swagger:
+          enabled: true
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: ServiceAccount
+      - equal:
+          path: metadata.name
+          value: swagger-RELEASE-NAME
+
+  - it: should not create swagger service account when disabled
+    template: templates/db/rest/swagger/serviceaccount.yaml
+    set:
+      postgrest:
+        swagger:
+          enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should create swagger HPA when autoscaling enabled
+    template: templates/db/rest/swagger/hpa.yaml
+    set:
+      postgrest:
+        swagger:
+          enabled: true
+          autoscaling:
+            enabled: true
+            minReplicas: 1
+            maxReplicas: 10
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: HorizontalPodAutoscaler
+
+  - it: should not create swagger HPA when autoscaling disabled
+    template: templates/db/rest/swagger/hpa.yaml
+    set:
+      postgrest:
+        swagger:
+          enabled: true
+          autoscaling:
+            enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should not create swagger HPA when swagger disabled
+    template: templates/db/rest/swagger/hpa.yaml
+    set:
+      postgrest:
+        swagger:
+          enabled: false
+          autoscaling:
+            enabled: true
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should create swagger ingress when enabled
+    template: templates/db/rest/swagger/ingress.yaml
+    set:
+      postgrest:
+        swagger:
+          enabled: true
+          ingress:
+            enabled: true
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Ingress
+
+  - it: should not create swagger ingress when disabled
+    template: templates/db/rest/swagger/ingress.yaml
+    set:
+      global:
+        ingress:
+          enabled: false
+      postgrest:
+        swagger:
+          enabled: true
+          ingress:
+            enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should not create swagger ingress when swagger disabled
+    template: templates/db/rest/swagger/ingress.yaml
+    set:
+      postgrest:
+        swagger:
+          enabled: false
+          ingress:
+            enabled: true
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should create swagger route when className is route
+    template: templates/db/rest/swagger/route.yaml
+    set:
+      postgrest:
+        swagger:
+          enabled: true
+          ingress:
+            enabled: true
+            className: "route"
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Route
+
+  - it: should not create swagger route when className is not route
+    template: templates/db/rest/swagger/route.yaml
+    set:
+      postgrest:
+        swagger:
+          enabled: true
+          ingress:
+            enabled: true
+            className: "nginx"
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should not create swagger route when swagger disabled
+    template: templates/db/rest/swagger/route.yaml
+    set:
+      postgrest:
+        swagger:
+          enabled: false
+          ingress:
+            enabled: true
+            className: "route"
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should configure swagger replica count
+    template: templates/db/rest/swagger/deployment.yaml
+    set:
+      postgrest:
+        swagger:
+          enabled: true
+          replicaCount: 3
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 3
+
+  - it: should set swagger replicas when autoscaling disabled
+    template: templates/db/rest/swagger/deployment.yaml
+    set:
+      postgrest:
+        swagger:
+          enabled: true
+          autoscaling:
+            enabled: false
+          replicaCount: 2
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 2
+
+  - it: should use custom swagger nameOverride
+    template: templates/db/rest/swagger/deployment.yaml
+    set:
+      postgrest:
+        swagger:
+          enabled: true
+          nameOverride: "custom-swagger"
+          fullnameOverride: ""
+    asserts:
+      - equal:
+          path: metadata.name
+          value: swagger-custom-swagger-RELEASE-NAME
+
+  - it: should use custom swagger image
+    template: templates/db/rest/swagger/deployment.yaml
+    set:
+      postgrest:
+        swagger:
+          enabled: true
+          image:
+            repo:
+              base: "custom.cr.io"
+              path: "custom/swagger-ui"
+            tag: "latest"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "custom.cr.io/custom/swagger-ui:latest"
+
+  - it: should include proper labels on swagger deployment
+    template: templates/db/rest/swagger/deployment.yaml
+    set:
+      postgrest:
+        swagger:
+          enabled: true
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: swagger

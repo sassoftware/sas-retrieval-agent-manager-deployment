@@ -1,0 +1,75 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test filebrowser edge cases
+templates:
+  - templates/storage/deployment.yaml
+  - templates/storage/service.yaml
+  - templates/storage/ingress.yaml
+  - templates/storage/serviceaccount.yaml
+tests:
+  - it: should handle disabled service account creation
+    set:
+      filebrowser:
+        enabled: true
+        serviceAccount:
+          create: false
+          name: existing-service-account
+    template: templates/storage/serviceaccount.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should use existing service account when creation disabled
+    set:
+      filebrowser:
+        enabled: true
+        serviceAccount:
+          create: false
+          name: existing-service-account
+    template: templates/storage/deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: existing-service-account
+
+  - it: should handle custom image pull secrets
+    set:
+      global:
+        imagePullSecrets:
+          - name: global-registry-secret
+      filebrowser:
+        enabled: true
+        imagePullSecrets:
+          - name: local-registry-secret
+    template: templates/storage/deployment.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.imagePullSecrets
+          content:
+            name: global-registry-secret
+      - contains:
+          path: spec.template.spec.imagePullSecrets
+          content:
+            name: local-registry-secret
+
+  - it: should handle empty annotations
+    set:
+      filebrowser:
+        enabled: true
+        podAnnotations: {}
+    template: templates/storage/deployment.yaml
+    asserts:
+      - isKind:
+          of: Deployment
+
+  - it: should handle minimal configuration
+    set:
+      filebrowser:
+        enabled: true
+        replicaCount: 1
+    template: templates/storage/deployment.yaml
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: spec.replicas
+          value: 1

@@ -1,0 +1,103 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test filebrowser quick
+templates:
+  - ../templates/storage/deployment.yaml
+  - ../templates/storage/service.yaml
+  - ../templates/storage/configmap.yaml
+  - ../templates/storage/serviceaccount.yaml
+  - ../templates/storage/pvc-db.yaml
+  - ../templates/storage/pvc-rootdir.yaml
+  - ../templates/storage/ingress.yaml
+tests:
+  - it: should render main templates when enabled
+    template: templates/storage/deployment.yaml
+    set:
+      filebrowser:
+        enabled: true
+    asserts:
+      - hasDocuments:
+          count: 1
+
+  - it: should create deployment
+    template: templates/storage/deployment.yaml
+    set:
+      filebrowser:
+        enabled: true
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-filebrowser
+
+  - it: should create service
+    template: templates/storage/service.yaml
+    set:
+      filebrowser:
+        enabled: true
+    asserts:
+      - isKind:
+          of: Service
+
+  - it: should create configmap
+    template: templates/storage/configmap.yaml
+    set:
+      filebrowser:
+        enabled: true
+    asserts:
+      - isKind:
+          of: ConfigMap
+
+  - it: should create service account
+    template: templates/storage/serviceaccount.yaml
+    set:
+      filebrowser:
+        enabled: true
+    asserts:
+      - isKind:
+          of: ServiceAccount
+
+  - it: should create database PVC
+    template: templates/storage/pvc-db.yaml
+    set:
+      filebrowser:
+        enabled: true
+    asserts:
+      - isKind:
+          of: PersistentVolumeClaim
+
+  - it: should create rootdir PVC
+    template: templates/storage/pvc-rootdir.yaml
+    set:
+      filebrowser:
+        enabled: true
+    asserts:
+      - isKind:
+          of: PersistentVolumeClaim
+
+  - it: should create ingress
+    template: templates/storage/ingress.yaml
+    set:
+      filebrowser:
+        enabled: true
+    asserts:
+      - isKind:
+          of: Ingress
+
+  - it: should always create rootdir PVC
+    template: templates/storage/pvc-rootdir.yaml
+    set:
+      filebrowser:
+        enabled: false
+    asserts:
+      - isKind:
+          of: PersistentVolumeClaim
+
+  - it: should not create optional resources when disabled
+    template: templates/storage/deployment.yaml
+    set:
+      filebrowser:
+        enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0

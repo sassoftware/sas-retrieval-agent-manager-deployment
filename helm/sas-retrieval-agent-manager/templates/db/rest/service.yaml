@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "postgrest.fullname" . }}
+  labels:
+    {{- include "postgrest.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.postgrest.service.type }}
+  ports:
+    - port: {{ .Values.postgrest.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+    - port: {{ index .Values.global.configuration.postgrest.monitoring "server-port" }}
+      targetPort: http-monitor
+      protocol: TCP
+      name: http-monitor
+  selector:
+    {{- include "postgrest.selectorLabels" . | nindent 4 }}

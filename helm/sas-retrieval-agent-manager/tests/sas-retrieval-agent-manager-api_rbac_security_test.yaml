@@ -1,0 +1,154 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test sas retrieval agent manager api rbac and security
+templates:
+  - templates/api/serviceaccount.yaml
+  - templates/api/role.yaml
+  - templates/api/rolebinding.yaml
+  - templates/api/license-secret.yaml
+tests:
+  - it: should create service account
+    template: templates/api/serviceaccount.yaml
+    asserts:
+      - isKind:
+          of: ServiceAccount
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-api
+
+  - it: should create role
+    template: templates/api/role.yaml
+    asserts:
+      - isKind:
+          of: Role
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-api
+
+  - it: should create role binding
+    template: templates/api/rolebinding.yaml
+    asserts:
+      - isKind:
+          of: RoleBinding
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-api
+
+  - it: should create license secret
+    template: templates/api/license-secret.yaml
+    set:
+      global:
+        configuration:
+          api:
+            license: "some-very-long-string-representing-a-license-key"
+    asserts:
+      - isKind:
+          of: Secret
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: metadata.name
+          value: license-secret
+
+  - it: should not default to create license secret
+    template: templates/api/license-secret.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should configure service account automount
+    template: templates/api/serviceaccount.yaml
+    set:
+      sas-retrieval-agent-manager-api:
+        serviceAccount:
+          automount: false
+    asserts:
+      - equal:
+          path: automountServiceAccountToken
+          value: false
+
+  - it: should include service account annotations
+    template: templates/api/serviceaccount.yaml
+    set:
+      sas-retrieval-agent-manager-api:
+        serviceAccount:
+          annotations:
+            test-annotation: test-value
+    asserts:
+      - equal:
+          path: metadata.annotations["test-annotation"]
+          value: test-value
+
+  - it: should configure role permissions
+    template: templates/api/role.yaml
+    asserts:
+      - exists:
+          path: rules
+      - isNotEmpty:
+          path: rules
+
+  - it: should bind role to service account
+    template: templates/api/rolebinding.yaml
+    asserts:
+      - equal:
+          path: subjects[0].kind
+          value: ServiceAccount
+      - equal:
+          path: subjects[0].name
+          value: sas-retrieval-agent-manager-api
+      - equal:
+          path: roleRef.kind
+          value: Role
+      - equal:
+          path: roleRef.name
+          value: sas-retrieval-agent-manager-api
+
+  - it: should include proper labels on service account
+    template: templates/api/serviceaccount.yaml
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: api
+      - equal:
+          path: metadata.labels["helm.sh/chart"]
+          value: sas-retrieval-agent-manager-1.2.3-dev.20241225
+
+  - it: should include proper labels on role
+    template: templates/api/role.yaml
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: api
+      - equal:
+          path: metadata.labels["helm.sh/chart"]
+          value: sas-retrieval-agent-manager-1.2.3-dev.20241225
+
+  - it: should include proper labels on role binding
+    template: templates/api/rolebinding.yaml
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: api
+      - equal:
+          path: metadata.labels["helm.sh/chart"]
+          value: sas-retrieval-agent-manager-1.2.3-dev.20241225
+
+  - it: should include proper labels on license secret
+    template: templates/api/license-secret.yaml
+    set:
+      global:
+        configuration:
+          api:
+            license: "some-very-long-string-representing-a-license-key"
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: api
+      - equal:
+          path: metadata.labels["helm.sh/chart"]
+          value: sas-retrieval-agent-manager-1.2.3-dev.20241225

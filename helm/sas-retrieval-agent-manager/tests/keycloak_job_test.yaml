@@ -1,0 +1,95 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test keycloak job components
+templates:
+  - templates/iam/fetch-certs/cronjob.yaml
+  - templates/iam/fetch-certs/configmap.yaml
+  - templates/iam/fetch-certs/role.yaml
+  - templates/iam/fetch-certs/role-binding.yaml
+  - templates/iam/fetch-certs/serviceaccount.yaml
+tests:
+  - it: should create all job components
+    asserts:
+      - hasDocuments:
+          count: 1  # Each template creates 1 document
+
+  - it: should create cronjob with correct schedule
+    template: templates/iam/fetch-certs/cronjob.yaml
+    asserts:
+      - isKind:
+          of: CronJob
+      - equal:
+          path: spec.schedule
+          value: "*/5 * * * *"
+      - equal:
+          path: metadata.name
+          value: sas-retagentmgr-fetch-keycloak-certs
+
+  - it: should create job configmap
+    template: templates/iam/fetch-certs/configmap.yaml
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - exists:
+          path: data
+
+  - it: should create job role with proper permissions
+    template: templates/iam/fetch-certs/role.yaml
+    asserts:
+      - isKind:
+          of: Role
+      - exists:
+          path: rules
+
+  - it: should create job role binding
+    template: templates/iam/fetch-certs/role-binding.yaml
+    asserts:
+      - isKind:
+          of: RoleBinding
+      - exists:
+          path: subjects
+      - exists:
+          path: roleRef
+
+  - it: should create job service account
+    template: templates/iam/fetch-certs/serviceaccount.yaml
+    asserts:
+      - isKind:
+          of: ServiceAccount
+
+  - it: should use global image configuration for kubectl in cronjob
+    template: templates/iam/fetch-certs/cronjob.yaml
+    set:
+      global:
+        image:
+          repo:
+            base: "global.registry.io"
+      keycloak:
+        image:
+          kubectl:
+            tag: "latest"
+    asserts:
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.containers[0].image
+          value: "global.registry.io/alpine/k8s:latest"
+
+  - it: should use local image configuration when global not available
+    template: templates/iam/fetch-certs/cronjob.yaml
+    set:
+      global: {}
+      keycloak:
+        image:
+          kubectl:
+            repo:
+              base: "local.registry.io"
+            tag: "latest"
+    asserts:
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.containers[0].image
+          value: "local.registry.io/alpine/k8s:latest"
+
+  - it: should include oauth proxy labels in cronjob
+    template: templates/iam/fetch-certs/cronjob.yaml
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/component"]
+          value: oauthProxy

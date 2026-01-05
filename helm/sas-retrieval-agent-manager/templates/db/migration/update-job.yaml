@@ -1,0 +1,94 @@
+{{- $kubectl_repo_base := "" -}}
+{{- if ((include "testValuesPath" (list .Values "global" "image" "repo" "base")) | eq "true") -}}
+    {{- $kubectl_repo_base = .Values.global.image.repo.base | default (index .Values "sas-retrieval-agent-manager-db-init").image.kubectl.repo.base -}}
+{{- else -}}
+  {{- $kubectl_repo_base = (index .Values "sas-retrieval-agent-manager-db-init").image.kubectl.repo.base -}}
+{{- end -}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "sas-retrieval-agent-manager-db-migration.fullname" . }}-cleanup
+  labels:
+    {{- with (index .Values "sas-retrieval-agent-manager-db-migration").labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  annotations:
+    helm.sh/hook: pre-upgrade
+    helm.sh/hook-delete-policy: before-hook-creation
+spec:
+  ttlSecondsAfterFinished: 300  # Auto-cleanup after 5 minutes
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "sas-retrieval-agent-manager-db-migration.fullname" . }}-cleanup
+        job-type: cleanup
+    spec:
+      serviceAccountName: {{ include "sas-retrieval-agent-manager-db-migration.fullname" . }}-cleanup-sa
+      restartPolicy: Never
+      containers:
+      - name: cleanup
+        image: "{{ $kubectl_repo_base }}/{{ (index .Values "sas-retrieval-agent-manager-db-init").image.kubectl.repo.path }}:{{ (index .Values "sas-retrieval-agent-manager-db-init").image.kubectl.tag }}"
+        command:
+        - /bin/bash
+        - -c
+        - |
+          set -e
+          
+          CURRENT_VERSION="{{ .Chart.Version }}"
+          NAMESPACE="{{ .Release.Namespace }}"
+          
+          echo "Current cleanup job version: ${CURRENT_VERSION}"
+          echo "Namespace: ${NAMESPACE}"
+          
+          kubectl delete jobs -n ${NAMESPACE} -l ram-base-job==true
+          
+          echo "Cleanup of jobs with ram-base-job=true label complete"
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "sas-retrieval-agent-manager-db-migration.fullname" . }}-cleanup-sa
+  labels:
+    app.kubernetes.io/name: {{ include "sas-retrieval-agent-manager-db-migration.fullname" . }}-cleanup-sa
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  annotations:
+    helm.sh/hook: pre-upgrade
+    helm.sh/hook-weight: "-10"
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "sas-retrieval-agent-manager-db-migration.fullname" . }}-cleanup-role
+  labels:
+    app.kubernetes.io/name: {{ include "sas-retrieval-agent-manager-db-migration.fullname" . }}-cleanup-role
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  annotations:
+    helm.sh/hook: pre-upgrade
+    helm.sh/hook-weight: "-10"
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+rules:
+- apiGroups: ["batch"]
+  resources: ["jobs"]
+  verbs: ["list", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "sas-retrieval-agent-manager-db-migration.fullname" . }}-cleanup-rolebinding
+  labels:
+    app.kubernetes.io/name: {{ include "sas-retrieval-agent-manager-db-migration.fullname" . }}-cleanup-rolebinding
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  annotations:
+    helm.sh/hook: pre-upgrade
+    helm.sh/hook-weight: "-10"
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "sas-retrieval-agent-manager-db-migration.fullname" . }}-cleanup-role
+subjects:
+- kind: ServiceAccount
+  name: {{ include "sas-retrieval-agent-manager-db-migration.fullname" . }}-cleanup-sa
+  namespace: {{ .Release.Namespace }}

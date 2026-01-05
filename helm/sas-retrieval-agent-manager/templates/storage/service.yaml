@@ -1,0 +1,20 @@
+{{- if .Values.filebrowser.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "storage.fullname" . }}
+  labels:
+    {{- include "storage.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.filebrowser.service.type }}
+  ports:
+    - port: {{ .Values.filebrowser.service.port }}
+      {{- if eq .Values.filebrowser.service.type "NodePort" }}
+      nodePort: {{ .Values.filebrowser.service.nodePort }}
+      {{- end }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "storage.selectorLabels" . | nindent 4 }}
+{{- end -}}

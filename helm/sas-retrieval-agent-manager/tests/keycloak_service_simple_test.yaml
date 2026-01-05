@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test keycloak service simple
+templates:
+  - templates/iam/keycloak/service.yaml
+tests:
+  - it: should create a service with correct name when fullnameOverride is empty
+    set:
+      keycloak:
+        fullnameOverride: ""
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Service
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-keycloak
+
+  - it: should use default fullnameOverride value
+    asserts:
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-keycloak

@@ -1,0 +1,98 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test postgrest configmaps
+templates:
+  - templates/db/rest/configuration-configmap.yaml
+  - templates/db/rest/postgrest-configmap.yaml
+  - templates/db/rest/scripts-configmap.yaml
+tests:
+  - it: should create configuration configmap
+    template: templates/db/rest/configuration-configmap.yaml
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-postgrest-configuration
+
+  - it: should create postgrest configmap
+    template: templates/db/rest/postgrest-configmap.yaml
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: metadata.name
+          value: postgrest-configmap
+
+  - it: should create scripts configmap
+    template: templates/db/rest/scripts-configmap.yaml
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-postgrest-scripts
+
+  - it: should include data in configuration configmap
+    template: templates/db/rest/configuration-configmap.yaml
+    asserts:
+      - exists:
+          path: data
+
+  - it: should include data in postgrest configmap
+    template: templates/db/rest/postgrest-configmap.yaml
+    asserts:
+      - exists:
+          path: data
+
+  - it: should include data in scripts configmap
+    template: templates/db/rest/scripts-configmap.yaml
+    asserts:
+      - exists:
+          path: data
+
+  - it: should include proper labels on configuration configmap
+    template: templates/db/rest/configuration-configmap.yaml
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: postgrest
+      - equal:
+          path: metadata.labels["helm.sh/chart"]
+          value: sas-retrieval-agent-manager-1.2.3-dev.20241225
+
+  - it: should include proper labels on postgrest configmap
+    template: templates/db/rest/postgrest-configmap.yaml
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: postgrest
+      - equal:
+          path: metadata.labels["helm.sh/chart"]
+          value: sas-retrieval-agent-manager-1.2.3-dev.20241225
+
+  - it: should include proper labels on scripts configmap
+    template: templates/db/rest/scripts-configmap.yaml
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: postgrest
+      - equal:
+          path: metadata.labels["helm.sh/chart"]
+          value: sas-retrieval-agent-manager-1.2.3-dev.20241225
+
+  - it: should handle custom configuration data
+    template: templates/db/rest/configuration-configmap.yaml
+    set:
+      global:
+        configuration:
+          postgrest:
+            customSetting: "value"
+    asserts:
+      - exists:
+          path: data

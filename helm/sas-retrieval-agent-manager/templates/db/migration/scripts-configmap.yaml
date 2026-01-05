@@ -1,0 +1,168 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "sas-retrieval-agent-manager-db-migration.fullname" . }}-scripts
+  labels:
+    {{- include "sas-retrieval-agent-manager-db-migration.labels" . | nindent 4 }}
+data:
+  wait_for_database.sh: |-
+    #!/bin/bash
+    PSQL=`which psql`
+
+    export PGPASSWORD="$DB_PASSWORD"
+
+    until pg_isready -h $DB_HOST -p $DB_PORT -U $DB_USER; 
+    do
+      echo "Waiting for database to be ready ...";
+      sleep 2;
+    done;
+    echo "The database is ready";
+
+    # Wait for the specific database to exist
+    until $PSQL -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -lqt | cut -d \| -f 1 | grep -qw "$DB_NAME"; do
+      echo "Waiting for database '$DB_NAME' to be created..."
+      sleep 2
+    done
+
+    echo "Database '$DB_NAME' is ready."
+
+    # Wait for the specific schema to exist
+    until $PSQL -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -tAc "SELECT 1 FROM information_schema.schemata WHERE schema_name = '$DB_SCHEMA'" | grep -q 1; do
+      echo "Waiting for schema '$DB_SCHEMA' to be present in database '$DB_NAME'..."
+      sleep 2
+    done
+
+    echo "Schema '$DB_SCHEMA' is present."
+
+  wait_for_llm_table.sh: |-
+    #!/bin/bash
+    PSQL=`which psql`
+
+    export PGPASSWORD="$DB_PASSWORD"
+
+    # Wait for the llm table to exist in the schema
+    until $PSQL -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -tAc "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = '$DB_SCHEMA' AND table_name = 'llm')" | grep -q t; do
+      echo "Waiting for llm table to be present in schema '$DB_SCHEMA'..."
+      sleep 2
+    done
+
+    echo "llm table is present in schema '$DB_SCHEMA'."
+
+  wait_for_emb_model_table.sh: |-
+    #!/bin/bash
+    PSQL=`which psql`
+
+    export PGPASSWORD="$DB_PASSWORD"
+
+    # Wait for the embedding model table to exist in the schema
+    until $PSQL -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -tAc "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = '$DB_SCHEMA' AND table_name = 'embedding_model')" | grep -q t; do
+      echo "Waiting for embedding_model table to be present in schema '$DB_SCHEMA'..."
+      sleep 2
+    done
+
+    echo "embedding_model table is present in schema '$DB_SCHEMA'."
+
+{{- if .Values.global.configuration.llmHydration.enabled }}
+  llm_hydration_initialization.sh: |-
+    #!/bin/bash
+    set -e
+
+    PSQL=`which psql`
+    DB_NAME=$(< /config/db-config/db)
+    DB_SCHEMA=$(< /config/db-config/schema)
+
+    echo "Starting LLM hydration initialization..."
+    echo "Database: $DB_NAME"
+    echo "Schema: $DB_SCHEMA"
+    echo "LLM Key: $LLM_KEY"
+
+    # Execute the generated SQL file
+    SQL_FILE="/scripts/llm_hydration.sql"
+    
+    if [[ -f "$SQL_FILE" ]]; then
+      echo "Executing LLM hydration SQL script..."
+      $PSQL -h "$DB_HOST" -p "$DB_PORT" -U "$USER" -d "$DB_NAME" -v llm_key="$LLM_KEY" -f "$SQL_FILE"
+      
+      if [ $? -eq 0 ]; then
+        echo "LLM hydration completed successfully."
+      else
+        echo "Error: LLM hydration failed."
+        exit 1
+      fi
+    else
+      echo "Error: LLM hydration SQL file not found at $SQL_FILE"
+      exit 1
+    fi
+
+    echo "LLM hydration initialization completed."
+
+  llm_hydration.sql: |-
+    -- Auto-generated LLM hydration SQL
+    -- This script hydrates the database with LLM configurations
+    -- Needs to be altered for multiple platforms in the future
+
+    SET search_path TO {{ .Values.global.configuration.application.schema }};
+    
+    {{- range $index, $model := .Values.global.configuration.llmHydration.models }}
+    
+    -- Insert model {{ $index }}: {{ $model }}
+    INSERT INTO llm(
+      name, type, description, security_groups, uri, metadata, secrets) 
+    VALUES (
+      '{{ $model }}', 
+      'azure_openai'::llm_type, 
+      'Model from hydration script', 
+      '{ "/Admin" }',
+      '{{ $.Values.global.configuration.llmHydration.endpoint }}',
+      '{ "deployment_name": "{{ $model }}"}',
+      convert_to(jsonb_build_object('key', :'llm_key')::text, 'UTF8')
+    ) ON CONFLICT DO NOTHING;
+    {{- end }}
+{{- end }}
+{{- if .Values.global.configuration.embModelHydration.enabled }}
+  emb_model_hydration_initialization.sh: |-
+    #!/bin/bash
+    set -e
+
+    PSQL=`which psql`
+    DB_NAME=$(< /config/db-config/db)
+    DB_SCHEMA=$(< /config/db-config/schema)
+
+    echo "Starting embedding model hydration initialization..."
+    echo "Database: $DB_NAME"
+    echo "Schema: $DB_SCHEMA"
+
+    # Execute the generated SQL file
+    SQL_FILE="/scripts/emb_model_hydration.sql"
+    
+    if [[ -f "$SQL_FILE" ]]; then
+      echo "Executing embedding model hydration SQL script..."
+      $PSQL -h "$DB_HOST" -p "$DB_PORT" -U "$USER" -d "$DB_NAME" -f "$SQL_FILE"
+      
+      if [ $? -eq 0 ]; then
+        echo "Embedding model hydration completed successfully."
+      else
+        echo "Error: Embedding model hydration failed."
+        exit 1
+      fi
+    else
+      echo "Error: Embedding model hydration SQL file not found at $SQL_FILE"
+      exit 1
+    fi
+
+    echo "Embedding model hydration initialization completed."
+
+  emb_model_hydration.sql: |-
+    -- Auto-generated embedding model hydration SQL
+    -- This script updates embedding models to set them as published
+
+    SET search_path TO {{ .Values.global.configuration.application.schema }};
+    
+    {{- range $index, $model := .Values.global.configuration.embModelHydration.models }}
+    
+    -- Update embedding model {{ $index }}: {{ $model }}
+    UPDATE embedding_model 
+    SET metadata = metadata || jsonb_build_object('published', true)
+    WHERE metadata->>'deployment_name' = '{{ $model }}' AND type = 'onnx';
+    {{- end }}
+{{- end }}

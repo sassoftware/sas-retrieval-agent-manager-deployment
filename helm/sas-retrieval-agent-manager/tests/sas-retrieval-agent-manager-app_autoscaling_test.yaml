@@ -1,0 +1,160 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test sas retrieval agent manager app autoscaling
+templates:
+  - templates/ui/hpa.yaml
+tests:
+  - it: should not create HPA by default
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should create HPA when enabled
+    set:
+      sas-retrieval-agent-manager-app:
+        autoscaling:
+          enabled: true
+    asserts:
+      - isKind:
+          of: HorizontalPodAutoscaler
+      - hasDocuments:
+          count: 1
+
+  - it: should use correct HPA name when enabled
+    set:
+      sas-retrieval-agent-manager-app:
+        autoscaling:
+          enabled: true
+    asserts:
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-app
+
+  - it: should include proper labels when enabled
+    set:
+      sas-retrieval-agent-manager-app:
+        autoscaling:
+          enabled: true
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: app
+      - equal:
+          path: metadata.labels["app.kubernetes.io/instance"]
+          value: RELEASE-NAME
+      - equal:
+          path: metadata.labels["helm.sh/chart"]
+          value: sas-retrieval-agent-manager-1.2.3-dev.20241225
+
+  - it: should configure scale target reference
+    set:
+      sas-retrieval-agent-manager-app:
+        autoscaling:
+          enabled: true
+    asserts:
+      - equal:
+          path: spec.scaleTargetRef.apiVersion
+          value: apps/v1
+      - equal:
+          path: spec.scaleTargetRef.kind
+          value: Deployment
+      - equal:
+          path: spec.scaleTargetRef.name
+          value: sas-retrieval-agent-manager-app
+
+  - it: should configure default min replicas
+    set:
+      sas-retrieval-agent-manager-app:
+        autoscaling:
+          enabled: true
+    asserts:
+      - equal:
+          path: spec.minReplicas
+          value: 1
+
+  - it: should configure default max replicas
+    set:
+      sas-retrieval-agent-manager-app:
+        autoscaling:
+          enabled: true
+    asserts:
+      - equal:
+          path: spec.maxReplicas
+          value: 100
+
+  - it: should configure custom min replicas
+    set:
+      sas-retrieval-agent-manager-app:
+        autoscaling:
+          enabled: true
+          minReplicas: 2
+    asserts:
+      - equal:
+          path: spec.minReplicas
+          value: 2
+
+  - it: should configure custom max replicas
+    set:
+      sas-retrieval-agent-manager-app:
+        autoscaling:
+          enabled: true
+          maxReplicas: 10
+    asserts:
+      - equal:
+          path: spec.maxReplicas
+          value: 10
+
+  - it: should configure CPU target utilization
+    set:
+      sas-retrieval-agent-manager-app:
+        autoscaling:
+          enabled: true
+          targetCPUUtilizationPercentage: 80
+    asserts:
+      - contains:
+          path: spec.metrics
+          content:
+            type: Resource
+            resource:
+              name: cpu
+              target:
+                type: Utilization
+                averageUtilization: 80
+
+  - it: should configure memory target utilization
+    set:
+      sas-retrieval-agent-manager-app:
+        autoscaling:
+          enabled: true
+          targetMemoryUtilizationPercentage: 70
+    asserts:
+      - contains:
+          path: spec.metrics
+          content:
+            type: Resource
+            resource:
+              name: memory
+              target:
+                type: Utilization
+                averageUtilization: 70
+
+  - it: should allow custom HPA naming
+    set:
+      sas-retrieval-agent-manager-app:
+        autoscaling:
+          enabled: true
+        fullnameOverride: "custom-name"
+    asserts:
+      - equal:
+          path: metadata.name
+          value: custom-name
+
+  - it: should use fullname override in HPA name
+    set:
+      sas-retrieval-agent-manager-app:
+        autoscaling:
+          enabled: true
+        fullnameOverride: "custom-full-name"
+    asserts:
+      - equal:
+          path: metadata.name
+          value: custom-full-name

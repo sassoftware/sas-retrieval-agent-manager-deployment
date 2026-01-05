@@ -1,0 +1,53 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test filebrowser validation
+templates:
+  - templates/storage/deployment.yaml
+  - templates/storage/service.yaml
+  - templates/storage/configmap.yaml
+  - templates/storage/serviceaccount.yaml
+tests:
+  - it: should validate deployment has required fields
+    template: templates/storage/deployment.yaml
+    set:
+      filebrowser:
+        enabled: true
+    asserts:
+      - isKind:
+          of: Deployment
+      - exists:
+          path: metadata.name
+      - exists:
+          path: spec.template.spec.containers
+
+  - it: should validate service has required fields
+    template: templates/storage/service.yaml
+    set:
+      filebrowser:
+        enabled: true
+    asserts:
+      - isKind:
+          of: Service
+      - exists:
+          path: metadata.name
+
+  - it: should validate configmap has required fields
+    template: templates/storage/configmap.yaml
+    set:
+      filebrowser:
+        enabled: true
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - exists:
+          path: data[".filebrowser.json"]
+
+  - it: should validate service account has required fields
+    template: templates/storage/serviceaccount.yaml
+    set:
+      filebrowser:
+        enabled: true
+    asserts:
+      - isKind:
+          of: ServiceAccount
+      - exists:
+          path: metadata.name

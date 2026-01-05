@@ -1,0 +1,230 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test keycloak edge cases and integration
+templates:
+  - templates/iam/keycloak/deployment.yaml
+  - templates/iam/keycloak/service.yaml
+  - templates/iam/keycloak/serviceaccount.yaml
+  - templates/iam/keycloak/hpa.yaml
+tests:
+  - it: should work with minimal configuration
+    template: templates/iam/keycloak/hpa.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should work with all features enabled
+    set:
+      keycloak:
+        autoscaling:
+          enabled: true
+          minReplicas: 2
+          maxReplicas: 10
+          targetCPUUtilizationPercentage: 80
+        ingress:
+          enabled: true
+          hosts:
+            - host: keycloak.example.com
+              paths:
+                - path: /
+                  pathType: Prefix
+        serviceAccount:
+          create: true
+          annotations:
+            test: annotation
+        podAnnotations:
+          pod-annotation: value
+      global:
+        configuration:
+          keycloak:
+            keycloakAdmin: admin
+            keycloakAdminPassword: password
+    template: templates/iam/keycloak/deployment.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+      - notExists:
+          path: spec.replicas
+
+  - it: should create HPA when autoscaling enabled
+    templates:
+      - templates/iam/keycloak/hpa.yaml
+    set:
+      keycloak:
+        autoscaling:
+          enabled: true
+          minReplicas: 2
+          maxReplicas: 10
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: HorizontalPodAutoscaler
+
+  - it: should handle very long names gracefully
+    set:
+      keycloak:
+        nameOverride: "very-long-name-that-should-be-truncated-properly-to-stay-within-limits"
+    template: templates/iam/keycloak/service.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+      # Name should be truncated to 63 characters
+      - matchRegex:
+          path: metadata.name
+          pattern: "^.{1,63}$"
+
+  - it: should handle very long fullnameOverride gracefully
+    set:
+      keycloak:
+        fullnameOverride: "extremely-long-fullname-override-that-definitely-exceeds-kubernetes-name-limits-and-should-be-truncated"
+    template: templates/iam/keycloak/deployment.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+      # Name should be truncated to 63 characters
+      - matchRegex:
+          path: metadata.name
+          pattern: "^.{1,63}$"
+
+  - it: should handle release name containing chart name
+    release:
+      name: keycloak-production
+    set:
+      keycloak:
+        fullnameOverride: ""
+    template: templates/iam/keycloak/service.yaml
+    asserts:
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-keycloak
+
+  - it: should use consistent naming across resources
+    set:
+      keycloak:
+        fullnameOverride: "test-keycloak"
+    template: templates/iam/keycloak/deployment.yaml
+    asserts:
+      - equal:
+          path: metadata.name
+          value: test-keycloak
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: test-keycloak
+
+  - it: should handle empty values gracefully
+    set:
+      keycloak:
+        nameOverride: ""
+        fullnameOverride: ""
+    template: templates/iam/keycloak/deployment.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-keycloak
+
+  - it: should work with complex release names
+    release:
+      name: "my-app-123-test"
+    set:
+      keycloak:
+        fullnameOverride: ""
+    template: templates/iam/keycloak/service.yaml
+    asserts:
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-keycloak
+
+  - it: should handle zero replicas
+    set:
+      keycloak:
+        replicaCount: 0
+    template: templates/iam/keycloak/deployment.yaml
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 0
+
+  - it: should preserve selector consistency with custom names
+    set:
+      keycloak:
+        nameOverride: "custom"
+    template: templates/iam/keycloak/service.yaml
+    asserts:
+      - equal:
+          path: spec.selector["app.kubernetes.io/name"]
+          value: custom
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: custom
+
+  - it: should create service account with default settings
+    template: templates/iam/keycloak/serviceaccount.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: ServiceAccount
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-keycloak
+
+  - it: should include proper labels on service account
+    template: templates/iam/keycloak/serviceaccount.yaml
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: keycloak
+      - equal:
+          path: metadata.labels["helm.sh/chart"]
+          value: sas-retrieval-agent-manager-1.2.3-dev.20241225
+
+  - it: should work with service account annotations
+    template: templates/iam/keycloak/serviceaccount.yaml
+    set:
+      keycloak:
+        serviceAccount:
+          annotations:
+            test-annotation: test-value
+    asserts:
+      - equal:
+          path: metadata.annotations["test-annotation"]
+          value: test-value
+
+  - it: should handle missing global configuration
+    set:
+      global: {}
+      keycloak:
+        image:
+          keycloak:
+            repo:
+              base: "quay.io"
+              path: "keycloak/keycloak"
+            tag: "26.3.2"
+    template: templates/iam/keycloak/deployment.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+      # Should use local image configuration
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "quay.io/keycloak/keycloak:26.3.2"
+
+  - it: should handle partial global configuration
+    set:
+      global:
+        image:
+          repo:
+            base: "partial.registry.io"
+      keycloak:
+        image:
+          keycloak:
+            repo:
+              path: "keycloak/keycloak"
+            tag: "26.3.2"
+    template: templates/iam/keycloak/deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "partial.registry.io/keycloak/keycloak:26.3.2"

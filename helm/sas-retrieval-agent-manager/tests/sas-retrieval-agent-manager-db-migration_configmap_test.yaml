@@ -1,0 +1,238 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test sas retrieval agent manager db migration configmap
+templates:
+  - templates/db/migration/scripts-configmap.yaml
+tests:
+  - it: should create scripts configmap
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-db-migration-scripts
+
+  - it: should have correct labels
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: sas-retrieval-agent-manager-db-migration
+      - equal:
+          path: metadata.labels["app.kubernetes.io/instance"]
+          value: RELEASE-NAME
+      - equal:
+          path: metadata.labels["app.kubernetes.io/managed-by"]
+          value: Helm
+
+  - it: should contain wait_for_database.sh script
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+    asserts:
+      - exists:
+          path: data["wait_for_database.sh"]
+      - isNotEmpty:
+          path: data["wait_for_database.sh"]
+
+  - it: should have database readiness check in script
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+    asserts:
+      - matchRegex:
+          path: data["wait_for_database.sh"]
+          pattern: "pg_isready"
+
+  - it: should have database existence check in script
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+    asserts:
+      - matchRegex:
+          path: data["wait_for_database.sh"]
+          pattern: "Waiting for database"
+
+  - it: should have schema existence check in script
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+    asserts:
+      - matchRegex:
+          path: data["wait_for_database.sh"]
+          pattern: "schema_name"
+
+  - it: should include bash shebang
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+    asserts:
+      - matchRegex:
+          path: data["wait_for_database.sh"]
+          pattern: "#!/bin/bash"
+
+  - it: should use environment variables in script
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+    asserts:
+      - matchRegex:
+          path: data["wait_for_database.sh"]
+          pattern: "\\$DB_HOST"
+      - matchRegex:
+          path: data["wait_for_database.sh"]
+          pattern: "\\$DB_USER"
+      - matchRegex:
+          path: data["wait_for_database.sh"]
+          pattern: "\\$DB_NAME"
+      - matchRegex:
+          path: data["wait_for_database.sh"]
+          pattern: "\\$DB_SCHEMA"
+
+  - it: should contain wait_for_llm_table.sh script
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+    asserts:
+      - exists:
+          path: data["wait_for_llm_table.sh"]
+      - isNotEmpty:
+          path: data["wait_for_llm_table.sh"]
+
+  - it: should contain wait_for_emb_model_table.sh script
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+    asserts:
+      - exists:
+          path: data["wait_for_emb_model_table.sh"]
+      - isNotEmpty:
+          path: data["wait_for_emb_model_table.sh"]
+
+  - it: should contain llm_hydration_initialization.sh when llmHydration is enabled
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+          application:
+            schema: "retagentmgr"
+          llmHydration:
+            enabled: true
+            accountName: "test-account"
+            key: "dGVzdC1rZXk="
+            models:
+              - "gpt-4"
+    asserts:
+      - exists:
+          path: data["llm_hydration_initialization.sh"]
+      - isNotEmpty:
+          path: data["llm_hydration_initialization.sh"]
+
+  - it: should not contain llm_hydration_initialization.sh when llmHydration is disabled
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+          application:
+            schema: "retagentmgr"
+          llmHydration:
+            enabled: false
+    asserts:
+      - notExists:
+          path: data["llm_hydration_initialization.sh"]
+
+  - it: should contain llm_hydration.sql when llmHydration is enabled
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+          application:
+            schema: "retagentmgr"
+          llmHydration:
+            enabled: true
+            accountName: "test-account"
+            key: "dGVzdC1rZXk="
+            models:
+              - "gpt-4"
+    asserts:
+      - exists:
+          path: data["llm_hydration.sql"]
+      - isNotEmpty:
+          path: data["llm_hydration.sql"]
+
+  - it: should contain emb_model_hydration_initialization.sh when embModelHydration is enabled
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+          application:
+            schema: "retagentmgr"
+          embModelHydration:
+            enabled: true
+            models:
+              - "sentence-transformers/all-MiniLM-L6-v2"
+    asserts:
+      - exists:
+          path: data["emb_model_hydration_initialization.sh"]
+      - isNotEmpty:
+          path: data["emb_model_hydration_initialization.sh"]
+
+  - it: should not contain emb_model_hydration_initialization.sh when embModelHydration is disabled
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+          application:
+            schema: "retagentmgr"
+          embModelHydration:
+            enabled: false
+    asserts:
+      - notExists:
+          path: data["emb_model_hydration_initialization.sh"]
+
+  - it: should contain emb_model_hydration.sql when embModelHydration is enabled
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+          application:
+            schema: "retagentmgr"
+          embModelHydration:
+            enabled: true
+            models:
+              - "sentence-transformers/all-MiniLM-L6-v2"
+    asserts:
+      - exists:
+          path: data["emb_model_hydration.sql"]
+      - isNotEmpty:
+          path: data["emb_model_hydration.sql"]

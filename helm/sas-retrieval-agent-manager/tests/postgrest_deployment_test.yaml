@@ -1,0 +1,162 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test postgrest deployment
+templates:
+  - templates/db/rest/deployment.yaml
+tests:
+  - it: should create deployment with correct kind
+    asserts:
+      - isKind:
+          of: Deployment
+      - hasDocuments:
+          count: 1
+
+  - it: should use correct deployment name
+    asserts:
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-postgrest
+
+  - it: should configure replica count
+    set:
+      postgrest:
+        replicaCount: 3
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 3
+
+  - it: should not set replicas when autoscaling enabled
+    set:
+      postgrest:
+        autoscaling:
+          enabled: true
+    asserts:
+      - notExists:
+          path: spec.replicas
+
+  - it: should use correct container image
+    set:
+      postgrest:
+        image:
+          postgrest:
+            tag: "latest"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "docker.io/postgrest/postgrest:latest"
+
+  - it: should configure container ports
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].ports[0].containerPort
+          value: 3000
+      - equal:
+          path: spec.template.spec.containers[0].ports[0].name
+          value: http
+
+  - it: should include security context
+    asserts:
+      - exists:
+          path: spec.template.spec.securityContext
+      - exists:
+          path: spec.template.spec.containers[0].securityContext
+
+  - it: should configure resource limits
+    set:
+      postgrest:
+        resources:
+          limits:
+            cpu: 500m
+            memory: 512Mi
+          requests:
+            cpu: 250m
+            memory: 256Mi
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.cpu
+          value: 500m
+      - equal:
+          path: spec.template.spec.containers[0].resources.requests.memory
+          value: 256Mi
+
+  - it: should configure environment variables
+    asserts:
+      - exists:
+          path: spec.template.spec.containers[0].env
+
+  - it: should mount config volumes
+    asserts:
+      - exists:
+          path: spec.template.spec.volumes
+      - exists:
+          path: spec.template.spec.containers[0].volumeMounts
+
+  - it: should configure liveness probe
+    asserts:
+      - exists:
+          path: spec.template.spec.containers[0].livenessProbe
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.port
+          value: admin
+
+  - it: should configure readiness probe
+    asserts:
+      - exists:
+          path: spec.template.spec.containers[0].readinessProbe
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.port
+          value: admin
+
+  - it: should use correct service account
+    asserts:
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: sas-retrieval-agent-manager-postgrest
+
+  - it: should configure node selector
+    set:
+      postgrest:
+        nodeSelector:
+          kubernetes.io/os: linux
+    asserts:
+      - equal:
+          path: spec.template.spec.nodeSelector["kubernetes.io/os"]
+          value: linux
+
+  - it: should configure tolerations
+    set:
+      postgrest:
+        tolerations:
+          - key: node-role.kubernetes.io/control-plane
+            operator: Exists
+            effect: NoSchedule
+    asserts:
+      - equal:
+          path: spec.template.spec.tolerations[0].key
+          value: node-role.kubernetes.io/control-plane
+
+  - it: should configure affinity
+    set:
+      postgrest:
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+                - matchExpressions:
+                    - key: kubernetes.io/arch
+                      operator: In
+                      values:
+                        - amd64
+    asserts:
+      - exists:
+          path: spec.template.spec.affinity.nodeAffinity
+
+  - it: should configure pod annotations
+    set:
+      postgrest:
+        podAnnotations:
+          test-annotation: test-value
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations["test-annotation"]
+          value: test-value

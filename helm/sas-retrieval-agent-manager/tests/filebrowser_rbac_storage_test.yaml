@@ -1,0 +1,79 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test filebrowser rbac and storage
+templates:
+  - templates/storage/serviceaccount.yaml
+  - templates/storage/storageclass.yaml
+tests:
+  - it: should create service account when enabled
+    template: templates/storage/serviceaccount.yaml
+    set:
+      filebrowser:
+        enabled: true
+    asserts:
+      - isKind:
+          of: ServiceAccount
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-filebrowser
+
+  - it: should have correct labels on service account
+    template: templates/storage/serviceaccount.yaml
+    set:
+      filebrowser:
+        enabled: true
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: filebrowser
+      - equal:
+          path: metadata.labels["app.kubernetes.io/instance"]
+          value: RELEASE-NAME
+
+  - it: should support custom service account annotations
+    template: templates/storage/serviceaccount.yaml
+    set:
+      filebrowser:
+        enabled: true
+        serviceAccount:
+          annotations:
+            iam.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/filebrowser-role
+            custom.annotation: test-value
+    asserts:
+      - equal:
+          path: metadata.annotations["iam.amazonaws.com/role-arn"]
+          value: arn:aws:iam::123456789012:role/filebrowser-role
+      - equal:
+          path: metadata.annotations["custom.annotation"]
+          value: test-value
+
+  - it: should support custom service account name
+    template: templates/storage/serviceaccount.yaml
+    set:
+      filebrowser:
+        enabled: true
+        serviceAccount:
+          name: custom-filebrowser-sa
+    asserts:
+      - equal:
+          path: metadata.name
+          value: custom-filebrowser-sa
+
+  - it: should not create service account when creation disabled
+    template: templates/storage/serviceaccount.yaml
+    set:
+      filebrowser:
+        enabled: true
+        serviceAccount:
+          create: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should not create service account when globally disabled
+    template: templates/storage/serviceaccount.yaml
+    set:
+      filebrowser:
+        enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0

@@ -1,0 +1,32 @@
+{{- if (index .Values "sas-retrieval-agent-manager-app").autoscaling.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "sas-retrieval-agent-manager-ui.fullname" . }}
+  labels:
+    {{- include "sas-retrieval-agent-manager-ui.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "sas-retrieval-agent-manager-ui.fullname" . }}
+  minReplicas: {{ (index .Values "sas-retrieval-agent-manager-app").autoscaling.minReplicas }}
+  maxReplicas: {{ (index .Values "sas-retrieval-agent-manager-app").autoscaling.maxReplicas }}
+  metrics:
+    {{- if (index .Values "sas-retrieval-agent-manager-app").autoscaling.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ (index .Values "sas-retrieval-agent-manager-app").autoscaling.targetCPUUtilizationPercentage }}
+    {{- end }}
+    {{- if (index .Values "sas-retrieval-agent-manager-app").autoscaling.targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ (index .Values "sas-retrieval-agent-manager-app").autoscaling.targetMemoryUtilizationPercentage }}
+    {{- end }}
+{{- end }}

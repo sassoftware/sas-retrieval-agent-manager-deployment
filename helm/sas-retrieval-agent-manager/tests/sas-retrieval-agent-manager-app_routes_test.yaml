@@ -1,0 +1,82 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test sas retrieval agent manager app routes
+templates:
+  - templates/ui/route.yaml
+tests:
+  - it: should not create route by default
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should create route when enabled
+    set:
+      sas-retrieval-agent-manager-app:
+        ingress:
+          className: "route"
+    asserts:
+      - isKind:
+          of: Route
+      - hasDocuments:
+          count: 1
+
+  - it: should use correct route name when enabled
+    set:
+      sas-retrieval-agent-manager-app:
+        ingress:
+          className: "route"
+    asserts:
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-app
+
+  - it: should include proper labels when enabled
+    set:
+      sas-retrieval-agent-manager-app:
+        ingress:
+          className: "route"
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: app
+      - equal:
+          path: metadata.labels["app.kubernetes.io/instance"]
+          value: RELEASE-NAME
+      - equal:
+          path: metadata.labels["helm.sh/chart"]
+          value: sas-retrieval-agent-manager-1.2.3-dev.20241225
+
+  - it: should configure route path
+    set:
+      sas-retrieval-agent-manager-app:
+        ingress:
+          className: "route"
+    asserts:
+      - equal:
+          path: spec.path
+          value: "/SASRetrievalAgentManager(/|$)(.*)"
+
+  - it: should configure backend service
+    set:
+      sas-retrieval-agent-manager-app:
+        ingress:
+          className: "route"
+    asserts:
+      - equal:
+          path: spec.to.kind
+          value: Service
+      - equal:
+          path: spec.to.name
+          value: sas-retrieval-agent-manager-app
+
+  - it: should configure TLS termination
+    set:
+      sas-retrieval-agent-manager-app:
+        ingress:
+          className: "route"
+    asserts:
+      - equal:
+          path: spec.tls.termination
+          value: edge
+      - equal:
+          path: spec.tls.insecureEdgeTerminationPolicy
+          value: Redirect

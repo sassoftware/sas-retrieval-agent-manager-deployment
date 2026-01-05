@@ -1,0 +1,154 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test sas retrieval agent manager embedding model hydration job
+templates:
+  - ../templates/db/migration/emb-hydration-job.yaml
+tests:
+  - it: should not create job when embModelHydration is disabled
+    set:
+      global:
+        configuration:
+          embModelHydration:
+            enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should create a job when embModelHydration is enabled
+    set:
+      global:
+        configuration:
+          embModelHydration:
+            enabled: true
+            models:
+              - "sentence-transformers/all-MiniLM-L6-v2"
+    asserts:
+      - isKind:
+          of: Job
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-db-migration-emb-model-hydration
+
+  - it: should have correct labels
+    set:
+      global:
+        configuration:
+          embModelHydration:
+            enabled: true
+            models:
+              - "sentence-transformers/all-MiniLM-L6-v2"
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: sas-retrieval-agent-manager-db-migration
+      - equal:
+          path: metadata.labels["app.kubernetes.io/instance"]
+          value: RELEASE-NAME
+
+  - it: should have argocd skip annotation
+    set:
+      global:
+        configuration:
+          embModelHydration:
+            enabled: true
+            models:
+              - "sentence-transformers/all-MiniLM-L6-v2"
+    asserts:
+      - equal:
+          path: metadata.annotations["argocd.argoproj.io/sync-options"]
+          value: Skip
+
+  - it: should have init container with postgres image
+    set:
+      global:
+        configuration:
+          embModelHydration:
+            enabled: true
+            models:
+              - "sentence-transformers/all-MiniLM-L6-v2"
+    asserts:
+      - isNotEmpty:
+          path: spec.template.spec.initContainers
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: wait-for-embedding-model-table
+      - equal:
+          path: spec.template.spec.initContainers[0].image
+          value: docker.io/postgres:15-alpine
+
+  - it: should have main container with postgres image
+    set:
+      global:
+        configuration:
+          embModelHydration:
+            enabled: true
+            models:
+              - "sentence-transformers/all-MiniLM-L6-v2"
+    asserts:
+      - isNotEmpty:
+          path: spec.template.spec.containers
+      - equal:
+          path: spec.template.spec.containers[0].name
+          value: emb-model-hydration
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: docker.io/postgres:15-alpine
+
+  - it: should mount scripts volume in init container
+    set:
+      global:
+        configuration:
+          embModelHydration:
+            enabled: true
+            models:
+              - "sentence-transformers/all-MiniLM-L6-v2"
+    asserts:
+      - contains:
+          path: spec.template.spec.initContainers[0].volumeMounts
+          content:
+            mountPath: "/scripts"
+            name: scripts
+            readOnly: true
+
+  # - it: should have scripts volume from configmap
+  #   set:
+  #     global:
+  #       configuration:
+  #         embModelHydration:
+  #           enabled: true
+  #           models:
+  #             - "sentence-transformers/all-MiniLM-L6-v2"
+  #   asserts:
+  #     - contains:
+  #         path: spec.template.spec.volumes
+  #         content:
+  #           name: scripts
+  #           configMap:
+  #             name: sas-retrieval-agent-manager-db-migration-scripts
+  #             defaultMode: 0777
+
+  - it: should not have LLM_KEY environment variable
+    set:
+      global:
+        configuration:
+          embModelHydration:
+            enabled: true
+            models:
+              - "sentence-transformers/all-MiniLM-L6-v2"
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: LLM_KEY
+
+  - it: should have backoff limit
+    set:
+      global:
+        configuration:
+          embModelHydration:
+            enabled: true
+            models:
+              - "sentence-transformers/all-MiniLM-L6-v2"
+    asserts:
+      - equal:
+          path: spec.backoffLimit
+          value: 10

@@ -1,0 +1,118 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test postgrest services
+templates:
+  - templates/db/rest/service.yaml
+  - templates/db/rest/admin-service.yaml
+tests:
+  - it: should create main service
+    template: templates/db/rest/service.yaml
+    asserts:
+      - isKind:
+          of: Service
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-postgrest
+
+  - it: should configure main service type
+    template: templates/db/rest/service.yaml
+    set:
+      postgrest:
+        service:
+          type: LoadBalancer
+    asserts:
+      - equal:
+          path: spec.type
+          value: LoadBalancer
+
+  - it: should configure main service port
+    template: templates/db/rest/service.yaml
+    set:
+      postgrest:
+        service:
+          port: 8080
+    asserts:
+      - equal:
+          path: spec.ports[0].port
+          value: 8080
+
+  - it: should configure main service target port
+    template: templates/db/rest/service.yaml
+    asserts:
+      - equal:
+          path: spec.ports[0].targetPort
+          value: http
+
+  - it: should use correct selector for main service
+    template: templates/db/rest/service.yaml
+    asserts:
+      - equal:
+          path: spec.selector["app.kubernetes.io/name"]
+          value: postgrest
+      - equal:
+          path: spec.selector["app.kubernetes.io/instance"]
+          value: RELEASE-NAME
+
+  - it: should create admin service
+    template: templates/db/rest/admin-service.yaml
+    asserts:
+      - isKind:
+          of: Service
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-postgrest-admin
+
+  - it: should configure admin service type
+    template: templates/db/rest/admin-service.yaml
+    set:
+      postgrest:
+        adminService:
+          type: NodePort
+    asserts:
+      - equal:
+          path: spec.type
+          value: NodePort
+
+  - it: should configure admin service port
+    template: templates/db/rest/admin-service.yaml
+    set:
+      postgrest:
+        adminService:
+          port: 9000
+    asserts:
+      - equal:
+          path: spec.ports[0].port
+          value: 9000
+
+  - it: should use correct selector for admin service
+    template: templates/db/rest/admin-service.yaml
+    asserts:
+      - equal:
+          path: spec.selector["app.kubernetes.io/name"]
+          value: postgrest
+      - equal:
+          path: spec.selector["app.kubernetes.io/instance"]
+          value: RELEASE-NAME
+
+  - it: should include proper labels on main service
+    template: templates/db/rest/service.yaml
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: postgrest
+      - equal:
+          path: metadata.labels["helm.sh/chart"]
+          value: sas-retrieval-agent-manager-1.2.3-dev.20241225
+
+  - it: should include proper labels on admin service
+    template: templates/db/rest/admin-service.yaml
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: postgrest
+      - equal:
+          path: metadata.labels["helm.sh/chart"]
+          value: sas-retrieval-agent-manager-1.2.3-dev.20241225

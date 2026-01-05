@@ -1,0 +1,23 @@
+{{- if (eq .Values.filebrowser.rootDir.type "pvc") }}
+{{- $scParts := include "storage.storageConfig" . | splitList "|" }}
+{{- $storageClass := index $scParts 0 }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.filebrowser.rootDir.pvc.name }}
+  labels:
+    {{- include "storage.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/resource-policy: keep
+spec:
+  accessModes:
+    {{- range .Values.filebrowser.rootDir.pvc.accessModes }}
+    - {{ . | quote }}
+    {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.filebrowser.rootDir.pvc.size | quote }}
+  {{- if $storageClass }}
+  storageClassName: {{ $storageClass }}
+  {{- end }}
+{{- end }}

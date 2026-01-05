@@ -1,0 +1,156 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test keycloak helper functions
+templates:
+  - templates/iam/keycloak/deployment.yaml
+tests:
+  - it: should return correct chart name with default fullnameOverride
+    set:
+      keycloak:
+        fullnameOverride: ""
+    asserts:
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-keycloak
+
+  - it: should use default fullnameOverride
+    asserts:
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-keycloak
+
+  - it: should use full name override
+    set:
+      keycloak:
+        fullnameOverride: "completely-custom"
+    asserts:
+      - equal:
+          path: metadata.name
+          value: completely-custom
+
+  - it: should include chart name in labels
+    asserts:
+      - equal:
+          path: metadata.labels["helm.sh/chart"]
+          value: sas-retrieval-agent-manager-1.2.3-dev.20241225
+
+  - it: should include selector labels
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: keycloak
+      - equal:
+          path: metadata.labels["app.kubernetes.io/instance"]
+          value: RELEASE-NAME
+      - equal:
+          path: metadata.labels["app.kubernetes.io/component"]
+          value: keycloak
+
+  - it: should include app version
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/version"]
+          value: "1.2.0"
+
+  - it: should include managed-by label
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/managed-by"]
+          value: Helm
+
+  - it: should work with custom release name
+    release:
+      name: custom-release
+    set:
+      keycloak:
+        fullnameOverride: ""
+    asserts:
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-keycloak
+      - equal:
+          path: metadata.labels["app.kubernetes.io/instance"]
+          value: custom-release
+
+  - it: should handle chart name in release name
+    release:
+      name: keycloak-test
+    set:
+      keycloak:
+        fullnameOverride: ""
+    asserts:
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-keycloak
+
+  - it: should use default service account when not creating
+    set:
+      keycloak:
+        serviceAccount:
+          create: false
+        fullnameOverride: ""
+    asserts:
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: default
+
+  - it: should use custom service account name
+    set:
+      keycloak:
+        serviceAccount:
+          create: false
+          name: "custom-sa"
+        fullnameOverride: ""
+    asserts:
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: custom-sa
+
+  - it: should use generated service account name when creating
+    set:
+      keycloak:
+        serviceAccount:
+          create: true
+          name: ""
+        fullnameOverride: ""
+    asserts:
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: sas-retrieval-agent-manager-keycloak
+
+  - it: should respect global image configuration
+    set:
+      global:
+        image:
+          repo:
+            base: "custom.registry.io"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "custom.registry.io/keycloak/keycloak:26.3.2"
+
+  - it: should use local image config when global not set
+    set:
+      keycloak:
+        image:
+          keycloak:
+            repo:
+              base: "local.registry.io"
+              path: "local/keycloak"
+            tag: "25.0.0"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "local.registry.io/local/keycloak:25.0.0"
+
+  - it: should test testValuesPath helper with existing path
+    set:
+      global:
+        image:
+          repo:
+            base: "test.registry.io"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "test.registry.io/keycloak/keycloak:26.3.2"

@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "sas-retrieval-agent-manager-api.fullname" . }}
+  labels:
+    {{- include "sas-retrieval-agent-manager-api.labels" . | nindent 4 }}
+spec:
+  type: {{ (index .Values "sas-retrieval-agent-manager-api").service.type }}
+  ports:
+    - port: {{ (index .Values "sas-retrieval-agent-manager-api").service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "sas-retrieval-agent-manager-api.selectorLabels" . | nindent 4 }}

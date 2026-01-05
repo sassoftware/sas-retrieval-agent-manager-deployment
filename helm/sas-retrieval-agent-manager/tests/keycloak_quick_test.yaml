@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test keycloak quick validation
+templates:
+  - templates/iam/keycloak/deployment.yaml
+  - templates/iam/keycloak/service.yaml
+tests:
+  - it: should create deployment with default name
+    template: templates/iam/keycloak/deployment.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-keycloak
+
+  - it: should create service with default name
+    template: templates/iam/keycloak/service.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-keycloak
+
+  - it: should create deployment with custom name when fullnameOverride cleared
+    template: templates/iam/keycloak/deployment.yaml
+    set:
+      keycloak:
+        fullnameOverride: ""
+    asserts:
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-keycloak

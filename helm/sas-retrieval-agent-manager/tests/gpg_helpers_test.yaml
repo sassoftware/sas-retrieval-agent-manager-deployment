@@ -1,0 +1,148 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test gpg helper functions
+tests:
+  - it: should test gpg.shouldGenerateKeys returns true when no keys provided
+    template: templates/security/gpg/job.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+
+  - it: should test gpg.shouldGenerateKeys returns true when only public key provided
+    template: templates/security/gpg/job.yaml
+    set:
+      global:
+        configuration:
+          gpg:
+            publicKey: "test-public-key"
+    asserts:
+      - hasDocuments:
+          count: 1
+
+  - it: should test gpg.shouldGenerateKeys returns true when only private key provided
+    template: templates/security/gpg/job.yaml
+    set:
+      global:
+        configuration:
+          gpg:
+            privateKey: "test-private-key"
+    asserts:
+      - hasDocuments:
+          count: 1
+
+  - it: should test gpg.shouldGenerateKeys logic through job creation when both keys provided
+    template: templates/security/gpg/job.yaml
+    set:
+      global:
+        configuration:
+          gpg:
+            publicKey: "test-public-key"
+            privateKey: "test-private-key"
+    asserts:
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: kind
+          value: Job
+
+  - it: should test gpg.hasPublicKey returns false by default
+    template: templates/security/gpg/gpg-public-configmap.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should test gpg.hasPublicKey returns true when public key provided globally
+    template: templates/security/gpg/gpg-public-configmap.yaml
+    set:
+      global:
+        configuration:
+          gpg:
+            publicKey: "test-public-key"
+            privateKey: "test-private-key"
+    asserts:
+      - hasDocuments:
+          count: 1
+
+  - it: should test gpg.hasPrivateKey returns false by default
+    template: templates/security/gpg/gpg-private-secret.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should test gpg.hasPrivateKey returns true when private key provided globally
+    template: templates/security/gpg/gpg-private-secret.yaml
+    set:
+      global:
+        configuration:
+          gpg:
+            publicKey: "test-public-key"
+            privateKey: "test-private-key"
+    asserts:
+      - hasDocuments:
+          count: 1
+
+  - it: should test gpg.fullname with default values via scripts configmap
+    template: templates/security/gpg/scripts-configmap.yaml
+    asserts:
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-gpg-scripts
+
+  - it: should test gpg.fullname with fullnameOverride via scripts configmap
+    template: templates/security/gpg/scripts-configmap.yaml
+    set:
+      gpg:
+        fullnameOverride: custom-gpg
+    asserts:
+      - equal:
+          path: metadata.name
+          value: custom-gpg-scripts
+
+  - it: should test gpg.fullname with nameOverride logic is applied
+    template: templates/security/gpg/scripts-configmap.yaml
+    set:
+      gpg:
+        nameOverride: custom-name
+    release:
+      name: test-release
+    asserts:
+      - isNotEmpty:
+          path: metadata.name
+      - matchRegex:
+          path: metadata.name
+          pattern: ".*-scripts$"
+
+  - it: should test gpg.labels include all required labels
+    template: templates/security/gpg/scripts-configmap.yaml
+    asserts:
+      - isSubset:
+          path: metadata.labels
+          content:
+            app.kubernetes.io/name: gpg
+            app.kubernetes.io/instance: RELEASE-NAME
+            app.kubernetes.io/managed-by: Helm
+      - equal:
+          path: metadata.labels["helm.sh/chart"]
+          value: sas-retrieval-agent-manager-1.2.3-dev.20241225
+      - equal:
+          path: metadata.labels["app.kubernetes.io/version"]
+          value: "1.2.0"
+
+  - it: should test testValuesPath helper with existing path
+    template: templates/security/gpg/settings-configmap.yaml
+    set:
+      global:
+        configuration:
+          gpg:
+            key:
+              name: "Test User"
+    asserts:
+      - equal:
+          path: data.name
+          value: "Test User"
+
+  - it: should test testValuesPath helper with non-existing path falls back to default
+    template: templates/security/gpg/settings-configmap.yaml
+    asserts:
+      - equal:
+          path: data.name
+          value: "RAM Secrets"

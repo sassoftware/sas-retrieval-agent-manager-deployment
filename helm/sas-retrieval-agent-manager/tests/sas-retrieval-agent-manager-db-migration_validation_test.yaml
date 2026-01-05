@@ -1,0 +1,112 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test sas retrieval agent manager db migration validation
+templates:
+  - ../templates/db/migration/migration-job.yaml
+  - ../templates/db/migration/serviceaccount.yaml
+  - ../templates/db/migration/scripts-configmap.yaml
+tests:
+  - it: should validate job has required fields
+    template: ../templates/db/migration/migration-job.yaml
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+    asserts:
+      - isKind:
+          of: Job
+      - exists:
+          path: metadata.name
+      - exists:
+          path: spec.template.spec.containers
+      - exists:
+          path: spec.template.spec.restartPolicy
+
+  - it: should validate init container configuration
+    template: ../templates/db/migration/migration-job.yaml
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+    asserts:
+      - isNotEmpty:
+          path: spec.template.spec.initContainers
+      - exists:
+          path: spec.template.spec.initContainers[0].name
+      - exists:
+          path: spec.template.spec.initContainers[0].image
+
+  - it: should validate main container configuration
+    template: ../templates/db/migration/migration-job.yaml
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+    asserts:
+      - exists:
+          path: spec.template.spec.containers[0].name
+      - exists:
+          path: spec.template.spec.containers[0].image
+
+  - it: should validate service account creation
+    template: ../templates/db/migration/serviceaccount.yaml
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+    asserts:
+      - isKind:
+          of: ServiceAccount
+      - exists:
+          path: metadata.name
+
+  - it: should validate scripts configmap
+    template: ../templates/db/migration/scripts-configmap.yaml
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - exists:
+          path: data["wait_for_database.sh"]
+
+  - it: should validate backoff limit is set
+    template: ../templates/db/migration/migration-job.yaml
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+    asserts:
+      - exists:
+          path: spec.backoffLimit
+
+  - it: should validate restart policy is valid
+    template: ../templates/db/migration/migration-job.yaml
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+    asserts:
+      - isNotEmpty:
+          path: spec.template.spec.restartPolicy
+
+  - it: should validate service account name is set
+    template: ../templates/db/migration/migration-job.yaml
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+    asserts:
+      - exists:
+          path: spec.template.spec.serviceAccountName
+      - isNotEmpty:
+          path: spec.template.spec.serviceAccountName

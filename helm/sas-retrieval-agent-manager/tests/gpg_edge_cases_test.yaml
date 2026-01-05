@@ -1,0 +1,148 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test gpg chart edge cases and integration
+tests:
+  - it: should handle empty string values as if not provided
+    template: templates/security/gpg/gpg-public-configmap.yaml
+    set:
+      global:
+        configuration:
+          gpg:
+            publicKey: ""
+            privateKey: ""
+            passphrase: ""
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should handle missing global configuration section
+    template: templates/security/gpg/job.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Job
+
+  - it: should handle partial global.configuration.gpg path
+    template: templates/security/gpg/job.yaml
+    set:
+      global:
+        configuration:
+          someOtherService: "config"
+    asserts:
+      - hasDocuments:
+          count: 1
+
+  - it: should generate job when no keys are provided
+    template: templates/security/gpg/job.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+
+  - it: should generate configmaps when no keys are provided  
+    template: templates/security/gpg/scripts-configmap.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+
+  - it: should generate job when all keys are provided
+    template: templates/security/gpg/job.yaml
+    set:
+      global:
+        configuration:
+          gpg:
+            publicKey: "test-public-key"
+            privateKey: "test-private-key" 
+            passphrase: "test-passphrase"
+    asserts:
+      - hasDocuments:
+          count: 1
+
+  - it: should generate public configmap when all keys are provided
+    template: templates/security/gpg/gpg-public-configmap.yaml
+    set:
+      global:
+        configuration:
+          gpg:
+            publicKey: "test-public-key"
+            privateKey: "test-private-key" 
+            passphrase: "test-passphrase"
+    asserts:
+      - hasDocuments:
+          count: 1
+
+  - it: should handle complex nested GPG key configuration
+    template: templates/security/gpg/settings-configmap.yaml
+    set:
+      global:
+        configuration:
+          gpg:
+            key:
+              name: "Complex User Name with Spaces"
+              email: "user+tag@example.com"
+              comment: "GPG Key with special chars: !@#$%"
+              length: 2048
+              expire: "5y"
+    asserts:
+      - equal:
+          path: data.name
+          value: "Complex User Name with Spaces"
+      - equal:
+          path: data.email  
+          value: "user+tag@example.com"
+      - equal:
+          path: data.comment
+          value: "GPG Key with special chars: !@#$%"
+      - equal:
+          path: data.length
+          value: "2048"
+      - equal:
+          path: data.expire
+          value: "5y"
+
+  - it: should handle reasonable release names properly
+    template: templates/security/gpg/scripts-configmap.yaml
+    release:
+      name: reasonable-release-name
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isNotEmpty:
+          path: metadata.name
+
+  - it: should work with minimal values file
+    template: templates/security/gpg/job.yaml
+    set: {}
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Job
+
+  - it: should handle boolean and numeric values properly
+    template: templates/security/gpg/settings-configmap.yaml
+    set:
+      global:
+        configuration:
+          gpg:
+            key:
+              length: 4096
+              expire: 0
+    asserts:
+      - equal:
+          path: data.length
+          value: "4096"
+      - equal:
+          path: data.expire
+          value: "0"
+
+  - it: should handle whitespace-only values as non-empty currently
+    template: templates/security/gpg/gpg-public-configmap.yaml
+    set:
+      global:
+        configuration:
+          gpg:
+            publicKey: "   "
+            privateKey: "test-private-key"
+    asserts:
+      - hasDocuments:
+          count: 1

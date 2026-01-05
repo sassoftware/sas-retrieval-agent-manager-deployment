@@ -1,0 +1,156 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test sas retrieval agent manager db init configmaps
+templates:
+  - templates/db/init/application-roles-configmap.yaml
+  - templates/db/init/db-application-configmap.yaml
+  - templates/db/init/db-connection-configmap.yaml
+  - templates/db/init/db-keycloak-configmap.yaml
+  - templates/db/init/db-vector-store-configmap.yaml
+  - templates/db/init/db-weaviate-configmap.yaml
+  - templates/db/init/scripts-configmap.yaml
+tests:
+  - it: should create application roles configmap
+    template: templates/db/init/application-roles-configmap.yaml
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.name
+          value: application-roles
+
+  - it: should create database application configmap
+    template: templates/db/init/db-application-configmap.yaml
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.name
+          value: db-application
+
+  - it: should create database connection configmap
+    template: templates/db/init/db-connection-configmap.yaml
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.name
+          value: db-connection
+
+  - it: should create keycloak database configmap
+    template: templates/db/init/db-keycloak-configmap.yaml
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.name
+          value: db-keycloak
+
+  - it: should create vector store database configmap
+    template: templates/db/init/db-vector-store-configmap.yaml
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.name
+          value: db-vector-store
+
+  - it: should create weaviate database configmap
+    set:
+      global:
+        configuration:
+          weaviate:
+            enabled: true
+    template: templates/db/init/db-weaviate-configmap.yaml
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.name
+          value: db-weaviate
+
+  - it: should create scripts configmap with initialization scripts
+    template: templates/db/init/scripts-configmap.yaml
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-db-init-scripts
+
+  - it: should create scripts configmap with initialization scripts
+    template: templates/db/init/scripts-configmap.yaml
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-db-init-scripts
+
+  - it: should include proper labels on all configmaps
+    template: templates/db/init/scripts-configmap.yaml
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: sas-retrieval-agent-manager-db-init
+      - equal:
+          path: metadata.labels["helm.sh/chart"]
+          value: sas-retrieval-agent-manager-1.2.3-dev.20241225
+
+  - it: should use correct database configuration
+    set:
+      global:
+        configuration:
+          database:
+            host: "custom-host"
+            port: "5433"
+    template: templates/db/init/db-connection-configmap.yaml
+    asserts:
+      - isKind:
+          of: ConfigMap
+
+  - it: should support application configuration
+    set:
+      global:
+        configuration:
+          application:
+            createDB: true
+            createUser: true
+    template: templates/db/init/db-application-configmap.yaml
+    asserts:
+      - isKind:
+          of: ConfigMap
+
+  - it: should support keycloak configuration
+    set:
+      global:
+        configuration:
+          keycloak:
+            createDB: true
+            createUser: true
+    template: templates/db/init/db-keycloak-configmap.yaml
+    asserts:
+      - isKind:
+          of: ConfigMap
+
+  - it: should support vector store configuration
+    set:
+      global:
+        configuration:
+          vectorStore:
+            enabled: true
+            createDB: true
+    template: templates/db/init/db-vector-store-configmap.yaml
+    asserts:
+      - isKind:
+          of: ConfigMap
+
+  - it: should support weaviate configuration
+    set:
+      global:
+        configuration:
+          weaviate:
+            enabled: true
+    template: templates/db/init/db-weaviate-configmap.yaml
+    asserts:
+      - isKind:
+          of: ConfigMap

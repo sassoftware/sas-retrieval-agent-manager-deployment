@@ -1,0 +1,323 @@
+{{- $pgrest_repo_base := "" -}}
+{{- $postgres_repo_base := "" -}}
+{{- $kubectl_repo_base := "" -}}
+{{- if ((include "testValuesPath" (list .Values "global" "image" "repo" "base")) | eq "true") -}}
+  {{/* Postgrest image if mirrored repository is used */}}
+  {{- $pgrest_repo_base = .Values.global.image.repo.base | default (index .Values "postgrest").image.postgrest.repo.base -}}
+  {{/* Postgres image if mirrored repository is used */}}
+  {{- $postgres_repo_base = .Values.global.image.repo.base | default (index .Values "postgrest").image.postgres.repo.base -}}
+  {{/* Kubectl image if mirrored repository is used */}}
+  {{- $kubectl_repo_base = .Values.global.image.repo.base | default (index .Values "postgrest").image.kubectl.repo.base -}}
+{{- else -}}
+  {{/* Postgrest image if mirrored repository is not used */}}
+  {{- $pgrest_repo_base = (index .Values "postgrest").image.postgrest.repo.base -}}
+  {{/* Postgres image if mirrored repository is not used */}}
+  {{- $postgres_repo_base = (index .Values "postgrest").image.postgres.repo.base -}}
+  {{/* Kubectl image if mirrored repository is not used */}}
+  {{- $kubectl_repo_base = (index .Values "postgrest").image.kubectl.repo.base -}}
+{{- end -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "postgrest.fullname" . }}
+  labels:
+    {{- include "postgrest.labels" . | nindent 4 }}
+spec:
+  {{- if not (index .Values "postgrest").autoscaling.enabled }}
+  replicas: {{ (index .Values "postgrest").replicaCount }}
+  {{- end }}
+  {{- with (index .Values "postgrest").strategy }}
+  strategy:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "postgrest.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with (index .Values "postgrest").podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "postgrest.labels" . | nindent 8 }}
+        {{- with (index .Values "postgrest").podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with uniq (concat ((index .Values "postgrest").imagePullSecrets | default (list)) (.Values.global.imagePullSecrets | default (list))) }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "postgrest.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml (index .Values "postgrest").podSecurityContext | nindent 8 }}
+      initContainers:
+        - name: {{ .Chart.Name }}-db-wait
+          command:
+            - "/bin/sh"
+            - "-c"
+            - "/config/wait_for_postgres.sh"
+          env:
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: application-db-credentials
+                  key: user
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: application-db-credentials
+                  key: password
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: db-connection
+                  key: host
+            - name: DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: db-connection
+                  key: port
+            - name: DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: db-application
+                  key: db
+          image: "{{ $postgres_repo_base }}/{{ (index .Values "postgrest").image.postgres.repo.path }}:{{ (index .Values "postgrest").image.postgres.tag }}"
+          imagePullPolicy: {{ (index .Values "postgrest").image.postgres.pullPolicy }}
+          securityContext:
+            {{- toYaml (index .Values "postgrest").securityContext | nindent 12 }}
+          resources:
+            {{- toYaml (index .Values "postgrest").resources | nindent 12 }}
+          volumeMounts:
+            - mountPath: "/config"
+              name: scripts
+              readOnly: true
+        - name: {{ .Chart.Name }}-monitoring-db-wait
+          command:
+            - /bin/sh
+            - '-c'
+            - /config/wait_for_postgres.sh
+          env:
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: application-db-credentials
+                  key: user
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: application-db-credentials
+                  key: password
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: db-connection
+                  key: host
+            - name: DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: db-connection
+                  key: port
+            - name: DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: db-monitoring
+                  key: db
+          image: "{{ $postgres_repo_base }}/{{ (index .Values "postgrest").image.postgres.repo.path }}:{{ (index .Values "postgrest").image.postgres.tag }}"
+          imagePullPolicy: {{ (index .Values "postgrest").image.postgres.pullPolicy }}
+          securityContext:
+            {{- toYaml (index .Values "postgrest").securityContext | nindent 12 }}
+          resources:
+            {{- toYaml (index .Values "postgrest").resources | nindent 12 }}
+          volumeMounts:
+            - mountPath: "/config"
+              name: scripts
+              readOnly: true
+        - name: wait-for-secret
+          image: "{{ $kubectl_repo_base }}/{{ (index .Values "postgrest").image.kubectl.repo.path }}:{{ (index .Values "postgrest").image.kubectl.tag }}"
+          imagePullPolicy: {{ (index .Values "postgrest").image.kubectl.pullPolicy }}
+          securityContext:
+            {{- toYaml (index .Values "postgrest").securityContext | nindent 12 }}
+          resources:
+            {{- toYaml (index .Values "postgrest").resources | nindent 12 }}
+          command:
+            - sh
+            - -c
+            - "/config/wait_for_secret.sh"
+          volumeMounts:
+            - mountPath: "/config"
+              name: scripts
+              readOnly: true
+            - mountPath: /workdir
+              name: workdir
+      containers:
+        - name: {{ .Chart.Name }}
+          command:
+              - /bin/postgrest
+          args:
+              - /postgrest-config/postgrest.conf
+          env:
+            - name: PGUSER
+              valueFrom:
+                secretKeyRef:
+                  name: application-db-credentials
+                  key: user
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: application-db-credentials
+                  key: password
+            - name: PGHOST
+              valueFrom:
+                configMapKeyRef:
+                  name: db-connection
+                  key: host
+            - name: PGPORT
+              valueFrom:
+                configMapKeyRef:
+                  name: db-connection
+                  key: port
+            - name: PGDATABASE
+              valueFrom:
+                configMapKeyRef:
+                  name: db-application
+                  key: db
+            - name: PGRST_DB_SCHEMAS
+              valueFrom:
+                configMapKeyRef:
+                  name: db-application
+                  key: schema
+            - name: PGRST_JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  key: certs.json
+                  name: keycloak-certs
+          image: "{{ $pgrest_repo_base }}/{{ (index .Values "postgrest").image.postgrest.repo.path }}:{{ (index .Values "postgrest").image.postgrest.tag }}"
+          imagePullPolicy: {{ (index .Values "postgrest").image.postgrest.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+            - name: admin
+              containerPort: 3001
+              protocol: TCP
+          livenessProbe:
+            {{- toYaml (index .Values "postgrest").livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml (index .Values "postgrest").readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml (index .Values "postgrest").resources | nindent 12 }}
+          securityContext:
+            {{- toYaml (index .Values "postgrest").securityContext | nindent 12 }}
+          volumeMounts:
+            - mountPath: "/config"
+              name: scripts
+              readOnly: true
+            - mountPath: "/postgrest-config"
+              name: configuration
+              readOnly: true
+            {{- with (index .Values "postgrest").volumeMounts }}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
+        - name: {{ .Chart.Name }}-monitoring
+          command:
+            - /bin/postgrest
+          args:
+            - /postgrest-config/postgrest.conf
+          env:
+            - name: PGRST_SERVER_PORT
+              value: {{ index .Values.global.configuration.postgrest.monitoring "server-port" | quote }}
+            - name: PGRST_ADMIN_SERVER_PORT
+              value: {{ index .Values.global.configuration.postgrest.monitoring "admin-server-port" | quote }}
+            - name: PGUSER
+              valueFrom:
+                secretKeyRef:
+                  name: application-db-credentials
+                  key: user
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: application-db-credentials
+                  key: password
+            - name: PGHOST
+              valueFrom:
+                configMapKeyRef:
+                  name: db-connection
+                  key: host
+            - name: PGPORT
+              valueFrom:
+                configMapKeyRef:
+                  name: db-connection
+                  key: port
+            - name: PGDATABASE
+              valueFrom:
+                configMapKeyRef:
+                  name: db-monitoring
+                  key: db
+            - name: PGRST_DB_SCHEMAS
+              valueFrom:
+                configMapKeyRef:
+                  name: db-monitoring
+                  key: schema
+            - name: PGRST_JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: keycloak-certs
+                  key: certs.json
+          image: "{{ $pgrest_repo_base }}/{{ (index .Values "postgrest").image.postgrest.repo.path }}:{{ (index .Values "postgrest").image.postgrest.tag }}"
+          imagePullPolicy: {{ (index .Values "postgrest").image.postgrest.pullPolicy }}
+          ports:
+            - name: http-monitor
+              containerPort: {{ index .Values.global.configuration.postgrest.monitoring "server-port" }}
+              protocol: TCP
+            - name: admin-monitor
+              containerPort: {{ index .Values.global.configuration.postgrest.monitoring "admin-server-port" }}
+              protocol: TCP
+          livenessProbe:
+            {{- toYaml (index .Values "postgrest").livenessProbeMonitoring | nindent 12 }}
+          readinessProbe:
+            {{- toYaml (index .Values "postgrest").readinessProbeMonitoring | nindent 12 }}
+          resources:
+            {{- toYaml (index .Values "postgrest").resources | nindent 12 }}
+          securityContext:
+            {{- toYaml (index .Values "postgrest").securityContext | nindent 12 }}
+          volumeMounts:
+            - name: scripts
+              readOnly: true
+              mountPath: /config
+            - name: monitoring-configuration
+              readOnly: true
+              mountPath: /postgrest-config
+            {{- with (index .Values "postgrest").volumeMounts }}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
+      volumes:
+        - name: workdir
+          emptyDir: {}
+        - name: configuration
+          configMap:
+            name: {{ include "postgrest.fullname" . }}-configuration
+        - name: monitoring-configuration
+          configMap:
+            name: {{ include "postgrest.fullname" . }}-monitoring-configuration
+        - name: scripts
+          configMap:
+            name: {{ include "postgrest.fullname" . }}-scripts
+            defaultMode: 0777
+        {{- with (index .Values "postgrest").volumes }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with (index .Values "postgrest").nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with (index .Values "postgrest").affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with (index .Values "postgrest").tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

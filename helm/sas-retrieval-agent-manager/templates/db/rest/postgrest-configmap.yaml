@@ -1,0 +1,63 @@
+{{- $dot := . -}}
+{{- $globalEnabled := false }}
+{{- if hasKey .Values "global" }}
+{{- if hasKey .Values.global "ingress" }}
+{{- if .Values.global.ingress.enabled }}
+{{- $globalEnabled = .Values.global.ingress.enabled }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- $postgrestPath := "" -}}
+{{- if $globalEnabled }}
+{{- $postgrestPath = regexReplaceAll "\\(.*" (first .Values.postgrest.ingress.paths).path "" }}
+{{- else }}
+{{- if (len .Values.postgrest.ingress.hosts) }}
+{{- $postgrestPath = regexReplaceAll "\\(.*" (first (first .Values.postgrest.ingress.hosts).paths).path "" }}
+{{- end }}
+{{- end }}
+{{- $postgrestMonitoringPath := "" -}}
+{{- if $globalEnabled }}
+{{- range .Values.postgrest.ingress.paths }}
+{{- if contains "monitoring" .path }}
+{{- $postgrestMonitoringPath = regexReplaceAll "\\(.*" .path "" }}
+{{- end }}
+{{- end }}
+{{- else }}
+{{- if (len .Values.postgrest.ingress.hosts) }}
+{{- range (first .Values.postgrest.ingress.hosts).paths }}
+{{- if contains "monitoring" .path }}
+{{- $postgrestMonitoringPath = regexReplaceAll "\\(.*" .path "" }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgrest-configmap
+  labels:
+    {{- include "postgrest.labels" . | nindent 4 }}
+data:
+  namespace: {{ .Release.Namespace }}
+  adminService: {{ include "postgrest.fullname" . }}-admin
+  service: {{ include "postgrest.fullname" . }}
+  port: "{{ .Values.postgrest.service.port }}"
+  adminPort: "{{ .Values.postgrest.adminService.port }}"
+  inClusterUrl: "http://{{ include "postgrest.fullname" . }}:{{ .Values.postgrest.service.port }}"
+  adminInClusterUrl: "http://{{ include "postgrest.fullname" . }}-admin:{{ .Values.postgrest.adminService.port }}"
+  url: {{ if $globalEnabled -}}
+        "https://{{ .Values.global.domain }}{{ $postgrestPath }}"
+      {{- else -}}
+        "https://{{ with (first .Values.postgrest.ingress.hosts) }}{{ .host }}{{ $postgrestPath }}{{ end }}"
+      {{- end }}
+  monitoringAdminPort: "{{ index .Values.global.configuration.postgrest.monitoring "admin-server-port" }}"
+  monitoringPort: "{{ index .Values.global.configuration.postgrest.monitoring "server-port" }}"
+  monitoringInClusterUrl: "http://{{ include "postgrest.fullname" . }}:{{ index .Values.global.configuration.postgrest.monitoring "server-port" }}"
+  {{- if $postgrestMonitoringPath }}
+  monitoringUrl: {{ if $globalEnabled -}}
+        "https://{{ .Values.global.domain }}{{ $postgrestMonitoringPath }}"
+      {{- else -}}
+        "https://{{ with (first .Values.postgrest.ingress.hosts) }}{{ .host }}{{ $postgrestMonitoringPath }}{{ end }}"
+      {{- end }}
+  {{- end }}

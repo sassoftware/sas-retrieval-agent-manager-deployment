@@ -1,0 +1,186 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test keycloak autoscaling
+templates:
+  - templates/iam/keycloak/hpa.yaml
+tests:
+  - it: should not create HPA when autoscaling disabled
+    set:
+      keycloak:
+        autoscaling:
+          enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should create HPA when autoscaling enabled
+    set:
+      keycloak:
+        autoscaling:
+          enabled: true
+          minReplicas: 1
+          maxReplicas: 10
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: HorizontalPodAutoscaler
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-keycloak
+      - equal:
+          path: spec.minReplicas
+          value: 1
+      - equal:
+          path: spec.maxReplicas
+          value: 10
+
+  - it: should include proper labels
+    set:
+      keycloak:
+        autoscaling:
+          enabled: true
+          minReplicas: 1
+          maxReplicas: 5
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: keycloak
+      - equal:
+          path: metadata.labels["helm.sh/chart"]
+          value: sas-retrieval-agent-manager-1.2.3-dev.20241225
+
+  - it: should target correct deployment
+    set:
+      keycloak:
+        autoscaling:
+          enabled: true
+          minReplicas: 1
+          maxReplicas: 5
+    asserts:
+      - equal:
+          path: spec.scaleTargetRef.apiVersion
+          value: apps/v1
+      - equal:
+          path: spec.scaleTargetRef.kind
+          value: Deployment
+      - equal:
+          path: spec.scaleTargetRef.name
+          value: sas-retrieval-agent-manager-keycloak
+
+  - it: should include CPU metrics when configured
+    set:
+      keycloak:
+        autoscaling:
+          enabled: true
+          minReplicas: 1
+          maxReplicas: 5
+          targetCPUUtilizationPercentage: 80
+    asserts:
+      - contains:
+          path: spec.metrics
+          content:
+            type: Resource
+            resource:
+              name: cpu
+              target:
+                type: Utilization
+                averageUtilization: 80
+
+  - it: should include memory metrics when configured
+    set:
+      keycloak:
+        autoscaling:
+          enabled: true
+          minReplicas: 1
+          maxReplicas: 5
+          targetMemoryUtilizationPercentage: 70
+    asserts:
+      - contains:
+          path: spec.metrics
+          content:
+            type: Resource
+            resource:
+              name: memory
+              target:
+                type: Utilization
+                averageUtilization: 70
+
+  - it: should include both CPU and memory metrics
+    set:
+      keycloak:
+        autoscaling:
+          enabled: true
+          minReplicas: 2
+          maxReplicas: 10
+          targetCPUUtilizationPercentage: 75
+          targetMemoryUtilizationPercentage: 85
+    asserts:
+      - contains:
+          path: spec.metrics
+          content:
+            type: Resource
+            resource:
+              name: cpu
+              target:
+                type: Utilization
+                averageUtilization: 75
+      - contains:
+          path: spec.metrics
+          content:
+            type: Resource
+            resource:
+              name: memory
+              target:
+                type: Utilization
+                averageUtilization: 85
+
+  - it: should work with fullnameOverride
+    set:
+      keycloak:
+        fullnameOverride: "custom-keycloak"
+        autoscaling:
+          enabled: true
+          minReplicas: 1
+          maxReplicas: 5
+    asserts:
+      - equal:
+          path: metadata.name
+          value: custom-keycloak
+      - equal:
+          path: spec.scaleTargetRef.name
+          value: custom-keycloak
+
+  - it: should work with custom release name
+    release:
+      name: custom-release
+    set:
+      keycloak:
+        fullnameOverride: ""
+        autoscaling:
+          enabled: true
+          minReplicas: 1
+          maxReplicas: 5
+    asserts:
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-keycloak
+      - equal:
+          path: spec.scaleTargetRef.name
+          value: sas-retrieval-agent-manager-keycloak
+
+  - it: should include default CPU metrics when basic config used
+    set:
+      keycloak:
+        autoscaling:
+          enabled: true
+          minReplicas: 1
+          maxReplicas: 5
+    asserts:
+      - exists:
+          path: spec.metrics
+      - equal:
+          path: spec.metrics[0].type
+          value: Resource
+      - equal:
+          path: spec.metrics[0].resource.name
+          value: cpu

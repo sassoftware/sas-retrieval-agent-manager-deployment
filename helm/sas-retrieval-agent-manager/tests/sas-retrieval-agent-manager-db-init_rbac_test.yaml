@@ -1,0 +1,133 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test sas retrieval agent manager db init rbac
+templates:
+  - templates/db/init/serviceaccount.yaml
+  - templates/db/init/role.yaml
+  - templates/db/init/rolebinding.yaml
+tests:
+  - it: should create service account with correct properties
+    template: templates/db/init/serviceaccount.yaml
+    asserts:
+      - isKind:
+          of: ServiceAccount
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-db-init
+
+  - it: should create role with correct permissions
+    template: templates/db/init/role.yaml
+    asserts:
+      - isKind:
+          of: Role
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-db-init
+      - isNotEmpty:
+          path: rules
+      - contains:
+          path: rules
+          content:
+            apiGroups: [""]
+            resources: ["secrets"]
+            resourceNames: ["admin-db-credentials"]
+            verbs: ["get", "patch"]
+
+  - it: should create rolebinding with correct references
+    template: templates/db/init/rolebinding.yaml
+    asserts:
+      - isKind:
+          of: RoleBinding
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-db-init
+      - equal:
+          path: roleRef.kind
+          value: Role
+      - equal:
+          path: roleRef.name
+          value: sas-retrieval-agent-manager-db-init
+      - equal:
+          path: subjects[0].kind
+          value: ServiceAccount
+      - equal:
+          path: subjects[0].name
+          value: sas-retrieval-agent-manager-db-init
+
+  - it: should include proper labels on RBAC resources
+    template: templates/db/init/serviceaccount.yaml
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: sas-retrieval-agent-manager-db-init
+
+  - it: should support custom service account name
+    set:
+      sas-retrieval-agent-manager-db-init:
+        serviceAccount:
+          name: "custom-sa"
+    template: templates/db/init/serviceaccount.yaml
+    asserts:
+      - equal:
+          path: metadata.name
+          value: custom-sa
+
+  - it: should reference custom service account in rolebinding
+    set:
+      sas-retrieval-agent-manager-db-init:
+        serviceAccount:
+          name: "custom-sa"
+    template: templates/db/init/rolebinding.yaml
+    asserts:
+      - equal:
+          path: subjects[0].name
+          value: custom-sa
+
+  - it: should conditionally create service account
+    set:
+      sas-retrieval-agent-manager-db-init:
+        serviceAccount:
+          create: false
+    template: templates/db/init/serviceaccount.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should include annotations on service account when provided
+    set:
+      sas-retrieval-agent-manager-db-init:
+        serviceAccount:
+          annotations:
+            custom/annotation: "value"
+    template: templates/db/init/serviceaccount.yaml
+    asserts:
+      - equal:
+          path: metadata.annotations["custom/annotation"]
+          value: "value"
+
+  - it: should include proper API group for role
+    template: templates/db/init/role.yaml
+    asserts:
+      - equal:
+          path: apiVersion
+          value: rbac.authorization.k8s.io/v1
+
+  - it: should include proper API group for rolebinding
+    template: templates/db/init/rolebinding.yaml
+    asserts:
+      - equal:
+          path: apiVersion
+          value: rbac.authorization.k8s.io/v1
+      - equal:
+          path: roleRef.apiGroup
+          value: rbac.authorization.k8s.io
+
+  - it: should allow access to specific secrets only
+    template: templates/db/init/role.yaml
+    asserts:
+      - contains:
+          path: rules
+          content:
+            apiGroups: [""]
+            resources: ["secrets"]
+            resourceNames: ["admin-db-credentials"]
+            verbs: ["get", "patch"]
