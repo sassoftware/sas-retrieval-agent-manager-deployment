@@ -1,0 +1,163 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test sas retrieval agent manager db init job
+templates:
+  - ../templates/db/init/initialization-job.yaml
+tests:
+  - it: should create job with correct properties
+    asserts:
+      - isKind:
+          of: Job
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-db-init
+      - equal:
+          path: spec.template.spec.restartPolicy
+          value: OnFailure
+
+  - it: should use correct service account
+    asserts:
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: sas-retrieval-agent-manager-db-init
+
+  - it: should have init container with correct properties
+    asserts:
+      - isNotEmpty:
+          path: spec.template.spec.initContainers
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: initialization
+      - equal:
+          path: spec.template.spec.initContainers[0].image
+          value: "docker.io/postgres:15-alpine"
+
+  - it: should have cleanup container with correct properties
+    asserts:
+      - isNotEmpty:
+          path: spec.template.spec.containers
+      - equal:
+          path: spec.template.spec.containers[0].name
+          value: secret-cleaning
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "docker.io/alpine/k8s:1.31.12"
+
+  - it: should mount scripts volume in init container
+    asserts:
+      - contains:
+          path: spec.template.spec.initContainers[0].volumeMounts
+          content:
+            name: configmap-scripts
+            mountPath: /scripts
+
+  - it: should mount database credentials in init container
+    asserts:
+      - contains:
+          path: spec.template.spec.initContainers[0].volumeMounts
+          content:
+            name: db-admin-credentials
+            mountPath: /secret/admin
+            readOnly: true
+
+  - it: should mount scripts volume in cleanup container
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: configmap-scripts
+            mountPath: /scripts
+
+  # - it: should define all required volumes
+  #   asserts:
+  #     - contains:
+  #         path: spec.template.spec.volumes
+  #         content:
+  #           name: configmap-scripts
+  #           configMap:
+  #             name: sas-retrieval-agent-manager-db-init-scripts
+  #             defaultMode: 511
+  #     - contains:
+  #         path: spec.template.spec.volumes
+  #         content:
+  #           name: db-admin-credentials
+  #           secret:
+  #             secretName: admin-db-credentials
+
+  - it: should include proper labels
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: sas-retrieval-agent-manager-db-init
+
+  - it: should set correct backoff limit
+    asserts:
+      - equal:
+          path: spec.backoffLimit
+          value: 1000
+
+  - it: should include security context
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext.runAsNonRoot
+          value: true
+      - equal:
+          path: spec.template.spec.securityContext.runAsUser
+          value: 10001
+
+  - it: should include resource limits
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].resources.limits.cpu
+          value: "200m"
+      - equal:
+          path: spec.template.spec.initContainers[0].resources.limits.memory
+          value: "256Mi"
+
+  - it: should include init container command
+    asserts:
+      - contains:
+          path: spec.template.spec.initContainers[0].command
+          content: "/scripts/initialize_database.sh"
+
+  - it: should include cleanup container command
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].command
+          content: "/scripts/clean_admin_secret.sh"
+
+  - it: should support custom image pull policy
+    set:
+      sas-retrieval-agent-manager-db-init:
+        image:
+          postgres:
+            pullPolicy: "Always"
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].imagePullPolicy
+          value: "Always"
+
+  - it: should mount all database connection volumes in init container
+    asserts:
+      - contains:
+          path: spec.template.spec.initContainers[0].volumeMounts
+          content:
+            name: db-connection
+            mountPath: /config/db
+      - contains:
+          path: spec.template.spec.initContainers[0].volumeMounts
+          content:
+            name: db-keycloak-connection
+            mountPath: /config/keycloak
+
+  - it: should include node affinity
+    asserts:
+      - exists:
+          path: spec.template.spec.affinity.nodeAffinity
+      - isNotEmpty:
+          path: spec.template.spec.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution
+
+  - it: should include ArgoCD annotation
+    asserts:
+      - equal:
+          path: metadata.annotations["argocd.argoproj.io/sync-options"]
+          value: "Skip"

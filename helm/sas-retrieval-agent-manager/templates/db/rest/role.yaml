@@ -1,0 +1,21 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "postgrest.serviceAccountName" . }}
+  labels:
+    {{- include "postgrest.labels" . | nindent 4 }}
+  {{- with (index .Values "postgrest").serviceAccount.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+rules:
+  - apiGroups:
+    - ""
+    resources:
+      - "secrets"
+    resourceNames:
+      - "keycloak-certs"
+    verbs:
+      # - "create"
+      - "get"
+      - "list"

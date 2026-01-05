@@ -1,4 +1,7 @@
 dependencies:
+- name: common-lib
+  repository: file://../common-lib
+  version: 1.0.0
 - name: filebrowser
   repository: file://../filebrowser
   version: 1.0.0
@@ -23,5 +26,5 @@ dependencies:
 - name: gpg
   repository: file://../gpg
   version: 1.1.0
-digest: sha256:8b0b637711effa6cb1c695080e814a61dc7420c775449e25885478a129219698
-generated: "2025-09-30T17:21:15.255639195Z"
+digest: sha256:c65952d9e7a6b5496ac30aefa5a69ca16a6b545539176cd3ee209734f623e07c
+generated: "2025-12-15T14:42:46.1156462-05:00"

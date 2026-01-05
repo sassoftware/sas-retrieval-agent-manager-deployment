@@ -1,0 +1,214 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test keycloak deployment
+templates:
+  - templates/iam/keycloak/deployment.yaml
+tests:
+  - it: should create a deployment with default values
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Deployment
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-keycloak
+      - equal:
+          path: spec.replicas
+          value: 1
+
+  - it: should disable replicas when autoscaling enabled
+    set:
+      keycloak:
+        autoscaling:
+          enabled: true
+    asserts:
+      - notExists:
+          path: spec.replicas
+
+  - it: should set custom replica count
+    set:
+      keycloak:
+        replicaCount: 3
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 3
+
+  - it: should include proper labels
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: keycloak
+      - equal:
+          path: spec.selector.matchLabels["app.kubernetes.io/component"]
+          value: keycloak
+
+  - it: should include pod annotations
+    set:
+      keycloak:
+        podAnnotations:
+          test-annotation: "test-value"
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations["test-annotation"]
+          value: test-value
+
+  - it: should include pod labels
+    set:
+      keycloak:
+        podLabels:
+          test-label: "test-value"
+    asserts:
+      - equal:
+          path: spec.template.metadata.labels["test-label"]
+          value: test-value
+
+  - it: should use default keycloak image
+    set:
+      keycloak:
+        image:
+          keycloak:
+            tag: "latest"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "quay.io/keycloak/keycloak:latest"
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: IfNotPresent
+
+  - it: should use custom keycloak image
+    set:
+      keycloak:
+        image:
+          keycloak:
+            repo:
+              base: "custom.registry.io"
+              path: "custom/keycloak"
+            tag: "25.0.0"
+            pullPolicy: Always
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "custom.registry.io/custom/keycloak:25.0.0"
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: Always
+
+  - it: should use global image registry when set
+    set:
+      keycloak:
+        image:
+          keycloak:
+            tag: "latest"
+      global:
+        image:
+          repo:
+            base: "global.registry.io"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "global.registry.io/keycloak/keycloak:latest"
+
+  - it: should use default postgres image
+    set:
+      keycloak:
+        image:
+          postgres:
+            tag: "latest"
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].image
+          value: "docker.io/postgres:latest"
+
+  - it: should use custom postgres image
+    set:
+      keycloak:
+        image:
+          postgres:
+            repo:
+              base: "custom.registry.io"
+              path: "custom/postgres"
+            tag: "14-alpine"
+            pullPolicy: Never
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].image
+          value: "custom.registry.io/custom/postgres:14-alpine"
+      - equal:
+          path: spec.template.spec.initContainers[0].imagePullPolicy
+          value: IfNotPresent
+
+  - it: should include image pull secrets from values
+    set:
+      keycloak:
+        imagePullSecrets:
+          - name: local-secret
+    asserts:
+      - contains:
+          path: spec.template.spec.imagePullSecrets
+          content:
+            name: local-secret
+
+  - it: should merge local and global image pull secrets
+    set:
+      keycloak:
+        imagePullSecrets:
+          - name: local-secret
+      global:
+        imagePullSecrets:
+          - name: global-secret
+    asserts:
+      - contains:
+          path: spec.template.spec.imagePullSecrets
+          content:
+            name: local-secret
+      - contains:
+          path: spec.template.spec.imagePullSecrets
+          content:
+            name: global-secret
+
+  - it: should apply pod security context
+    set:
+      keycloak:
+        podSecurityContext:
+          runAsUser: 1000
+          runAsGroup: 1000
+          fsGroup: 1000
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext.runAsUser
+          value: 1000
+      - equal:
+          path: spec.template.spec.securityContext.runAsGroup
+          value: 1000
+      - equal:
+          path: spec.template.spec.securityContext.fsGroup
+          value: 1000
+
+  - it: should use default security context
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext.runAsUser
+          value: 10001
+      - equal:
+          path: spec.template.spec.securityContext.runAsNonRoot
+          value: true
+
+  - it: should use correct service account name
+    asserts:
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: sas-retrieval-agent-manager-keycloak
+
+  - it: should work with fullnameOverride
+    set:
+      keycloak:
+        fullnameOverride: "custom-keycloak"
+    asserts:
+      - equal:
+          path: metadata.name
+          value: custom-keycloak
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: custom-keycloak

@@ -1,0 +1,23 @@
+{{- $repo_base := "" -}}
+{{- if and (hasKey (index .Values "sas-retrieval-agent-manager-api") "global") (hasKey .Values.global "image") (hasKey .Values.global.image "repo") (hasKey .Values.global.image.repo "base") -}}
+  {{- $repo_base = .Values.global.image.repo.base | default .Values.global.configuration.vhub.image.repo.base -}}
+{{- else -}}
+  {{- $repo_base = .Values.global.configuration.vhub.image.repo.base -}}
+{{- end -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vhub-config
+  labels:
+    {{- include "sas-retrieval-agent-manager-api.labels" . | nindent 4 }}
+data:
+  vhub_repository: "{{ $repo_base }}/{{ .Values.global.configuration.vhub.image.repo.path }}"
+  vhub_tag: "{{ .Values.global.configuration.vhub.image.tag }}"
+  
+  {{- with first (uniq (concat ((index .Values "sas-retrieval-agent-manager-api").imagePullSecrets | default (list)) (.Values.global.imagePullSecrets | default (list)))) }}
+  vhub_pull_secret: {{  .name }}
+  {{- end }}
+  available_hardware: {{ index .Values.global.configuration.vhub "availableHardware" | toJson | quote }}
+  {{- if .Values.global.configuration.vhub.postgreSQLCertSecret | default .Values.global.configuration.vhub.awsCertSecret | quote }}
+  postgresql_cert_secret: {{ .Values.global.configuration.vhub.postgreSQLCertSecret | default .Values.global.configuration.vhub.awsCertSecret | quote }}
+  {{- end }}

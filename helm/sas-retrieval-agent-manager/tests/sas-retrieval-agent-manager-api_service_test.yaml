@@ -1,0 +1,118 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test sas retrieval agent manager api services
+templates:
+  - templates/api/service.yaml
+  - templates/api/noauth-service.yaml
+tests:
+  - it: should create main service
+    template: templates/api/service.yaml
+    asserts:
+      - isKind:
+          of: Service
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-api
+
+  - it: should configure main service type
+    template: templates/api/service.yaml
+    set:
+      sas-retrieval-agent-manager-api:
+        service:
+          type: LoadBalancer
+    asserts:
+      - equal:
+          path: spec.type
+          value: LoadBalancer
+
+  - it: should configure main service port
+    template: templates/api/service.yaml
+    set:
+      sas-retrieval-agent-manager-api:
+        service:
+          port: 9090
+    asserts:
+      - equal:
+          path: spec.ports[0].port
+          value: 9090
+
+  - it: should configure main service target port
+    template: templates/api/service.yaml
+    asserts:
+      - equal:
+          path: spec.ports[0].targetPort
+          value: http
+
+  - it: should use correct selector for main service
+    template: templates/api/service.yaml
+    asserts:
+      - equal:
+          path: spec.selector["app.kubernetes.io/name"]
+          value: api
+      - equal:
+          path: spec.selector["app.kubernetes.io/instance"]
+          value: RELEASE-NAME
+
+  - it: should create noauth service
+    template: templates/api/noauth-service.yaml
+    asserts:
+      - isKind:
+          of: Service
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-api-noauth
+
+  - it: should configure noauth service type
+    template: templates/api/noauth-service.yaml
+    set:
+      sas-retrieval-agent-manager-api:
+        service:
+          type: NodePort
+    asserts:
+      - equal:
+          path: spec.type
+          value: NodePort
+
+  - it: should configure noauth service port
+    template: templates/api/noauth-service.yaml
+    set:
+      sas-retrieval-agent-manager-api:
+        service:
+          port: 8181
+    asserts:
+      - equal:
+          path: spec.ports[0].port
+          value: 8181
+
+  - it: should use correct selector for noauth service
+    template: templates/api/noauth-service.yaml
+    asserts:
+      - equal:
+          path: spec.selector["app.kubernetes.io/name"]
+          value: api
+      - equal:
+          path: spec.selector["app.kubernetes.io/instance"]
+          value: RELEASE-NAME
+
+  - it: should include proper labels on main service
+    template: templates/api/service.yaml
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: api
+      - equal:
+          path: metadata.labels["helm.sh/chart"]
+          value: sas-retrieval-agent-manager-1.2.3-dev.20241225
+
+  - it: should include proper labels on noauth service
+    template: templates/api/noauth-service.yaml
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: api
+      - equal:
+          path: metadata.labels["helm.sh/chart"]
+          value: sas-retrieval-agent-manager-1.2.3-dev.20241225

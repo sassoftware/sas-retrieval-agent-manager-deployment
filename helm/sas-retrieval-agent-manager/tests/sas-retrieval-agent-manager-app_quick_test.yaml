@@ -1,0 +1,42 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test sas retrieval agent manager app quick validation
+templates:
+  - templates/ui/deployment.yaml
+  - templates/ui/service.yaml
+  - templates/ui/serviceaccount.yaml
+tests:
+  - it: should create all basic resources
+    asserts:
+      - hasDocuments:
+          count: 1
+
+  - it: should use consistent naming across deployment
+    template: templates/ui/deployment.yaml
+    asserts:
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-app
+
+  - it: should use consistent naming across service
+    template: templates/ui/service.yaml
+    asserts:
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-app
+
+  - it: should use consistent naming across serviceaccount
+    template: templates/ui/serviceaccount.yaml
+    asserts:
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-app
+
+  - it: should include required labels on deployment
+    template: templates/ui/deployment.yaml
+    asserts:
+      - isSubset:
+          path: metadata.labels
+          content:
+            app.kubernetes.io/name: app
+            app.kubernetes.io/instance: RELEASE-NAME
+            helm.sh/chart: sas-retrieval-agent-manager-1.2.3-dev.20241225

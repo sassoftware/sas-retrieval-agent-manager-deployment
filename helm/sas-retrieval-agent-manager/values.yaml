@@ -139,7 +139,7 @@ global:
   # @schema
   # -- Default domain/host for ingress resources
   # -- If not set, each chart uses its own host configuration
-  domain: ""
+  domain: null
 
   # @schema
   # type: object
@@ -156,7 +156,7 @@ global:
       # type: [string,null]
       # @schema
       # -- Base container registry URL (SAS Container Registry)
-      base: ''
+      base: null
 
   # @schema
   # type: array
@@ -519,6 +519,80 @@ global:
 
 
     # @schema
+    # type: object
+    # required: true
+    # @schema
+    # -- LLM hydration configuration
+    llmHydration:
+      # @schema
+      # type: boolean
+      # required: true
+      # default: false
+      # @schema
+      # -- Whether to automatically hydrate LLM data
+      enabled: false
+      # @schema
+      # type: string
+      # required: false
+      # default: ""
+      # @schema
+      # -- Endpoint for LLM provider
+      # -- Example: 
+      endpoint: ""
+      # @schema
+      # type: string
+      # required: false
+      # default: ""
+      # @schema
+      # -- B64 Encoded API key for LLM provider
+      key: ""
+      # Needs to be seperated by platform at some point... not today
+      # @schema
+      # type: array
+      # items:
+      #   type: string
+      # default: []
+      # @schema
+      # -- List of model names to hydrate
+      # -- Examples:
+      #     - "gpt-4.1"
+      #     - "gpt-4.1-mini"
+      #     - "gpt-4.1-nano"
+      models: []
+
+    # @schema
+    # type: object
+    # required: true
+    # @schema
+    # -- Embedding model hydration configuration
+    embModelHydration:
+      # @schema
+      # type: boolean
+      # required: true
+      # default: false
+      # @schema
+      # -- Whether to automatically hydrate embedding model data
+      enabled: false
+      # Needs to be seperated by platform at some point... not today
+      # @schema
+      # type: array
+      # items:
+      #   type: string
+      # default: []
+      # @schema
+      # -- List of model names to hydrate
+      # -- Examples:
+      #   - "ibm-granite/granite-embedding-30m-english"
+      #   - "prdev/mini-gte"
+      #   - "sentence-transformers/all-MiniLM-L6-v2"
+      #   - "nomic-ai/nomic-embed-text-v2-moe"
+      #   - "ibm-granite/granite-embedding-107m-multilingual"
+      #   - "sentence-transformers/distiluse-base-multilingual-cased-v2"
+      models: []
+
+
+
+    # @schema
     # required: true
     # type: object
     # @schema
@@ -850,6 +924,18 @@ global:
     # @schema
     # -- Embedding model inference configuration
     embedding:
+      # @schema
+      # type: string
+      # required: true
+      # @schema
+      # -- Embedding user name
+      user: "sas_ram_embedding_user"
+      # @schema
+      # type: string
+      # required: true
+      # @schema
+      # -- Embedding user password
+      password: "GBmFpVZ2Aqh9okUT0yW1Jx8vdQpxCXyS"
       # -- Container image configuration for embedding model inference
       image:
         repo:
@@ -858,7 +944,7 @@ global:
           # -- Container image path/name for embedding model inference
           path: huggingface/text-embeddings-inference
         # -- Container image tag for embedding model inference with CPU
-        # tag_cpu: ""
+        tag_cpu: cpu-1.8
         # -- Use global registry configuration instead of local
         useGlobal: false
       pvc:
@@ -874,7 +960,26 @@ global:
         # -- Size for the embedding PVC
         size: 40Gi
         # -- Existing claim name for the embedding PVC (if not creating a new one)
-        existingClaim: ""
+        # existingClaim: ""
+
+    # @schema
+    # type: object
+    # required: true
+    # @schema
+    # -- OpenTelemetry user configuration
+    otel:
+      # @schema
+      # type: string
+      # required: true
+      # @schema
+      # -- OpenTelemetry user name
+      user: "sas_ram_otel_user"
+      # @schema
+      # type: string
+      # required: true
+      # @schema
+      # -- OpenTelemetry user password
+      password: "Buso0YCnh8asVUAw6N0xjn6OgvNSvUKC"
 
     # @schema
     # required: true
@@ -905,7 +1010,7 @@ global:
           # -- Container image path/name for evaluation service
           path: "viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-evaluation"
         # -- Container image tag for evaluation service
-        # tag: ""
+        tag: "1.6.4-20251202.1764685261181"
 
     # @schema
     # required: true
@@ -936,7 +1041,7 @@ global:
           # -- Container image path/name for plugin agent
           path: viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-agent
         # -- Container image tag for plugin agent
-        # tag: ""
+        tag: "1.6.8-20251120.1763662950004"
     
     # @schema
     # type: object
@@ -962,6 +1067,12 @@ global:
       # @schema
       # -- Kueue pod quota
       podQuota: 6
+      # @schema
+      # type: integer
+      # required: true
+      # @schema
+      # -- Kueue gpu quota
+      nvidiaGpuQuota: 0
 
     # @schema
     # required: true
@@ -1259,7 +1370,7 @@ global:
           # -- Container image path/name for vectorization hub
           path: "viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-vectorization-hub"
         # -- Container image tag for vectorization hub
-        # tag: ""
+        tag: "1.6.4-20251118.1763481842222"
 
       # @schema
       # type: array
@@ -1299,6 +1410,27 @@ global:
       # @schema
       # -- Database migration user password (should be provided via secret)
       dbMigrationPassword: ""
+
+    # @schema
+    # type: object
+    # required: true
+    # additionalProperties: true
+    # @schema
+    # -- OpenTelemetry configuration
+    # -- Controls observability and telemetry settings
+    otel:
+      # @schema
+      # type: string
+      # required: true
+      # @schema
+      # -- OpenTelemetry user for authentication
+      user: "otel_user"
+      # @schema
+      # type: string
+      # required: true
+      # @schema
+      # -- OpenTelemetry password (should be provided via secret)
+      password: ""
 
     # @schema
     # type: object
@@ -1427,6 +1559,30 @@ global:
     # @schema
     # type: object
     # required: true
+    # properties:
+    #   sslVerify:
+    #     type: boolean
+    #     default: false
+    #     required: true
+    # @schema
+    # -- UI/Frontend application configuration
+    ui:
+      # @schema
+      # type: boolean
+      # required: true
+      # @schema
+      # -- Whether RAM is hosted on the root ingress or not
+      enableRootIngress: true
+      # @schema
+      # type: boolean
+      # required: true
+      # @schema
+      # -- Whether to verify SSL certificates for backend API calls
+      sslVerify: false
+
+    # @schema
+    # type: object
+    # required: true
     # @schema
     # -- weaviate settings
     weaviate:
@@ -1436,6 +1592,7 @@ global:
       # @schema
       # -- Enable hydration for local Weaviate installation
       enabled: false
+    
 
 # ============================================================================
 # SUB-CHART CONFIGURATIONS
@@ -1461,8 +1618,18 @@ filebrowser:
     # -- Container image pull policy
     pullPolicy: IfNotPresent
     # -- Overrides the image tag whose default is the chart appVersion.
-    # tag: "" # https://hub.docker.com/r/filebrowser/filebrowser/tags
+    tag: "v2.51.2" # https://hub.docker.com/r/filebrowser/filebrowser/tags
 
+  # @schema
+  # type: array
+  # items:
+  #   type: object
+  #   properties:
+  #     name:
+  #       type: string
+  #       example: cr-sas-secret
+  # default: []
+  # @schema
   # -- Array of imagePullSecrets in the namespace for pulling images
   imagePullSecrets: []
 
@@ -1472,6 +1639,9 @@ filebrowser:
   # -- String to fully override the fullname template with a string
   fullnameOverride: "sas-retrieval-agent-manager-filebrowser"
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/serviceaccount-schema.json"
+  # @schema
   # -- Service account configuration for API
   serviceAccount:
     # -- Annotations to add to the service account
@@ -1481,15 +1651,26 @@ filebrowser:
     # -- The name of the service account to use. If not set and create is true, a name is generated using the fullname template
     name: ''
 
+  # @schema
+  # type: object
+  # additionalProperties: true
+  # @schema
   # -- Annotations to add to the pods
   podAnnotations: {}
 
+  # @schema
+  # type: object
+  # additionalProperties: true
+  # @schema
   # -- Labels to add to the pods
   podLabels:
     sas.com/deployment: "sas-retrieval-agent-manager"
     workload.sas.com/class: "ram"
 
-  # -- The security context for the pods
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/podsecuritycontext-schema.json"
+  # @schema
+  # filebrowser.podSecurityContext -- The security context for the pods
   # podSecurityContext: {}
   #   # -- Group ID to run the entrypoint of the container process
   #   # runAsGroup: 1001
@@ -1503,7 +1684,10 @@ filebrowser:
   #   # -- Group ID for file system ownership
   #   # fsGroup: 2000
 
-  # -- The security context for the application container
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/securitycontext-schema.json"
+  # @schema
+  # filebrowser.securityContext -- The security context for the application container
   # securityContext: {}
   #   # -- Run as non-privileged container
   #   # privileged: false
@@ -1526,6 +1710,9 @@ filebrowser:
   #   # -- Group ID to run the entrypoint of the container process
   #   # runAsGroup: 1001
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/service-schema.json"
+  # @schema
   # -- Kubernetes Service configuration
   service:
     # -- Kubernetes Service type
@@ -1539,6 +1726,10 @@ filebrowser:
     enabled: true
     # -- Class name of the Ingress
     className: nginx
+    # @schema
+    # type: object
+    # additionalProperties: true
+    # @schema
     # -- Annotations for the Ingress
     annotations:
       # -- OAuth2 authentication sign-in URL
@@ -1586,12 +1777,21 @@ filebrowser:
     #   cpu: 100m
     #   memory: 128Mi
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/nodeselector-schema.json"
+  # @schema
   # -- Node labels for pod assignment
   nodeSelector: {}
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/tolerations-schema.json"
+  # @schema
   # -- Tolerations for pod assignment
   tolerations: []
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/affinity-schema.json"
+  # @schema
   # -- Map of node/pod affinities
   affinity:
     nodeAffinity:
@@ -1688,9 +1888,15 @@ filebrowser:
       maxUnavailable: 0
       maxSurge: 1
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/probe-schema.json"
+  # @schema
   # -- Liveness probe configuration (disabled by default, enable if needed)
   livenessProbe: {}
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/probe-schema.json"
+  # @schema
   # -- Readiness probe configuration
   readinessProbe:
     httpGet:
@@ -1727,6 +1933,10 @@ keycloak:
 
   # -- Container image configuration for Keycloak and related services
   image:
+    # @schema
+    # type: object
+    # additionalProperties: true
+    # @schema
     # -- Container image configuration for Keycloak
     keycloak:
       # -- Container image configuration for Keycloak
@@ -1738,7 +1948,11 @@ keycloak:
       # -- Image pull policy for Keycloak container
       pullPolicy: IfNotPresent
       # -- Keycloak container image tag
-      # tag: ""
+      tag: "26.3.2"
+    # @schema
+    # type: object
+    # additionalProperties: true
+    # @schema
     # -- PostgreSQL database container image configuration
     postgres:
       # -- Container image configuration for Postgres
@@ -1750,7 +1964,7 @@ keycloak:
       # -- Image pull policy for PostgreSQL container
       pullPolicy: IfNotPresent
       # -- PostgreSQL container image tag
-      # tag: ""
+      tag: "15-alpine"
     # -- Custom theme container image configuration
     theme:
       # -- Container image configuration for the SAS Keycloak theme
@@ -1762,7 +1976,7 @@ keycloak:
       # -- Image pull policy for theme container
       pullPolicy: IfNotPresent
       # -- Theme container image tag
-      # tag: ""
+      tag: "1.2.19-20250908.1757359720294"
     # -- kubectl container image configuration (used for Kubernetes operations)
     kubectl:
       # -- Container image configuration for kubectl container
@@ -1774,8 +1988,18 @@ keycloak:
       # -- Image pull policy for kubectl container
       pullPolicy: IfNotPresent
       # -- kubectl container image tag
-      # tag: ""
+      tag: "1.31.12"
 
+  # @schema
+  # type: array
+  # items:
+  #   type: object
+  #   properties:
+  #     name:
+  #       type: string
+  #       example: cr-sas-secret
+  # default: []
+  # @schema
   # -- Array of imagePullSecrets in the namespace for pulling images from private registries
   imagePullSecrets:
     - name: cr-sas-secret
@@ -1786,6 +2010,9 @@ keycloak:
   # -- String to fully override the fullname template with a string
   fullnameOverride: "sas-retrieval-agent-manager-keycloak"
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/serviceaccount-schema.json"
+  # @schema
   # -- Service account configuration for Keycloak
   serviceAccount:
     # -- Specifies whether a service account should be created
@@ -1797,14 +2024,25 @@ keycloak:
     # -- The name of the service account to use. If not set and create is true, a name is generated using the fullname template
     name: ""
 
+  # @schema
+  # type: object
+  # additionalProperties: true
+  # @schema
   # -- Annotations to add to the pods
   podAnnotations: {}
 
+  # @schema
+  # type: object
+  # additionalProperties: true
+  # @schema
   # -- Labels to add to the pods
   podLabels:
     sas.com/deployment: "sas-retrieval-agent-manager"
     workload.sas.com/class: "ram"
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/podsecuritycontext-schema.json"
+  # @schema
   # -- The security context for the pods
   podSecurityContext:
     # -- Group ID to run the entrypoint of the container process
@@ -1819,6 +2057,9 @@ keycloak:
     # -- Group ID for file system ownership
     fsGroup: 10001
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/securitycontext-schema.json"
+  # @schema
   # -- The security context for the application container
   securityContext:
     # -- Whether the container runs in privileged mode
@@ -1842,6 +2083,9 @@ keycloak:
     # -- Group ID to run the entrypoint of the container process
     runAsGroup: 10001
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/service-schema.json"
+  # @schema
   # -- Kubernetes Service configuration
   service:
     # -- Kubernetes Service type
@@ -1855,6 +2099,10 @@ keycloak:
     enabled: true
     # -- Class name of the Ingress
     className: "nginx"
+    # @schema
+    # type: object
+    # additionalProperties: true
+    # @schema
     # -- Annotations for the Ingress
     annotations:
       # -- Disallow HTTP traffic, force HTTPS only
@@ -1897,6 +2145,9 @@ keycloak:
       #   hosts:
       #     - ""
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/resources-schema.json"
+  # @schema
   # -- The resources to allocate for the Keycloak container
   resources:
     # -- Resource limits for the container
@@ -1912,6 +2163,9 @@ keycloak:
       # -- Memory request
       memory: 256Mi
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/probe-schema.json"
+  # @schema
   # -- Liveness probe configuration for Keycloak
   livenessProbe:
     # -- Number of consecutive failures required to mark container as not ready
@@ -1926,6 +2180,9 @@ keycloak:
     # -- How often to perform the probe
     periodSeconds: 30
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/probe-schema.json"
+  # @schema
   # -- Readiness probe configuration for Keycloak
   readinessProbe:
     # -- Number of consecutive failures required to mark container as not ready
@@ -1940,6 +2197,9 @@ keycloak:
     # -- How often to perform the probe
     periodSeconds: 30
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/autoscaling-schema.json"
+  # @schema
   # -- Horizontal Pod Autoscaler configuration
   autoscaling:
     # -- Enable horizontal pod autoscaling
@@ -1966,12 +2226,21 @@ keycloak:
   #   mountPath: "/etc/foo"
   #   readOnly: true
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/nodeselector-schema.json"
+  # @schema
   # -- Node labels for pod assignment
   nodeSelector: {}
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/tolerations-schema.json"
+  # @schema
   # -- Tolerations for pod assignment
   tolerations: []
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/affinity-schema.json"
+  # @schema
   # -- Map of node/pod affinities
   affinity:
     nodeAffinity:
@@ -1999,6 +2268,9 @@ keycloak:
     fullnameOverride: "sas-retrieval-agent-manager-oauth2-proxy"
     # -- Number of OAuth2 Proxy replicas
     replicaCount: 1
+    # @schema
+    # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/service-schema.json"
+    # @schema
     # -- OAuth2 Proxy service configuration
     service:
       # -- Kubernetes Service type for OAuth2 Proxy
@@ -2006,6 +2278,9 @@ keycloak:
       # -- Kubernetes Service port for OAuth2 Proxy
       port: 4180
 
+    # @schema
+    # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/serviceaccount-schema.json"
+    # @schema
     # -- OAuth2 Proxy service account configuration
     serviceAccount:
       # -- Specifies whether a service account should be created for OAuth2 Proxy
@@ -2023,6 +2298,10 @@ keycloak:
       enabled: true
       # -- Class name of the OAuth2 Proxy Ingress
       className: "nginx"
+      # @schema
+      # type: object
+      # additionalProperties: true
+      # @schema
       # -- Annotations for the OAuth2 Proxy Ingress
       annotations:
         # -- Disallow HTTP traffic, force HTTPS only
@@ -2064,20 +2343,41 @@ keycloak:
       # -- Image pull policy for OAuth2 Proxy container
       pullPolicy: Always
       # -- OAuth2 Proxy container image tag
-      # tag: ""
+      tag: "v7.12.0"
 
+    # @schema
+    # type: array
+    # items:
+    #   type: object
+    #   properties:
+    #     name:
+    #       type: string
+    #       example: cr-sas-secret
+    # default: []
+    # @schema
     # -- Array of imagePullSecrets for OAuth2 Proxy
     imagePullSecrets:
       - name: acr-secret
 
+    # @schema
+    # type: object
+    # additionalProperties: true
+    # @schema
     # -- Annotations to add to the OAuth2 Proxy pods
     podAnnotations: {}
 
+    # @schema
+    # type: object
+    # additionalProperties: true
+    # @schema
     # -- Labels to add to the OAuth2 Proxy pods
     podLabels:
       sas.com/deployment: "sas-retrieval-agent-manager"
       workload.sas.com/class: "ram"
 
+    # @schema
+    # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/podsecuritycontext-schema.json"
+    # @schema
     # -- The security context for the OAuth2 Proxy pods
     podSecurityContext:
       # -- Group ID for file system ownership
@@ -2092,6 +2392,9 @@ keycloak:
       seccompProfile:
         type: RuntimeDefault
 
+    # @schema
+    # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/securitycontext-schema.json"
+    # @schema
     # -- The security context for the OAuth2 Proxy application container
     securityContext:
       # -- Seccomp profile for the OAuth2 Proxy container
@@ -2113,6 +2416,9 @@ keycloak:
       # -- User ID to run the entrypoint of the container process
       runAsUser: 10001
 
+    # @schema
+    # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/probe-schema.json"
+    # @schema
     # -- Liveness probe configuration for OAuth2 Proxy
     livenessProbe:
       # -- HTTP GET probe configuration for liveness
@@ -2121,6 +2427,9 @@ keycloak:
         path: /ping
         port: http
 
+    # @schema
+    # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/probe-schema.json"
+    # @schema
     # -- Readiness probe configuration for OAuth2 Proxy
     readinessProbe:
       # -- HTTP GET probe configuration for readiness
@@ -2129,6 +2438,9 @@ keycloak:
         path: /ping
         port: http
 
+    # @schema
+    # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/resources-schema.json"
+    # @schema
     # -- The resources to allocate for the OAuth2 Proxy container
     resources:
       # -- Resource limits for the OAuth2 Proxy container
@@ -2144,6 +2456,9 @@ keycloak:
         # -- Memory request
         memory: 32Mi
 
+    # @schema
+    # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/autoscaling-schema.json"
+    # @schema
     # -- Horizontal Pod Autoscaler configuration for OAuth2 Proxy
     autoscaling:
       # -- Enable horizontal pod autoscaling for OAuth2 Proxy
@@ -2168,12 +2483,21 @@ keycloak:
     #   mountPath: "/etc/foo"
     #   readOnly: true
 
+    # @schema
+    # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/nodeselector-schema.json"
+    # @schema
     # -- Node labels for OAuth2 Proxy pod assignment
     nodeSelector: {}
 
+    # @schema
+    # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/tolerations-schema.json"
+    # @schema
     # -- Tolerations for OAuth2 Proxy pod assignment
     tolerations: []
 
+    # @schema
+    # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/affinity-schema.json"
+    # @schema
     # -- Map of node/pod affinities for OAuth2 Proxy
     affinity:
       nodeAffinity:
@@ -2252,6 +2576,10 @@ keycloak:
 # -- GPG: Cryptographic key management service
 # -- Provides GPG encryption/decryption capabilities for secure data handling
 gpg:
+  # @schema
+  # type: object
+  # additionalProperties: true
+  # @schema
   # -- Container image configuration for GPG and kubectl containers
   image:
     # -- Container image configuration for GPG
@@ -2265,7 +2593,7 @@ gpg:
       # -- Image pull policy for GPG container
       pullPolicy: IfNotPresent
       # -- GPG container image tag
-      # tag: ""
+      tag: "1.3.6"
     # -- kubectl container image configuration (used for Kubernetes operations)
     kubectl:
       # -- Container image configuration for kubectl
@@ -2277,8 +2605,18 @@ gpg:
       # -- Image pull policy for kubectl container
       pullPolicy: IfNotPresent
       # -- kubectl container image tag
-      # tag: ""
+      tag: "1.31.12"
 
+  # @schema
+  # type: array
+  # items:
+  #   type: object
+  #   properties:
+  #     name:
+  #       type: string
+  #       example: cr-sas-secret
+  # default: []
+  # @schema
   # -- Array of imagePullSecrets in the namespace for pulling images from private registries
   imagePullSecrets: []
 
@@ -2288,6 +2626,9 @@ gpg:
   # -- String to fully override the fullname template with a string
   fullnameOverride: "sas-retrieval-agent-manager-gpg"
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/serviceaccount-schema.json"
+  # @schema
   # -- Service account configuration for GPG operations
   serviceAccount:
     # -- Specifies whether a service account should be created
@@ -2299,14 +2640,25 @@ gpg:
     # -- The name of the service account to use. If not set and create is true, a name is generated using the fullname template
     name: ""
 
+  # @schema
+  # type: object
+  # additionalProperties: true
+  # @schema
   # -- Annotations to add to the pods
   podAnnotations: {}
 
+  # @schema
+  # type: object
+  # additionalProperties: true
+  # @schema
   # -- Labels to add to the pods
   podLabels:
     sas.com/deployment: "sas-retrieval-agent-manager"
     workload.sas.com/class: "ram"
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/podsecuritycontext-schema.json"
+  # @schema
   # -- The security context for the pods
   podSecurityContext:
     # -- Group ID for file system ownership
@@ -2321,6 +2673,9 @@ gpg:
     seccompProfile:
       type: RuntimeDefault
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/securitycontext-schema.json"
+  # @schema
   # -- The security context for the application container
   securityContext:
     # -- Seccomp profile for the container
@@ -2342,6 +2697,9 @@ gpg:
     # -- Group ID to run the entrypoint of the container process
     runAsGroup: 10001
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/resources-schema.json"
+  # @schema
   # -- The resources to allocate for the container
   resources:
     # -- Resource limits for the container
@@ -2357,12 +2715,21 @@ gpg:
       # -- Memory request
       memory: 128Mi
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/nodeselector-schema.json"
+  # @schema
   # -- Node labels for pod assignment
   nodeSelector: {}
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/tolerations-schema.json"
+  # @schema
   # -- Tolerations for pod assignment
   tolerations: []
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/affinity-schema.json"
+  # @schema
   # -- Map of node/pod affinities
   affinity:
     nodeAffinity:
@@ -2390,6 +2757,10 @@ postgrest:
 
   # -- PostgREST container image configuration
   image:
+    # @schema
+    # type: object
+    # additionalProperties: true
+    # @schema
     # -- PostgREST main container image configuration
     postgrest:
       repo:
@@ -2398,7 +2769,7 @@ postgrest:
         # -- Official PostgREST image
         path: "postgrest/postgrest"
       # -- Image tag (defaults to chart appVersion)
-      # tag: ""
+      tag: "v13.0.4"
       # -- Image pull policy
       pullPolicy: IfNotPresent
 
@@ -2412,7 +2783,7 @@ postgrest:
       # -- Image pull policy for PostgreSQL container
       pullPolicy: IfNotPresent
       # -- PostgreSQL container image tag
-      # tag: ""
+      tag: "15-alpine"
 
     # -- kubectl container image configuration (used for Kubernetes operations)
     kubectl:
@@ -2424,8 +2795,18 @@ postgrest:
       # -- Image pull policy for kubectl container
       pullPolicy: IfNotPresent
       # -- kubectl container image tag
-      # tag: ""
+      tag: "1.31.12"
 
+  # @schema
+  # type: array
+  # items:
+  #   type: object
+  #   properties:
+  #     name:
+  #       type: string
+  #       example: cr-sas-secret
+  # default: []
+  # @schema
   # -- Array of imagePullSecrets in the namespace for pulling images from private registries
   imagePullSecrets: []
 
@@ -2435,6 +2816,9 @@ postgrest:
   # -- String to fully override the fullname template with a string
   fullnameOverride: "sas-retrieval-agent-manager-postgrest"
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/serviceaccount-schema.json"
+  # @schema
   # -- Service account configuration
   serviceAccount:
     # -- Annotations to add to the service account
@@ -2446,14 +2830,25 @@ postgrest:
     # -- The name of the service account to use. If not set and create is true, a name is generated using the fullname template
     name: ''
 
+  # @schema
+  # type: object
+  # additionalProperties: true
+  # @schema
   # -- Annotations to add to the pods
   podAnnotations: {}
 
+  # @schema
+  # type: object
+  # additionalProperties: true
+  # @schema
   # -- Labels to add to the pods
   podLabels:
     sas.com/deployment: "sas-retrieval-agent-manager"
     workload.sas.com/class: "ram"
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/podsecuritycontext-schema.json"
+  # @schema
   # -- The security context for the pods
   podSecurityContext:
     # -- Group ID for file system ownership
@@ -2468,6 +2863,9 @@ postgrest:
     seccompProfile:
       type: RuntimeDefault
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/securitycontext-schema.json"
+  # @schema
   # -- The security context for the application container
   securityContext:
     # -- Seccomp profile for the container
@@ -2489,6 +2887,9 @@ postgrest:
     # -- Group ID to run the entrypoint of the container process
     runAsGroup: 10001
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/service-schema.json"
+  # @schema
   # -- Kubernetes Service configuration
   service:
     # -- Kubernetes Service type
@@ -2496,6 +2897,9 @@ postgrest:
     # -- Kubernetes Service port
     port: 3000
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/service-schema.json"
+  # @schema
   # -- Admin service configuration for PostgREST management
   adminService:
     # -- Kubernetes Service type for PostgREST admin interface
@@ -2509,6 +2913,10 @@ postgrest:
     enabled: true
     # -- Class name of the Ingress
     className: nginx
+    # @schema
+    # type: object
+    # additionalProperties: true
+    # @schema
     # -- Annotations for the Ingress
     annotations:
       # -- Enable TLS certificate management via cert-manager
@@ -2531,13 +2939,13 @@ postgrest:
       nginx.ingress.kubernetes.io/rewrite-target: /$2
 
     # -- Hosts configuration
-    hosts:
-    - host: chart-example.local
-      paths:
-        - path: /SASRetrievalAgentManager/postgrest(/|$)(.*) 
-          pathType: ImplementationSpecific
-        - path: /SASRetrievalAgentManager/postgrest/monitoring(/|$)(.*) 
-          pathType: ImplementationSpecific
+    hosts: []
+    # - host: chart-example.local
+    #   paths:
+    #     - path: /SASRetrievalAgentManager/postgrest(/|$)(.*) 
+    #       pathType: ImplementationSpecific
+    #     - path: /SASRetrievalAgentManager/postgrest/monitoring(/|$)(.*) 
+    #       pathType: ImplementationSpecific
     # -- Paths configuration
     paths:
     - path: /SASRetrievalAgentManager/postgrest(/|$)(.*) 
@@ -2551,6 +2959,9 @@ postgrest:
       #   hosts:
       #     - ""
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/resources-schema.json"
+  # @schema
   # -- The resources to allocate for the PostgREST container
   resources:
     # -- Resource limits for the container
@@ -2566,6 +2977,9 @@ postgrest:
       # -- Memory request
       memory: 128Mi
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/probe-schema.json"
+  # @schema
   # -- Liveness probe configuration for PostgREST
   livenessProbe:
     # -- HTTP GET probe configuration for liveness
@@ -2585,6 +2999,9 @@ postgrest:
     # -- Number of consecutive failures required to mark container as not ready
     failureThreshold: 3
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/probe-schema.json"
+  # @schema
   # -- Liveness probe configuration for PostgREST
   livenessProbeMonitoring:
     # -- HTTP GET probe configuration for liveness
@@ -2604,6 +3021,9 @@ postgrest:
     # -- Number of consecutive failures required to mark container as not ready
     failureThreshold: 3
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/probe-schema.json"
+  # @schema
   # -- Readiness probe configuration for PostgREST
   readinessProbe:
     # -- HTTP GET probe configuration for readiness
@@ -2642,6 +3062,9 @@ postgrest:
     # -- Number of consecutive failures required to mark container as not ready
     failureThreshold: 3
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/autoscaling-schema.json"
+  # @schema
   # -- Horizontal Pod Autoscaler configuration
   autoscaling:
     # -- Enable horizontal pod autoscaling
@@ -2668,12 +3091,21 @@ postgrest:
   #   mountPath: "/etc/foo"
   #   readOnly: true
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/nodeselector-schema.json"
+  # @schema
   # -- Node labels for pod assignment
   nodeSelector: {}
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/tolerations-schema.json"
+  # @schema
   # -- Tolerations for pod assignment
   tolerations: []
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/affinity-schema.json"
+  # @schema
   # -- Map of node/pod affinities
   affinity:
     nodeAffinity:
@@ -2714,6 +3146,16 @@ postgrest:
       # -- Swagger UI container image tag
       tag: "v5.17.14"
 
+    # @schema
+    # type: array
+    # items:
+    #   type: object
+    #   properties:
+    #     name:
+    #       type: string
+    #       example: cr-sas-secret
+    # default: []
+    # @schema
     # -- Array of imagePullSecrets in the namespace for pulling images from private registries
     imagePullSecrets: []
 
@@ -2723,6 +3165,9 @@ postgrest:
     # -- String to fully override the Swagger UI fullname template
     fullnameOverride: ""
 
+    # @schema
+    # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/serviceaccount-schema.json"
+    # @schema
     # -- Service account configuration
     serviceAccount:
       # -- Annotations to add to the service account
@@ -2734,14 +3179,25 @@ postgrest:
       # -- The name of the service account to use. If not set and create is true, a name is generated using the fullname template
       name: ''
 
+    # @schema
+    # type: object
+    # additionalProperties: true
+    # @schema
     # -- Annotations to add to the Swagger UI pods
     podAnnotations: {}
 
+    # @schema
+    # type: object
+    # additionalProperties: true
+    # @schema
     # -- Labels to add to the pods
     podLabels:
       sas.com/deployment: "sas-retrieval-agent-manager"
       workload.sas.com/class: "ram"
 
+    # @schema
+    # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/podsecuritycontext-schema.json"
+    # @schema
     # -- The security context for the pods
     podSecurityContext:
       # -- Group ID for file system ownership
@@ -2756,6 +3212,9 @@ postgrest:
       seccompProfile:
         type: RuntimeDefault
 
+    # @schema
+    # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/securitycontext-schema.json"
+    # @schema
     # -- The security context for the application container
     securityContext:
       # -- Seccomp profile for the container
@@ -2777,6 +3236,9 @@ postgrest:
       # -- Group ID to run the entrypoint of the container process
       runAsGroup: 10001
 
+    # @schema
+    # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/service-schema.json"
+    # @schema
     # -- Kubernetes Service configuration
     service:
       # -- Kubernetes Service type
@@ -2790,6 +3252,10 @@ postgrest:
       enabled: true
       # -- Class name of the Ingress
       className: nginx
+      # @schema
+      # type: object
+      # additionalProperties: true
+      # @schema
       # -- Annotations for the Swagger UI Ingress
       annotations:
         # -- Enable TLS certificate management via cert-manager
@@ -2829,6 +3295,9 @@ postgrest:
         #   hosts:
         #     - ""
 
+    # @schema
+    # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/resources-schema.json"
+    # @schema
     # -- The resources to allocate for the Swagger UI container
     resources:
       # -- Resource limits for the Swagger UI container
@@ -2844,6 +3313,9 @@ postgrest:
         # -- Memory request
         memory: 256Mi
 
+    # @schema
+    # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/probe-schema.json"
+    # @schema
     # -- Liveness probe configuration for Swagger UI
     livenessProbe:
       # -- HTTP GET probe configuration for liveness
@@ -2852,6 +3324,9 @@ postgrest:
         path: /
         port: http
 
+    # @schema
+    # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/probe-schema.json"
+    # @schema
     # -- Readiness probe configuration for Swagger UI
     readinessProbe:
       # -- HTTP GET probe configuration for readiness
@@ -2860,6 +3335,9 @@ postgrest:
         path: /
         port: http
 
+    # @schema
+    # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/autoscaling-schema.json"
+    # @schema
     # -- Horizontal Pod Autoscaler configuration for Swagger UI
     autoscaling:
       # -- Enable horizontal pod autoscaling for Swagger UI
@@ -2886,30 +3364,56 @@ postgrest:
     #   mountPath: "/etc/foo"
     #   readOnly: true
 
+    # @schema
+    # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/nodeselector-schema.json"
+    # @schema
     # -- Node labels for pod assignment
     nodeSelector: {}
 
+    # @schema
+    # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/tolerations-schema.json"
+    # @schema
     # -- Tolerations for pod assignment
     tolerations: []
 
+    # @schema
+    # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/affinity-schema.json"
+    # @schema
     # -- Map of node/pod affinities for Swagger UI
     affinity: {}
 
 # -- SAS Retrieval Agent Manager API: Main backend service
 # -- Provides REST API endpoints and AI/ML processing capabilities
 sas-retrieval-agent-manager-api:
-  # -- Container image configuration
-  # image:
-  #   repo:
-  #     # -- SAS container registry
-  #     base: ""
-  #     # -- SAS API image
-  #     path: ""
-  #   # -- Image tag (defaults to chart appVersion)
-  #   tag: ""
-  #   # -- Image pull policy
-  #   pullPolicy: IfNotPresent
+  # @schema
+  # type: integer
+  # required: true
+  # @schema
+  # -- Number of replicas to run
+  replicaCount: 1
 
+  # -- Container image configuration
+  image:
+    repo:
+      # -- SAS container registry
+      base: "cr.sas.com"
+      # -- SAS API image
+      path: "viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager"
+    # -- Image tag (defaults to chart appVersion)
+    tag: "1.7.15-20251125.1764086747124"
+    # -- Image pull policy
+    pullPolicy: IfNotPresent
+
+  # @schema
+  # type: array
+  # items:
+  #   type: object
+  #   properties:
+  #     name:
+  #       type: string
+  #       example: cr-sas-secret
+  # default: []
+  # @schema
   # -- Array of imagePullSecrets in the namespace for pulling images from private registries
   imagePullSecrets:
     - name: cr-sas-secret
@@ -2920,9 +3424,9 @@ sas-retrieval-agent-manager-api:
   # -- String to fully override the fullname template with a string
   fullnameOverride: "sas-retrieval-agent-manager-api"
 
-  # -- Number of replicas to run. Chart is not designed to scale horizontally, use at your own risk
-  replicaCount: 1
-
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/serviceaccount-schema.json"
+  # @schema
   # -- Service account configuration for API
   serviceAccount:
     # -- Annotations to add to the service account
@@ -2934,14 +3438,25 @@ sas-retrieval-agent-manager-api:
     # -- The name of the service account to use. If not set and create is true, a name is generated using the fullname template
     name: ''
 
+  # @schema
+  # type: object
+  # additionalProperties: true
+  # @schema
   # -- Annotations to add to the pods
   podAnnotations: {}
 
+  # @schema
+  # type: object
+  # additionalProperties: true
+  # @schema
   # -- Labels to add to the pods
   podLabels:
     sas.com/deployment: "sas-retrieval-agent-manager"
     workload.sas.com/class: "ram"
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/podsecuritycontext-schema.json"
+  # @schema
   # -- The security context for the pods
   podSecurityContext:
     # -- Group ID to run the entrypoint of the container process
@@ -2956,6 +3471,9 @@ sas-retrieval-agent-manager-api:
     # -- Group ID for file system ownership
     fsGroup: 1001
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/securitycontext-schema.json"
+  # @schema
   # -- The security context for the application container
   securityContext:
     # -- Run as non-privileged container
@@ -2979,6 +3497,9 @@ sas-retrieval-agent-manager-api:
     # -- Group ID to run the entrypoint of the container process
     runAsGroup: 1001
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/service-schema.json"
+  # @schema
   # -- Kubernetes Service configuration
   service:
     # -- Kubernetes Service type
@@ -2992,6 +3513,10 @@ sas-retrieval-agent-manager-api:
     enabled: true
     # -- Class name of the Ingress
     className: nginx
+    # @schema
+    # type: object
+    # additionalProperties: true
+    # @schema
     # -- Annotations for the Ingress
     annotations:
       # -- Disallow HTTP traffic, force HTTPS only
@@ -3029,6 +3554,9 @@ sas-retrieval-agent-manager-api:
       #   hosts:
       #     - ""
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/resources-schema.json"
+  # @schema
   # -- The resources to allocate for the API container
   resources:
     # -- Resource limits for the container
@@ -3044,6 +3572,9 @@ sas-retrieval-agent-manager-api:
       # -- Memory request
       memory: 4Gi
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/probe-schema.json"
+  # @schema
   # -- Liveness probe configuration for API
   livenessProbe:
     # -- Number of consecutive failures required to mark container as not ready
@@ -3063,6 +3594,9 @@ sas-retrieval-agent-manager-api:
     # -- Timeout for the probe
     timeoutSeconds: 1
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/probe-schema.json"
+  # @schema
   # -- Readiness probe configuration for API
   readinessProbe:
     # -- Number of consecutive failures required to mark container as not ready
@@ -3082,6 +3616,9 @@ sas-retrieval-agent-manager-api:
     # -- Timeout for the probe
     timeoutSeconds: 1
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/autoscaling-schema.json"
+  # @schema
   # -- Horizontal Pod Autoscaler configuration
   autoscaling:
     # -- Enable horizontal pod autoscaling
@@ -3092,6 +3629,8 @@ sas-retrieval-agent-manager-api:
     minReplicas: 1
     # -- Target CPU utilization percentage for scaling
     targetCPUUtilizationPercentage: 80
+    # -- Target memory utilization percentage for scaling (optional)
+    targetMemoryUtilizationPercentage: 80
 
   # -- Additional volumes on the output Deployment definition
   volumes: []
@@ -3106,12 +3645,22 @@ sas-retrieval-agent-manager-api:
   #   mountPath: "/etc/foo"
   #   readOnly: true
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/nodeselector-schema.json"
+  # @schema
   # -- Node labels for pod assignment
   nodeSelector: {}
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/tolerations-schema.json"
+  # @schema
   # -- Tolerations for pod assignment
   tolerations: []
 
+
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/affinity-schema.json"
+  # @schema
   # -- Map of node/pod affinities
   affinity:
     nodeAffinity:
@@ -3135,39 +3684,47 @@ sas-retrieval-agent-manager-api:
 # -- Initializes databases and schemas for the entire platform
 sas-retrieval-agent-manager-db-init:
   # -- Container image configuration
-  # image:
-  #   # -- PostgreSQL binary container image configuration
-  #   postgres:
-  #     repo:
-  #       # -- Container registry base URL for PostgreSQL
-  #       base: ""
-  #       # -- Container image path/name for PostgreSQL
-  #       path: ""
-  #     # -- Image pull policy for PostgreSQL container
-  #     pullPolicy: IfNotPresent
-  #     # -- PostgreSQL container image tag
-  #     tag: ""
+  image:
+    # -- PostgreSQL binary container image configuration
+    postgres:
+      repo:
+        # -- Container registry base URL for PostgreSQL
+        base: "docker.io"
+        # -- Container image path/name for PostgreSQL
+        path: "postgres"
+      # -- Image pull policy for PostgreSQL container
+      pullPolicy: IfNotPresent
+      # -- PostgreSQL container image tag
+      tag: "15-alpine"
 
-  #   # -- kubectl container image configuration (used for Kubernetes operations)
-  #   kubectl:
-  #     repo:
-  #       # -- Container registry base URL for kubectl
-  #       base: ""
-  #       # -- Container image path/name for kubectl
-  #       path: ""
-  #     # -- Image pull policy for kubectl container
-  #     pullPolicy: IfNotPresent
-  #     # -- kubectl container image tag
-  #     tag: ""
+    # -- kubectl container image configuration (used for Kubernetes operations)
+    kubectl:
+      repo:
+        # -- Container registry base URL for kubectl
+        base: "docker.io"
+        # -- Container image path/name for kubectl
+        path: "alpine/k8s"
+      # -- Image pull policy for kubectl container
+      pullPolicy: IfNotPresent
+      # -- kubectl container image tag
+      tag: "1.31.12"
 
+  # @schema
+  # type: array
+  # items:
+  #   type: object
+  #   properties:
+  #     name:
+  #       type: string
+  #       example: cr-sas-secret
+  # default: []
+  # @schema
   # -- Array of imagePullSecrets in the namespace for pulling images from private registries
   imagePullSecrets: []
 
-  # -- String to partially override the fullname template with a string (will prepend the release name)
-  nameOverride: "initialization"
-
-  # -- String to fully override the fullname template with a string
-  fullnameOverride: "sas-retrieval-agent-manager-db-init"
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/serviceaccount-schema.json"
+  # @schema
   # -- Service account configuration for database initialization
   serviceAccount:
     # -- Specifies whether a service account should be created
@@ -3179,14 +3736,25 @@ sas-retrieval-agent-manager-db-init:
     # -- The name of the service account to use. If not set and create is true, a name is generated using the fullname template
     name: ""
 
+  # @schema
+  # type: object
+  # additionalProperties: true
+  # @schema
   # -- Annotations to add to the pods
   podAnnotations: {}
 
+  # @schema
+  # type: object
+  # additionalProperties: true
+  # @schema
   # -- Labels to add to the pods
   podLabels:
     sas.com/deployment: "sas-retrieval-agent-manager"
     workload.sas.com/class: "ram"
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/podsecuritycontext-schema.json"
+  # @schema
   # -- The security context for the pods
   podSecurityContext:
     # -- Group ID to run the entrypoint of the container process
@@ -3201,6 +3769,9 @@ sas-retrieval-agent-manager-db-init:
     # -- Group ID for file system ownership
     fsGroup: 10001
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/securitycontext-schema.json"
+  # @schema
   # -- The security context for the application container
   securityContext:
     # -- Seccomp profile for the container
@@ -3220,6 +3791,9 @@ sas-retrieval-agent-manager-db-init:
     # -- User ID to run the entrypoint of the container process
     runAsUser: 10001
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/resources-schema.json"
+  # @schema
   # -- The resources to allocate for the database initialization container
   resources:
     # -- Resource limits for the container
@@ -3235,12 +3809,21 @@ sas-retrieval-agent-manager-db-init:
       # -- Memory request
       memory: 128Mi
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/nodeselector-schema.json"
+  # @schema
   # -- Node labels for pod assignment
   nodeSelector: {}
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/tolerations-schema.json"
+  # @schema
   # -- Tolerations for pod assignment
   tolerations: []
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/affinity-schema.json"
+  # @schema
   # -- Map of node/pod affinities
   affinity:
     nodeAffinity:
@@ -3263,6 +3846,10 @@ sas-retrieval-agent-manager-db-init:
 # -- SAS Retrieval Agent Manager Web Application
 # -- Frontend user interface for the platform
 sas-retrieval-agent-manager-app:
+  # @schema
+  # type: object
+  # additionalProperties: true
+  # @schema
   image:
     # -- Container image configuration for API
     repo:
@@ -3271,10 +3858,20 @@ sas-retrieval-agent-manager-app:
       # -- Container image path/name
       path: viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-app
     # -- Container image tag
-    # tag: ""
+    tag: "1.3.14-20251202.1764706210147"
     # -- Image pull policy for API container
     pullPolicy: IfNotPresent
 
+  # @schema
+  # type: array
+  # items:
+  #   type: object
+  #   properties:
+  #     name:
+  #       type: string
+  #       example: cr-sas-secret
+  # default: []
+  # @schema
   # -- Array of imagePullSecrets in the namespace for pulling images from private registries
   imagePullSecrets:
     - name: cr-sas-secret
@@ -3288,6 +3885,9 @@ sas-retrieval-agent-manager-app:
   # -- Number of replicas to run. Chart is not designed to scale horizontally, use at your own risk
   replicaCount: 1
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/serviceaccount-schema.json"
+  # @schema
   # -- Service account configuration
   serviceAccount:
     # -- Annotations to add to the service account
@@ -3299,14 +3899,25 @@ sas-retrieval-agent-manager-app:
     # -- The name of the service account to use. If not set and create is true, a name is generated using the fullname template
     name: ''
 
+  # @schema
+  # type: object
+  # additionalProperties: true
+  # @schema
   # -- Annotations to add to the pods
   podAnnotations: {}
 
+  # @schema
+  # type: object
+  # additionalProperties: true
+  # @schema
   # -- Labels to add to the pods
   podLabels:
     sas.com/deployment: "sas-retrieval-agent-manager"
     workload.sas.com/class: "ram"
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/podsecuritycontext-schema.json"
+  # @schema
   # -- The security context for the pods
   podSecurityContext:
     # -- Group ID for file system ownership
@@ -3321,6 +3932,9 @@ sas-retrieval-agent-manager-app:
     seccompProfile:
       type: RuntimeDefault
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/securitycontext-schema.json"
+  # @schema
   # -- The security context for the application container
   securityContext:
     # -- Seccomp profile for the container
@@ -3342,6 +3956,9 @@ sas-retrieval-agent-manager-app:
     # -- Group ID to run the entrypoint of the container process
     runAsGroup: 10001
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/service-schema.json"
+  # @schema
   # -- Kubernetes Service configuration
   service:
     # -- Kubernetes Service type
@@ -3355,6 +3972,10 @@ sas-retrieval-agent-manager-app:
     enabled: true
     # -- Class name of the Ingress
     className: nginx
+    # @schema
+    # type: object
+    # additionalProperties: true
+    # @schema
     # -- Annotations for the Ingress
     annotations:
       # -- Disallow HTTP traffic, force HTTPS only
@@ -3392,6 +4013,9 @@ sas-retrieval-agent-manager-app:
       #   hosts:
       #     - ""
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/resources-schema.json"
+  # @schema
   # -- The resources to allocate for the container
   resources:
     # -- Resource limits for the container
@@ -3407,6 +4031,9 @@ sas-retrieval-agent-manager-app:
       # -- Memory request
       memory: 256Mi
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/probe-schema.json"
+  # @schema
   # -- Liveness probe configuration
   livenessProbe:
     # -- Number of consecutive failures required to mark container as not ready
@@ -3423,6 +4050,9 @@ sas-retrieval-agent-manager-app:
     # -- Timeout for the probe
     timeoutSeconds: 1
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/probe-schema.json"
+  # @schema
   # -- Readiness probe configuration
   readinessProbe:
     # -- Number of consecutive failures required to mark container as not ready
@@ -3439,6 +4069,9 @@ sas-retrieval-agent-manager-app:
     # -- Timeout for the probe
     timeoutSeconds: 1
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/autoscaling-schema.json"
+  # @schema
   # -- Horizontal Pod Autoscaler configuration
   autoscaling:
     # -- Enable horizontal pod autoscaling
@@ -3449,6 +4082,8 @@ sas-retrieval-agent-manager-app:
     minReplicas: 1
     # -- Target CPU utilization percentage for scaling
     targetCPUUtilizationPercentage: 80
+    # -- Target memory utilization percentage for scaling (optional)
+    targetMemoryUtilizationPercentage: 80
 
   # -- Additional volumes on the output Deployment definition
   volumes: []
@@ -3463,12 +4098,190 @@ sas-retrieval-agent-manager-app:
   #   mountPath: "/etc/foo"
   #   readOnly: true
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/nodeselector-schema.json"
+  # @schema
   # -- Node labels for pod assignment
   nodeSelector: {}
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/tolerations-schema.json"
+  # @schema
   # -- Tolerations for pod assignment
   tolerations: []
 
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/affinity-schema.json"
+  # @schema
+  # -- Map of node/pod affinities
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 1
+        preference:
+          matchExpressions:
+          - key: sas.com/deployment
+            operator: In
+            values:
+            - sas-retrieval-agent-manager
+      - weight: 2
+        preference:
+          matchExpressions:
+          - key: workload.sas.com/class
+            operator: In
+            values:
+            - ram
+
+# -- SAS Retrieval Agent Manager Database Migration
+# -- Performs database schema migrations using Goose migration tool
+sas-retrieval-agent-manager-db-migration:
+  # -- Container image configuration
+  image:
+    # -- PostgreSQL binary container image configuration
+    postgres:
+      repo:
+        # -- Container registry base URL for PostgreSQL
+        base: "docker.io"
+        # -- Container image path/name for PostgreSQL
+        path: "postgres"
+      # -- Image pull policy for PostgreSQL container
+      pullPolicy: IfNotPresent
+      # -- PostgreSQL container image tag
+      tag: "15-alpine"
+
+    # -- Goose migration tool container image configuration
+    goose:
+      repo:
+        # -- Container registry base URL for Goose
+        base: "cr.sas.com"
+        # -- Container image path/name for Goose
+        path: "viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-db-migration"
+      # -- Image pull policy for Goose container
+      pullPolicy: IfNotPresent
+      # -- Goose container image tag
+      tag: "1.6.5-20251121.1763756456747"
+
+  # @schema
+  # type: array
+  # items:
+  #   type: object
+  #   properties:
+  #     name:
+  #       type: string
+  #       example: cr-sas-secret
+  # default: []
+  # @schema
+  # -- Array of imagePullSecrets in the namespace for pulling images from private registries
+  imagePullSecrets: []
+
+  # -- String to partially override the fullname template with a string (will prepend the release name)
+  nameOverride: ""
+
+  # -- String to fully override the fullname template with a string
+  fullnameOverride: ""
+
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/serviceaccount-schema.json"
+  # @schema
+  # -- Service account configuration for database migration
+  serviceAccount:
+    # -- Specifies whether a service account should be created
+    create: true
+    # -- Automatically mount a ServiceAccount's API credentials
+    automount: true
+    # -- Annotations to add to the service account
+    annotations: {}
+    # -- The name of the service account to use. If not set and create is true, a name is generated using the fullname template
+    name: ""
+
+  # @schema
+  # type: object
+  # additionalProperties: true
+  # @schema
+  # -- Annotations to add to the pods
+  podAnnotations: {}
+
+  # @schema
+  # type: object
+  # additionalProperties: true
+  # @schema
+  # -- Labels to add to the pods
+  podLabels:
+    sas.com/deployment: "sas-retrieval-agent-manager"
+    workload.sas.com/class: "ram"
+
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/podsecuritycontext-schema.json"
+  # @schema
+  # -- The security context for the pods
+  podSecurityContext:
+    # -- Group ID to run the entrypoint of the container process
+    runAsGroup: 10001
+    # -- Indicates that the container must be run as a non-root user
+    runAsNonRoot: true
+    # -- User ID to run the entrypoint of the container process
+    runAsUser: 10001
+    # -- Seccomp profile for the pod
+    seccompProfile:
+      type: RuntimeDefault
+    # -- Group ID for file system ownership
+    fsGroup: 10001
+
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/securitycontext-schema.json"
+  # @schema
+  # -- The security context for the application container
+  securityContext:
+    # -- Seccomp profile for the container
+    seccompProfile:
+      type: RuntimeDefault
+    # -- Whether a process can gain more privileges than its parent process
+    allowPrivilegeEscalation: false
+    # -- Linux capabilities to add/drop for the container
+    capabilities:
+      add: []
+      drop:
+        - ALL
+    # -- Whether the container has a read-only root filesystem
+    readOnlyRootFilesystem: true
+    # -- Whether the container must be run as a non-root user
+    runAsNonRoot: true
+    # -- User ID to run the entrypoint of the container process
+    runAsUser: 10001
+
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/resources-schema.json"
+  # @schema
+  # -- The resources to allocate for the database migration container
+  resources:
+    # -- Resource limits for the container
+    limits:
+      # -- CPU limit
+      cpu: 200m
+      # -- Memory limit
+      memory: 256Mi
+    # -- Resource requests for the container
+    requests:
+      # -- CPU request
+      cpu: 100m
+      # -- Memory request
+      memory: 128Mi
+
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/nodeselector-schema.json"
+  # @schema
+  # -- Node labels for pod assignment
+  nodeSelector: {}
+
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/tolerations-schema.json"
+  # @schema
+  # -- Tolerations for pod assignment
+  tolerations: []
+
+  # @schema
+  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/affinity-schema.json"
+  # @schema
   # -- Map of node/pod affinities
   affinity:
     nodeAffinity:

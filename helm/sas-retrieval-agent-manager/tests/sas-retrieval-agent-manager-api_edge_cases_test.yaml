@@ -1,0 +1,178 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test sas retrieval agent manager api edge cases and integration
+templates:
+  - templates/api/deployment.yaml
+  - templates/api/service.yaml
+  - templates/api/serviceaccount.yaml
+tests:
+  - it: should work with minimal configuration
+    asserts:
+      - hasDocuments:
+          count: 1  # Each template produces 1 document
+
+  - it: should work with all features enabled
+    set:
+      sas-retrieval-agent-manager-api:
+        autoscaling:
+          enabled: true
+          minReplicas: 2
+          maxReplicas: 10
+          targetCPUUtilizationPercentage: 80
+        ingress:
+          enabled: true
+          hosts:
+            - host: api.example.com
+              paths:
+                - path: /
+                  pathType: Prefix
+        serviceAccount:
+          create: true
+          annotations:
+            test: annotation
+        podAnnotations:
+          pod-annotation: value
+    template: templates/api/deployment.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+      - notExists:
+          path: spec.replicas  # Should be disabled when autoscaling enabled
+
+  - it: should handle very long names gracefully
+    set:
+      sas-retrieval-agent-manager-api:
+        nameOverride: "very-long-name-that-should-be-truncated-properly-to-stay-within-limits"
+    template: templates/api/service.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+      # Name should be truncated to 63 characters
+      - matchRegex:
+          path: metadata.name
+          pattern: "^.{1,63}$"
+
+  - it: should handle very long fullnameOverride gracefully
+    set:
+      sas-retrieval-agent-manager-api:
+        fullnameOverride: "extremely-long-fullname-override-that-definitely-exceeds-kubernetes-name-limits-and-should-be-truncated"
+    template: templates/api/deployment.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+      # Name should be truncated to 63 characters
+      - matchRegex:
+          path: metadata.name
+          pattern: "^.{1,63}$"
+
+  - it: should handle release name containing chart name
+    release:
+      name: api-production
+    set:
+      sas-retrieval-agent-manager-api:
+        nameOverride: "api"
+        fullnameOverride: ""
+    template: templates/api/service.yaml
+    asserts:
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-api
+
+  - it: should use consistent naming across resources
+    set:
+      sas-retrieval-agent-manager-api:
+        fullnameOverride: "test-api"
+    template: templates/api/deployment.yaml
+    asserts:
+      - equal:
+          path: metadata.name
+          value: test-api
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: test-api
+
+  - it: should handle empty values gracefully
+    set:
+      sas-retrieval-agent-manager-api:
+        nameOverride: ""
+        fullnameOverride: ""
+    template: templates/api/deployment.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-api
+
+  - it: should work with complex release names
+    release:
+      name: "my-app-123-test"
+    set:
+      sas-retrieval-agent-manager-api:
+        fullnameOverride: ""
+    template: templates/api/service.yaml
+    asserts:
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-api
+
+  - it: should handle zero replicas
+    set:
+      sas-retrieval-agent-manager-api:
+        replicaCount: 0
+    template: templates/api/deployment.yaml
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 0
+
+  - it: should preserve selector consistency with custom names
+    set:
+      sas-retrieval-agent-manager-api:
+        nameOverride: "custom"
+    template: templates/api/service.yaml
+    asserts:
+      - equal:
+          path: spec.selector["app.kubernetes.io/name"]
+          value: custom
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: custom
+
+  - it: should create service account with default settings
+    template: templates/api/serviceaccount.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: ServiceAccount
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-api
+
+  - it: should include proper labels on service account
+    template: templates/api/serviceaccount.yaml
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: api
+      - equal:
+          path: metadata.labels["helm.sh/chart"]
+          value: sas-retrieval-agent-manager-1.2.3-dev.20241225
+
+  - it: should handle missing global configuration
+    set:
+      sas-retrieval-agent-manager-api:
+        image:
+          repo:
+            base: "cr.sas.com"
+            path: "viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager"
+          tag: "latest"
+        # global: {}
+    template: templates/api/deployment.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+      # Should use local image configuration
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "cr.sas.com/viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager:latest"

@@ -1,0 +1,65 @@
+{{- $dot := . -}}
+{{- $globalEnabled := ((include "testValuesPath" (list .Values.postgrest "global" "ingress" "enabled")) | eq "true") -}}
+{{- $globalClassName := "" -}}
+{{- if $globalEnabled -}}
+{{- $globalClassName = .Values.global.ingress.className | default "" -}}
+{{- end -}}
+{{- $isRouteClassName := false -}}
+{{- if $globalEnabled -}}
+{{- if eq $globalClassName "route" -}}
+{{- $isRouteClassName = true -}}
+{{- end -}}
+{{- else if ((include "testValuesPath" (list .Values.postgrest "ingress" "enabled")) | eq "true") -}}
+{{- if eq (.Values.postgrest.ingress.className | default "") "route" -}}
+{{- $isRouteClassName = true -}}
+{{- end -}}
+{{- end -}}
+{{- if and (or ((include "testValuesPath" (list .Values.postgrest "ingress" "enabled")) | eq "true") $globalEnabled) $isRouteClassName -}}
+{{- $fullName := include "postgrest.fullname" . | lower -}}
+{{- $svcPort := .Values.postgrest.service.port -}}
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: {{ $fullName }}
+  labels:
+    {{- include "postgrest.labels" . | nindent 4 }}
+  annotations:
+    {{- if .Values.postgrest.ingress.annotations }}
+    {{- range $key, $value := .Values.postgrest.ingress.annotations }}
+    {{- if not (hasPrefix "nginx.ingress.kubernetes.io/" $key) }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
+    {{- end }}
+    {{- end }}
+spec:
+{{- if $globalEnabled }}
+  host: {{ .Values.global.domain | quote }}
+  {{- if ((include "testValuesPath" (list .Values.postgrest "ingress" "paths")) | eq "true") }}
+  {{- with (first .Values.postgrest.ingress.paths) }}
+  path: {{ .path | default "/" }}
+  {{- end }}
+  {{- end }}
+{{- else }}
+  {{- if ((include "testValuesPath" (list .Values.postgrest "ingress" "hosts")) | eq "true") }}
+  {{- with (first .Values.postgrest.ingress.hosts) }}
+  host: {{ .host | quote }}
+  {{- with (first .paths) }}
+  path: {{ .path | default "/" }}
+  {{- end }}
+  {{- end }}
+  {{- end }}
+{{- end }}
+  to:
+    kind: Service
+    name: {{ $fullName }}
+    weight: 100
+  port:
+    targetPort: {{ $svcPort }}
+{{- $globalTlsEnabled := ((include "testValuesPath" (list .Values.postgrest "global" "ingress" "tls" "enabled")) | eq "true") -}}
+{{- if or (and $globalEnabled $globalTlsEnabled) ((include "testValuesPath" (list .Values.postgrest "ingress" "tls")) | eq "true") }}
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
+{{- end }}
+  wildcardPolicy: None
+{{- end }}

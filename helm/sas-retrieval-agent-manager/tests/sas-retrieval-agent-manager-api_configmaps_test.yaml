@@ -1,0 +1,87 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test sas retrieval agent manager api configmaps
+templates:
+  - templates/api/configmap.yaml
+  - templates/api/plugin-configmap.yaml
+  - templates/api/vhub-configmap.yaml
+tests:
+  - it: should create main configmap
+    template: templates/api/configmap.yaml
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: metadata.name
+          value: api-config
+
+  - it: should create plugin configmap
+    template: templates/api/plugin-configmap.yaml
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: metadata.name
+          value: plugin-config
+
+  - it: should create vhub configmap
+    template: templates/api/vhub-configmap.yaml
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: metadata.name
+          value: vhub-config
+
+  - it: should include data in main configmap
+    template: templates/api/configmap.yaml
+    asserts:
+      - exists:
+          path: data
+
+  - it: should include data in plugin configmap
+    template: templates/api/plugin-configmap.yaml
+    asserts:
+      - exists:
+          path: data
+
+  - it: should include data in vhub configmap
+    template: templates/api/vhub-configmap.yaml
+    asserts:
+      - exists:
+          path: data
+
+  - it: should include proper labels on main configmap
+    template: templates/api/configmap.yaml
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: api
+      - equal:
+          path: metadata.labels["helm.sh/chart"]
+          value: sas-retrieval-agent-manager-1.2.3-dev.20241225
+
+  - it: should include proper labels on plugin configmap
+    template: templates/api/plugin-configmap.yaml
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: api
+      - equal:
+          path: metadata.labels["helm.sh/chart"]
+          value: sas-retrieval-agent-manager-1.2.3-dev.20241225
+
+  - it: should include proper labels on vhub configmap
+    template: templates/api/vhub-configmap.yaml
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: api
+      - equal:
+          path: metadata.labels["helm.sh/chart"]
+          value: sas-retrieval-agent-manager-1.2.3-dev.20241225

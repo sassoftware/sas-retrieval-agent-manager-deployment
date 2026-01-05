@@ -1,0 +1,142 @@
+{{- if (index .Values "filebrowser").enabled -}}
+{{- $repo_base := "" -}}
+{{- if ((include "testValuesPath" (list .Values "global" "image" "repo" "base")) | eq "true") -}}
+  {{- $repo_base = .Values.global.image.repo.base | default (index .Values "filebrowser").image.repo.base -}}
+{{- else -}}
+  {{- $repo_base = (index .Values "filebrowser").image.repo.base -}}
+{{- end -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "storage.fullname" . }}
+  labels:
+    {{- include "storage.labels" . | nindent 4 }}
+spec:
+  replicas: {{ (index .Values "filebrowser").replicaCount }}
+  {{- with (index .Values "filebrowser").strategy }}
+  strategy:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "storage.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with (index .Values "filebrowser").podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "storage.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- $globalImagePullSecrets := list -}}
+      {{- if ((include "testValuesPath" (list .Values "global" "imagePullSecrets")) | eq "true") -}}
+      {{- $globalImagePullSecrets = .Values.global.imagePullSecrets | default (list) -}}
+      {{- end -}}
+      {{- with uniq (concat ((index .Values "filebrowser").imagePullSecrets | default (list)) $globalImagePullSecrets) }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "storage.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml (index .Values "filebrowser").podSecurityContext | nindent 8 }}
+      initContainers:
+        - name: init-db
+          image: "{{ $repo_base }}/busybox"
+          command: ["sh", "-c", "touch /db/filebrowser.db && chown 1000:1000 /db/filebrowser.db"]
+          securityContext:
+            {{- toYaml (index .Values "filebrowser").securityContext | nindent 12 }}
+          imagePullPolicy: {{ (index .Values "filebrowser").image.pullPolicy }}
+          resources:
+            {{- toYaml (index .Values "filebrowser").resources | nindent 12 }}
+          volumeMounts:
+            - name: db
+              mountPath: /db
+      {{- with (index .Values "filebrowser").initContainers }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml (index .Values "filebrowser").securityContext | nindent 12 }}
+          image: "{{ $repo_base }}/{{ (index .Values "filebrowser").image.repo.path }}:{{ (index .Values "filebrowser").image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ (index .Values "filebrowser").image.pullPolicy }}
+          env:
+            {{- if ((include "testValuesPath" (list .Values "securityContext" "runAsUser")) | eq "true") }}
+            - name: PUID
+              value: {{ (index .Values "filebrowser").securityContext.runAsUser | quote }}
+            {{- end }}
+            {{- if ((include "testValuesPath" (list .Values "securityContext" "runAsGroup")) | eq "true") }}
+            - name: PGID
+              value: {{ (index .Values "filebrowser").securityContext.runAsGroup | quote }}
+            {{- end }}
+            - name: FB_BASEURL
+              value: {{ (index .Values "filebrowser").config.baseURL }}
+            - name: FB_DATABASE
+              value: {{ (index .Values "filebrowser").config.database }}
+            - name: FB_NOAUTH
+              value: "true"
+            - name: FB_PORT
+              value: {{ (index .Values "filebrowser").config.port | quote }}
+            - name: FB_ROOT
+              value: {{ (index .Values "filebrowser").config.root }}
+            - name: FB_LOG
+              value: {{ (index .Values "filebrowser").config.log }}
+          volumeMounts:
+            - mountPath: /.filebrowser.json
+              name: config
+              subPath: .filebrowser.json
+            - mountPath: "/db"
+              name: db
+            - mountPath: {{ (index .Values "filebrowser").rootDir.hostPath.path | default "/rootdir" }}
+              name: rootdir
+              readOnly: {{ (index .Values "filebrowser").rootDir.readOnly }}
+          ports:
+            - name: http
+              containerPort: {{ (index .Values "filebrowser").config.port }}
+              protocol: TCP
+          {{- with (index .Values "filebrowser").livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with (index .Values "filebrowser").readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          resources:
+            {{- toYaml (index .Values "filebrowser").resources | nindent 12 }}
+      {{- with (index .Values "filebrowser").nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with (index .Values "filebrowser").affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with (index .Values "filebrowser").tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "storage.fullname" . }}
+        - name: db
+          {{- if (index .Values "filebrowser").db.pvc.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ (index .Values "filebrowser").db.pvc.existingClaim | default (printf "%s-%s" (include "storage.fullname" .) "db" ) }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        - name: rootdir
+          {{- if eq (index .Values "filebrowser").rootDir.type "pvc" }}
+          persistentVolumeClaim:
+            claimName: {{ (index .Values "filebrowser").rootDir.pvc.existingClaim | default (index .Values "filebrowser").rootDir.pvc.name }}
+            readOnly: {{ (index .Values "filebrowser").rootDir.readOnly }}
+          {{- else if eq (index .Values "filebrowser").rootDir.type "hostPath" }}
+          hostPath:
+            path: {{ (index .Values "filebrowser").rootDir.hostPath.path }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+{{- end -}}

@@ -1,0 +1,94 @@
+{{- $dot := . -}}
+{{- $localIngressEnabled := (index .Values "sas-retrieval-agent-manager-app").ingress.enabled -}}
+{{- $globalIngressEnabled := false -}}
+{{- if and (hasKey .Values "global") (hasKey .Values.global "ingress") (hasKey .Values.global.ingress "enabled") -}}
+{{- $globalIngressEnabled = .Values.global.ingress.enabled -}}
+{{- end -}}
+{{- $localClassNameIsRoute := (eq ((index .Values "sas-retrieval-agent-manager-app").ingress.className | default "") "route") -}}
+{{- $globalClassNameIsRoute := (eq (.Values.global.ingress.className | default "") "route") -}}
+{{- $shouldCreateRoute := or (and $localIngressEnabled $localClassNameIsRoute) (and $globalIngressEnabled $globalClassNameIsRoute) -}}
+{{- if $shouldCreateRoute -}}
+{{- $fullName := include "sas-retrieval-agent-manager-ui.fullname" . | lower -}}
+{{- $svcPort := (index .Values "sas-retrieval-agent-manager-app").service.port -}}
+{{- $routeAnnotations := dict -}}
+{{- if (index .Values "sas-retrieval-agent-manager-app").ingress.annotations }}
+{{- range $key, $value := (index .Values "sas-retrieval-agent-manager-app").ingress.annotations }}
+{{- if not (hasPrefix "nginx.ingress.kubernetes.io/" $key) }}
+{{- $_ := set $routeAnnotations $key $value }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- /* Handle UI root ingress configuration for OpenShift Routes */ -}}
+{{- if ((include "testValuesPath" (list (index .Values "sas-retrieval-agent-manager-app") "global" "configuration" "ui" "enableRootIngress")) | eq "true") }}
+{{- $rawPath := "/SASRetrievalAgentManager" -}}
+{{- if $globalIngressEnabled }}
+{{- if and ((include "testValuesPath" (list (index .Values "sas-retrieval-agent-manager-app") "ingress" "paths")) | eq "true") (gt (len (index .Values "sas-retrieval-agent-manager-app").ingress.paths) 0) }}
+{{- $rawPath = (index (index .Values "sas-retrieval-agent-manager-app").ingress.paths 0).path }}
+{{- end }}
+{{- else }}
+{{- if and ((include "testValuesPath" (list (index .Values "sas-retrieval-agent-manager-app") "ingress" "hosts")) | eq "true") (gt (len (index .Values "sas-retrieval-agent-manager-app").ingress.hosts) 0) (index (index .Values "sas-retrieval-agent-manager-app").ingress.hosts 0).paths (gt (len (index (index .Values "sas-retrieval-agent-manager-app").ingress.hosts 0).paths) 0) }}
+{{- $rawPath = (index (index (index .Values "sas-retrieval-agent-manager-app").ingress.hosts 0).paths 0).path }}
+{{- end }}
+{{- end }}
+{{- /* Clean the path: remove regex, trailing wildcards, ensure starts with '/' */ -}}
+{{- $basePath := regexFind "^/[^\\(\\[\\$\\*\\+\\?\\|]*" $rawPath }}
+{{- if not $basePath }}
+{{- $basePath = "/SASRetrievalAgentManager" }}
+{{- end }}
+{{- if and (ne $basePath "/") (hasSuffix $basePath "/") }}
+{{- $basePath = trimSuffix $basePath "/" }}
+{{- end }}
+{{- $_ := set $routeAnnotations "haproxy.router.openshift.io/rewrite-target" $basePath }}
+{{- end }}
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: {{ $fullName }}
+  labels:
+    {{- include "sas-retrieval-agent-manager-ui.labels" . | nindent 4 }}
+  {{- with $routeAnnotations }}
+  annotations:
+    {{- range $key, $value := . }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
+  {{- end }}
+spec:
+{{- if $globalIngressEnabled }}
+  host: {{ .Values.global.domain | quote }}
+  {{- if ((include "testValuesPath" (list (index .Values "sas-retrieval-agent-manager-app") "ingress" "paths")) | eq "true") }}
+  {{- with (first (index .Values "sas-retrieval-agent-manager-app").ingress.paths) }}
+  path: {{ .path | default "/" }}
+  {{- end }}
+  {{- end }}
+{{- else }}
+  {{- if (index .Values "sas-retrieval-agent-manager-app").ingress.hosts }}
+  {{- $host := (first (index .Values "sas-retrieval-agent-manager-app").ingress.hosts) }}
+  host: {{ $host.host | quote }}
+  {{- if $host.paths }}
+  {{- with (first $host.paths) }}
+  path: {{ .path | default "/" }}
+  {{- end }}
+  {{- end }}
+  {{- end }}
+{{- end }}
+  to:
+    kind: Service
+    name: {{ $fullName }}
+    weight: 100
+  port:
+    targetPort: http
+  wildcardPolicy: None
+{{- $globalTlsEnabled := false -}}
+{{- if and (hasKey (index .Values "sas-retrieval-agent-manager-app") "global") (hasKey .Values.global "ingress") (hasKey .Values.global.ingress "tls") (hasKey .Values.global.ingress.tls "enabled") -}}
+{{- $globalTlsEnabled = .Values.global.ingress.tls.enabled -}}
+{{- end -}}
+{{- $localTlsEnabled := false -}}
+{{- if and (hasKey (index .Values "sas-retrieval-agent-manager-app") "ingress") (hasKey (index .Values "sas-retrieval-agent-manager-app").ingress "tls") -}}
+{{- $localTlsEnabled = true -}}
+{{- end -}}
+{{- if or (and $globalIngressEnabled $globalTlsEnabled) $localTlsEnabled }}
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
+{{- end }}
+{{- end }}

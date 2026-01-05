@@ -1,0 +1,116 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test postgrest rbac
+templates:
+  - templates/db/rest/serviceaccount.yaml
+  - templates/db/rest/role.yaml
+  - templates/db/rest/role-binding.yaml
+tests:
+  - it: should create service account
+    template: templates/db/rest/serviceaccount.yaml
+    asserts:
+      - isKind:
+          of: ServiceAccount
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-postgrest
+
+  - it: should create role
+    template: templates/db/rest/role.yaml
+    asserts:
+      - isKind:
+          of: Role
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-postgrest
+
+  - it: should create role binding
+    template: templates/db/rest/role-binding.yaml
+    asserts:
+      - isKind:
+          of: RoleBinding
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-postgrest
+
+  - it: should configure service account automount
+    template: templates/db/rest/serviceaccount.yaml
+    set:
+      postgrest:
+        serviceAccount:
+          automount: false
+    asserts:
+      - equal:
+          path: automountServiceAccountToken
+          value: false
+
+  - it: should include service account annotations
+    template: templates/db/rest/serviceaccount.yaml
+    set:
+      postgrest:
+        serviceAccount:
+          annotations:
+            test-annotation: test-value
+    asserts:
+      - equal:
+          path: metadata.annotations["test-annotation"]
+          value: test-value
+
+  - it: should configure role permissions
+    template: templates/db/rest/role.yaml
+    asserts:
+      - exists:
+          path: rules
+      - isNotEmpty:
+          path: rules
+
+  - it: should bind role to service account
+    template: templates/db/rest/role-binding.yaml
+    asserts:
+      - equal:
+          path: subjects[0].kind
+          value: ServiceAccount
+      - equal:
+          path: subjects[0].name
+          value: sas-retrieval-agent-manager-postgrest
+      - equal:
+          path: roleRef.kind
+          value: Role
+      - equal:
+          path: roleRef.name
+          value: sas-retrieval-agent-manager-postgrest
+
+  - it: should include proper labels on service account
+    template: templates/db/rest/serviceaccount.yaml
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: postgrest
+      - equal:
+          path: metadata.labels["helm.sh/chart"]
+          value: sas-retrieval-agent-manager-1.2.3-dev.20241225
+
+  - it: should include proper labels on role
+    template: templates/db/rest/role.yaml
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: postgrest
+      - equal:
+          path: metadata.labels["helm.sh/chart"]
+          value: sas-retrieval-agent-manager-1.2.3-dev.20241225
+
+  - it: should include proper labels on role binding
+    template: templates/db/rest/role-binding.yaml
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: postgrest
+      - equal:
+          path: metadata.labels["helm.sh/chart"]
+          value: sas-retrieval-agent-manager-1.2.3-dev.20241225

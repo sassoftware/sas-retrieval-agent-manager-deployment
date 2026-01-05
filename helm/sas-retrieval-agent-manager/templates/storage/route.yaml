@@ -1,0 +1,77 @@
+{{- if .Values.filebrowser.enabled -}}
+{{- $dot := . -}}
+{{- $globalEnabled := ((include "testValuesPath" (list .Values.filebrowser "global" "ingress" "enabled")) | eq "true") -}}
+{{- $globalClassName := "" -}}
+{{- if $globalEnabled -}}
+{{- $globalClassName = .Values.global.ingress.className | default "" -}}
+{{- end -}}
+{{- $isRouteClassName := false -}}
+{{- if $globalEnabled -}}
+{{- if eq $globalClassName "route" -}}
+{{- $isRouteClassName = true -}}
+{{- end -}}
+{{- else if .Values.filebrowser.ingress.enabled -}}
+{{- if eq (.Values.filebrowser.ingress.className | default "") "route" -}}
+{{- $isRouteClassName = true -}}
+{{- end -}}
+{{- end -}}
+{{- if and (or .Values.filebrowser.ingress.enabled $globalEnabled) $isRouteClassName -}}
+{{- $fullName := include "storage.fullname" . | lower -}}
+{{- $svcPort := .Values.filebrowser.service.port -}}
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: {{ $fullName }}
+  labels:
+    {{- include "storage.labels" . | nindent 4 }}
+  annotations:
+    {{- if .Values.filebrowser.ingress.annotations }}
+    {{- range $key, $value := . }}
+    {{- if not (hasPrefix "nginx.ingress.kubernetes.io/" $key) }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
+    {{- end }}
+    {{- end }}
+    # Route-specific annotation for rewrite functionality
+    haproxy.router.openshift.io/rewrite-target: /
+spec:
+{{- if $globalEnabled }}
+  host: {{ .Values.global.domain | quote }}
+  path: {{ (index .Values.filebrowser.ingress.paths 0).path | default "/SASRetrievalAgentManager/files" }}
+{{- else }}
+  {{- $firstHost := index .Values.filebrowser.ingress.hosts 0 }}
+  host: {{ $firstHost.host | quote }}
+  {{- $firstPath := index $firstHost.paths 0 }}
+  path: {{ $firstPath.path | default "/" }}
+{{- end }}
+  to:
+    kind: Service
+    name: {{ $fullName }}
+    weight: 100
+  port:
+    targetPort: {{ $svcPort }}
+  {{- $globalTlsEnabled := ((include "testValuesPath" (list .Values.filebrowser "global" "ingress" "tls" "enabled")) | eq "true") -}}
+  {{- $globalTlsSecretName := "" -}}
+  {{- if ((include "testValuesPath" (list .Values.filebrowser "global" "ingress" "tls" "secretName")) | eq "true") -}}
+  {{- $globalTlsSecretName = .Values.global.ingress.tls.secretName -}}
+  {{- end -}}
+  {{- if or (and $globalEnabled $globalTlsEnabled) .Values.filebrowser.ingress.tls }}
+  tls:
+    termination: edge
+    {{- if $globalEnabled }}
+    {{- if $globalTlsSecretName }}
+    key: {{ $globalTlsSecretName }}-key
+    certificate: {{ $globalTlsSecretName }}-cert
+    {{- end }}
+    {{- else }}
+    {{- if .Values.filebrowser.ingress.tls }}
+    {{- $firstTls := index .Values.filebrowser.ingress.tls 0 }}
+    {{- if $firstTls.secretName }}
+    key: {{ $firstTls.secretName }}-key
+    certificate: {{ $firstTls.secretName }}-cert
+    {{- end }}
+    {{- end }}
+    {{- end }}
+  {{- end }}
+{{- end -}}
+{{- end -}}

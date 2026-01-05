@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test postgrest quick validation
+templates:
+  - templates/db/rest/deployment.yaml
+  - templates/db/rest/service.yaml
+  - templates/db/rest/serviceaccount.yaml
+tests:
+  - it: should render all basic templates
+    asserts:
+      - hasDocuments:
+          count: 1  # Each template produces 1 document
+
+  - it: should use correct naming
+    asserts:
+      - exists:
+          path: metadata.name
+      - matchRegex:
+          path: metadata.name
+          pattern: "sas-retrieval-agent-manager-postgrest.*"
+
+  - it: should include basic labels
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: postgrest
+      - exists:
+          path: metadata.labels["app.kubernetes.io/instance"]

@@ -1,0 +1,70 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test sas retrieval agent manager db init validation
+templates:
+  - ../templates/db/init/initialization-job.yaml
+  - ../templates/db/init/db-connection-configmap.yaml
+  - ../templates/db/init/scripts-configmap.yaml
+tests:
+  - it: should validate job has required fields
+    template: ../templates/db/init/initialization-job.yaml
+    asserts:
+      - isKind:
+          of: Job
+      - exists:
+          path: metadata.name
+      - exists:
+          path: spec.template.spec.containers
+      - exists:
+          path: spec.template.spec.restartPolicy
+
+  - it: should validate init container configuration
+    template: ../templates/db/init/initialization-job.yaml
+    asserts:
+      - isNotEmpty:
+          path: spec.template.spec.initContainers
+      - exists:
+          path: spec.template.spec.initContainers[0].name
+      - exists:
+          path: spec.template.spec.initContainers[0].image
+
+  - it: should validate main container configuration
+    template: ../templates/db/init/initialization-job.yaml
+    asserts:
+      - exists:
+          path: spec.template.spec.containers[0].name
+      - exists:
+          path: spec.template.spec.containers[0].image
+
+  - it: should validate service account name is set
+    template: ../templates/db/init/initialization-job.yaml
+    asserts:
+      - exists:
+          path: spec.template.spec.serviceAccountName
+      - isNotEmpty:
+          path: spec.template.spec.serviceAccountName
+
+  - it: should validate database configuration has all required fields
+    template: ../templates/db/init/db-connection-configmap.yaml
+    asserts:
+      - isKind:
+          of: ConfigMap
+
+  - it: should validate scripts configmap contains initialization script
+    template: ../templates/db/init/scripts-configmap.yaml
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - isNotEmpty:
+          path: data
+
+  - it: should validate backoff limit is reasonable
+    template: ../templates/db/init/initialization-job.yaml
+    asserts:
+      - exists:
+          path: spec.backoffLimit
+
+  - it: should validate restart policy is valid
+    template: ../templates/db/init/initialization-job.yaml
+    asserts:
+      - isNotEmpty:
+          path: spec.template.spec.restartPolicy

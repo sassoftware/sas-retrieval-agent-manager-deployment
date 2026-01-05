@@ -1,0 +1,90 @@
+{{- if ((include "testValuesPath" (list .Values "ingress" "admin" "enabled")) | eq "true") }}
+{{- $dot := . -}}
+{{- $globalEnabled := ((include "testValuesPath" (list .Values "global" "ingress" "enabled")) | eq "true") -}}
+{{- $globalClassName := "" -}}
+{{- if $globalEnabled -}}
+{{- $globalClassName = .Values.global.ingress.className | default "" -}}
+{{- end -}}
+{{- $isRouteClassName := false -}}
+{{- if $globalEnabled -}}
+{{- if eq $globalClassName "route" -}}
+{{- $isRouteClassName = true -}}
+{{- end -}}
+{{- else if ((include "testValuesPath" (list .Values "ingress" "enabled")) | eq "true") -}}
+{{- if eq ((index .Values "keycloak").ingress.className | default "") "route" -}}
+{{- $isRouteClassName = true -}}
+{{- end -}}
+{{- end -}}
+{{- if and (or ((include "testValuesPath" (list .Values "ingress" "enabled")) | eq "true") $globalEnabled) $isRouteClassName -}}
+{{- $fullName := include "keycloak.fullname" . | lower -}}
+{{- $svcPort := (index .Values "keycloak").service.port -}}
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: {{ $fullName }}-admin
+  labels:
+    {{- include "keycloak.labels" . | nindent 4 }}
+  annotations:
+    {{- if (index .Values "keycloak").ingress.annotations }}
+    {{- range $key, $value := (index .Values "keycloak").ingress.annotations }}
+    {{- if not (hasPrefix "nginx.ingress.kubernetes.io/" $key) }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
+    {{- end }}
+    {{- end }}
+    # Route-specific annotation for rewrite functionality
+    haproxy.router.openshift.io/rewrite-target: /
+    {{- with (index .Values "keycloak").ingress.admin.sourceRange }}
+    # Note: OpenShift Routes handle source IP restrictions differently than nginx ingress
+    # Consider using network policies or other OpenShift-native approaches for IP whitelisting
+    {{- end }}
+spec:
+{{- if $globalEnabled }}
+  host: {{ .Values.global.domain | quote }}
+  path: {{ (index .Values "keycloak").ingress.admin.path | default "/SASRetrievalAgentManager/auth/admin" }}
+{{- else }}
+  host: {{ (index .Values "keycloak").ingress.admin.host | quote }}
+  path: {{ (index .Values "keycloak").ingress.admin.path | default "/SASRetrievalAgentManager/auth/admin" }}
+{{- end }}
+  to:
+    kind: Service
+    name: {{ $fullName }}
+    weight: 100
+  port:
+    targetPort: {{ $svcPort }}
+  {{- $globalTlsEnabled := false -}}
+  {{- if hasKey .Values "global" -}}
+  {{- if hasKey .Values.global "ingress" -}}
+  {{- if hasKey .Values.global.ingress "tls" -}}
+  {{- if .Values.global.ingress.tls.enabled -}}
+  {{- $globalTlsEnabled = true -}}
+  {{- end -}}
+  {{- end -}}
+  {{- end -}}
+  {{- end -}}
+  {{- $globalTlsSecretName := "" -}}
+  {{- if $globalTlsEnabled -}}
+  {{- if hasKey .Values.global.ingress.tls "secretName" -}}
+  {{- $globalTlsSecretName = .Values.global.ingress.tls.secretName -}}
+  {{- end -}}
+  {{- end -}}
+  {{- if or (and $globalEnabled $globalTlsEnabled) (index .Values "keycloak").ingress.tls }}
+  tls:
+    termination: edge
+    {{- if $globalEnabled }}
+    {{- if $globalTlsSecretName }}
+    key: {{ $globalTlsSecretName }}-key
+    certificate: {{ $globalTlsSecretName }}-cert
+    {{- end }}
+    {{- else }}
+    {{- if (index .Values "keycloak").ingress.tls }}
+    {{- $firstTls := index (index .Values "keycloak").ingress.tls 0 }}
+    {{- if $firstTls.secretName }}
+    key: {{ $firstTls.secretName }}-key
+    certificate: {{ $firstTls.secretName }}-cert
+    {{- end }}
+    {{- end }}
+    {{- end }}
+  {{- end }}
+{{- end -}}
+{{- end -}}

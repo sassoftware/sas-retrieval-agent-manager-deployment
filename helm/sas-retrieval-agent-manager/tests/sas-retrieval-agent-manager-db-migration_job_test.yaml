@@ -1,0 +1,335 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test sas retrieval agent manager db migration job
+templates:
+  - ../templates/db/migration/migration-job.yaml
+tests:
+  - it: should create a job
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+    asserts:
+      - isKind:
+          of: Job
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-db-migration
+
+  - it: should have correct labels
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: sas-retrieval-agent-manager-db-migration
+      - equal:
+          path: metadata.labels["app.kubernetes.io/instance"]
+          value: RELEASE-NAME
+
+  - it: should have argocd skip annotation
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+    asserts:
+      - equal:
+          path: metadata.annotations["argocd.argoproj.io/sync-options"]
+          value: Skip
+
+  - it: should use correct service account
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+    asserts:
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: sas-retrieval-agent-manager-db-migration
+
+  - it: should have init container with postgres image
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+    asserts:
+      - isNotEmpty:
+          path: spec.template.spec.initContainers
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: wait-for-db
+      - equal:
+          path: spec.template.spec.initContainers[0].image
+          value: docker.io/postgres:15-alpine
+
+  - it: should have main container with migration image
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+    asserts:
+      - isNotEmpty:
+          path: spec.template.spec.containers
+      - equal:
+          path: spec.template.spec.containers[0].name
+          value: db-initialization
+      - matchRegex:
+          path: spec.template.spec.containers[0].image
+          pattern: sas-retrieval-agent-manager-db-migration
+
+  - it: should mount scripts volume in init container
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+    asserts:
+      - contains:
+          path: spec.template.spec.initContainers[0].volumeMounts
+          content:
+            mountPath: "/scripts"
+            name: scripts
+            readOnly: true
+
+  # - it: should have scripts volume from configmap
+  #   set:
+  #     global:
+  #       configuration:
+  #         database:
+  #           migrationDb: true
+  #   asserts:
+  #     - contains:
+  #         path: spec.template.spec.volumes
+  #         content:
+  #           name: scripts
+  #           configMap:
+  #             name: sas-retrieval-agent-manager-db-migration-scripts
+  #             defaultMode: 0777
+
+  - it: should have correct security context
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext.runAsUser
+          value: 10001
+      - equal:
+          path: spec.template.spec.securityContext.runAsGroup
+          value: 10001
+      - equal:
+          path: spec.template.spec.securityContext.runAsNonRoot
+          value: true
+
+  - it: should have container security context
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.allowPrivilegeEscalation
+          value: false
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.runAsNonRoot
+          value: true
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.readOnlyRootFilesystem
+          value: true
+
+  - it: should have correct restart policy
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+    asserts:
+      - equal:
+          path: spec.template.spec.restartPolicy
+          value: OnFailure
+
+  - it: should have backoff limit
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+    asserts:
+      - equal:
+          path: spec.backoffLimit
+          value: 1000
+
+  - it: should have init container environment variables
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+    asserts:
+      - contains:
+          path: spec.template.spec.initContainers[0].env
+          content:
+            name: DB_USER
+            valueFrom:
+              secretKeyRef:
+                key: user
+                name: migration-db-credentials
+      - contains:
+          path: spec.template.spec.initContainers[0].env
+          content:
+            name: DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: password
+                name: migration-db-credentials
+
+  - it: should have main container environment variables
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DB_HOST
+            valueFrom:
+              configMapKeyRef:
+                key: host
+                name: db-connection
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: MIGRATE_DB_USERNAME
+            valueFrom:
+              secretKeyRef:
+                key: user
+                name: migration-db-credentials
+
+  - it: should have resource limits and requests
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.cpu
+          value: 200m
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.memory
+          value: 256Mi
+      - equal:
+          path: spec.template.spec.containers[0].resources.requests.cpu
+          value: 100m
+      - equal:
+          path: spec.template.spec.containers[0].resources.requests.memory
+          value: 128Mi
+
+  - it: should support custom image pull policy
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+      sas-retrieval-agent-manager-db-migration:
+        image:
+          postgres:
+            pullPolicy: Always
+          goose:
+            pullPolicy: Never
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].imagePullPolicy
+          value: Always
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: Never
+
+  - it: should support custom pod annotations
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+      sas-retrieval-agent-manager-db-migration:
+        podAnnotations:
+          custom.annotation: "test-value"
+          another.annotation: "another-value"
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations["custom.annotation"]
+          value: "test-value"
+      - equal:
+          path: spec.template.metadata.annotations["another.annotation"]
+          value: "another-value"
+
+  - it: should support custom pod labels
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+      sas-retrieval-agent-manager-db-migration:
+        podLabels:
+          custom.label: "test-label"
+          environment: "testing"
+    asserts:
+      - equal:
+          path: spec.template.metadata.labels["custom.label"]
+          value: "test-label"
+      - equal:
+          path: spec.template.metadata.labels["environment"]
+          value: "testing"
+
+  - it: should have node affinity for sas deployment
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+    asserts:
+      - exists:
+          path: spec.template.spec.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution
+      - contains:
+          path: spec.template.spec.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution
+          content:
+            weight: 1
+            preference:
+              matchExpressions:
+              - key: sas.com/deployment
+                operator: In
+                values:
+                - sas-retrieval-agent-manager
+
+  - it: should include image pull secrets
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+        imagePullSecrets:
+          - name: global-secret
+      sas-retrieval-agent-manager-db-migration:
+        imagePullSecrets:
+          - name: local-secret
+    asserts:
+      - contains:
+          path: spec.template.spec.imagePullSecrets
+          content:
+            name: global-secret
+      - contains:
+          path: spec.template.spec.imagePullSecrets
+          content:
+            name: local-secret

@@ -1,0 +1,132 @@
+{{- $dot := . -}}
+{{- $globalEnabled := false -}}
+{{- $ingressAnnotations := dict -}}
+{{- if (index .Values "sas-retrieval-agent-manager-app").ingress.annotations }}
+  {{- $ingressAnnotations = (index .Values "sas-retrieval-agent-manager-app").ingress.annotations }}
+{{- end }}
+{{- if .Values.global.configuration.ui.enableRootIngress }}
+  {{- $rawPath := "/SASRetrievalAgentManager" }}
+  {{- if .Values.global.ingress.enabled }}
+    {{- if and (index .Values "sas-retrieval-agent-manager-app").ingress.paths (gt (len (index .Values "sas-retrieval-agent-manager-app").ingress.paths) 0) }}
+      {{- $rawPath = (index (index .Values "sas-retrieval-agent-manager-app").ingress.paths 0).path }}
+    {{- end }}
+  {{- else }}
+    {{- if and (index .Values "sas-retrieval-agent-manager-app").ingress.hosts (gt (len (index .Values "sas-retrieval-agent-manager-app").ingress.hosts) 0) (index (index .Values "sas-retrieval-agent-manager-app").ingress.hosts 0).paths (gt (len (index (index .Values "sas-retrieval-agent-manager-app").ingress.hosts 0).paths) 0) }}
+      {{- $rawPath = (index (index (index .Values "sas-retrieval-agent-manager-app").ingress.hosts 0).paths 0).path }}
+    {{- end }}
+  {{- end }}
+  {{- /* Clean the path: remove regex, trailing wildcards, ensure starts with '/' */ -}}
+  {{- /* Extract base path before any special character (regex, wildcards, etc.) */ -}}
+  {{- $basePath := regexFind "^/[^\\(\\[\\$\\*\\+\\?\\|]*" $rawPath }}
+  {{- if not $basePath }}
+    {{- $basePath = "/SASRetrievalAgentManager" }}
+  {{- end }}
+  {{- if and (ne $basePath "/") (hasSuffix $basePath "/") }}
+    {{- $basePath = trimSuffix $basePath "/" }}
+  {{- end }}
+  {{- $_ := set $ingressAnnotations "nginx.ingress.kubernetes.io/app-root" $basePath }}
+{{- end }}
+{{- if hasKey .Values "global" -}}
+{{- if hasKey .Values.global "ingress" -}}
+{{- if .Values.global.ingress.enabled -}}
+{{- $globalEnabled = .Values.global.ingress.enabled -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- if or (index .Values "sas-retrieval-agent-manager-app").ingress.enabled $globalEnabled -}}
+{{- $fullName := include "sas-retrieval-agent-manager-ui.fullname" .  | lower -}}
+{{- $svcPort := (index .Values "sas-retrieval-agent-manager-app").service.port -}}
+{{- if and (index .Values "sas-retrieval-agent-manager-app").ingress.className (not (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion)) }}
+  {{- if not (hasKey (index .Values "sas-retrieval-agent-manager-app").ingress.annotations "kubernetes.io/ingress.class") }}
+  {{- $_ := set (index .Values "sas-retrieval-agent-manager-app").ingress.annotations "kubernetes.io/ingress.class" (index .Values "sas-retrieval-agent-manager-app").ingress.className}}
+  {{- end }}
+{{- end }}
+{{- if semverCompare ">=1.19-0" .Capabilities.KubeVersion.GitVersion -}}
+apiVersion: networking.k8s.io/v1
+{{- else if semverCompare ">=1.14-0" .Capabilities.KubeVersion.GitVersion -}}
+apiVersion: networking.k8s.io/v1beta1
+{{- else -}}
+apiVersion: extensions/v1beta1
+{{- end }}
+kind: Ingress
+metadata:
+  name: {{ $fullName }}
+  labels:
+    {{- include "sas-retrieval-agent-manager-ui.labels" . | nindent 4 }}
+  {{- with $ingressAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+{{- if $globalEnabled | default false }}
+  {{- if and (.Values.global.ingress.className | default (index .Values "sas-retrieval-agent-manager-app").ingress.className) (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion) }}
+  ingressClassName: {{ .Values.global.ingress.className | default (index .Values "sas-retrieval-agent-manager-app").ingress.className  }}
+  {{- end }}
+  {{- if and ((include "testValuesPath" (list (index .Values "sas-retrieval-agent-manager-app") "global" "ingress" "tls" "enabled")) | eq "true"  | default false) (.Values.global.ingress.tls.enabled | default false) }}
+  tls:
+    - hosts:
+       - {{ .Values.global.domain | quote }}
+      {{- if ((include "testValuesPath" (list (index .Values "sas-retrieval-agent-manager-app") "global" "ingress" "tls" "secretName")) | eq "true") }}
+      secretName: {{ .Values.global.ingress.tls.secretName | default "" }}
+      {{- else if ((include "testValuesPath" (list (index .Values "sas-retrieval-agent-manager-app") "ingress" "tls" "secretName")) | eq "true") }}
+      secretName: {{ (index .Values "sas-retrieval-agent-manager-app").ingress.tls.secretName | default "" }}
+      {{- end }}
+  {{- end }}
+  rules:
+    - host: {{ .Values.global.domain | quote }}
+      http:
+        paths:
+          {{- range (index .Values "sas-retrieval-agent-manager-app").ingress.paths }}
+          - path: {{ .path}}
+            {{- if and .pathType (semverCompare ">=1.18-0" $.Capabilities.KubeVersion.GitVersion) }}
+            pathType: {{ .pathType }}
+            {{- end }}
+            backend:
+              {{- if semverCompare ">=1.19-0" $.Capabilities.KubeVersion.GitVersion }}
+              service:
+                name: {{ $fullName }}
+                port:
+                  number: {{ $svcPort }}
+              {{- else }}
+              serviceName: {{ $fullName }}
+              servicePort: {{ $svcPort }}
+              {{- end }}
+          {{- end }}
+  {{- else }}
+  {{- if and (index .Values "sas-retrieval-agent-manager-app").ingress.className (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion) }}
+  ingressClassName: {{ (index .Values "sas-retrieval-agent-manager-app").ingress.className }}
+  {{- end }}
+  {{- if (index .Values "sas-retrieval-agent-manager-app").ingress.tls }}
+  tls:
+    {{- range (index .Values "sas-retrieval-agent-manager-app").ingress.tls }}
+    - hosts:
+        {{- range .hosts }}
+        - {{ . | quote }}
+        {{- end }}
+      secretName: {{ .secretName }}
+    {{- end }}
+  {{- end }}
+  rules:
+    {{- range (index .Values "sas-retrieval-agent-manager-app").ingress.hosts }}
+    - host: {{ .host | quote }}
+      http:
+        paths:
+          {{- range .paths }}
+          - path: {{ .path }}
+            {{- if and .pathType (semverCompare ">=1.18-0" $.Capabilities.KubeVersion.GitVersion) }}
+            pathType: {{ .pathType }}
+            {{- end }}
+            backend:
+              {{- if semverCompare ">=1.19-0" $.Capabilities.KubeVersion.GitVersion }}
+              service:
+                name: {{ $fullName }}
+                port:
+                  number: {{ $svcPort }}
+              {{- else }}
+              serviceName: {{ $fullName }}
+              servicePort: {{ $svcPort }}
+              {{- end }}
+          {{- end }}
+    {{- end }}
+  {{- end }}
+{{- end }}

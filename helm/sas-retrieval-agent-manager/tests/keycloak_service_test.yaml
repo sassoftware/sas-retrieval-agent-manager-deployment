@@ -1,0 +1,131 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test keycloak service
+templates:
+  - templates/iam/keycloak/service.yaml
+tests:
+  - it: should create a service with default values
+    set:
+      keycloak:
+        fullnameOverride: ""
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Service
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-keycloak
+      - equal:
+          path: spec.type
+          value: ClusterIP
+      - equal:
+          path: spec.ports[0].port
+          value: 8080
+      - equal:
+          path: spec.ports[0].targetPort
+          value: http
+      - equal:
+          path: spec.ports[0].protocol
+          value: TCP
+      - equal:
+          path: spec.ports[0].name
+          value: http
+
+  - it: should include proper labels
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: keycloak
+      - equal:
+          path: metadata.labels["app.kubernetes.io/instance"]
+          value: RELEASE-NAME
+      - equal:
+          path: metadata.labels["helm.sh/chart"]
+          value: sas-retrieval-agent-manager-1.2.3-dev.20241225
+
+  - it: should include selector labels
+    asserts:
+      - equal:
+          path: spec.selector["app.kubernetes.io/component"]
+          value: keycloak
+      - equal:
+          path: spec.selector["app.kubernetes.io/name"]
+          value: keycloak
+      - equal:
+          path: spec.selector["app.kubernetes.io/instance"]
+          value: RELEASE-NAME
+
+  - it: should use custom service type
+    set:
+      keycloak:
+        service:
+          type: NodePort
+    asserts:
+      - equal:
+          path: spec.type
+          value: NodePort
+
+  - it: should use custom port
+    set:
+      keycloak:
+        service:
+          port: 9090
+    asserts:
+      - equal:
+          path: spec.ports[0].port
+          value: 9090
+
+  - it: should work with fullnameOverride
+    set:
+      keycloak:
+        fullnameOverride: "custom-keycloak"
+    asserts:
+      - equal:
+          path: metadata.name
+          value: custom-keycloak
+      - equal:
+          path: spec.selector["app.kubernetes.io/name"]
+          value: keycloak
+      - equal:
+          path: spec.selector["app.kubernetes.io/instance"]
+          value: RELEASE-NAME
+
+  - it: should work with nameOverride
+    set:
+      keycloak:
+        fullnameOverride: "custom-name"
+    asserts:
+      - equal:
+          path: metadata.name
+          value: custom-name
+      - equal:
+          path: spec.selector["app.kubernetes.io/name"]
+          value: keycloak
+
+  - it: should work with custom release name
+    release:
+      name: custom-release
+    set:
+      keycloak:
+        fullnameOverride: ""
+    asserts:
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-keycloak
+      - equal:
+          path: spec.selector["app.kubernetes.io/instance"]
+          value: custom-release
+
+  - it: should handle LoadBalancer service type
+    set:
+      keycloak:
+        service:
+          type: LoadBalancer
+          port: 80
+    asserts:
+      - equal:
+          path: spec.type
+          value: LoadBalancer
+      - equal:
+          path: spec.ports[0].port
+          value: 80

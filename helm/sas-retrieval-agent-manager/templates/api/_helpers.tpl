@@ -1,0 +1,80 @@
+{{/*
+Expand the name of the chart.
+*/}}
+{{- define "sas-retrieval-agent-manager-api.name" -}}
+{{- if (index .Values "sas-retrieval-agent-manager-api").nameOverride }}
+{{- (index .Values "sas-retrieval-agent-manager-api").nameOverride | trunc 63 | trimSuffix "-" }}
+{{- else }}
+{{- printf "%s-api" (include "sas-retrieval-agent-manager.name" .) | trunc 63 | trimSuffix "-" }}
+{{- end }}
+{{- end }}
+
+{{/*
+Create a default fully qualified app name.
+We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
+If release name contains chart name it will be used as a full name.
+*/}}
+{{- define "sas-retrieval-agent-manager-api.fullname" -}}
+{{- if (index .Values "sas-retrieval-agent-manager-api").fullnameOverride }}
+{{- (index .Values "sas-retrieval-agent-manager-api").fullnameOverride | trunc 63 | trimSuffix "-" }}
+{{- else }}
+{{- printf "%s-api" (include "sas-retrieval-agent-manager.fullname" .) | trunc 63 | trimSuffix "-" }}
+{{- end }}
+{{- end }}
+
+{{/*
+Create chart name and version as used by the chart label.
+*/}}
+{{- define "sas-retrieval-agent-manager-api.chart" -}}
+{{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{/*
+Common labels
+*/}}
+{{- define "sas-retrieval-agent-manager-api.labels" -}}
+helm.sh/chart: {{ include "sas-retrieval-agent-manager-api.chart" . }}
+{{ include "sas-retrieval-agent-manager-api.selectorLabels" . }}
+{{- if .Chart.AppVersion }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+{{- end }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- end }}
+
+{{/*
+Selector labels
+*/}}
+{{- define "sas-retrieval-agent-manager-api.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "sas-retrieval-agent-manager-api.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}
+
+{{/*
+Create the name of the service account to use
+*/}}
+{{- define "sas-retrieval-agent-manager-api.serviceAccountName" -}}
+{{- if (index .Values "sas-retrieval-agent-manager-api").serviceAccount.create }}
+{{- default (include "sas-retrieval-agent-manager-api.fullname" .) (index .Values "sas-retrieval-agent-manager-api").serviceAccount.name }}
+{{- else }}
+{{- default "default" (index .Values "sas-retrieval-agent-manager-api").serviceAccount.name }}
+{{- end }}
+{{- end }}
+
+{{/*
+Check if a nested path exists in .Values.sas-retrieval-agent-manager-api
+Usage: {{ include "testValuesPath" (list .Values.sas-retrieval-agent-manager-api "x" "y" "z") }}
+*/}}
+{{- define "testValuesPath" -}}
+{{- $root := index . 0 -}}
+{{- $keys := rest . -}}
+{{- $current := $root -}}
+{{- $exists := true -}}
+{{- range $key := $keys }}
+  {{- if and $exists (kindIs "map" $current) (hasKey $current $key) }}
+    {{- $current = index $current $key -}}
+  {{- else }}
+    {{- $exists = false -}}
+  {{- end }}
+{{- end }}
+{{- $exists }}
+{{- end }}

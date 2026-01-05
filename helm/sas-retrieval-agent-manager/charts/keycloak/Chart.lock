@@ -1,6 +1,0 @@
-dependencies:
-- name: mail
-  repository: ""
-  version: v4.4.0
-digest: sha256:98f782535ea609b605f7e92591b352190d7aeb4a42d4a1aec2021ab3729489f8
-generated: "2025-10-09T13:14:34.888810182-04:00"
