@@ -1,0 +1,11 @@
+{{- if .Values.filebrowser.enabled -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "storage.fullname" . }}
+  labels:
+    {{- include "storage.labels" . | nindent 4 }}
+data:
+  .filebrowser.json: |
+    {{- .Values.filebrowser.config | toPrettyJson | nindent 4 }}
+{{- end -}}

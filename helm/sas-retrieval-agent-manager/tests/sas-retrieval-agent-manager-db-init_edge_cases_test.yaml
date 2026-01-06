@@ -1,0 +1,127 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test sas retrieval agent manager db init edge cases
+templates:
+  - ../templates/db/init/initialization-job.yaml
+  - ../templates/db/init/serviceaccount.yaml
+  - ../templates/db/init/db-connection-configmap.yaml
+tests:
+  - it: should handle disabled service account creation
+    set:
+      sas-retrieval-agent-manager-db-init:
+        serviceAccount:
+          create: false
+          name: "existing-service-account"
+    template: ../templates/db/init/serviceaccount.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should use existing service account when creation disabled
+    set:
+      sas-retrieval-agent-manager-db-init:
+        serviceAccount:
+          create: false
+          name: "existing-service-account"
+    template: ../templates/db/init/initialization-job.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: "existing-service-account"
+
+  - it: should handle empty database configuration
+    set:
+      global:
+        configuration:
+          database:
+            host: "psql.example.com"
+            port: null
+            sslmode: "require"
+    template: ../templates/db/init/db-connection-configmap.yaml
+    asserts:
+      - equal:
+          path: data.host
+          value: "psql.example.com"
+      - equal:
+          path: data.port
+          value: "5432"
+      - equal:
+          path: data.sslmode
+          value: "require"
+
+  - it: should handle special characters in passwords
+    set:
+      global:
+        configuration:
+          database:
+            initAdminPassword: "p@ssw0rd!@#$%^&*()_+"
+          migration:
+            dbMigrationPassword: "p@ssw0rd!@#$%^&*()_+"
+          application:
+            password: "p@ssw0rd!@#$%^&*()_+"
+          keycloak:
+            password: "p@ssw0rd!@#$%^&*()_+"
+          vectorizationJob:
+            password: "p@ssw0rd!@#$%^&*()_+"
+          vectorStore:
+            password: "p@ssw0rd!@#$%^&*()_+"
+    template: ../templates/db/init/initialization-job.yaml
+    asserts:
+      - isKind:
+          of: Job
+
+  - it: should handle numeric values properly
+    set:
+      global:
+        configuration:
+          database:
+            port: 5432
+      sas-retrieval-agent-manager-db-init:
+        podSecurityContext:
+          runAsUser: 1991
+          runAsGroup: 2991
+    template: ../templates/db/init/initialization-job.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext.runAsUser
+          value: 1991
+
+  - it: should handle boolean values properly
+    set:
+      sas-retrieval-agent-manager-db-init:
+        serviceAccount:
+          create: true
+          automount: false
+    template: ../templates/db/init/initialization-job.yaml
+    asserts:
+      - isKind:
+          of: Job
+
+  - it: should handle empty arrays and objects
+    set:
+      sas-retrieval-agent-manager-db-init:
+        tolerations: []
+        nodeSelector: {}
+        resources: {}
+    template: ../templates/db/init/initialization-job.yaml
+    asserts:
+      - isKind:
+          of: Job
+      - notExists:
+          path: spec.template.spec.tolerations
+      - notExists:
+          path: spec.template.spec.nodeSelector
+      - notExists:
+          path: spec.template.spec.resources
+
+  - it: should handle image pull secrets
+    set:
+      sas-retrieval-agent-manager-db-init:
+        imagePullSecrets:
+          - name: "my-registry-secret"
+          - name: "another-secret"
+    template: ../templates/db/init/initialization-job.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.imagePullSecrets
+          content:
+            name: "my-registry-secret"

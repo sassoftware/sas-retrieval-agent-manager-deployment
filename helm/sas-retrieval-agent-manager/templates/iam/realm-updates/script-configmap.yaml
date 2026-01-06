@@ -1,0 +1,279 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "keycloak.fullname" . }}-realm-update-scripts
+data:
+  apply.sh: |-
+    #!/usr/bin/env bash
+
+    # This script applies realm updates to a Keycloak server using the Keycloak Admin CLI (kcadm.sh).
+    # It reads admin credentials from mounted Kubernetes secrets and uses an ephemeral work directory
+    # for storing the kcadm.sh configuration file.
+    # It is intended to be run as part of a Kubernetes Job within a Helm chart deployment, and will
+    # execute realm updates defined in additional scripts or commands after authentication. Any
+    # script present in the /updates directory with the suffix "-update.sh" will be executed.
+
+    set -e -o pipefail -o nounset
+
+    shopt -s nullglob
+
+    script_pattern="/updates/*-update.sh"
+    targets=( $script_pattern )
+
+    if [ ${#targets[@]} -eq 0 ]; then
+      echo "No update scripts found. Skipping realm updates."
+      exit 0
+    fi
+
+    # Consume mounted secrets for Keycloak admin credentials.
+    if [ -f /admin/username ]; then
+      KEYCLOAK_USER=$(cat /admin/username)
+      export KEYCLOAK_USER
+    fi
+
+    if [ -f /admin/password ]; then
+      KEYCLOAK_PASSWORD=$(cat /admin/password)
+      export KEYCLOAK_PASSWORD
+    fi
+
+    # Verify that kcadm.sh exists.
+    if [ -f /opt/keycloak/bin/kcadm.sh ]; then
+      KCADM_SH="/opt/keycloak/bin/kcadm.sh"
+    else
+      echo "kcadm.sh not found in /opt/keycloak/bin/"
+      exit 1
+    fi
+
+    # Verify required environment variables are set.
+    if [ -z "${KEYCLOAK_USER:-}" ] || [ -z "${KEYCLOAK_PASSWORD:-}" ]; then
+      echo "KEYCLOAK_USER and KEYCLOAK_PASSWORD environment variables must be set."
+      exit 1
+    fi
+
+    if [ -z "${KCADM_CFG_PATH}" ] || [ -z "${KEYCLOAK_URL}" ] || [ -z "${KEYCLOAK_REALM:-}" ]; then
+      echo "KCADM_CFG_PATH, KEYCLOAK_URL, and KEYCLOAK_REALM environment variables must be set."
+      exit 1
+    fi
+
+    # Authenticate with Keycloak and persist configuration to ephemeral work directory.
+    "${KCADM_SH}" config credentials --config "${KCADM_CFG_PATH}" \
+      --server "${KEYCLOAK_URL}" --realm master                   \
+      --user "${KEYCLOAK_USER}" --password "${KEYCLOAK_PASSWORD}"
+
+    # Disable exit on error to allow for custom error handling in update scripts and
+    # all scripts to run.
+    set +e
+
+    exit_code=0
+
+    # Apply realm updates.
+    for update_script in /updates/*-update.sh; do
+      if [ -f "${update_script}" ]; then
+        echo "Applying update script: ${update_script}"
+        if ! bash "${update_script}"; then
+          echo "Error applying update script: ${update_script}"
+          exit_code=1
+        else
+          echo "Successfully applied update script: ${update_script}"
+        fi
+      fi
+    done
+
+    exit ${exit_code}
+
+  ram-api-client-update.sh: |-
+    #!/usr/bin/env bash
+
+    set -e -o pipefail -o nounset
+
+    function maybe_create_api_client() {
+      client_id=$(/opt/keycloak/bin/kcadm.sh get clients -r "${KEYCLOAK_REALM}" \
+        -q "clientId=sas-ram-api" --fields id,clientId --format csv \
+        --config "${KCADM_CFG_PATH}" | cut -d',' -f1 | sed 's/"//g')
+
+      if [ -n "$client_id" ]; then
+        echo "Default API client found in realm '${KEYCLOAK_REALM}', skipping creation."
+        return 0
+      fi
+
+      cat > /workdir/ram-api-client.json <<EOF
+    {
+      "clientId": "sas-ram-api",
+      "name": "SAS RAM API Client",
+      "description": "The default public client for SAS RAM API access.",
+      "rootUrl": "https://${KEYCLOAK_FQDN}/",
+      "adminUrl": "",
+      "baseUrl": "",
+      "surrogateAuthRequired": false,
+      "enabled": true,
+      "alwaysDisplayInConsole": false,
+      "clientAuthenticatorType": "client-secret",
+      "redirectUris": [
+        "/*"
+      ],
+      "webOrigins": [
+        "+"
+      ],
+      "notBefore": 0,
+      "bearerOnly": false,
+      "consentRequired": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "publicClient": true,
+      "frontchannelLogout": true,
+      "protocol": "openid-connect",
+      "attributes": {
+        "request.object.signature.alg": "any",
+        "post.logout.redirect.uris": "+",
+        "frontchannel.logout.session.required": "true",
+        "oauth2.device.authorization.grant.enabled": "true",
+        "backchannel.logout.revoke.offline.tokens": "false",
+        "use.refresh.tokens": "true",
+        "realm_client": "false",
+        "oidc.ciba.grant.enabled": "false",
+        "id.token.signed.response.alg": "RS256",
+        "backchannel.logout.session.required": "true",
+        "client_credentials.use_refresh_token": "false",
+        "require.pushed.authorization.requests": "false",
+        "request.object.encryption.enc": "any",
+        "pkce.code.challenge.method": "S256",
+        "request.object.encryption.alg": "any",
+        "client.introspection.response.allow.jwt.claim.enabled": "false",
+        "standard.token.exchange.enabled": "false",
+        "access.token.signed.response.alg": "RS256",
+        "client.use.lightweight.access.token.enabled": "false",
+        "request.object.required": "not required",
+        "access.token.header.type.rfc9068": "false",
+        "tls.client.certificate.bound.access.tokens": "false",
+        "acr.loa.map": "{}",
+        "display.on.consent.screen": "false",
+        "token.response.type.bearer.lower-case": "false"
+      },
+      "authenticationFlowBindingOverrides": {},
+      "fullScopeAllowed": false,
+      "nodeReRegistrationTimeout": -1,
+      "protocolMappers": [
+        {
+          "name": "SAS RAM roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-client-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "introspection.token.claim": "true",
+            "multivalued": "true",
+            "userinfo.token.claim": "true",
+            "id.token.claim": "true",
+            "lightweight.claim": "false",
+            "access.token.claim": "true",
+            "claim.name": "resource_access.${RAM_APP_CLIENT}.roles",
+            "jsonType.label": "String",
+            "usermodel.clientRoleMapping.clientId": "${RAM_APP_CLIENT}"
+          }
+        },
+        {
+          "name": "SAS RAM audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "${RAM_APP_CLIENT}",
+            "id.token.claim": "true",
+            "lightweight.claim": "false",
+            "access.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        }
+      ],
+      "defaultClientScopes": [
+        "web-origins",
+        "acr",
+        "profile",
+        "roles",
+        "basic",
+        "email"
+      ],
+      "optionalClientScopes": [
+        "organization",
+        "offline_access",
+        "microprofile-jwt"
+      ],
+      "access": {
+        "view": true,
+        "configure": true,
+        "manage": true
+      }
+    }
+    EOF
+
+      echo "Creating default API client in realm '${KEYCLOAK_REALM}'..."
+      if ! /opt/keycloak/bin/kcadm.sh create clients         \
+        -r "${KEYCLOAK_REALM}" --config "${KCADM_CFG_PATH}" \
+        -f /workdir/ram-api-client.json; then
+        echo "Failed to create default API client in realm '${KEYCLOAK_REALM}'."
+        return 1
+      fi
+    }
+
+    function add_ram_app_scope_mapping() {
+      echo "Adding SAS RAM application scope mapping to API client..."
+      api_client_id="$(/opt/keycloak/bin/kcadm.sh get clients \
+        -r "${KEYCLOAK_REALM}" --config "${KCADM_CFG_PATH}"   \
+        -q "clientId=sas-ram-api" --fields id,clientId        \
+        --format csv | cut -d',' -f1 | sed 's/"//g')"
+      if [ -z "${api_client_id}" ]; then
+        echo "API client 'sas-ram-api' not found in realm '${KEYCLOAK_REALM}'."
+        return 1
+      fi
+
+      app_client_id="$(/opt/keycloak/bin/kcadm.sh get clients -r "${KEYCLOAK_REALM}" \
+        -q "clientId=${RAM_APP_CLIENT}" --fields id,clientId --format csv            \
+        --config "${KCADM_CFG_PATH}" | cut -d',' -f1 | sed 's/"//g')"
+      if [ -z "${app_client_id}" ]; then
+        echo "SAS RAM application client '${RAM_APP_CLIENT}' not found in realm '${KEYCLOAK_REALM}'."
+        return 1
+      fi
+
+      app_roles="$(/opt/keycloak/bin/kcadm.sh get "clients/${app_client_id}/roles" \
+        -r "${KEYCLOAK_REALM}" --config "${KCADM_CFG_PATH}" --fields 'id,name,description')"
+      if [ -z "${app_roles}" ]; then
+        echo "No roles found for SAS RAM application client '${RAM_APP_CLIENT}' in realm '${KEYCLOAK_REALM}'."
+        return 1
+      fi
+
+      /opt/keycloak/bin/kcadm.sh create "clients/${api_client_id}/scope-mappings/clients/${app_client_id}" \
+        -r "${KEYCLOAK_REALM}" --config "${KCADM_CFG_PATH}" \
+        -f - <<<"${app_roles}"
+    }
+
+    maybe_create_api_client || exit 1
+
+    add_ram_app_scope_mapping
+
+  ram-app-client-update.sh: |-
+    #!/usr/bin/env bash
+
+    set -e -o pipefail -o nounset
+
+    function set_signing_algo() {
+      /opt/keycloak/bin/kcadm.sh update clients/"${client_id}"     \
+        -r "${KEYCLOAK_REALM}" --config "${KCADM_CFG_PATH}"        \
+        -s 'attributes."access.token.signed.response.alg"="RS256"' \
+        -s 'attributes."id.token.signed.response.alg"="RS256"'
+    }
+
+
+    client_id=$(/opt/keycloak/bin/kcadm.sh get clients -r "${KEYCLOAK_REALM}" \
+      -q "clientId=${RAM_APP_CLIENT}" --fields id,clientId --format csv \
+      --config "${KCADM_CFG_PATH}" | cut -d',' -f1 | sed 's/"//g')
+
+    if [ -z "$client_id" ]; then
+      echo "Client '${RAM_APP_CLIENT}' not found in realm '${KEYCLOAK_REALM}'."
+      exit 1
+    fi
+
+    export client_id
+
+    echo "Setting signing algorithms for client '${RAM_APP_CLIENT}'..."
+    set_signing_algo

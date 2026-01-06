@@ -1,0 +1,70 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test sas retrieval agent manager db migration quick
+templates:
+  - ../templates/db/migration/migration-job.yaml
+  - ../templates/db/migration/serviceaccount.yaml
+  - ../templates/db/migration/scripts-configmap.yaml
+tests:
+  - it: should render each template successfully
+    template: ../templates/db/migration/migration-job.yaml
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+    asserts:
+      - hasDocuments:
+          count: 1
+
+  - it: should create job with migration requirement
+    template: ../templates/db/migration/migration-job.yaml
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+    asserts:
+      - isKind:
+          of: Job
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-db-migration
+
+  - it: should create service account
+    template: ../templates/db/migration/serviceaccount.yaml
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+    asserts:
+      - isKind:
+          of: ServiceAccount
+
+  - it: should create scripts configmap
+    template: ../templates/db/migration/scripts-configmap.yaml
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - exists:
+          path: data["wait_for_database.sh"]
+
+  - it: should have both init and main containers
+    template: ../templates/db/migration/migration-job.yaml
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+    asserts:
+      - lengthEqual:
+          path: spec.template.spec.initContainers
+          count: 2
+      - lengthEqual:
+          path: spec.template.spec.containers
+          count: 1

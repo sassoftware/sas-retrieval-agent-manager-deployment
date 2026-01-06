@@ -1,9 +1,0 @@
-{{ $updateScripts := .Files.Glob "update-scripts/*.sh" }}
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: {{ include "keycloak.fullname" . }}-realm-update-scripts
-{{- with $updateScripts }}
-data:
-{{ ($updateScripts).AsConfig | indent 2 }}
-{{ end -}}

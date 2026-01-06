@@ -1,0 +1,217 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test filebrowser deployment
+templates:
+  - templates/storage/deployment.yaml
+  - templates/storage/configmap.yaml
+tests:
+  - it: should create deployment when enabled
+    template: templates/storage/deployment.yaml
+    set:
+      filebrowser:
+        enabled: true
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-filebrowser
+
+  - it: should have correct labels
+    template: templates/storage/deployment.yaml
+    set:
+      filebrowser:
+        enabled: true
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: filebrowser
+      - equal:
+          path: metadata.labels["app.kubernetes.io/instance"]
+          value: RELEASE-NAME
+
+  - it: should use correct image
+    template: templates/storage/deployment.yaml
+    set:
+      filebrowser:
+        enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: docker.io/filebrowser/filebrowser:v2.51.2
+
+  - it: should have correct service account
+    template: templates/storage/deployment.yaml
+    set:
+      filebrowser:
+        enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: sas-retrieval-agent-manager-filebrowser
+
+  - it: should have init container for database setup
+    template: templates/storage/deployment.yaml
+    set:
+      filebrowser:
+        enabled: true
+    asserts:
+      - isNotEmpty:
+          path: spec.template.spec.initContainers
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: init-db
+      - equal:
+          path: spec.template.spec.initContainers[0].image
+          value: docker.io/busybox
+
+  - it: should have correct port configuration
+    template: templates/storage/deployment.yaml
+    set:
+      filebrowser:
+        enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].ports[0].containerPort
+          value: 18080
+      - equal:
+          path: spec.template.spec.containers[0].ports[0].name
+          value: http
+
+  - it: should have environment variables
+    template: templates/storage/deployment.yaml
+    set:
+      filebrowser:
+        enabled: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: FB_BASEURL
+            value: /files
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: FB_DATABASE
+            value: /db/filebrowser.db
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: FB_NOAUTH
+            value: "true"
+
+  - it: should mount volumes correctly
+    template: templates/storage/deployment.yaml
+    set:
+      filebrowser:
+        enabled: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            mountPath: /.filebrowser.json
+            name: config
+            subPath: .filebrowser.json
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            mountPath: /db
+            name: db
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            mountPath: /mnt/data
+            name: rootdir
+            readOnly: false
+
+  - it: should have correct volumes
+    template: templates/storage/deployment.yaml
+    set:
+      filebrowser:
+        enabled: true
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: config
+            configMap:
+              name: sas-retrieval-agent-manager-filebrowser
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: db
+            persistentVolumeClaim:
+              claimName: sas-retrieval-agent-manager-filebrowser-db
+
+  - it: should have readiness probe
+    template: templates/storage/deployment.yaml
+    set:
+      filebrowser:
+        enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.path
+          value: /health
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.port
+          value: http
+
+  - it: should have node affinity
+    template: templates/storage/deployment.yaml
+    set:
+      filebrowser:
+        enabled: true
+    asserts:
+      - exists:
+          path: spec.template.spec.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution
+      - contains:
+          path: spec.template.spec.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution
+          content:
+            weight: 1
+            preference:
+              matchExpressions:
+              - key: sas.com/deployment
+                operator: In
+                values:
+                - sas-retrieval-agent-manager
+
+  - it: should support custom replica count
+    template: templates/storage/deployment.yaml
+    set:
+      filebrowser:
+        enabled: true
+        replicaCount: 2
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 2
+
+  - it: should by default have RollingUpdate strategy
+    template: templates/storage/deployment.yaml
+    set:
+      filebrowser:
+        enabled: true
+    asserts:
+      - equal:
+          path: spec.strategy.type
+          value: RollingUpdate
+
+  - it: should have recreate strategy
+    template: templates/storage/deployment.yaml
+    set:
+      filebrowser:
+        enabled: true
+        strategy:
+          type: Recreate
+    asserts:
+      - equal:
+          path: spec.strategy.type
+          value: Recreate
+
+  - it: should not create deployment when disabled
+    template: templates/storage/deployment.yaml
+    set:
+      filebrowser:
+        enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0

@@ -9,7 +9,7 @@ spec:
     matchLabels:
       kubernetes.io/metadata.name: "{{ .Release.Namespace }}"
   resourceGroups:
-  - coveredResources: ["cpu", "memory", "pods"]
+  - coveredResources: ["cpu", "memory", "pods", "nvidia.com/gpu"]
     flavors:
     - name: "sas-retrieval-agent-manager"
       resources:
@@ -19,3 +19,5 @@ spec:
         nominalQuota: {{ .Values.global.configuration.kueue.memoryQuota | default "128Gi" }}
       - name: "pods"
         nominalQuota: {{ .Values.global.configuration.kueue.podQuota | default "6" }}
+      - name: "nvidia.com/gpu"
+        nominalQuota: {{ .Values.global.configuration.kueue.nvidiaGpuQuota | default "0" }}

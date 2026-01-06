@@ -1,0 +1,163 @@
+{{- $oauthProxy_repo_base := "" -}}
+{{- $kubectl_repo_base := "" -}}
+{{- if ((include "testValuesPath" (list .Values "global" "image" "repo" "base")) | eq "true") -}}
+  {{- $oauthProxy_repo_base = .Values.global.image.repo.base | default (index .Values "keycloak").oauthProxy.image.repo.base -}}
+  {{- $kubectl_repo_base = .Values.global.image.repo.base | default (index .Values "keycloak").image.kubectl.repo.base -}}
+{{- else -}}
+  {{- $oauthProxy_repo_base = (index .Values "keycloak").oauthProxy.image.repo.base -}}
+  {{- $kubectl_repo_base = (index .Values "keycloak").image.kubectl.repo.base -}}
+{{- end -}}
+{{- $globalEnabled := false }}
+{{- if hasKey .Values "global" }}
+{{- if hasKey .Values.global "ingress" }}
+{{- if hasKey .Values.global.ingress "enabled" }}
+{{- $globalEnabled = .Values.global.ingress.enabled }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- $oAuthProxyPath := "" -}}
+{{- if $globalEnabled }}
+{{- $oAuthProxyPath = regexReplaceAll "\\(.*" (first (index .Values "keycloak").oauthProxy.ingress.paths).path "" }}
+{{- else }}
+{{- if (len (index .Values "keycloak").oauthProxy.ingress.hosts) }}
+{{- $oAuthProxyPath = regexReplaceAll "\\(.*" (first (first (index .Values "keycloak").oauthProxy.ingress.hosts).paths).path "" }}
+{{- end }}
+{{- end }}
+{{- $keycloakPath := "" -}}
+{{- if $globalEnabled }}
+{{- $keycloakPath = regexReplaceAll "\\(.*" (first (index .Values "keycloak").ingress.paths).path "" }}
+{{- else }}
+{{- if (len (index .Values "keycloak").ingress.hosts) }}
+{{- $keycloakPath = regexReplaceAll "\\(.*" (first (first (index .Values "keycloak").ingress.hosts).paths).path "" }}
+{{- end }}
+{{- end }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "keycloak.oauthProxy.fullname" . | lower }}
+  labels:
+    {{- include "keycloak.oauthProxy.labels" . | nindent 4 }}
+spec:
+  {{- if not (index .Values "keycloak").oauthProxy.autoscaling.enabled }}
+  replicas: {{ (index .Values "keycloak").oauthProxy.replicaCount }}
+  {{- end }}
+  {{- with (index .Values "keycloak").oauthProxy.strategy }}
+  strategy:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "keycloak.oauthProxy.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with (index .Values "keycloak").oauthProxy.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "keycloak.oauthProxy.labels" . | nindent 8 }}
+        {{- with (index .Values "keycloak").oauthProxy.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with uniq (concat ((index .Values "keycloak").imagePullSecrets | default (list)) (.Values.global.imagePullSecrets | default (list))) }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "keycloak.oauthProxy.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml (index .Values "keycloak").oauthProxy.podSecurityContext | nindent 8 }}
+      initContainers:
+        - command:
+            - /bin/sh
+            - -c
+            - |
+                while [ $(curl -sw '%{http_code}' "http://{{ include "keycloak.fullname" . | lower }}:{{ (index .Values "keycloak").service.port }}{{ $keycloakPath }}/realms/master" -o /dev/null) -ne 200 ]; do
+                  echo "Waiting for ID provider to reach ready state...";
+                  sleep 15;
+                done
+          image: "{{ $kubectl_repo_base }}/{{ (index .Values "keycloak").image.kubectl.repo.path }}:{{ (index .Values "keycloak").image.kubectl.tag }}"
+          imagePullPolicy: {{ (index .Values "keycloak").image.kubectl.pullPolicy }}
+          name: idp-ready
+          resources:
+            limits:
+              cpu: 50m
+              memory: 32Mi
+            requests:
+              cpu: 50m
+              memory: 32Mi
+          securityContext:
+            {{- toYaml (index .Values "keycloak").oauthProxy.securityContext | nindent 12 }}
+      containers:
+        - name: oauth2-proxy
+          securityContext:
+            {{- toYaml (index .Values "keycloak").oauthProxy.securityContext | nindent 12 }}
+          image: "{{ $oauthProxy_repo_base }}/{{ (index .Values "keycloak").oauthProxy.image.repo.path }}:{{ (index .Values "keycloak").oauthProxy.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ (index .Values "keycloak").oauthProxy.image.pullPolicy }}
+          args:
+            - --config=/config/oauth2-proxy.cfg
+          env:
+            - name: OAUTH2_PROXY_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: keycloak-client-secret
+                  key: sv-client-id
+            - name: OAUTH2_PROXY_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: keycloak-client-secret
+                  key: sv-client-secret
+            - name: OAUTH2_PROXY_COOKIE_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "keycloak.oauthProxy.fullname" . | lower }}
+                  key: cookie-secret
+              # head -c 32 /dev/random | base64 -w 0
+              #value: xvL2dHsqwThpkUOHYdWFn95TIUuKxuTbspLrSjJtSW8=
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+            - name: POD_UID
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.uid
+          ports:
+            - containerPort: 4180
+              name: http
+              protocol: TCP
+          resources:
+            {{- toYaml (index .Values "keycloak").resources | nindent 12 }}
+          volumeMounts:
+            - mountPath: /config
+              name: config
+              readOnly: true
+          {{- with (index .Values "keycloak").volumeMounts }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      volumes:
+        - configMap:
+            name: {{ include "keycloak.oauthProxy.fullname" . | lower }}
+          name: config
+      {{- with (index .Values "keycloak").volumes }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with (index .Values "keycloak").nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with (index .Values "keycloak").affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with (index .Values "keycloak").tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

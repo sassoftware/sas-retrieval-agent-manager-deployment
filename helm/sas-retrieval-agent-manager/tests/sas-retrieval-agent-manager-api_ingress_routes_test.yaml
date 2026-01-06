@@ -1,0 +1,198 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test sas retrieval agent manager api ingress and routes
+templates:
+  - templates/api/ingress.yaml
+  - templates/api/route.yaml
+tests:
+  - it: should create ingress when enabled
+    template: templates/api/ingress.yaml
+    set:
+      sas-retrieval-agent-manager-api:
+        ingress:
+          enabled: true
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Ingress
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-api
+
+  - it: should not create ingress when disabled
+    template: templates/api/ingress.yaml
+    set:
+      global:
+        ingress:
+          enabled: false
+      sas-retrieval-agent-manager-api:
+        ingress:
+          enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should configure ingress class name
+    template: templates/api/ingress.yaml
+    set:
+      sas-retrieval-agent-manager-api:
+        ingress:
+          enabled: true
+          className: "nginx"
+    asserts:
+      - equal:
+          path: spec.ingressClassName
+          value: "nginx"
+
+  - it: should configure ingress hosts
+    template: templates/api/ingress.yaml
+    set:
+      global:
+        ingress:
+          enabled: false
+      sas-retrieval-agent-manager-api:
+        ingress:
+          enabled: true
+          hosts:
+            - host: api.example.com
+              paths:
+                - path: /
+                  pathType: Prefix
+    asserts:
+      - equal:
+          path: spec.rules[0].host
+          value: api.example.com
+      - equal:
+          path: spec.rules[0].http.paths[0].path
+          value: /
+
+  - it: should configure ingress annotations
+    template: templates/api/ingress.yaml
+    set:
+      sas-retrieval-agent-manager-api:
+        ingress:
+          enabled: true
+          annotations:
+            nginx.ingress.kubernetes.io/rewrite-target: /
+    asserts:
+      - equal:
+          path: metadata.annotations["nginx.ingress.kubernetes.io/rewrite-target"]
+          value: /
+
+  - it: should configure TLS
+    template: templates/api/ingress.yaml
+    set:
+      global:
+        ingress:
+          enabled: false
+      sas-retrieval-agent-manager-api:
+        ingress:
+          enabled: true
+          tls:
+            - secretName: api-tls
+              hosts:
+                - api.example.com
+    asserts:
+      - equal:
+          path: spec.tls[0].secretName
+          value: api-tls
+      - equal:
+          path: spec.tls[0].hosts[0]
+          value: api.example.com
+
+  - it: should create route when className is route
+    template: templates/api/route.yaml
+    set:
+      sas-retrieval-agent-manager-api:
+        ingress:
+          enabled: true
+          className: "route"
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Route
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-api
+
+  - it: should not create route when className is not route
+    template: templates/api/route.yaml
+    set:
+      sas-retrieval-agent-manager-api:
+        ingress:
+          enabled: true
+          className: "nginx"
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should not create route when ingress disabled
+    template: templates/api/route.yaml
+    set:
+      sas-retrieval-agent-manager-api:
+        ingress:
+          enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should configure route host
+    template: templates/api/route.yaml
+    set:
+      sas-retrieval-agent-manager-api:
+        ingress:
+          enabled: true
+          className: "route"
+          hosts:
+            - host: api.example.com
+              paths:
+                - path: /
+    asserts:
+      - equal:
+          path: spec.host
+          value: api.example.com
+
+  - it: should target correct service in route
+    template: templates/api/route.yaml
+    set:
+      sas-retrieval-agent-manager-api:
+        ingress:
+          enabled: true
+          className: "route"
+    asserts:
+      - equal:
+          path: spec.to.kind
+          value: Service
+      - equal:
+          path: spec.to.name
+          value: sas-retrieval-agent-manager-api
+
+  - it: should include proper labels on ingress
+    template: templates/api/ingress.yaml
+    set:
+      sas-retrieval-agent-manager-api:
+        ingress:
+          enabled: true
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: api
+      - equal:
+          path: metadata.labels["helm.sh/chart"]
+          value: sas-retrieval-agent-manager-1.2.3-dev.20241225
+
+  - it: should include proper labels on route
+    template: templates/api/route.yaml
+    set:
+      sas-retrieval-agent-manager-api:
+        ingress:
+          enabled: true
+          className: "route"
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: api
+      - equal:
+          path: metadata.labels["helm.sh/chart"]
+          value: sas-retrieval-agent-manager-1.2.3-dev.20241225

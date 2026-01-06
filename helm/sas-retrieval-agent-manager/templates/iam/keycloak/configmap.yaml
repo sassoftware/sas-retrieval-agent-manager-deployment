@@ -1,0 +1,34 @@
+
+{{- $globalEnabled := false -}}
+{{- if hasKey .Values "global" -}}
+{{- if hasKey .Values.global "ingress" -}}
+{{- if .Values.global.ingress.enabled -}}
+{{- $globalEnabled = .Values.global.ingress.enabled -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: keycloak-config
+  labels:
+    {{- include "keycloak.labels" . | nindent 4 }}
+data:
+  namespace: {{ .Release.Namespace }}
+  service: {{ include "keycloak.fullname" . }}
+  host: {{ if $globalEnabled -}}
+          "{{ .Values.global.domain }}"
+       {{- else -}}
+          "{{ with (first .Values.keycloak.ingress.hosts) }}{{ .host }}{{ end }}"
+       {{- end }}
+  basePath: {{ if $globalEnabled -}}
+          "{{ regexReplaceAll "\\(.*" (first .Values.keycloak.ingress.paths).path "" }}"
+       {{- else -}}
+          "{{ with (first .Values.keycloak.ingress.hosts) }}{{ with (first .paths) }}{{ regexReplaceAll "\\(.*" .path "" }}{{ end }}{{ end }}"
+       {{- end }}
+  url: {{ if $globalEnabled -}}
+          "https://{{ .Values.global.domain }}{{ regexReplaceAll "\\(.*" (first .Values.keycloak.ingress.paths).path "" }}"
+       {{- else -}}
+          "https://{{ with (first .Values.keycloak.ingress.hosts) }}{{ .host }}{{ with (first .paths) }}{{ regexReplaceAll "\\(.*" .path "" }}{{ end }}{{ end }}"
+       {{- end }}

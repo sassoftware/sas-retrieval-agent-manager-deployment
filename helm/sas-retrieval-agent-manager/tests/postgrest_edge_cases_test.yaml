@@ -1,0 +1,203 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test postgrest edge cases and integration
+templates:
+  - templates/db/rest/deployment.yaml
+  - templates/db/rest/service.yaml
+  - templates/db/rest/serviceaccount.yaml
+tests:
+  - it: should work with minimal configuration
+    asserts:
+      - hasDocuments:
+          count: 1  # Each template produces 1 document
+
+  - it: should work with all features enabled
+    set:
+      postgrest:
+        autoscaling:
+          enabled: true
+          minReplicas: 2
+          maxReplicas: 10
+          targetCPUUtilizationPercentage: 80
+        ingress:
+          enabled: true
+          hosts:
+            - host: postgrest.example.com
+              paths:
+                - path: /
+                  pathType: Prefix
+        swagger:
+          enabled: true
+          autoscaling:
+            enabled: true
+            minReplicas: 1
+            maxReplicas: 5
+        serviceAccount:
+          create: true
+          annotations:
+            test: annotation
+        podAnnotations:
+          pod-annotation: value
+    template: templates/db/rest/deployment.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+      - notExists:
+          path: spec.replicas  # Should be disabled when autoscaling enabled
+
+  - it: should handle very long names gracefully
+    set:
+      postgrest:
+        nameOverride: "very-long-name-that-should-be-truncated-properly-to-stay-within-limits"
+    template: templates/db/rest/service.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+      # Name should be truncated to 63 characters
+      - matchRegex:
+          path: metadata.name
+          pattern: "^.{1,63}$"
+
+  - it: should handle very long fullnameOverride gracefully
+    set:
+      postgrest:
+        fullnameOverride: "extremely-long-fullname-override-that-definitely-exceeds-kubernetes-name-limits-and-should-be-truncated"
+    template: templates/db/rest/deployment.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+      # Name should be truncated to 63 characters
+      - matchRegex:
+          path: metadata.name
+          pattern: "^.{1,63}$"
+
+  - it: should handle release name containing chart name
+    release:
+      name: postgrest-production
+    set:
+      postgrest:
+        nameOverride: "postgrest"
+        fullnameOverride: ""
+    template: templates/db/rest/service.yaml
+    asserts:
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-postgrest
+
+  - it: should use consistent naming across resources
+    set:
+      postgrest:
+        fullnameOverride: "test-postgrest"
+    template: templates/db/rest/deployment.yaml
+    asserts:
+      - equal:
+          path: metadata.name
+          value: test-postgrest
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: test-postgrest
+
+  - it: should handle empty values gracefully
+    set:
+      postgrest:
+        nameOverride: ""
+        fullnameOverride: ""
+    template: templates/db/rest/deployment.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-postgrest
+
+  - it: should work with complex release names
+    release:
+      name: "my-app-123-test"
+    set:
+      postgrest:
+        fullnameOverride: ""
+    template: templates/db/rest/service.yaml
+    asserts:
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-postgrest
+
+  - it: should handle zero replicas
+    set:
+      postgrest:
+        replicaCount: 0
+    template: templates/db/rest/deployment.yaml
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 0
+
+  - it: should preserve selector consistency with custom names
+    set:
+      postgrest:
+        nameOverride: "custom"
+    template: templates/db/rest/service.yaml
+    asserts:
+      - equal:
+          path: spec.selector["app.kubernetes.io/name"]
+          value: custom
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: custom
+
+  - it: should create service account with default settings
+    template: templates/db/rest/serviceaccount.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: ServiceAccount
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-postgrest
+
+  - it: should include proper labels on service account
+    template: templates/db/rest/serviceaccount.yaml
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: postgrest
+      - equal:
+          path: metadata.labels["helm.sh/chart"]
+          value: sas-retrieval-agent-manager-1.2.3-dev.20241225
+
+  - it: should handle missing global configuration
+    set:
+      global: {}
+      postgrest:
+        image:
+          postgrest:
+            repo:
+              base: "docker.io"
+              path: "postgrest/postgrest"
+            tag: "v13.0.4"
+    template: templates/db/rest/deployment.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+      # Should use local image configuration
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "docker.io/postgrest/postgrest:v13.0.4"
+
+  - it: should handle partial global configuration
+    set:
+      global:
+        image:
+          repo:
+            base: "partial.registry.io"
+      postgrest:
+        image:
+          postgrest:
+            repo:
+              path: "postgrest/postgrest"
+            tag: "v13.0.4"
+    template: templates/db/rest/deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "partial.registry.io/postgrest/postgrest:v13.0.4"

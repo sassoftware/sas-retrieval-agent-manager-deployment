@@ -1,0 +1,149 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test configmaps for gpg chart
+tests:
+  - it: should create scripts configmap
+    template: templates/security/gpg/scripts-configmap.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-gpg-scripts
+      - exists:
+          path: data["check_secrets_exist.sh"]
+      - exists:
+          path: data["generate_gpg_keys.sh"]
+      - isNotEmpty:
+          path: data["check_secrets_exist.sh"]
+      - isNotEmpty:
+          path: data["generate_gpg_keys.sh"]
+
+  - it: should create settings configmap with default values
+    template: templates/security/gpg/settings-configmap.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-gpg-gpg-settings
+      - equal:
+          path: data["name"]
+          value: "RAM Secrets"
+      - equal:
+          path: data["email"]
+          value: "ram@sas.com"
+      - equal:
+          path: data["comment"]
+          value: "RAM GPG Key"
+      - equal:
+          path: data["length"]
+          value: "4096"
+      - equal:
+          path: data["expire"]
+          value: "0"
+
+  - it: should use custom GPG key settings when specified
+    template: templates/security/gpg/settings-configmap.yaml
+    set:
+      global:
+        configuration:
+          gpg:
+            key:
+              name: "Custom User"
+              email: "custom@example.com"
+              comment: "Custom GPG Key"
+              length: 2048
+              expire: "2y"
+    asserts:
+      - equal:
+          path: data["name"]
+          value: "Custom User"
+      - equal:
+          path: data["email"]
+          value: "custom@example.com"
+      - equal:
+          path: data["comment"]
+          value: "Custom GPG Key"
+      - equal:
+          path: data["length"]
+          value: "2048"
+      - equal:
+          path: data["expire"]
+          value: "2y"
+
+  - it: should create scripts configmap with custom release name
+    template: templates/security/gpg/scripts-configmap.yaml
+    release:
+      name: custom-release
+    asserts:
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-gpg-scripts
+
+  - it: should create settings configmap with custom release name
+    template: templates/security/gpg/settings-configmap.yaml
+    release:
+      name: custom-release
+    asserts:
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-gpg-gpg-settings
+
+  - it: should create scripts configmap with fullnameOverride
+    template: templates/security/gpg/scripts-configmap.yaml
+    set:
+      gpg:
+        fullnameOverride: custom-gpg
+    asserts:
+      - equal:
+          path: metadata.name
+          value: custom-gpg-scripts
+
+  - it: should create settings configmap with fullnameOverride
+    template: templates/security/gpg/settings-configmap.yaml
+    set:
+      gpg:
+        fullnameOverride: custom-gpg
+    asserts:
+      - equal:
+          path: metadata.name
+          value: custom-gpg-gpg-settings
+
+  - it: should include proper labels on scripts configmap
+    template: templates/security/gpg/scripts-configmap.yaml
+    asserts:
+      - isSubset:
+          path: metadata.labels
+          content:
+            app.kubernetes.io/name: gpg
+            app.kubernetes.io/instance: RELEASE-NAME
+            app.kubernetes.io/managed-by: Helm
+
+  - it: should include proper labels on settings configmap
+    template: templates/security/gpg/settings-configmap.yaml
+    asserts:
+      - isSubset:
+          path: metadata.labels
+          content:
+            app.kubernetes.io/name: gpg
+            app.kubernetes.io/instance: RELEASE-NAME
+            app.kubernetes.io/managed-by: Helm
+
+  - it: should work when existing keys are provided
+    template: templates/security/gpg/scripts-configmap.yaml
+    set:
+      global:
+        configuration:
+          gpg:
+            publicKey: "existing-public-key"
+            privateKey: "existing-private-key"
+            passphrase: "existing-passphrase"
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: ConfigMap

@@ -1,0 +1,105 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test sas retrieval agent manager db migration rbac
+templates:
+  - templates/db/migration/serviceaccount.yaml
+tests:
+  - it: should create service account by default
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+    asserts:
+      - isKind:
+          of: ServiceAccount
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-db-migration
+
+  - it: should have correct labels
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: sas-retrieval-agent-manager-db-migration
+      - equal:
+          path: metadata.labels["app.kubernetes.io/instance"]
+          value: RELEASE-NAME
+      - equal:
+          path: metadata.labels["app.kubernetes.io/managed-by"]
+          value: Helm
+
+  - it: should automount service account token by default
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+    asserts:
+      - equal:
+          path: automountServiceAccountToken
+          value: true
+
+  - it: should not create service account when disabled
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+      sas-retrieval-agent-manager-db-migration:
+        serviceAccount:
+          create: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should support custom annotations
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+      sas-retrieval-agent-manager-db-migration:
+        serviceAccount:
+          annotations:
+            custom.annotation: "test-value"
+            iam.amazonaws.com/role-arn: "arn:aws:iam::123456789012:role/migration-role"
+    asserts:
+      - equal:
+          path: metadata.annotations["custom.annotation"]
+          value: "test-value"
+      - equal:
+          path: metadata.annotations["iam.amazonaws.com/role-arn"]
+          value: "arn:aws:iam::123456789012:role/migration-role"
+
+  - it: should allow disabling automount
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+      sas-retrieval-agent-manager-db-migration:
+        serviceAccount:
+          automount: false
+    asserts:
+      - equal:
+          path: automountServiceAccountToken
+          value: false
+
+  - it: should support custom service account name
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+      sas-retrieval-agent-manager-db-migration:
+        serviceAccount:
+          name: "custom-migration-account"
+    asserts:
+      - equal:
+          path: metadata.name
+          value: custom-migration-account

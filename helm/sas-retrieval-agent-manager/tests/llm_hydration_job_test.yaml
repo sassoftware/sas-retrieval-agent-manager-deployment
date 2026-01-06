@@ -1,0 +1,172 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test sas retrieval agent manager llm hydration job
+templates:
+  - ../templates/db/migration/llm-hydration-job.yaml
+tests:
+  - it: should not create job when llmHydration is disabled
+    set:
+      global:
+        configuration:
+          llmHydration:
+            enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should create a job when llmHydration is enabled
+    set:
+      global:
+        configuration:
+          llmHydration:
+            enabled: true
+    asserts:
+      - isKind:
+          of: Job
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-db-migration-llm-hydration
+
+  - it: should have correct labels
+    set:
+      global:
+        configuration:
+          llmHydration:
+            enabled: true
+            accountName: "test-account"
+            key: "dGVzdC1rZXk="
+            models:
+              - "gpt-4"
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: sas-retrieval-agent-manager-db-migration
+      - equal:
+          path: metadata.labels["app.kubernetes.io/instance"]
+          value: RELEASE-NAME
+
+  - it: should have argocd skip annotation
+    set:
+      global:
+        configuration:
+          llmHydration:
+            enabled: true
+            accountName: "test-account"
+            key: "dGVzdC1rZXk="
+            models:
+              - "gpt-4"
+    asserts:
+      - equal:
+          path: metadata.annotations["argocd.argoproj.io/sync-options"]
+          value: Skip
+
+  - it: should have init container with postgres image
+    set:
+      global:
+        configuration:
+          llmHydration:
+            enabled: true
+            accountName: "test-account"
+            key: "dGVzdC1rZXk="
+            models:
+              - "gpt-4"
+    asserts:
+      - isNotEmpty:
+          path: spec.template.spec.initContainers
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: wait-for-llm-table
+      - equal:
+          path: spec.template.spec.initContainers[0].image
+          value: docker.io/postgres:15-alpine
+
+  - it: should have main container with postgres image
+    set:
+      global:
+        configuration:
+          llmHydration:
+            enabled: true
+            accountName: "test-account"
+            key: "dGVzdC1rZXk="
+            models:
+              - "gpt-4"
+    asserts:
+      - isNotEmpty:
+          path: spec.template.spec.containers
+      - equal:
+          path: spec.template.spec.containers[0].name
+          value: llm-hydration
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: docker.io/postgres:15-alpine
+
+  - it: should mount scripts volume in init container
+    set:
+      global:
+        configuration:
+          llmHydration:
+            enabled: true
+            accountName: "test-account"
+            key: "dGVzdC1rZXk="
+            models:
+              - "gpt-4"
+    asserts:
+      - contains:
+          path: spec.template.spec.initContainers[0].volumeMounts
+          content:
+            mountPath: "/scripts"
+            name: scripts
+            readOnly: true
+
+  # - it: should have scripts volume from configmap
+  #   set:
+  #     global:
+  #       configuration:
+  #         llmHydration:
+  #           enabled: true
+  #           accountName: "test-account"
+  #           key: "dGVzdC1rZXk="
+  #           models:
+  #             - "gpt-4"
+  #   asserts:
+  #     - contains:
+  #         path: spec.template.spec.volumes
+  #         content:
+  #           name: scripts
+  #           configMap:
+  #             name: sas-retrieval-agent-manager-db-migration-scripts
+  #             defaultMode: 0777
+
+  - it: should have LLM_KEY environment variable
+    set:
+      global:
+        configuration:
+          llmHydration:
+            enabled: true
+            accountName: "test-account"
+            key: "dGVzdC1rZXk="
+            models:
+              - "gpt-4"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: LLM_KEY
+            valueFrom:
+              secretKeyRef:
+                key: apiKey
+                name: llm-key
+
+  - it: should have backoff limit
+    set:
+      global:
+        configuration:
+          llmHydration:
+            enabled: true
+            accountName: "test-account"
+            key: "dGVzdC1rZXk="
+            models:
+              - "gpt-4"
+    asserts:
+      - equal:
+          path: spec.backoffLimit
+          value: 10

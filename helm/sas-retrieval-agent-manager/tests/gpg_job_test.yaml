@@ -1,0 +1,196 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test gpg job
+templates:
+  - templates/security/gpg/job.yaml
+tests:
+  - it: should create job when no existing keys provided
+    set:
+      global:
+        configuration:
+          gpg:
+            passphrase: "test-passphrase"
+            key:
+              name: "Test User"
+              email: "test@example.com"
+              comment: "Test GPG Key"
+              length: 2048
+              expire: "1y"
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Job
+      - equal:
+          path: metadata.name
+          value: retagentmgr-gpg-initialization
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: sas-retrieval-agent-manager-gpg
+
+  - it: should create job even when public key exists
+    set:
+      global:
+        configuration:
+          gpg:
+            publicKey: "LS0tLS1CRUdJTiBQR1AgUFVCTElDIEtFWSBCTE9DSy0tLS0t"
+            passphrase: "test-passphrase"
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Job
+
+  - it: should create job even when private key exists
+    set:
+      global:
+        configuration:
+          gpg:
+            privateKey: "LS0tLS1CRUdJTiBQR1AgUFJJVkFURSBLRVkgQkxPQ0stLS0tLQ=="
+            passphrase: "test-passphrase"
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Job
+
+  - it: should use custom image repositories
+    set:
+      global:
+        configuration:
+          gpg:
+            passphrase: "test-passphrase"
+      gpg:
+        image:
+          gpg:
+            repo:
+              base: "custom-registry.com"
+              path: "custom/gpg"
+            tag: "custom-tag"
+          kubectl:
+            repo:
+              base: "custom-registry.com"
+              path: "custom/kubectl"
+            tag: "custom-kubectl-tag"
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].image
+          value: "custom-registry.com/custom/kubectl:custom-kubectl-tag"
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "custom-registry.com/custom/gpg:custom-tag"
+
+  - it: should use global image repository base when available
+    set:
+      global:
+        image:
+          repo:
+            base: "global-registry.com"
+        configuration:
+          gpg:
+            passphrase: "test-passphrase"
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].image
+          value: "global-registry.com/alpine/k8s:1.31.12"
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "global-registry.com/vladgh/gpg:1.3.6"
+
+  - it: should apply pod annotations and labels
+    set:
+      global:
+        configuration:
+          gpg:
+            passphrase: "test-passphrase"
+      gpg:
+        podAnnotations:
+          test.annotation: "test-value"
+        podLabels:
+          test.label: "test-value"
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations["test.annotation"]
+          value: "test-value"
+      - equal:
+          path: spec.template.metadata.labels["test.label"]
+          value: "test-value"
+
+  - it: should use custom security contexts
+    set:
+      global:
+        configuration:
+          gpg:
+            passphrase: "test-passphrase"
+      gpg:
+        podSecurityContext:
+          runAsUser: 12345
+          runAsGroup: 54321
+          fsGroup: 99999
+        securityContext:
+          runAsUser: 11111
+          readOnlyRootFilesystem: false
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext.runAsUser
+          value: 12345
+      - equal:
+          path: spec.template.spec.securityContext.runAsGroup
+          value: 54321
+      - equal:
+          path: spec.template.spec.securityContext.fsGroup
+          value: 99999
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.runAsUser
+          value: 11111
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.readOnlyRootFilesystem
+          value: false
+
+  - it: should use imagePullSecrets
+    set:
+      global:
+        imagePullSecrets:
+          - name: global-secret
+        configuration:
+          gpg:
+            passphrase: "test-passphrase"
+      gpg:
+        imagePullSecrets:
+          - name: local-secret
+    asserts:
+      - contains:
+          path: spec.template.spec.imagePullSecrets
+          content:
+            name: global-secret
+      - contains:
+          path: spec.template.spec.imagePullSecrets
+          content:
+            name: local-secret
+
+  - it: should use custom resource limits and requests
+    set:
+      global:
+        configuration:
+          gpg:
+            passphrase: "test-passphrase"
+      gpg:
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "1Gi"
+          requests:
+            cpu: "250m"
+            memory: "512Mi"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.cpu
+          value: "500m"
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.memory
+          value: "1Gi"
+      - equal:
+          path: spec.template.spec.containers[0].resources.requests.cpu
+          value: "250m"
+      - equal:
+          path: spec.template.spec.containers[0].resources.requests.memory
+          value: "512Mi"

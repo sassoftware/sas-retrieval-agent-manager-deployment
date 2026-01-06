@@ -1,0 +1,74 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test sas retrieval agent manager app rbac
+templates:
+  - templates/ui/serviceaccount.yaml
+tests:
+  - it: should create service account with correct kind
+    asserts:
+      - isKind:
+          of: ServiceAccount
+      - hasDocuments:
+          count: 1
+
+  - it: should use correct service account name
+    asserts:
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-app
+
+  - it: should include proper labels
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: app
+      - equal:
+          path: metadata.labels["app.kubernetes.io/instance"]
+          value: RELEASE-NAME
+      - equal:
+          path: metadata.labels["helm.sh/chart"]
+          value: sas-retrieval-agent-manager-1.2.3-dev.20241225
+
+  - it: should enable automount service account token
+    asserts:
+      - equal:
+          path: automountServiceAccountToken
+          value: true
+
+  - it: should disable automount service account token when configured
+    set:
+      sas-retrieval-agent-manager-app:
+        serviceAccount:
+          automount: false
+    asserts:
+      - equal:
+          path: automountServiceAccountToken
+          value: false
+
+  - it: should use custom service account name
+    set:
+      sas-retrieval-agent-manager-app:
+        serviceAccount:
+          name: "custom-service-account"
+    asserts:
+      - equal:
+          path: metadata.name
+          value: custom-service-account
+
+  - it: should use name override in service account name
+    set:
+      sas-retrieval-agent-manager-app:
+        nameOverride: "custom-name"
+        fullnameOverride: ""
+    asserts:
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-app
+
+  - it: should use fullname override in service account name
+    set:
+      sas-retrieval-agent-manager-app:
+        fullnameOverride: "custom-full-name"
+    asserts:
+      - equal:
+          path: metadata.name
+          value: custom-full-name

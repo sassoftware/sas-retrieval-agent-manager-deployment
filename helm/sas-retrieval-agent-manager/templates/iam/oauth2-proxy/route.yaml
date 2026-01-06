@@ -1,0 +1,61 @@
+{{- $dot := . -}}
+{{- $globalEnabled := ((include "testValuesPath" (list .Values "global" "ingress" "enabled")) | eq "true") -}}
+{{- $globalClassName := "" -}}
+{{- if $globalEnabled -}}
+{{- $globalClassName = .Values.global.ingress.className | default "" -}}
+{{- end -}}
+{{- $isRouteClassName := false -}}
+{{- if $globalEnabled -}}
+{{- if eq $globalClassName "route" -}}
+{{- $isRouteClassName = true -}}
+{{- end -}}
+{{- else if ((include "testValuesPath" (list .Values "oauthProxy" "ingress" "enabled")) | eq "true") -}}
+{{- if eq ((index .Values "keycloak").oauthProxy.ingress.className | default "") "route" -}}
+{{- $isRouteClassName = true -}}
+{{- end -}}
+{{- end -}}
+{{- if and (or ((include "testValuesPath" (list .Values "oauthProxy" "ingress" "enabled")) | eq "true") $globalEnabled) $isRouteClassName -}}
+{{- $fullName := include "keycloak.oauthProxy.fullname" . | lower -}}
+{{- $svcPort := (index .Values "keycloak").oauthProxy.service.port -}}
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: {{ $fullName }}
+  labels:
+    {{- include "keycloak.labels" . | nindent 4 }}
+  annotations:
+    {{- with (index .Values "keycloak").oauthProxy.ingress.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+{{- if $globalEnabled }}
+  host: {{ .Values.global.domain | quote }}
+  {{- if ((include "testValuesPath" (list .Values "oauthProxy" "ingress" "paths")) | eq "true") }}
+  {{- range (index .Values "keycloak").oauthProxy.ingress.paths }}
+  path: {{ .path}}
+  {{- end }}
+  {{- end }}
+{{- else }}
+  {{- if ((include "testValuesPath" (list .Values "oauthProxy" "ingress" "hosts")) | eq "true") }}
+  {{- with (first (index .Values "keycloak").oauthProxy.ingress.hosts) }}
+  host: {{ .host | quote }}
+  {{- with (first .paths) }}
+  path: {{ .path }}
+  {{- end }}
+  {{- end }}
+  {{- end }}
+{{- end }}
+  to:
+    kind: Service
+    name: {{ $fullName }}
+    weight: 100
+  port:
+    targetPort: {{ $svcPort }}
+{{- $globalTlsEnabled := ((include "testValuesPath" (list .Values "global" "ingress" "tls" "enabled")) | eq "true") -}}
+{{- if or (and $globalEnabled $globalTlsEnabled) ((include "testValuesPath" (list .Values "oauthProxy" "ingress" "tls")) | eq "true") }}
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
+{{- end }}
+  wildcardPolicy: None
+{{- end }}

@@ -1,0 +1,37 @@
+{{- $dot := . -}}
+{{- $globalEnabled := false -}}
+{{- if hasKey .Values "global" -}}
+{{- if hasKey .Values.global "ingress" -}}
+{{- if .Values.global.ingress.enabled -}}
+{{- $globalEnabled = .Values.global.ingress.enabled -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- $basePathWithLeadingSlash := .Values.global.configuration.api.base_path | toString | trimSuffix "/" }}
+{{- if eq $basePathWithLeadingSlash "/" }}
+{{- $basePathWithLeadingSlash = "" }}
+{{- end }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: api-config
+  labels:
+    {{- include "sas-retrieval-agent-manager-api.labels" . | nindent 4 }}
+data:
+  namespace: {{ .Release.Namespace }}
+  service: {{ include "sas-retrieval-agent-manager-api.fullname" . }}
+  noauth-service: '{{ include "sas-retrieval-agent-manager-api.fullname" . }}-noauth'
+  url: {{ if $globalEnabled -}}
+          "https://{{ .Values.global.domain }}{{ regexReplaceAll "\\(.*" (first (index .Values "sas-retrieval-agent-manager-api").ingress.paths).path "" }}"
+       {{- else -}}
+          "https://{{ with (first (index .Values "sas-retrieval-agent-manager-api").ingress.hosts) }}{{ .host }}/{{ with (first .paths) }}{{ regexReplaceAll "\\(.*" .path "" }}{{ end }}{{ end }}"
+       {{- end }}
+  docsUrl: {{ if $globalEnabled -}}
+          "https://{{ .Values.global.domain }}{{ regexReplaceAll "\\(.*" (first (index .Values "sas-retrieval-agent-manager-api").ingress.paths).path "" }}/docs"
+       {{- else -}}
+          "https://{{ with (first (index .Values "sas-retrieval-agent-manager-api").ingress.hosts) }}{{ .host }}/{{ with (first .paths) }}{{ regexReplaceAll "\\(.*" .path "" }}{{ end }}{{ end }}/docs"
+       {{- end }}
+  base_path: {{ $basePathWithLeadingSlash | quote }}
+  inClusterUrl: "http://{{ include "sas-retrieval-agent-manager-api.fullname" . }}:{{ (index .Values "sas-retrieval-agent-manager-api").service.port }}{{ $basePathWithLeadingSlash }}/{{ .Values.global.configuration.api.latest_version }}"
+  noauthInClusterUrl: "http://{{ include "sas-retrieval-agent-manager-api.fullname" . }}-noauth:{{ (index .Values "sas-retrieval-agent-manager-api").service.port }}{{ $basePathWithLeadingSlash }}/{{ .Values.global.configuration.api.latest_version }}"

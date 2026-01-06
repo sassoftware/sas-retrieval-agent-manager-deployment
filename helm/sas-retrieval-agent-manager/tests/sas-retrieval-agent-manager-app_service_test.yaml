@@ -1,0 +1,97 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test sas retrieval agent manager app service
+templates:
+  - templates/ui/service.yaml
+tests:
+  - it: should create service with correct kind
+    asserts:
+      - isKind:
+          of: Service
+      - hasDocuments:
+          count: 1
+
+  - it: should use correct service name
+    asserts:
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-app
+
+  - it: should configure service type
+    asserts:
+      - equal:
+          path: spec.type
+          value: ClusterIP
+
+  - it: should configure service port
+    asserts:
+      - equal:
+          path: spec.ports[0].port
+          value: 8080
+      - equal:
+          path: spec.ports[0].targetPort
+          value: http
+      - equal:
+          path: spec.ports[0].protocol
+          value: TCP
+      - equal:
+          path: spec.ports[0].name
+          value: http
+
+  - it: should include proper labels
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: app
+      - equal:
+          path: metadata.labels["app.kubernetes.io/instance"]
+          value: RELEASE-NAME
+      - equal:
+          path: metadata.labels["helm.sh/chart"]
+          value: sas-retrieval-agent-manager-1.2.3-dev.20241225
+
+  - it: should configure correct selector
+    asserts:
+      - equal:
+          path: spec.selector["app.kubernetes.io/name"]
+          value: app
+      - equal:
+          path: spec.selector["app.kubernetes.io/instance"]
+          value: RELEASE-NAME
+
+  - it: should support custom service type
+    set:
+      sas-retrieval-agent-manager-app:
+        service:
+          type: NodePort
+    asserts:
+      - equal:
+          path: spec.type
+          value: NodePort
+
+  - it: should support custom service port
+    set:
+      sas-retrieval-agent-manager-app:
+        service:
+          port: 9090
+    asserts:
+      - equal:
+          path: spec.ports[0].port
+          value: 9090
+
+  - it: should use custom fullname override in service name
+    set:
+      sas-retrieval-agent-manager-app:
+        fullnameOverride: "custom-app-name"
+    asserts:
+      - equal:
+          path: metadata.name
+          value: custom-app-name
+
+  - it: should allow custom service naming
+    set:
+      sas-retrieval-agent-manager-app:
+        fullnameOverride: "custom-name"
+    asserts:
+      - equal:
+          path: metadata.name
+          value: custom-name

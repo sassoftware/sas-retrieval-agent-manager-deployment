@@ -1,0 +1,159 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test sas retrieval agent manager db migration edge cases
+templates:
+  - ../templates/db/migration/migration-job.yaml
+  - ../templates/db/migration/serviceaccount.yaml
+  - ../templates/db/migration/scripts-configmap.yaml
+tests:
+  - it: should handle disabled service account creation
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+      sas-retrieval-agent-manager-db-migration:
+        serviceAccount:
+          create: false
+          name: "existing-service-account"
+    template: ../templates/db/migration/serviceaccount.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should use existing service account when creation disabled
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+      sas-retrieval-agent-manager-db-migration:
+        serviceAccount:
+          create: false
+          name: "existing-service-account"
+    template: ../templates/db/migration/migration-job.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: "existing-service-account"
+
+  - it: should handle custom image repositories
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+        image:
+          repo:
+            base: "custom-registry.io"
+      sas-retrieval-agent-manager-db-migration:
+        image:
+          postgres:
+            repo:
+              base: "postgres-registry.io"
+              path: "custom-postgres"
+            tag: "14-alpine"
+          goose:
+            repo:
+              base: "goose-registry.io"
+              path: "custom-goose"
+            tag: "v3.8.0"
+    template: ../templates/db/migration/migration-job.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].image
+          value: "custom-registry.io/custom-postgres:14-alpine"
+      - matchRegex:
+          path: spec.template.spec.containers[0].image
+          pattern: "custom-registry.io"
+
+  - it: should handle empty annotations
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+      sas-retrieval-agent-manager-db-migration:
+        podAnnotations: {}
+        serviceAccount:
+          annotations: {}
+    template: ../templates/db/migration/migration-job.yaml
+    asserts:
+      - isKind:
+          of: Job
+
+  - it: should handle empty labels
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+      sas-retrieval-agent-manager-db-migration:
+        podLabels: {}
+    template: ../templates/db/migration/migration-job.yaml
+    asserts:
+      - isKind:
+          of: Job
+      - exists:
+          path: metadata.labels["app.kubernetes.io/name"]
+
+  - it: should handle complex image pull secrets
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+        imagePullSecrets:
+          - name: global-registry-secret
+          - name: another-global-secret
+      sas-retrieval-agent-manager-db-migration:
+        imagePullSecrets:
+          - name: local-registry-secret
+          - name: migration-specific-secret
+    template: ../templates/db/migration/migration-job.yaml
+    asserts:
+      - lengthEqual:
+          path: spec.template.spec.imagePullSecrets
+          count: 4
+
+  - it: should support different security contexts
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+      sas-retrieval-agent-manager-db-migration:
+        podSecurityContext:
+          fsGroup: 20001
+          runAsUser: 20001
+          runAsGroup: 20001
+        securityContext:
+          runAsUser: 30001
+          allowPrivilegeEscalation: true
+    template: ../templates/db/migration/migration-job.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext.fsGroup
+          value: 20001
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.allowPrivilegeEscalation
+          value: true
+
+  - it: should handle global vs local image configuration precedence
+    set:
+      global:
+        configuration:
+          database:
+            migrationDb: true
+        image:
+          repo:
+            base: "global-registry.io"
+      sas-retrieval-agent-manager-db-migration:
+        image:
+          postgres:
+            repo:
+              base: "local-postgres-registry.io"
+    template: ../templates/db/migration/migration-job.yaml
+    asserts:
+      - matchRegex:
+          path: spec.template.spec.initContainers[0].image
+          pattern: "global-registry.io"

@@ -1,0 +1,199 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test postgrest ingress and routes
+templates:
+  - templates/db/rest/ingress.yaml
+  - templates/db/rest/route.yaml
+tests:
+  - it: should create ingress when enabled
+    template: templates/db/rest/ingress.yaml
+    set:
+      postgrest:
+        ingress:
+          enabled: true
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Ingress
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-postgrest
+
+  - it: should not create ingress when disabled
+    template: templates/db/rest/ingress.yaml
+    set:
+      global:
+        ingress:
+          enabled: false
+      postgrest:
+        ingress:
+          enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should configure ingress class name
+    template: templates/db/rest/ingress.yaml
+    set:
+      postgrest:
+        ingress:
+          enabled: true
+          className: "nginx"
+    asserts:
+      - equal:
+          path: spec.ingressClassName
+          value: "nginx"
+
+  - it: should configure ingress hosts
+    template: templates/db/rest/ingress.yaml
+    set:
+      global:
+        ingress:
+          enabled: false
+      postgrest:
+        ingress:
+          enabled: true
+          hosts:
+            - host: postgrest.example.com
+              paths:
+                - path: /
+                  pathType: ImplementationSpecific
+    asserts:
+      - equal:
+          path: spec.rules[0].host
+          value: postgrest.example.com
+      - equal:
+          path: spec.rules[0].http.paths[0].path
+          value: /
+
+  - it: should configure ingress annotations
+    template: templates/db/rest/ingress.yaml
+    set:
+      postgrest:
+        ingress:
+          enabled: true
+          annotations:
+            nginx.ingress.kubernetes.io/rewrite-target: /
+    asserts:
+      - equal:
+          path: metadata.annotations["nginx.ingress.kubernetes.io/rewrite-target"]
+          value: /
+
+  - it: should configure TLS
+    template: templates/db/rest/ingress.yaml
+    set:
+      global:
+        ingress:
+          enabled: false
+      postgrest:
+        ingress:
+          enabled: true
+          tls:
+            - secretName: postgrest-tls
+              hosts:
+                - postgrest.example.com
+    asserts:
+      - equal:
+          path: spec.tls[0].secretName
+          value: postgrest-tls
+      - equal:
+          path: spec.tls[0].hosts[0]
+          value: postgrest.example.com
+
+  - it: should create route when className is route
+    template: templates/db/rest/route.yaml
+    set:
+      postgrest:
+        ingress:
+          enabled: true
+          className: "route"
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Route
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-postgrest
+
+  - it: should not create route when className is not route
+    template: templates/db/rest/route.yaml
+    set:
+      postgrest:
+        ingress:
+          enabled: true
+          className: "nginx"
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should not create route when ingress disabled
+    template: templates/db/rest/route.yaml
+    set:
+      postgrest:
+        ingress:
+          enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should configure route host
+    template: templates/db/rest/route.yaml
+    set:
+      postgrest:
+        ingress:
+          enabled: true
+          className: "route"
+          hosts:
+            - host: postgrest.example.com
+              paths:
+                - path: /
+                  pathType: ImplementationSpecific
+    asserts:
+      - equal:
+          path: spec.host
+          value: postgrest.example.com
+
+  - it: should target correct service in route
+    template: templates/db/rest/route.yaml
+    set:
+      postgrest:
+        ingress:
+          enabled: true
+          className: "route"
+    asserts:
+      - equal:
+          path: spec.to.kind
+          value: Service
+      - equal:
+          path: spec.to.name
+          value: sas-retrieval-agent-manager-postgrest
+
+  - it: should include proper labels on ingress
+    template: templates/db/rest/ingress.yaml
+    set:
+      postgrest:
+        ingress:
+          enabled: true
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: postgrest
+      - equal:
+          path: metadata.labels["helm.sh/chart"]
+          value: sas-retrieval-agent-manager-1.2.3-dev.20241225
+
+  - it: should include proper labels on route
+    template: templates/db/rest/route.yaml
+    set:
+      postgrest:
+        ingress:
+          enabled: true
+          className: "route"
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: postgrest
+      - equal:
+          path: metadata.labels["helm.sh/chart"]
+          value: sas-retrieval-agent-manager-1.2.3-dev.20241225

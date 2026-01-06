@@ -1,0 +1,154 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test filebrowser persistent volume claims
+templates:
+  - templates/storage/pvc-db.yaml
+  - templates/storage/pvc-rootdir.yaml
+tests:
+  - it: should create database PVC when enabled
+    template: templates/storage/pvc-db.yaml
+    set:
+      filebrowser:
+        enabled: true
+    asserts:
+      - isKind:
+          of: PersistentVolumeClaim
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-filebrowser-db
+
+  - it: should have correct labels on database PVC
+    template: templates/storage/pvc-db.yaml
+    set:
+      filebrowser:
+        enabled: true
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: filebrowser
+      - equal:
+          path: metadata.labels["app.kubernetes.io/instance"]
+          value: RELEASE-NAME
+
+  - it: should have correct database PVC configuration
+    template: templates/storage/pvc-db.yaml
+    set:
+      filebrowser:
+        enabled: true
+    asserts:
+      - contains:
+          path: spec.accessModes
+          content: ReadWriteOnce
+      - equal:
+          path: spec.resources.requests.storage
+          value: 256Mi
+
+  - it: should create rootDir PVC when enabled
+    template: templates/storage/pvc-rootdir.yaml
+    set:
+      filebrowser:
+        enabled: true
+    asserts:
+      - isKind:
+          of: PersistentVolumeClaim
+      - equal:
+          path: metadata.name
+          value: vhub-pv
+
+  - it: should have keep annotation on rootDir PVC
+    template: templates/storage/pvc-rootdir.yaml
+    set:
+      filebrowser:
+        enabled: true
+    asserts:
+      - equal:
+          path: metadata.annotations["helm.sh/resource-policy"]
+          value: keep
+
+  - it: should have correct rootDir PVC configuration
+    template: templates/storage/pvc-rootdir.yaml
+    set:
+      filebrowser:
+        enabled: true
+    asserts:
+      - contains:
+          path: spec.accessModes
+          content: ReadWriteOnce
+      - equal:
+          path: spec.resources.requests.storage
+          value: 20Gi
+      - equal:
+          path: spec.storageClassName
+          value: azurefile-sas
+
+  - it: should support custom database PVC size
+    template: templates/storage/pvc-db.yaml
+    set:
+      filebrowser:
+        enabled: true
+        db:
+          pvc:
+            enabled: true
+    asserts:
+      - equal:
+          path: spec.resources.requests.storage
+          value: 256Mi
+
+  - it: should support custom rootDir PVC size
+    template: templates/storage/pvc-rootdir.yaml
+    set:
+      filebrowser:
+        enabled: true
+        rootDir:
+          pvc:
+            size: 50Gi
+    asserts:
+      - equal:
+          path: spec.resources.requests.storage
+          value: 50Gi
+
+  - it: should support custom storage class for database
+    template: templates/storage/pvc-db.yaml
+    set:
+      filebrowser:
+        enabled: true
+        db:
+          pvc:
+            enabled: true
+            storageClassName: fast-ssd
+    asserts:
+      - equal:
+          path: spec.storageClassName
+          value: fast-ssd
+
+  - it: should support custom rootDir PVC name
+    template: templates/storage/pvc-rootdir.yaml
+    set:
+      filebrowser:
+        enabled: true
+        rootDir:
+          pvc:
+            name: custom-data-pv
+    asserts:
+      - equal:
+          path: metadata.name
+          value: custom-data-pv
+
+  - it: should not create database PVC when disabled
+    template: templates/storage/pvc-db.yaml
+    set:
+      filebrowser:
+        enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should not create rootDir PVC when not of type PVC
+    template: templates/storage/pvc-rootdir.yaml
+    set:
+      filebrowser:
+        enabled: false
+        rootDir:
+          type: "hostPath"
+    asserts:
+      - hasDocuments:
+          count: 0

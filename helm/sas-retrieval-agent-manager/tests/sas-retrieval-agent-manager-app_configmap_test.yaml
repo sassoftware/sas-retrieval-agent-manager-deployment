@@ -1,0 +1,88 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test sas retrieval agent manager app configmap
+templates:
+  - templates/ui/configmap.yaml
+tests:
+  - it: should create configmap with correct kind
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - hasDocuments:
+          count: 1
+
+  - it: should use correct configmap name
+    asserts:
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-app-configmap
+
+  - it: should include proper labels
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: app
+      - equal:
+          path: metadata.labels["app.kubernetes.io/instance"]
+          value: RELEASE-NAME
+      - equal:
+          path: metadata.labels["helm.sh/chart"]
+          value: sas-retrieval-agent-manager-1.2.3-dev.20241225
+
+  - it: should include nginx configuration
+    asserts:
+      - exists:
+          path: data["nginx.conf"]
+
+  - it: should configure nginx to listen on port 8080
+    asserts:
+      - matchRegex:
+          path: data["nginx.conf"]
+          pattern: "listen 8080"
+
+  - it: should configure nginx health endpoints
+    asserts:
+      - matchRegex:
+          path: data["nginx.conf"]
+          pattern: "/SASRetrievalAgentManager/health/liveness"
+      - matchRegex:
+          path: data["nginx.conf"]
+          pattern: "/SASRetrievalAgentManager/health/readiness"
+
+  - it: should configure nginx application path
+    asserts:
+      - matchRegex:
+          path: data["nginx.conf"]
+          pattern: "/SASRetrievalAgentManager/"
+
+  - it: should configure nginx temp paths
+    asserts:
+      - matchRegex:
+          path: data["nginx.conf"]
+          pattern: "proxy_temp_path /tmp/proxy_temp"
+      - matchRegex:
+          path: data["nginx.conf"]
+          pattern: "client_body_temp_path /tmp/client_temp"
+
+  - it: should configure nginx root redirect
+    asserts:
+      - matchRegex:
+          path: data["nginx.conf"]
+          pattern: "return 301"
+
+  - it: should allow custom configmap naming
+    set:
+      sas-retrieval-agent-manager-app:
+        fullnameOverride: "custom-name"
+    asserts:
+      - equal:
+          path: metadata.name
+          value: custom-name-configmap
+
+  - it: should use custom fullname override in configmap name
+    set:
+      sas-retrieval-agent-manager-app:
+        fullnameOverride: "custom-full-name"
+    asserts:
+      - equal:
+          path: metadata.name
+          value: custom-full-name-configmap

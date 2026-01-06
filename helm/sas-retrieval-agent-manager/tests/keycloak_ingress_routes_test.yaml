@@ -1,0 +1,223 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test keycloak ingress and routes
+templates:
+  - templates/iam/keycloak/ingress.yaml
+  - templates/iam/keycloak/admin-ingress.yaml
+  - templates/iam/keycloak/route.yaml
+  - templates/iam/keycloak/admin-route.yaml
+tests:
+  - it: should create ingress when enabled
+    template: templates/iam/keycloak/ingress.yaml
+    set:
+      keycloak:
+        ingress:
+          enabled: true
+          hosts:
+            - host: keycloak.example.com
+              paths:
+                - path: /
+                  pathType: Prefix
+        fullnameOverride: ""
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Ingress
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-keycloak
+
+  - it: should not create ingress when disabled
+    template: templates/iam/keycloak/ingress.yaml
+    set:
+      global:
+        ingress:
+          enabled: false
+      keycloak:
+        ingress:
+          enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should include proper labels on ingress
+    template: templates/iam/keycloak/ingress.yaml
+    set:
+      keycloak:
+        ingress:
+          enabled: true
+          hosts:
+            - host: keycloak.example.com
+              paths:
+                - path: /
+                  pathType: Prefix
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: keycloak
+      - equal:
+          path: metadata.labels["helm.sh/chart"]
+          value: sas-retrieval-agent-manager-1.2.3-dev.20241225
+
+  - it: should create admin ingress when enabled
+    template: templates/iam/keycloak/admin-ingress.yaml
+    set:
+      keycloak:
+        ingress:
+          enabled: true
+          admin:
+            enabled: true
+          hosts:
+            - host: admin.keycloak.example.com
+              paths:
+                - path: /
+                  pathType: Prefix
+        fullnameOverride: ""
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Ingress
+      - equal:
+          path: metadata.name
+          value: sas-retrieval-agent-manager-keycloak-admin
+
+  - it: should not create admin ingress when disabled
+    template: templates/iam/keycloak/admin-ingress.yaml
+    set:
+      keycloak:
+        ingress:
+          enabled: true
+          admin:
+            enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  # - it: should create route when className is route
+  #   template: templates/iam/keycloak/route.yaml
+  #   set:
+  #     keycloak:
+  #       ingress:
+  #         enabled: true
+  #         className: "route"
+  #       fullnameOverride: ""
+  #   asserts:
+  #     - hasDocuments:
+  #         count: 1
+  #     - isKind:
+  #         of: Route
+  #     - equal:
+  #         path: metadata.name
+  #         value: sas-retrieval-agent-manager-keycloak
+
+  # - it: should not create route when className is not route
+  #   template: templates/iam/keycloak/route.yaml
+  #   set:
+  #     keycloak:
+  #       ingress:
+  #         enabled: true
+  #         className: "nginx"
+  #   asserts:
+  #     - hasDocuments:
+  #         count: 0
+
+  # - it: should create admin route when className is route
+  #   template: templates/iam/keycloak/admin-route.yaml
+  #   set:
+  #     keycloak:
+  #       ingress:
+  #         enabled: true
+  #         className: "route"
+  #         admin:
+  #           enabled: true
+  #       fullnameOverride: ""
+  #   asserts:
+  #     - hasDocuments:
+  #         count: 1
+  #     - isKind:
+  #         of: Route
+  #     - equal:
+  #         path: metadata.name
+  #         value: release-name-keycloak-admin
+
+  # - it: should not create admin route when className is not route
+  #   template: templates/iam/keycloak/admin-route.yaml
+  #   set:
+  #     keycloak:
+  #       ingress:
+  #         enabled: true
+  #         className: "nginx"
+  #         admin:
+  #           enabled: true
+  #   asserts:
+  #     - hasDocuments:
+  #         count: 0
+
+  - it: should work with fullnameOverride for ingress
+    template: templates/iam/keycloak/ingress.yaml
+    set:
+      keycloak:
+        fullnameOverride: "custom-keycloak"
+        ingress:
+          enabled: true
+          hosts:
+            - host: keycloak.example.com
+              paths:
+                - path: /
+                  pathType: Prefix
+    asserts:
+      - equal:
+          path: metadata.name
+          value: custom-keycloak
+
+  - it: should work with fullnameOverride for admin ingress
+    template: templates/iam/keycloak/admin-ingress.yaml
+    set:
+      keycloak:
+        fullnameOverride: "custom-keycloak"
+        ingress:
+          enabled: true
+          admin:
+            enabled: true
+          hosts:
+            - host: admin.keycloak.example.com
+              paths:
+                - path: /
+                  pathType: Prefix
+    asserts:
+      - equal:
+          path: metadata.name
+          value: custom-keycloak-admin
+
+  # - it: should work with custom release name for route
+  #   template: templates/iam/keycloak/route.yaml
+  #   release:
+  #     name: custom-release
+  #   set:
+  #     keycloak:
+  #       fullnameOverride: ""
+  #       ingress:
+  #         enabled: true
+  #         className: "route"
+  #   asserts:
+  #     - equal:
+  #         path: metadata.name
+  #         value: release-name-ingress-admin
+
+  # - it: should work with custom release name for admin route
+  #   template: templates/iam/keycloak/admin-route.yaml
+  #   release:
+  #     name: custom-release
+  #   set:
+  #     keycloak:
+  #       fullnameOverride: ""
+  #       ingress:
+  #         enabled: true
+  #         className: "route"
+  #         admin:
+  #           enabled: true
+  #   asserts:
+  #     - equal:
+  #         path: metadata.name
+  #         value: custom-release-keycloak-admin

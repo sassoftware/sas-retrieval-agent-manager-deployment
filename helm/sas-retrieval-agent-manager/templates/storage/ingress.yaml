@@ -1,0 +1,122 @@
+{{- if (index .Values "filebrowser").enabled -}}
+{{- $dot := . -}}
+{{- $globalEnabled := ((include "testValuesPath" (list .Values "global" "ingress" "enabled")) | eq "true") -}}
+{{- $globalClassName := "" -}}
+{{- if $globalEnabled -}}
+{{- $globalClassName = .Values.global.ingress.className | default "" -}}
+{{- end -}}
+{{- $isRouteClassName := false -}}
+{{- if $globalEnabled -}}
+{{- if eq $globalClassName "route" -}}
+{{- $isRouteClassName = true -}}
+{{- end -}}
+{{- else if (index .Values "filebrowser").ingress.enabled -}}
+{{- if eq ((index .Values "filebrowser").ingress.className | default "") "route" -}}
+{{- $isRouteClassName = true -}}
+{{- end -}}
+{{- end -}}
+{{- if and (or (index .Values "filebrowser").ingress.enabled $globalEnabled) (not $isRouteClassName) -}}
+{{- $fullName := include "storage.fullname" . | lower -}}
+{{- $svcPort := (index .Values "filebrowser").service.port -}}
+{{- if and (index .Values "filebrowser").ingress.className (not (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion)) }}
+  {{- if not (hasKey (index .Values "filebrowser").ingress.annotations "kubernetes.io/ingress.class") }}
+  {{- $_ := set (index .Values "filebrowser").ingress.annotations "kubernetes.io/ingress.class" (index .Values "filebrowser").ingress.className}}
+  {{- end }}
+{{- end }}
+{{- if semverCompare ">=1.19-0" .Capabilities.KubeVersion.GitVersion -}}
+apiVersion: networking.k8s.io/v1
+{{- else if semverCompare ">=1.14-0" .Capabilities.KubeVersion.GitVersion -}}
+apiVersion: networking.k8s.io/v1beta1
+{{- else -}}
+apiVersion: extensions/v1beta1
+{{- end }}
+kind: Ingress
+metadata:
+  name: {{ $fullName }}
+  labels:
+    {{- include "storage.labels" . | nindent 4 }}
+  {{- with (index .Values "filebrowser").ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+{{- if $globalEnabled | default false }}
+  {{- if and (.Values.global.ingress.className | default (index .Values "filebrowser").ingress.className) (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion) }}
+  ingressClassName: {{ .Values.global.ingress.className | default (index .Values "filebrowser").ingress.className  }}
+  {{- end }}
+  {{- if and ((include "testValuesPath" (list .Values "global" "ingress" "tls" "enabled")) | eq "true"  | default false) (.Values.global.ingress.tls.enabled | default false) }}
+  tls:
+    - hosts:
+      - {{ .Values.global.domain | quote }}
+      {{- if (include "testValuesPath" (list .Values "ingress" "tls" "hosts")) | eq "true" }}
+        {{- range (index .Values "filebrowser").ingress.tls.hosts }}
+          {{- if and . (ne . "") }}
+      - {{ . | quote }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+      {{- if ((include "testValuesPath" (list .Values "global" "ingress" "tls" "secretName")) | eq "true") }}
+      secretName: {{ .Values.global.ingress.tls.secretName | default "" }}
+      {{- else if ((include "testValuesPath" (list .Values "ingress" "tls" "secretName")) | eq "true") }}
+      secretName: {{ (index .Values "filebrowser").ingress.tls.secretName | default "" }}
+      {{- end }}
+  {{- end }}
+  rules:
+    - host: {{ .Values.global.domain | quote }}
+      http:
+        paths:
+          {{- range (index .Values "filebrowser").ingress.paths }}
+          - path: {{ .path}}
+            {{- if and .pathType (semverCompare ">=1.18-0" $.Capabilities.KubeVersion.GitVersion) }}
+            pathType: {{ .pathType }}
+            {{- end }}
+            backend:
+              {{- if semverCompare ">=1.19-0" $.Capabilities.KubeVersion.GitVersion }}
+              service:
+                name: {{ $fullName }}
+                port:
+                  number: {{ $svcPort }}
+              {{- else }}
+              serviceName: {{ $fullName }}
+              servicePort: {{ $svcPort }}
+              {{- end }}
+          {{- end }}
+{{- else }}
+  {{- if and (index .Values "filebrowser").ingress.className (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion) }}
+  ingressClassName: {{ (index .Values "filebrowser").ingress.className }}
+  {{- end }}
+  {{- if (index .Values "filebrowser").ingress.tls }}
+  tls:
+    {{- range (index .Values "filebrowser").ingress.tls }}
+    - hosts:
+        {{- range .hosts }}
+        - {{ . | quote }}
+        {{- end }}
+      secretName: {{ .secretName }}
+    {{- end }}
+  {{- end }}
+  rules:
+    {{- range (index .Values "filebrowser").ingress.hosts }}
+    - host: {{ .host | quote }}
+      http:
+        paths:
+          {{- range .paths }}
+          - path: {{ .path }}
+            {{- if and .pathType (semverCompare ">=1.18-0" $.Capabilities.KubeVersion.GitVersion) }}
+            pathType: {{ .pathType }}
+            {{- end }}
+            backend:
+              {{- if semverCompare ">=1.19-0" $.Capabilities.KubeVersion.GitVersion }}
+              service:
+                name: {{ $fullName }}
+                port:
+                  number: {{ $svcPort }}
+              {{- else }}
+              serviceName: {{ $fullName }}
+              servicePort: {{ $svcPort }}
+              {{- end }}
+          {{- end }}
+    {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
