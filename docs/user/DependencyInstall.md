@@ -68,7 +68,7 @@ You can install it onto your cluster with the following commands:
 ```bash
 # Install Kueue using your values file
 helm install kueue oci://registry.k8s.io/kueue/charts/kueue \
-  --version=0.12.1 \
+  --version=<kueue_version> \
   --namespace kueue \
   -f <kueue_values_file> \
   --create-namespace
@@ -90,7 +90,7 @@ helm repo update
 # Install ingress-nginx using your custom values file
 helm install nginx-ingress-nginx-controller \
     ingress-nginx/ingress-nginx \
-    --version=4.12.3 \
+    --version=<nginx_version> \
     --namespace ingress-nginx \
     -f <nginx_values_file> \
     --create-namespace
@@ -121,7 +121,7 @@ helm repo update
 
 # Install Weaviate using your custom values file
 helm install weaviate weaviate/weaviate \
-  --version=v17.3.3 \
+  --version=<weaviate_version> \
   --namespace weaviate \
   -f <weaviate_values_file> \
   --create-namespace
