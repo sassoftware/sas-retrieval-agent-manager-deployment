@@ -2357,7 +2357,7 @@ keycloak:
     # @schema
     # -- Array of imagePullSecrets for OAuth2 Proxy
     imagePullSecrets:
-      - name: acr-secret
+      - name: cr-sas-secret
 
     # @schema
     # type: object
