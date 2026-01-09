@@ -263,7 +263,7 @@ Customize your RAM Values file based on the deployment template for your specifi
 #### Deploy with Helm
 
 ```bash
-helm install my-sas-retrieval-agent-manager oci://ghcr.io/sassoftware/sas-retrieval-agent-manager-deployment/sas-retrieval-agent-manager \
+helm install sas-retrieval-agent-manager oci://ghcr.io/sassoftware/sas-retrieval-agent-manager-deployment/sas-retrieval-agent-manager \
   --version <RAM Version> \
   --values <RAM Values file> \
   -n retagentmgr \
@@ -327,7 +327,7 @@ Once you override the desired fields in your values file, upgrade your RAM insta
 
 ```sh
 
-helm upgrade my-sas-retrieval-agent-manager oci://ghcr.io/sassoftware/sas-retrieval-agent-manager-deployment/sas-retrieval-agent-manager \
+helm upgrade sas-retrieval-agent-manager oci://ghcr.io/sassoftware/sas-retrieval-agent-manager-deployment/sas-retrieval-agent-manager \
   --version <RAM Version> \
   --values <RAM Values file> \
   -n retagentmgr
