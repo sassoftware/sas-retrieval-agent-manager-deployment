@@ -1,4 +1,4 @@
-# Backup & Restore Guide
+# LLM Connection Guide
 
 This folder provides documentation and instructions for adding various LLMs into RAM.
 
