@@ -96,14 +96,6 @@ helm install nginx-ingress-nginx-controller \
     --create-namespace
 ```
 
-### Vector
-
-SAS Retrieval Agent Manager requires Vector for collecting, viewing, and managing logs/metrics.
-
-Here is an [Example Vector Values File](../../examples/vector.yaml). You can edit it as you'd like to fit your deployment.
-
-You can install it onto your cluster by reading the [installation instructions found here](../monitoring/logs-and-metrics.md#installation).
-
 ## Optional Components
 
 ### Weaviate
@@ -126,6 +118,14 @@ helm install weaviate weaviate/weaviate \
   -f <weaviate_values_file> \
   --create-namespace
 ```
+
+### Vector
+
+SAS Retrieval Agent Manager uses Vector for collecting, viewing, and managing logs/metrics.
+
+Here is an [Example Vector Values File](../../examples/vector.yaml). You can edit it as you'd like to fit your deployment.
+
+You can install it onto your cluster by reading the [installation instructions found here](../monitoring/logs-and-metrics.md#installation).
 
 ### Phoenix
 
