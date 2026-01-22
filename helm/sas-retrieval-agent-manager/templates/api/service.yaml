@@ -7,8 +7,10 @@ metadata:
 spec:
   type: {{ (index .Values "sas-retrieval-agent-manager-api").service.type }}
   ports:
+    # Main port routes to OAuth2 proxy sidecar (port 4180)
+    # OAuth2 proxy then forwards authenticated requests to app on localhost:8765
     - port: {{ (index .Values "sas-retrieval-agent-manager-api").service.port }}
-      targetPort: http
+      targetPort: oauth2-proxy0
       protocol: TCP
       name: http
   selector:

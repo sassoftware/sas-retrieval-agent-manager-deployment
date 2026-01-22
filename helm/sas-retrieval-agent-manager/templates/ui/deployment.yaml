@@ -57,6 +57,8 @@ spec:
       serviceAccountName: {{ include "sas-retrieval-agent-manager-ui.serviceAccountName" . }}
       securityContext:
         {{- toYaml (index .Values "sas-retrieval-agent-manager-app").podSecurityContext | nindent 8 }}
+      initContainers:
+        {{- include "oauth2-proxy.sidecar.init" . | nindent 8 }}
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
@@ -103,17 +105,15 @@ spec:
               name: cache
             - mountPath: /var/run
               name: run
-            - mountPath: /home/sas/.promptfoo
-              name: promptfoo
           {{- with (index .Values "sas-retrieval-agent-manager-app").volumeMounts }}
             {{- toYaml . | nindent 12 }}
           {{- end }}
+        {{- include "oauth2-proxy.sidecar" (dict "Root" . "upstreamPort" (index .Values "sas-retrieval-agent-manager-app").service.port) | nindent 8 }}
       volumes:
+        {{- include "oauth2-proxy.sidecar.volumes" . | nindent 8 }}
         - name: cache
           emptyDir: {}
         - name: run
-          emptyDir: {}
-        - name: promptfoo
           emptyDir: {}
       {{- with (index .Values "sas-retrieval-agent-manager-app").volumes }}
         {{- toYaml . | nindent 8 }}

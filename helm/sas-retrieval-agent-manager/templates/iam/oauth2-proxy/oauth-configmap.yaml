@@ -11,13 +11,13 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "keycloak.oauthProxy.fullname" . | lower }}
+  name: {{ include "oauth2-proxy.fullname" . | lower }}
   labels:
-    {{- include "keycloak.oauthProxy.labels" . | nindent 4 }}
+    {{- include "oauth2-proxy.labels" . | nindent 4 }}
 data:
   oauth2-proxy.cfg: |
     http_address              = "0.0.0.0:{{ .Values.keycloak.oauthProxy.service.port }}"
-    upstreams                 = "file:///dev/null"
+    # upstreams is set via OAUTH2_PROXY_UPSTREAMS env var in sidecar (see _oauth_sidecar.tpl)
     reverse_proxy             = true
     ssl_insecure_skip_verify  = false
 
@@ -27,11 +27,11 @@ data:
     skip_jwt_bearer_tokens  = true
     code_challenge_method   = "S256"
 
-    redirect_url            = "{{ include "keycloak.oauthProxy.ingressURL" . }}/callback"
+    redirect_url            = "{{ include "oauth2-proxy.ingressURL" . }}/callback"
     oidc_issuer_url         = "{{ include "keycloak.ingressURL" . }}"
     login_url               = "{{ include "keycloak.ingressURL" . }}/protocol/openid-connect/auth"
-    whitelist_domains       = "{{ include "keycloak.oauthProxy.domain" . }}"
-    proxy_prefix            = "{{ include "keycloak.oauthProxy.prefix" . }}"
+    whitelist_domains       = "{{ include "oauth2-proxy.domain" . }}"
+    proxy_prefix            = "{{ include "oauth2-proxy.prefix" . }}"
     email_domains           = "*"
 
     # Skip OIDC discovery and provide internal URLs directly.
@@ -44,18 +44,19 @@ data:
 
     # Cookie Configuration
     cookie_name     = "esp_oauth2_proxy"
+    cookie_path     = "/"
     cookie_expire   = "12h"
     cookie_refresh  = "60s"    
     cookie_secure   = true
     {{ if $globalEnabled -}}
     cookie_domains  = [
       "{{ .Values.global.domain }}",
-      "{{ include "keycloak.oauthProxy.fullname" . | lower }}.{{ .Release.Namespace }}.svc.cluster.local",
+      "{{ include "oauth2-proxy.fullname" . | lower }}.{{ .Release.Namespace }}.svc.cluster.local",
     ]
     {{- else -}}
     cookie_domains  = [
       "{{ with (first .Values.keycloak.oauthProxy.ingress.hosts) }}{{ .host }}{{ end }}",
-      "{{ include "keycloak.oauthProxy.fullname" . | lower }}.{{ .Release.Namespace }}.svc.cluster.local"
+      "{{ include "oauth2-proxy.fullname" . | lower }}.{{ .Release.Namespace }}.svc.cluster.local"
     ]
     {{- end }}
     cookie_samesite = "lax"
@@ -63,10 +64,16 @@ data:
     cookie_csrf_per_request       = true
     cookie_csrf_per_request_limit = 10
 
-    # Auth Response Headers
+    # Auth Response Headers (for nginx auth subrequest pattern)
     set_authorization_header  = true
     set_xauthrequest          = true
     pass_access_token         = true
+
+    # Pass ID token to upstream in Authorization header (required for reverse_proxy/sidecar mode)
+    pass_authorization_header = true
+
+    # CORS and preflight
+    skip_auth_preflight       = true
 
     # bypass authentication for requests that match the method & path. Format: method=path_regex OR path_regex alone for all methods
     # skip_auth_routes = [
