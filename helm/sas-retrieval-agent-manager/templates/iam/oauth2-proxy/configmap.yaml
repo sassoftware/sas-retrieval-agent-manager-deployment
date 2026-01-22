@@ -13,10 +13,10 @@ kind: ConfigMap
 metadata:
   name: oauth-proxy-config
   labels:
-    {{- include "keycloak.oauthProxy.labels" . | nindent 4 }}
+    {{- include "oauth2-proxy.labels" . | nindent 4 }}
 data:
   namespace: {{ .Release.Namespace }}
-  service: {{ include "keycloak.oauthProxy.fullname" . }}
+  service: {{ include "oauth2-proxy.fullname" . }}
   url: {{ if $globalEnabled -}}
           {{- if .Values.keycloak.oauthProxy.ingress.paths -}}
           "https://{{ .Values.global.domain }}{{ regexReplaceAll "\\(.*" (first .Values.keycloak.oauthProxy.ingress.paths).path "" }}"

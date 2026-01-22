@@ -3,7 +3,7 @@ kind: ConfigMap
 metadata:
   name: {{ include "keycloak.fullname" . }}-realm-update-env
 data:
-  KEYCLOAK_FQDN: "{{ include "keycloak.oauthProxy.domain" . }}"
+  KEYCLOAK_FQDN: "{{ include "oauth2-proxy.domain" . }}"
   KEYCLOAK_URL: "{{ include "keycloak.internalBaseURL" . }}"
   KEYCLOAK_REALM: "{{ .Values.global.configuration.keycloak.realm }}"
   RAM_APP_CLIENT: "{{ .Values.global.configuration.keycloak.clientId }}"

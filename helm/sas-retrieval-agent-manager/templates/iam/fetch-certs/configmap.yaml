@@ -20,7 +20,7 @@ kind: ConfigMap
 metadata:
   name: fetch-keycloak-certs
   labels:
-    {{- include "keycloak.oauthProxy.labels" . | nindent 4 }}
+    {{- include "oauth2-proxy.labels" . | nindent 4 }}
 data:
   init.sh: |
     #!/bin/bash

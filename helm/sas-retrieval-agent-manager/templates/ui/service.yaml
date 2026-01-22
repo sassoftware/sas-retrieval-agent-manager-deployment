@@ -8,7 +8,7 @@ spec:
   type: {{ (index .Values "sas-retrieval-agent-manager-app").service.type }}
   ports:
     - port: {{ (index .Values "sas-retrieval-agent-manager-app").service.port }}
-      targetPort: http
+      targetPort: oauth2-proxy0
       protocol: TCP
       name: http
   selector:

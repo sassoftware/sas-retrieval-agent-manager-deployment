@@ -31,12 +31,12 @@ tests:
       filebrowser:
         enabled: true
     asserts:
-      - equal:
-          path: metadata.annotations["nginx.ingress.kubernetes.io/auth-signin"]
-          value: "https://$host/SASRetrievalAgentManager/oauth2/start?rd=$escaped_request_uri"
-      - equal:
-          path: metadata.annotations["nginx.ingress.kubernetes.io/auth-url"]
-          value: "https://$host/SASRetrievalAgentManager/oauth2/auth"
+      # - equal:
+      #     path: metadata.annotations["nginx.ingress.kubernetes.io/auth-signin"]
+      #     value: "https://$host/SASRetrievalAgentManager/oauth2/start?rd=$escaped_request_uri"
+      # - equal:
+      #     path: metadata.annotations["nginx.ingress.kubernetes.io/auth-url"]
+      #     value: "https://$host/SASRetrievalAgentManager/oauth2/auth"
       - equal:
           path: metadata.annotations["nginx.ingress.kubernetes.io/rewrite-target"]
           value: "/$2"

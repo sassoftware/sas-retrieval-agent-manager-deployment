@@ -8,11 +8,11 @@ spec:
   type: {{ .Values.postgrest.service.type }}
   ports:
     - port: {{ .Values.postgrest.service.port }}
-      targetPort: http
+      targetPort: oauth2-proxy0
       protocol: TCP
       name: http
     - port: {{ index .Values.global.configuration.postgrest.monitoring "server-port" }}
-      targetPort: http-monitor
+      targetPort: oauth2-proxy1
       protocol: TCP
       name: http-monitor
   selector:
