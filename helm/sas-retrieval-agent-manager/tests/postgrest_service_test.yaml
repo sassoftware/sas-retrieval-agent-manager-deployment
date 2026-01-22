@@ -42,7 +42,7 @@ tests:
     asserts:
       - equal:
           path: spec.ports[0].targetPort
-          value: http
+          value: oauth2-proxy0
 
   - it: should use correct selector for main service
     template: templates/db/rest/service.yaml

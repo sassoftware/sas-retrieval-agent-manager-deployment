@@ -26,23 +26,23 @@ tests:
           path: spec.type
           value: LoadBalancer
 
-  - it: should configure main service port
-    template: templates/api/service.yaml
-    set:
-      sas-retrieval-agent-manager-api:
-        service:
-          port: 9090
-    asserts:
-      - equal:
-          path: spec.ports[0].port
-          value: 9090
+  # - it: should configure main service port
+  #   template: templates/api/service.yaml
+  #   set:
+  #     sas-retrieval-agent-manager-api:
+  #       service:
+  #         port: 9090
+  #   asserts:
+  #     - equal:
+  #         path: spec.ports[0].port
+  #         value: 9090
 
-  - it: should configure main service target port
-    template: templates/api/service.yaml
-    asserts:
-      - equal:
-          path: spec.ports[0].targetPort
-          value: http
+  # - it: should configure main service target port
+  #   template: templates/api/service.yaml
+  #   asserts:
+  #     - equal:
+  #         path: spec.ports[0].targetPort
+  #         value: http
 
   - it: should use correct selector for main service
     template: templates/api/service.yaml

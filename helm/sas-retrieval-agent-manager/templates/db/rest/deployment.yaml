@@ -152,6 +152,7 @@ spec:
               readOnly: true
             - mountPath: /workdir
               name: workdir
+        {{- include "oauth2-proxy.sidecar.init" . | nindent 8 }}
       containers:
         - name: {{ .Chart.Name }}
           command:
@@ -159,6 +160,10 @@ spec:
           args:
               - /postgrest-config/postgrest.conf
           env:
+            - name: PGRST_SERVER_PORT
+              value: {{ .Values.postgrest.service.port | quote }}
+            - name: PGRST_ADMIN_SERVER_PORT
+              value: {{ .Values.postgrest.adminService.port | quote }}
             - name: PGUSER
               valueFrom:
                 secretKeyRef:
@@ -198,10 +203,10 @@ spec:
           imagePullPolicy: {{ (index .Values "postgrest").image.postgrest.pullPolicy }}
           ports:
             - name: http
-              containerPort: 3000
+              containerPort: {{ .Values.postgrest.service.port }}
               protocol: TCP
             - name: admin
-              containerPort: 3001
+              containerPort: {{ .Values.postgrest.adminService.port }}
               protocol: TCP
           livenessProbe:
             {{- toYaml (index .Values "postgrest").livenessProbe | nindent 12 }}
@@ -293,7 +298,10 @@ spec:
             {{- with (index .Values "postgrest").volumeMounts }}
               {{- toYaml . | nindent 12 }}
             {{- end }}
+        {{- include "oauth2-proxy.sidecar" (dict "Root" . "upstreamPort" .Values.postgrest.service.port "instance" 0) | nindent 8 }}
+        {{- include "oauth2-proxy.sidecar" (dict "Root" . "upstreamPort" (index .Values.global.configuration.postgrest.monitoring "server-port") "instance" 1) | nindent 8 }}
       volumes:
+        {{- include "oauth2-proxy.sidecar.volumes" . | nindent 8 }}
         - name: workdir
           emptyDir: {}
         - name: configuration

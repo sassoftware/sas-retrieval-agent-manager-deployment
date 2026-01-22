@@ -15,7 +15,7 @@
 {{- end -}}
 {{- end -}}
 {{- if and (or ((include "testValuesPath" (list .Values "oauthProxy" "ingress" "enabled")) | eq "true") $globalEnabled) $isRouteClassName -}}
-{{- $fullName := include "keycloak.oauthProxy.fullname" . | lower -}}
+{{- $fullName := include "oauth2-proxy.fullname" . | lower -}}
 {{- $svcPort := (index .Values "keycloak").oauthProxy.service.port -}}
 apiVersion: route.openshift.io/v1
 kind: Route

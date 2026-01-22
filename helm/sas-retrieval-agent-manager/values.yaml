@@ -36,11 +36,9 @@
 #   required: ["apiVersion", "kind", "metadata"]
 #   properties:
 #     apiVersion:
-#       type: string
 #       description: API version of the Kubernetes object
 #       enum: ["v1", "apps/v1", "batch/v1", "networking.k8s.io/v1"]
 #     kind:
-#       type: string
 #       description: Kind of Kubernetes object
 #       enum: ["Secret", "ConfigMap", "Service", "Deployment", "Ingress", "Job", "CronJob"]
 #     metadata:
@@ -116,11 +114,14 @@ fullnameOverride: "sas-retrieval-agent-manager"
 #       type: object
 #       properties:
 #         kind:
-#           type: string
 #           enum: [allow,deny]
 #         schedule:
 #           type: string
-#           format: cron
+#           pattern: "^([0-9,\\-*/]+) ([0-9,\\-*/]+) ([0-9,\\-*/]+) ([0-9,\\-*/]+) ([0-9,\\-*/]+)$"
+#           examples:
+#             - "0 2 * * *"
+#             - "*/15 * * * *"
+#             - "0 0 * * 0"
 #         duration:
 #           type: string
 #         timezone:
@@ -203,11 +204,11 @@ global:
       # @schema
       # -- Enable TLS/SSL termination
       enabled: true
-      # @schema
-      # type: string
-      # @schema
-      # -- Name of TLS secret
-      secretname: ""
+    # @schema
+    # type: string
+    # @schema
+    # -- Name of TLS secret
+    secretname: ""
 
   # @schema
   # type: object
@@ -779,7 +780,7 @@ global:
           # -- Container image path/name for agent
           path: viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-agent
         # -- Container image tag for agent
-        tag: "1.6.8-20251120.1763662950004"
+        tag: "1.8.4-20260116.1768584402906"
 
     # @schema
     # type: object
@@ -812,6 +813,18 @@ global:
       # @schema
       # -- Path to license secret mount
       license_secret_path: /mnt/config/license
+      # @schema
+      # type: string
+      # required: true
+      # @schema
+      # -- Whether to hide the LLM api key in the UI
+      hide_llm_secrets: 'False'
+      # @schema
+      # type: string
+      # required: true
+      # @schema
+      # -- Whether to hide the destination secrets in the UI
+      hide_destination_secrets: 'False'
       # @schema
       # type: string
       # required: true
@@ -1024,7 +1037,7 @@ global:
           # -- Container image path/name for evaluation service
           path: "viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-evaluation"
         # -- Container image tag for evaluation service
-        tag: "1.6.4-20251202.1764685261181"
+        tag: "1.8.1-20260112.1768246698415"
 
     # @schema
     # required: true
@@ -1055,7 +1068,7 @@ global:
           # -- Container image path/name for plugin agent
           path: viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-agent
         # -- Container image tag for plugin agent
-        tag: "1.6.8-20251120.1763662950004"
+        tag: "1.8.4-20260116.1768584402906"
     
     # @schema
     # type: object
@@ -1384,7 +1397,7 @@ global:
           # -- Container image path/name for vectorization hub
           path: "viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-vectorization-hub"
         # -- Container image tag for vectorization hub
-        tag: "1.6.4-20251118.1763481842222"
+        tag: "1.8.1-20260116.1768589725293"
 
       # @schema
       # type: array
@@ -1746,10 +1759,6 @@ filebrowser:
     # @schema
     # -- Annotations for the Ingress
     annotations:
-      # -- OAuth2 authentication sign-in URL
-      nginx.ingress.kubernetes.io/auth-signin: https://$host/SASRetrievalAgentManager/oauth2/start?rd=$escaped_request_uri
-      # -- OAuth2 authentication validation URL
-      nginx.ingress.kubernetes.io/auth-url: https://$host/SASRetrievalAgentManager/oauth2/auth
       # -- Maximum allowed size of client request body (for file uploads)
       nginx.ingress.kubernetes.io/proxy-body-size: 500m
       # -- Size of buffer used for reading the first part of response received from proxied server
@@ -1758,6 +1767,8 @@ filebrowser:
       nginx.ingress.kubernetes.io/rewrite-target: /$2
       # -- Force SSL redirect
       nginx.ingress.kubernetes.io/ssl-redirect: 'true'
+      # -- Enable regex path matching for nginx ingress
+      nginx.ingress.kubernetes.io/use-regex: 'true'
 
     # -- Hosts for the ingress
     # @default -- see [values.yaml](values.yaml)
@@ -1870,7 +1881,6 @@ filebrowser:
   # type: object
   # properties:
   #   type:
-  #     type: string
   #     enum: [RollingUpdate, Recreate]
   #     description: Type of deployment strategy. RollingUpdate gradually replaces old pods with new ones. Recreate terminates all old pods before creating new ones.
   #   rollingUpdate:
@@ -2125,6 +2135,8 @@ keycloak:
       nginx.ingress.kubernetes.io/proxy-buffer-size: 16k
       # -- Force SSL redirect
       nginx.ingress.kubernetes.io/ssl-redirect: 'true'
+      # -- Enable regex path matching for nginx ingress
+      nginx.ingress.kubernetes.io/use-regex: 'true'
 
     # -- Hosts configuration
     hosts: []
@@ -2306,46 +2318,46 @@ keycloak:
       # -- The name of the service account to use for OAuth2 Proxy
       name: "oauth2-proxy"
 
-    # -- OAuth2 Proxy ingress configuration
+    # # -- OAuth2 Proxy ingress configuration
     ingress:
-      # -- Enable ingress for OAuth2 Proxy
-      enabled: true
-      # -- Class name of the OAuth2 Proxy Ingress
-      className: "nginx"
-      # @schema
-      # type: object
-      # additionalProperties: true
-      # @schema
-      # -- Annotations for the OAuth2 Proxy Ingress
-      annotations:
-        # -- Disallow HTTP traffic, force HTTPS only
-        kubernetes.io/ingress.allow-http: 'false'
-        # -- Size of buffer used for reading the first part of response
-        nginx.ingress.kubernetes.io/proxy-buffer-size: 16k
-        # -- Force SSL redirect
-        nginx.ingress.kubernetes.io/ssl-redirect: 'true'
-        # -- Enable CORS for OAuth2 Proxy
-        nginx.ingress.kubernetes.io/enable-cors: 'true'
-        # -- Session cookie SameSite attribute
-        nginx.ingress.kubernetes.io/session-cookie-samesite: lax
-      # -- Hosts configuration for OAuth2 Proxy
-      hosts: []
+    #   # -- Enable ingress for OAuth2 Proxy
+    #   enabled: true
+    #   # -- Class name of the OAuth2 Proxy Ingress
+    #   className: "nginx"
+    #   # @schema
+    #   # type: object
+    #   # additionalProperties: true
+    #   # @schema
+    #   # -- Annotations for the OAuth2 Proxy Ingress
+    #   annotations:
+    #     # -- Disallow HTTP traffic, force HTTPS only
+    #     kubernetes.io/ingress.allow-http: 'false'
+    #     # -- Size of buffer used for reading the first part of response
+    #     nginx.ingress.kubernetes.io/proxy-buffer-size: 16k
+    #     # -- Force SSL redirect
+    #     nginx.ingress.kubernetes.io/ssl-redirect: 'true'
+    #     # -- Enable CORS for OAuth2 Proxy
+    #     nginx.ingress.kubernetes.io/enable-cors: 'true'
+    #     # -- Session cookie SameSite attribute
+    #     nginx.ingress.kubernetes.io/session-cookie-samesite: lax
+    #   # -- Hosts configuration for OAuth2 Proxy
+    #   hosts: []
 
-      # -- OAuth2 authentication paths
+    #   # -- OAuth2 authentication paths
       paths:
         - path: /SASRetrievalAgentManager/oauth2(/|/(.*))$
           pathType: ImplementationSpecific
 
-      # -- OAuth2 logout paths
-      logoutPaths:
-        - path: /SASRetrievalAgentManager/logout(/(.*))?$
-          pathType: ImplementationSpecific
+    #   # -- OAuth2 logout paths
+    #   logoutPaths:
+    #     - path: /SASRetrievalAgentManager/logout(/(.*))?$
+    #       pathType: ImplementationSpecific
 
-      # -- TLS configuration for OAuth2 Proxy ingress
-      tls: []
-      #   - secretName: ""
-      #     hosts:
-      #       - ""
+    #   # -- TLS configuration for OAuth2 Proxy ingress
+    #   tls: []
+    #   #   - secretName: ""
+    #   #     hosts:
+    #   #       - ""
 
     # -- OAuth2 Proxy container image configuration
     image:
@@ -2429,28 +2441,6 @@ keycloak:
       runAsNonRoot: true
       # -- User ID to run the entrypoint of the container process
       runAsUser: 10001
-
-    # @schema
-    # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/probe-schema.json"
-    # @schema
-    # -- Liveness probe configuration for OAuth2 Proxy
-    livenessProbe:
-      # -- HTTP GET probe configuration for liveness
-      httpGet:
-        # -- Path to probe for liveness
-        path: /ping
-        port: http
-
-    # @schema
-    # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/probe-schema.json"
-    # @schema
-    # -- Readiness probe configuration for OAuth2 Proxy
-    readinessProbe:
-      # -- HTTP GET probe configuration for readiness
-      httpGet:
-        # -- Path to probe for readiness
-        path: /ping
-        port: http
 
     # @schema
     # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/resources-schema.json"
@@ -2945,12 +2935,14 @@ postgrest:
       nginx.ingress.kubernetes.io/proxy-buffer-size: "16k"
       # -- Headers to pass from auth response to backend
       nginx.ingress.kubernetes.io/auth-response-headers: "Authorization"
-      # -- OAuth2 authentication sign-in URL
-      nginx.ingress.kubernetes.io/auth-signin: "https://$host/SASRetrievalAgentManager/oauth2/start?rd=$escaped_request_uri"
-      # -- OAuth2 authentication validation URL
-      nginx.ingress.kubernetes.io/auth-url: "https://$host/SASRetrievalAgentManager/oauth2/auth"
       # -- URL rewrite rule to strip the prefix path
       nginx.ingress.kubernetes.io/rewrite-target: /$2
+      # -- Enable CORS for OAuth2 Proxy
+      nginx.ingress.kubernetes.io/enable-cors: 'true'
+      # -- Session cookie SameSite attribute
+      nginx.ingress.kubernetes.io/session-cookie-samesite: lax
+      # -- Enable regex path matching for nginx ingress
+      nginx.ingress.kubernetes.io/use-regex: 'true'
 
     # -- Hosts configuration
     hosts: []
@@ -3284,12 +3276,10 @@ postgrest:
         nginx.ingress.kubernetes.io/proxy-buffer-size: "16k"
         # -- Headers to pass from auth response to backend
         nginx.ingress.kubernetes.io/auth-response-headers: "Authorization"
-        # -- OAuth2 authentication sign-in URL
-        nginx.ingress.kubernetes.io/auth-signin: "https://$host/SASRetrievalAgentManager/oauth2/start?rd=$escaped_request_uri"
-        # -- OAuth2 authentication validation URL
-        nginx.ingress.kubernetes.io/auth-url: "https://$host/SASRetrievalAgentManager/oauth2/auth"
         # -- URL rewrite rule to strip the prefix path
         nginx.ingress.kubernetes.io/rewrite-target: /$2
+        # -- Enable regex path matching for nginx ingress
+        nginx.ingress.kubernetes.io/use-regex: 'true'
 
       # -- Hosts configuration for Swagger UI
       hosts: []
@@ -3414,7 +3404,7 @@ sas-retrieval-agent-manager-api:
       # -- SAS API image
       path: "viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager"
     # -- Image tag (defaults to chart appVersion)
-    tag: "1.7.15-20251125.1764086747124"
+    tag: "1.9.7-20260115.1768496053008"
     # -- Image pull policy
     pullPolicy: IfNotPresent
 
@@ -3539,16 +3529,18 @@ sas-retrieval-agent-manager-api:
       kubernetes.io/tls-acme: 'true'
       # -- Headers to pass from auth response to backend
       nginx.ingress.kubernetes.io/auth-response-headers: Authorization,X-Auth-Request-Access-Token
-      # -- OAuth2 authentication sign-in URL
-      nginx.ingress.kubernetes.io/auth-signin: https://$host/SASRetrievalAgentManager/oauth2/start?rd=$escaped_request_uri
-      # -- OAuth2 authentication validation URL
-      nginx.ingress.kubernetes.io/auth-url: https://$host/SASRetrievalAgentManager/oauth2/auth
       # -- Maximum allowed size of client request body
       nginx.ingress.kubernetes.io/proxy-body-size: 500m
       # -- Size of buffer used for reading the first part of response
       nginx.ingress.kubernetes.io/proxy-buffer-size: 16k
       # -- Force SSL redirect
       nginx.ingress.kubernetes.io/ssl-redirect: 'true'
+      # -- Enable CORS for OAuth2 Proxy
+      nginx.ingress.kubernetes.io/enable-cors: 'true'
+      # -- Session cookie SameSite attribute
+      nginx.ingress.kubernetes.io/session-cookie-samesite: lax
+      # -- Enable regex path matching for nginx ingress
+      nginx.ingress.kubernetes.io/use-regex: 'true'
 
     # -- Hosts configuration
     hosts: []
@@ -3872,7 +3864,7 @@ sas-retrieval-agent-manager-app:
       # -- Container image path/name
       path: viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-app
     # -- Container image tag
-    tag: "1.3.14-20251202.1764706210147"
+    tag: "1.6.3-20260116.1768590906194"
     # -- Image pull policy for API container
     pullPolicy: IfNotPresent
 
@@ -3998,16 +3990,18 @@ sas-retrieval-agent-manager-app:
       kubernetes.io/tls-acme: 'true'
       # -- Headers to pass from auth response to backend
       nginx.ingress.kubernetes.io/auth-response-headers: Authorization
-      # -- OAuth2 authentication sign-in URL
-      nginx.ingress.kubernetes.io/auth-signin: https://$host/SASRetrievalAgentManager/oauth2/start?rd=$escaped_request_uri
-      # -- OAuth2 authentication validation URL
-      nginx.ingress.kubernetes.io/auth-url: https://$host/SASRetrievalAgentManager/oauth2/auth
       # -- Maximum allowed size of client request body
       nginx.ingress.kubernetes.io/proxy-body-size: 500m
       # -- Size of buffer used for reading the first part of response
       nginx.ingress.kubernetes.io/proxy-buffer-size: 16k
       # -- Force SSL redirect
       nginx.ingress.kubernetes.io/ssl-redirect: 'true'
+      # -- Enable CORS for OAuth2 Proxy
+      nginx.ingress.kubernetes.io/enable-cors: 'true'
+      # -- Session cookie SameSite attribute
+      nginx.ingress.kubernetes.io/session-cookie-samesite: lax
+      # -- Enable regex path matching for nginx ingress
+      nginx.ingress.kubernetes.io/use-regex: 'true'
 
     # -- Hosts configuration
     hosts: []
@@ -4173,7 +4167,7 @@ sas-retrieval-agent-manager-db-migration:
       # -- Image pull policy for Goose container
       pullPolicy: IfNotPresent
       # -- Goose container image tag
-      tag: "1.6.5-20251121.1763756456747"
+      tag: "1.8.3-20260116.1768584401048"
 
   # @schema
   # type: array

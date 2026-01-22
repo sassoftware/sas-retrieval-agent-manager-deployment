@@ -14,8 +14,7 @@
               "batch/v1",
               "networking.k8s.io/v1"
             ],
-            "required": [],
-            "type": "string"
+            "required": []
           },
           "data": {
             "additionalProperties": {
@@ -36,8 +35,7 @@
               "Job",
               "CronJob"
             ],
-            "required": [],
-            "type": "string"
+            "required": []
           },
           "metadata": {
             "properties": {
@@ -305,23 +303,9 @@
               "additionalProperties": true,
               "description": "Annotations for the Ingress",
               "properties": {
-                "nginx.ingress.kubernetes.io/auth-signin": {
-                  "default": "https://$host/SASRetrievalAgentManager/oauth2/start?rd=$escaped_request_uri",
-                  "description": "OAuth2 authentication sign-in URL",
-                  "required": [],
-                  "title": "nginx.ingress.kubernetes.io/auth-signin",
-                  "type": "string"
-                },
-                "nginx.ingress.kubernetes.io/auth-url": {
-                  "default": "https://$host/SASRetrievalAgentManager/oauth2/auth",
-                  "description": "OAuth2 authentication validation URL",
-                  "required": [],
-                  "title": "nginx.ingress.kubernetes.io/auth-url",
-                  "type": "string"
-                },
                 "nginx.ingress.kubernetes.io/proxy-body-size": {
                   "default": "500m",
-                  "description": "Maximum allowed size of client request body (for file uploads)",
+                  "description": "OAuth2 authentication sign-in URL\nnginx.ingress.kubernetes.io/auth-signin: https://$host/SASRetrievalAgentManager/oauth2/start?rd=$escaped_request_uri\nOAuth2 authentication validation URL\nnginx.ingress.kubernetes.io/auth-url: https://$host/SASRetrievalAgentManager/oauth2/auth\nMaximum allowed size of client request body (for file uploads)",
                   "required": [],
                   "title": "nginx.ingress.kubernetes.io/proxy-body-size",
                   "type": "string"
@@ -346,15 +330,21 @@
                   "required": [],
                   "title": "nginx.ingress.kubernetes.io/ssl-redirect",
                   "type": "string"
+                },
+                "nginx.ingress.kubernetes.io/use-regex": {
+                  "default": "true",
+                  "description": "Enable regex path matching for nginx ingress",
+                  "required": [],
+                  "title": "nginx.ingress.kubernetes.io/use-regex",
+                  "type": "string"
                 }
               },
               "required": [
-                "nginx.ingress.kubernetes.io/auth-signin",
-                "nginx.ingress.kubernetes.io/auth-url",
                 "nginx.ingress.kubernetes.io/proxy-body-size",
                 "nginx.ingress.kubernetes.io/proxy-buffer-size",
                 "nginx.ingress.kubernetes.io/rewrite-target",
-                "nginx.ingress.kubernetes.io/ssl-redirect"
+                "nginx.ingress.kubernetes.io/ssl-redirect",
+                "nginx.ingress.kubernetes.io/use-regex"
               ],
               "title": "annotations",
               "type": "object"
@@ -660,8 +650,7 @@
                 "RollingUpdate",
                 "Recreate"
               ],
-              "required": [],
-              "type": "string"
+              "required": []
             }
           },
           "required": [
@@ -787,11 +776,15 @@
                   "allow",
                   "deny"
                 ],
-                "required": [],
-                "type": "string"
+                "required": []
               },
               "schedule": {
-                "format": "cron",
+                "examples": [
+                  "0 2 * * *",
+                  "*/15 * * * *",
+                  "0 0 * * 0"
+                ],
+                "pattern": "^([0-9,\\-*/]+) ([0-9,\\-*/]+) ([0-9,\\-*/]+) ([0-9,\\-*/]+) ([0-9,\\-*/]+)$",
                 "required": [],
                 "type": "string"
               },
@@ -1385,12 +1378,20 @@
                   "required": [],
                   "title": "nginx.ingress.kubernetes.io/ssl-redirect",
                   "type": "string"
+                },
+                "nginx.ingress.kubernetes.io/use-regex": {
+                  "default": "true",
+                  "description": "Enable regex path matching for nginx ingress",
+                  "required": [],
+                  "title": "nginx.ingress.kubernetes.io/use-regex",
+                  "type": "string"
                 }
               },
               "required": [
                 "kubernetes.io/ingress.allow-http",
                 "nginx.ingress.kubernetes.io/proxy-buffer-size",
-                "nginx.ingress.kubernetes.io/ssl-redirect"
+                "nginx.ingress.kubernetes.io/ssl-redirect",
+                "nginx.ingress.kubernetes.io/use-regex"
               ],
               "title": "annotations",
               "type": "object"
@@ -1786,116 +1787,10 @@
             },
             "ingress": {
               "additionalProperties": false,
-              "description": "OAuth2 Proxy ingress configuration",
+              "description": "# -- OAuth2 Proxy ingress configuration",
               "properties": {
-                "annotations": {
-                  "additionalProperties": true,
-                  "description": "Annotations for the OAuth2 Proxy Ingress",
-                  "properties": {
-                    "kubernetes.io/ingress.allow-http": {
-                      "default": "false",
-                      "description": "Disallow HTTP traffic, force HTTPS only",
-                      "required": [],
-                      "title": "kubernetes.io/ingress.allow-http",
-                      "type": "string"
-                    },
-                    "nginx.ingress.kubernetes.io/enable-cors": {
-                      "default": "true",
-                      "description": "Enable CORS for OAuth2 Proxy",
-                      "required": [],
-                      "title": "nginx.ingress.kubernetes.io/enable-cors",
-                      "type": "string"
-                    },
-                    "nginx.ingress.kubernetes.io/proxy-buffer-size": {
-                      "default": "16k",
-                      "description": "Size of buffer used for reading the first part of response",
-                      "required": [],
-                      "title": "nginx.ingress.kubernetes.io/proxy-buffer-size",
-                      "type": "string"
-                    },
-                    "nginx.ingress.kubernetes.io/session-cookie-samesite": {
-                      "default": "lax",
-                      "description": "Session cookie SameSite attribute",
-                      "required": [],
-                      "title": "nginx.ingress.kubernetes.io/session-cookie-samesite",
-                      "type": "string"
-                    },
-                    "nginx.ingress.kubernetes.io/ssl-redirect": {
-                      "default": "true",
-                      "description": "Force SSL redirect",
-                      "required": [],
-                      "title": "nginx.ingress.kubernetes.io/ssl-redirect",
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "kubernetes.io/ingress.allow-http",
-                    "nginx.ingress.kubernetes.io/proxy-buffer-size",
-                    "nginx.ingress.kubernetes.io/ssl-redirect",
-                    "nginx.ingress.kubernetes.io/enable-cors",
-                    "nginx.ingress.kubernetes.io/session-cookie-samesite"
-                  ],
-                  "title": "annotations",
-                  "type": "object"
-                },
-                "className": {
-                  "default": "nginx",
-                  "description": "Class name of the OAuth2 Proxy Ingress",
-                  "required": [],
-                  "title": "className",
-                  "type": "string"
-                },
-                "enabled": {
-                  "default": true,
-                  "description": "Enable ingress for OAuth2 Proxy",
-                  "required": [],
-                  "title": "enabled",
-                  "type": "boolean"
-                },
-                "hosts": {
-                  "description": "Hosts configuration for OAuth2 Proxy",
-                  "items": {
-                    "required": []
-                  },
-                  "required": [],
-                  "title": "hosts",
-                  "type": "array"
-                },
-                "logoutPaths": {
-                  "description": "OAuth2 logout paths",
-                  "items": {
-                    "anyOf": [
-                      {
-                        "additionalProperties": false,
-                        "properties": {
-                          "path": {
-                            "default": "/SASRetrievalAgentManager/logout(/(.*))?$",
-                            "required": [],
-                            "title": "path",
-                            "type": "string"
-                          },
-                          "pathType": {
-                            "default": "ImplementationSpecific",
-                            "required": [],
-                            "title": "pathType",
-                            "type": "string"
-                          }
-                        },
-                        "required": [
-                          "path",
-                          "pathType"
-                        ],
-                        "type": "object"
-                      }
-                    ],
-                    "required": []
-                  },
-                  "required": [],
-                  "title": "logoutPaths",
-                  "type": "array"
-                },
                 "paths": {
-                  "description": "OAuth2 authentication paths",
+                  "description": "  # -- OAuth2 authentication paths",
                   "items": {
                     "anyOf": [
                       {
@@ -1926,31 +1821,13 @@
                   "required": [],
                   "title": "paths",
                   "type": "array"
-                },
-                "tls": {
-                  "description": "TLS configuration for OAuth2 Proxy ingress",
-                  "items": {
-                    "required": []
-                  },
-                  "required": [],
-                  "title": "tls",
-                  "type": "array"
                 }
               },
               "required": [
-                "enabled",
-                "className",
-                "hosts",
-                "paths",
-                "logoutPaths",
-                "tls"
+                "paths"
               ],
               "title": "ingress",
               "type": "object"
-            },
-            "livenessProbe": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/probe-schema.json",
-              "required": []
             },
             "nameOverride": {
               "default": "oauth2-proxy",
@@ -1996,10 +1873,6 @@
             },
             "podSecurityContext": {
               "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/podsecuritycontext-schema.json",
-              "required": []
-            },
-            "readinessProbe": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/probe-schema.json",
               "required": []
             },
             "replicaCount": {
@@ -2396,18 +2269,11 @@
                   "title": "nginx.ingress.kubernetes.io/auth-response-headers",
                   "type": "string"
                 },
-                "nginx.ingress.kubernetes.io/auth-signin": {
-                  "default": "https://$host/SASRetrievalAgentManager/oauth2/start?rd=$escaped_request_uri",
-                  "description": "OAuth2 authentication sign-in URL",
+                "nginx.ingress.kubernetes.io/enable-cors": {
+                  "default": "true",
+                  "description": "Enable CORS for OAuth2 Proxy",
                   "required": [],
-                  "title": "nginx.ingress.kubernetes.io/auth-signin",
-                  "type": "string"
-                },
-                "nginx.ingress.kubernetes.io/auth-url": {
-                  "default": "https://$host/SASRetrievalAgentManager/oauth2/auth",
-                  "description": "OAuth2 authentication validation URL",
-                  "required": [],
-                  "title": "nginx.ingress.kubernetes.io/auth-url",
+                  "title": "nginx.ingress.kubernetes.io/enable-cors",
                   "type": "string"
                 },
                 "nginx.ingress.kubernetes.io/proxy-body-size": {
@@ -2426,9 +2292,16 @@
                 },
                 "nginx.ingress.kubernetes.io/rewrite-target": {
                   "default": "/$2",
-                  "description": "URL rewrite rule to strip the prefix path",
+                  "description": "OAuth2 authentication sign-in URL\nnginx.ingress.kubernetes.io/auth-signin: \"https://$host/SASRetrievalAgentManager/oauth2/start?rd=$escaped_request_uri\"\nOAuth2 authentication validation URL\nnginx.ingress.kubernetes.io/auth-url: \"https://$host/SASRetrievalAgentManager/oauth2/auth\"\nURL rewrite rule to strip the prefix path",
                   "required": [],
                   "title": "nginx.ingress.kubernetes.io/rewrite-target",
+                  "type": "string"
+                },
+                "nginx.ingress.kubernetes.io/session-cookie-samesite": {
+                  "default": "lax",
+                  "description": "Session cookie SameSite attribute",
+                  "required": [],
+                  "title": "nginx.ingress.kubernetes.io/session-cookie-samesite",
                   "type": "string"
                 },
                 "nginx.ingress.kubernetes.io/ssl-redirect": {
@@ -2436,6 +2309,13 @@
                   "description": "Force SSL redirect",
                   "required": [],
                   "title": "nginx.ingress.kubernetes.io/ssl-redirect",
+                  "type": "string"
+                },
+                "nginx.ingress.kubernetes.io/use-regex": {
+                  "default": "true",
+                  "description": "Enable regex path matching for nginx ingress",
+                  "required": [],
+                  "title": "nginx.ingress.kubernetes.io/use-regex",
                   "type": "string"
                 }
               },
@@ -2446,9 +2326,10 @@
                 "nginx.ingress.kubernetes.io/proxy-body-size",
                 "nginx.ingress.kubernetes.io/proxy-buffer-size",
                 "nginx.ingress.kubernetes.io/auth-response-headers",
-                "nginx.ingress.kubernetes.io/auth-signin",
-                "nginx.ingress.kubernetes.io/auth-url",
-                "nginx.ingress.kubernetes.io/rewrite-target"
+                "nginx.ingress.kubernetes.io/rewrite-target",
+                "nginx.ingress.kubernetes.io/enable-cors",
+                "nginx.ingress.kubernetes.io/session-cookie-samesite",
+                "nginx.ingress.kubernetes.io/use-regex"
               ],
               "title": "annotations",
               "type": "object"
@@ -2834,20 +2715,6 @@
                       "title": "nginx.ingress.kubernetes.io/auth-response-headers",
                       "type": "string"
                     },
-                    "nginx.ingress.kubernetes.io/auth-signin": {
-                      "default": "https://$host/SASRetrievalAgentManager/oauth2/start?rd=$escaped_request_uri",
-                      "description": "OAuth2 authentication sign-in URL",
-                      "required": [],
-                      "title": "nginx.ingress.kubernetes.io/auth-signin",
-                      "type": "string"
-                    },
-                    "nginx.ingress.kubernetes.io/auth-url": {
-                      "default": "https://$host/SASRetrievalAgentManager/oauth2/auth",
-                      "description": "OAuth2 authentication validation URL",
-                      "required": [],
-                      "title": "nginx.ingress.kubernetes.io/auth-url",
-                      "type": "string"
-                    },
                     "nginx.ingress.kubernetes.io/proxy-body-size": {
                       "default": "500m",
                       "description": "Maximum allowed size of client request body",
@@ -2864,7 +2731,7 @@
                     },
                     "nginx.ingress.kubernetes.io/rewrite-target": {
                       "default": "/$2",
-                      "description": "URL rewrite rule to strip the prefix path",
+                      "description": "OAuth2 authentication sign-in URL\nnginx.ingress.kubernetes.io/auth-signin: \"https://$host/SASRetrievalAgentManager/oauth2/start?rd=$escaped_request_uri\"\nOAuth2 authentication validation URL\nnginx.ingress.kubernetes.io/auth-url: \"https://$host/SASRetrievalAgentManager/oauth2/auth\"\nURL rewrite rule to strip the prefix path",
                       "required": [],
                       "title": "nginx.ingress.kubernetes.io/rewrite-target",
                       "type": "string"
@@ -2875,6 +2742,13 @@
                       "required": [],
                       "title": "nginx.ingress.kubernetes.io/ssl-redirect",
                       "type": "string"
+                    },
+                    "nginx.ingress.kubernetes.io/use-regex": {
+                      "default": "true",
+                      "description": "Enable regex path matching for nginx ingress",
+                      "required": [],
+                      "title": "nginx.ingress.kubernetes.io/use-regex",
+                      "type": "string"
                     }
                   },
                   "required": [
@@ -2884,9 +2758,8 @@
                     "nginx.ingress.kubernetes.io/proxy-body-size",
                     "nginx.ingress.kubernetes.io/proxy-buffer-size",
                     "nginx.ingress.kubernetes.io/auth-response-headers",
-                    "nginx.ingress.kubernetes.io/auth-signin",
-                    "nginx.ingress.kubernetes.io/auth-url",
-                    "nginx.ingress.kubernetes.io/rewrite-target"
+                    "nginx.ingress.kubernetes.io/rewrite-target",
+                    "nginx.ingress.kubernetes.io/use-regex"
                   ],
                   "title": "annotations",
                   "type": "object"
@@ -3173,7 +3046,7 @@
               "type": "object"
             },
             "tag": {
-              "default": "1.6.7-20251028.1761671221282",
+              "default": "1.7.15-20251125.1764086747124",
               "description": "Image tag (defaults to chart appVersion)",
               "required": [],
               "title": "tag",
@@ -3234,23 +3107,16 @@
                   "title": "nginx.ingress.kubernetes.io/auth-response-headers",
                   "type": "string"
                 },
-                "nginx.ingress.kubernetes.io/auth-signin": {
-                  "default": "https://$host/SASRetrievalAgentManager/oauth2/start?rd=$escaped_request_uri",
-                  "description": "OAuth2 authentication sign-in URL",
+                "nginx.ingress.kubernetes.io/enable-cors": {
+                  "default": "true",
+                  "description": "Enable CORS for OAuth2 Proxy",
                   "required": [],
-                  "title": "nginx.ingress.kubernetes.io/auth-signin",
-                  "type": "string"
-                },
-                "nginx.ingress.kubernetes.io/auth-url": {
-                  "default": "https://$host/SASRetrievalAgentManager/oauth2/auth",
-                  "description": "OAuth2 authentication validation URL",
-                  "required": [],
-                  "title": "nginx.ingress.kubernetes.io/auth-url",
+                  "title": "nginx.ingress.kubernetes.io/enable-cors",
                   "type": "string"
                 },
                 "nginx.ingress.kubernetes.io/proxy-body-size": {
                   "default": "500m",
-                  "description": "Maximum allowed size of client request body",
+                  "description": "OAuth2 authentication sign-in URL\nnginx.ingress.kubernetes.io/auth-signin: https://$host/SASRetrievalAgentManager/oauth2/start?rd=$escaped_request_uri\nOAuth2 authentication validation URL\nnginx.ingress.kubernetes.io/auth-url: https://$host/SASRetrievalAgentManager/oauth2/auth\nMaximum allowed size of client request body",
                   "required": [],
                   "title": "nginx.ingress.kubernetes.io/proxy-body-size",
                   "type": "string"
@@ -3262,11 +3128,25 @@
                   "title": "nginx.ingress.kubernetes.io/proxy-buffer-size",
                   "type": "string"
                 },
+                "nginx.ingress.kubernetes.io/session-cookie-samesite": {
+                  "default": "lax",
+                  "description": "Session cookie SameSite attribute",
+                  "required": [],
+                  "title": "nginx.ingress.kubernetes.io/session-cookie-samesite",
+                  "type": "string"
+                },
                 "nginx.ingress.kubernetes.io/ssl-redirect": {
                   "default": "true",
                   "description": "Force SSL redirect",
                   "required": [],
                   "title": "nginx.ingress.kubernetes.io/ssl-redirect",
+                  "type": "string"
+                },
+                "nginx.ingress.kubernetes.io/use-regex": {
+                  "default": "true",
+                  "description": "Enable regex path matching for nginx ingress",
+                  "required": [],
+                  "title": "nginx.ingress.kubernetes.io/use-regex",
                   "type": "string"
                 }
               },
@@ -3274,11 +3154,12 @@
                 "kubernetes.io/ingress.allow-http",
                 "kubernetes.io/tls-acme",
                 "nginx.ingress.kubernetes.io/auth-response-headers",
-                "nginx.ingress.kubernetes.io/auth-signin",
-                "nginx.ingress.kubernetes.io/auth-url",
                 "nginx.ingress.kubernetes.io/proxy-body-size",
                 "nginx.ingress.kubernetes.io/proxy-buffer-size",
-                "nginx.ingress.kubernetes.io/ssl-redirect"
+                "nginx.ingress.kubernetes.io/ssl-redirect",
+                "nginx.ingress.kubernetes.io/enable-cors",
+                "nginx.ingress.kubernetes.io/session-cookie-samesite",
+                "nginx.ingress.kubernetes.io/use-regex"
               ],
               "title": "annotations",
               "type": "object"
@@ -3527,7 +3408,7 @@
               "type": "object"
             },
             "tag": {
-              "default": "1.2.4-20251021.1761075661470",
+              "default": "1.3.14-20251202.1764706210147",
               "description": "Container image tag",
               "required": [],
               "title": "tag",
@@ -3588,23 +3469,16 @@
                   "title": "nginx.ingress.kubernetes.io/auth-response-headers",
                   "type": "string"
                 },
-                "nginx.ingress.kubernetes.io/auth-signin": {
-                  "default": "https://$host/SASRetrievalAgentManager/oauth2/start?rd=$escaped_request_uri",
-                  "description": "OAuth2 authentication sign-in URL",
+                "nginx.ingress.kubernetes.io/enable-cors": {
+                  "default": "true",
+                  "description": "Enable CORS for OAuth2 Proxy",
                   "required": [],
-                  "title": "nginx.ingress.kubernetes.io/auth-signin",
-                  "type": "string"
-                },
-                "nginx.ingress.kubernetes.io/auth-url": {
-                  "default": "https://$host/SASRetrievalAgentManager/oauth2/auth",
-                  "description": "OAuth2 authentication validation URL",
-                  "required": [],
-                  "title": "nginx.ingress.kubernetes.io/auth-url",
+                  "title": "nginx.ingress.kubernetes.io/enable-cors",
                   "type": "string"
                 },
                 "nginx.ingress.kubernetes.io/proxy-body-size": {
                   "default": "500m",
-                  "description": "Maximum allowed size of client request body",
+                  "description": "OAuth2 authentication sign-in URL\nnginx.ingress.kubernetes.io/auth-signin: https://$host/SASRetrievalAgentManager/oauth2/start?rd=$escaped_request_uri\nOAuth2 authentication validation URL\nnginx.ingress.kubernetes.io/auth-url: https://$host/SASRetrievalAgentManager/oauth2/auth\nMaximum allowed size of client request body",
                   "required": [],
                   "title": "nginx.ingress.kubernetes.io/proxy-body-size",
                   "type": "string"
@@ -3616,11 +3490,25 @@
                   "title": "nginx.ingress.kubernetes.io/proxy-buffer-size",
                   "type": "string"
                 },
+                "nginx.ingress.kubernetes.io/session-cookie-samesite": {
+                  "default": "lax",
+                  "description": "Session cookie SameSite attribute",
+                  "required": [],
+                  "title": "nginx.ingress.kubernetes.io/session-cookie-samesite",
+                  "type": "string"
+                },
                 "nginx.ingress.kubernetes.io/ssl-redirect": {
                   "default": "true",
                   "description": "Force SSL redirect",
                   "required": [],
                   "title": "nginx.ingress.kubernetes.io/ssl-redirect",
+                  "type": "string"
+                },
+                "nginx.ingress.kubernetes.io/use-regex": {
+                  "default": "true",
+                  "description": "Enable regex path matching for nginx ingress",
+                  "required": [],
+                  "title": "nginx.ingress.kubernetes.io/use-regex",
                   "type": "string"
                 }
               },
@@ -3628,11 +3516,12 @@
                 "kubernetes.io/ingress.allow-http",
                 "kubernetes.io/tls-acme",
                 "nginx.ingress.kubernetes.io/auth-response-headers",
-                "nginx.ingress.kubernetes.io/auth-signin",
-                "nginx.ingress.kubernetes.io/auth-url",
                 "nginx.ingress.kubernetes.io/proxy-body-size",
                 "nginx.ingress.kubernetes.io/proxy-buffer-size",
-                "nginx.ingress.kubernetes.io/ssl-redirect"
+                "nginx.ingress.kubernetes.io/ssl-redirect",
+                "nginx.ingress.kubernetes.io/enable-cors",
+                "nginx.ingress.kubernetes.io/session-cookie-samesite",
+                "nginx.ingress.kubernetes.io/use-regex"
               ],
               "title": "annotations",
               "type": "object"
@@ -4083,7 +3972,7 @@
                   "type": "object"
                 },
                 "tag": {
-                  "default": "1.5.2-20251013.1760371724486",
+                  "default": "1.6.5-20251121.1763756456747",
                   "description": "Goose container image tag",
                   "required": [],
                   "title": "tag",

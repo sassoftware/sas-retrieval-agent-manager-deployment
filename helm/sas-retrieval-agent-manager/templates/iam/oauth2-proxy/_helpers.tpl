@@ -2,7 +2,7 @@
 Expand the name of the chart.
 */}}
 
-{{- define "keycloak.oauthProxy.name" -}}
+{{- define "oauth2-proxy.name" -}}
 {{- if (index .Values "keycloak").oauthProxy.nameOverride }}
 {{- (index .Values "keycloak").oauthProxy.nameOverride | trunc 63 | trimSuffix "-" }}
 {{- else }}
@@ -15,7 +15,7 @@ Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 If release name contains chart name it will be used as a full name.
 */}}
-{{- define "keycloak.oauthProxy.fullname" -}}
+{{- define "oauth2-proxy.fullname" -}}
 {{- if (index .Values "keycloak").oauthProxy.fullnameOverride }}
 {{- (index .Values "keycloak").oauthProxy.fullnameOverride | trunc 63 | trimSuffix "-" }}
 {{- else }}
@@ -26,9 +26,9 @@ If release name contains chart name it will be used as a full name.
 {{/*
 Common labels
 */}}
-{{- define "keycloak.oauthProxy.labels" -}}
+{{- define "oauth2-proxy.labels" -}}
 helm.sh/chart: {{ include "keycloak.chart" . }}
-{{ include "keycloak.oauthProxy.selectorLabels" . }}
+{{ include "oauth2-proxy.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
@@ -38,18 +38,18 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{/*
 Selector labels
 */}}
-{{- define "keycloak.oauthProxy.selectorLabels" -}}
+{{- define "oauth2-proxy.selectorLabels" -}}
 app.kubernetes.io/component: oauthProxy
-app.kubernetes.io/name: {{ include "keycloak.oauthProxy.name" . }}
+app.kubernetes.io/name: {{ include "oauth2-proxy.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
 Create the name of the service account to use
 */}}
-{{- define "keycloak.oauthProxy.serviceAccountName" -}}
+{{- define "oauth2-proxy.serviceAccountName" -}}
 {{- if (index .Values "keycloak").oauthProxy.serviceAccount.create }}
-{{- default (include "keycloak.oauthProxy.fullname" .) (index .Values "keycloak").oauthProxy.serviceAccount.name }}
+{{- default (include "oauth2-proxy.fullname" .) (index .Values "keycloak").oauthProxy.serviceAccount.name }}
 {{- else }}
 {{- default "default" (index .Values "keycloak").oauthProxy.serviceAccount.name }}
 {{- end }}
@@ -58,11 +58,11 @@ Create the name of the service account to use
 {{/*
 Create the cookie secret
 */}}
-{{- define "keycloak.oauthProxy.cookieSecret" -}}
+{{- define "oauth2-proxy.cookieSecret" -}}
 {{- if .Values.global.configuration.keycloak.cookieSecret -}}
   {{- .Values.global.configuration.keycloak.cookieSecret }}
 {{- else -}}
-{{- $oauthProxySecretName := include "keycloak.oauthProxy.fullname" . -}}
+{{- $oauthProxySecretName := include "oauth2-proxy.fullname" . -}}
 {{- $oauthProxySecret := lookup "v1" "Secret" .Release.Namespace $oauthProxySecretName -}}
 {{- if and $oauthProxySecret (index $oauthProxySecret.data "cookie-secret") -}}
     {{- (index $oauthProxySecret.data "cookie-secret") | b64dec -}}
@@ -79,28 +79,28 @@ http://{{ include "keycloak.fullname" . }}:{{ (index .Values "keycloak").service
 {{- end }}
 
 {{/* OAuth2 Proxy domain */}}
-{{ define "keycloak.oauthProxy.domain" -}}
+{{ define "oauth2-proxy.domain" -}}
 {{$globalEnabled := (((.Values.global).ingress).enabled | default false) -}}
 {{ if $globalEnabled -}}
 {{ .Values.global.domain }}
 {{- else -}}
-{{ with (first (index .Values "keycloak").oauthProxy.ingress.hosts) }}{{ .host }}{{ end }}
+{{ with (first .Values.keycloak.oauthProxy.ingress.hosts) }}{{ .host }}{{ end }}
 {{- end }}
 {{- end }}
 
 {{/* OAuth2 Proxy prefix */}}
-{{ define "keycloak.oauthProxy.prefix" -}}
+{{ define "oauth2-proxy.prefix" -}}
 {{ $globalEnabled := (((.Values.global).ingress).enabled | default false) -}}
 {{ if $globalEnabled -}}
-{{ with (first (index .Values "keycloak").oauthProxy.ingress.paths) }}{{  regexReplaceAll "\\(.*" .path "" | trimSuffix "/" }}{{ end }}
+{{ with (first .Values.keycloak.oauthProxy.ingress.paths) }}{{  regexReplaceAll "\\(.*" .path "" | trimSuffix "/" }}{{ end }}
 {{- else -}}
-{{ with (first (index .Values "keycloak").oauthProxy.ingress.hosts) }}{{ with (first .paths) }}{{  regexReplaceAll "\\(.*" .path "" | trimSuffix "/" }}{{ end }}{{ end }}
+{{ with (first .Values.keycloak.oauthProxy.ingress.hosts) }}{{ with (first .paths) }}{{  regexReplaceAll "\\(.*" .path "" | trimSuffix "/" }}{{ end }}{{ end }}
 {{- end }}
 {{- end }}
 
 {{/* OAuth2 Proxy ingress URL */}}
-{{ define "keycloak.oauthProxy.ingressURL" -}}
-https://{{ include "keycloak.oauthProxy.domain" . }}{{ include "keycloak.oauthProxy.prefix" . }}
+{{ define "oauth2-proxy.ingressURL" -}}
+https://{{ include "oauth2-proxy.domain" . }}{{ include "oauth2-proxy.prefix" . }}
 {{- end }}
 
 {{/* Keycloak ingress URL */}}

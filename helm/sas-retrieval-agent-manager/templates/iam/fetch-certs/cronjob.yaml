@@ -9,7 +9,7 @@ kind: CronJob
 metadata:
   name: sas-retagentmgr-fetch-keycloak-certs # Don't hardcode this after
   labels:
-    {{- include "keycloak.oauthProxy.labels" . | nindent 4 }}
+    {{- include "oauth2-proxy.labels" . | nindent 4 }}
 spec:
   schedule: "*/5 * * * *"  # Original schedule
   concurrencyPolicy: Replace

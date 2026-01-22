@@ -40,6 +40,8 @@ spec:
       serviceAccountName: {{ include "sas-retrieval-agent-manager-api.serviceAccountName" . }}
       securityContext:
         {{- toYaml (index .Values "sas-retrieval-agent-manager-api").podSecurityContext | nindent 8 }}
+      initContainers:
+        {{- include "oauth2-proxy.sidecar.init" . | nindent 8 }}
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
@@ -86,6 +88,16 @@ spec:
                 configMapKeyRef:
                   name: vhub-config
                   key: vhub_repository
+            - name: AGENT_RUNNER_TAG
+              valueFrom:
+                configMapKeyRef:
+                  name: agent-config
+                  key: agent_runner_tag
+            - name: AGENT_RUNNER_REPOSITORY
+              valueFrom:
+                configMapKeyRef:
+                  name: agent-config
+                  key: agent_runner_repo
             - name: PLUGIN_RUNNER_TAG
               valueFrom:
                 configMapKeyRef:
@@ -158,6 +170,10 @@ spec:
               value: '{{ index .Values.global.configuration.api "enable_profiling" }}'
             - name: ENABLE_DEV_MODE
               value: '{{ index .Values.global.configuration.api "enable_dev_mode" }}'
+            - name: HIDE_LLM_SECRETS
+              value: '{{ index .Values.global.configuration.api "hide_llm_secrets" }}'
+            - name: HIDE_DESTINATION_SECRETS
+              value: '{{ index .Values.global.configuration.api "hide_destination_secrets" }}'
             {{- with .Values.global.configuration.api.azure_settings.openAI.default_api_version }}
             - name: AZURE_OPENAI_DEFAULT_API_VERSION
               value: '{{ . }}'
@@ -227,7 +243,9 @@ spec:
           {{- with (index .Values "sas-retrieval-agent-manager-api").volumeMounts }}
             {{- toYaml . | nindent 12 }}
           {{- end }}
+        {{- include "oauth2-proxy.sidecar" (dict "Root" . "upstreamPort" 8765) | nindent 8 }}
       volumes:
+        {{- include "oauth2-proxy.sidecar.volumes" . | nindent 8 }}
         - name: temp-storage
           emptyDir: {}
         - name: data

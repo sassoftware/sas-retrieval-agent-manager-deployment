@@ -1,0 +1,15 @@
+{{- $repo_base := "" -}}
+{{- if and (hasKey (index .Values "sas-retrieval-agent-manager-api") "global") (hasKey .Values.global "image") (hasKey .Values.global.image "repo") (hasKey .Values.global.image.repo "base") -}}
+  {{- $repo_base = .Values.global.image.repo.base | default .Values.global.configuration.agent.image.repo.base -}}
+{{- else -}}
+  {{- $repo_base = .Values.global.configuration.agent.image.repo.base -}}
+{{- end -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: agent-config
+  labels:
+    {{- include "sas-retrieval-agent-manager-api.labels" . | nindent 4 }}
+data:
+  agent_runner_repo: {{ printf "%s/%s" $repo_base .Values.global.configuration.agent.image.repo.path }}
+  agent_runner_tag: {{ .Values.global.configuration.agent.image.tag | quote }}

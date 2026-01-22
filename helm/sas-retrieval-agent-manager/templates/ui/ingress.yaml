@@ -62,11 +62,11 @@ spec:
   {{- if and (.Values.global.ingress.className | default (index .Values "sas-retrieval-agent-manager-app").ingress.className) (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion) }}
   ingressClassName: {{ .Values.global.ingress.className | default (index .Values "sas-retrieval-agent-manager-app").ingress.className  }}
   {{- end }}
-  {{- if and ((include "testValuesPath" (list (index .Values "sas-retrieval-agent-manager-app") "global" "ingress" "tls" "enabled")) | eq "true"  | default false) (.Values.global.ingress.tls.enabled | default false) }}
+  {{- if and ((include "testValuesPath" (list .Values "global" "ingress" "tls" "enabled")) | eq "true"  | default false) (.Values.global.ingress.tls.enabled | default false) }}
   tls:
     - hosts:
        - {{ .Values.global.domain | quote }}
-      {{- if ((include "testValuesPath" (list (index .Values "sas-retrieval-agent-manager-app") "global" "ingress" "tls" "secretName")) | eq "true") }}
+      {{- if ((include "testValuesPath" (list .Values "global" "ingress" "tls" "secretName")) | eq "true") }}
       secretName: {{ .Values.global.ingress.tls.secretName | default "" }}
       {{- else if ((include "testValuesPath" (list (index .Values "sas-retrieval-agent-manager-app") "ingress" "tls" "secretName")) | eq "true") }}
       secretName: {{ (index .Values "sas-retrieval-agent-manager-app").ingress.tls.secretName | default "" }}

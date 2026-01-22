@@ -179,11 +179,6 @@ tests:
           content:
             mountPath: /var/run
             name: run
-      - contains:
-          path: spec.template.spec.containers[0].volumeMounts
-          content:
-            mountPath: /home/sas/.promptfoo
-            name: promptfoo
 
   - it: should include volumes
     asserts:
@@ -196,11 +191,6 @@ tests:
           path: spec.template.spec.volumes
           content:
             name: run
-            emptyDir: {}
-      - contains:
-          path: spec.template.spec.volumes
-          content:
-            name: promptfoo
             emptyDir: {}
 
   - it: should allow custom affinity configuration

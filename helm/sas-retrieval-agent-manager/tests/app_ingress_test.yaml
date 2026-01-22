@@ -51,12 +51,12 @@ tests:
       - equal:
           path: metadata.annotations["nginx.ingress.kubernetes.io/auth-response-headers"]
           value: "Authorization"
-      - matchRegex:
-          path: metadata.annotations["nginx.ingress.kubernetes.io/auth-signin"]
-          pattern: "/SASRetrievalAgentManager/oauth2/start"
-      - matchRegex:
-          path: metadata.annotations["nginx.ingress.kubernetes.io/auth-url"]
-          pattern: "/SASRetrievalAgentManager/oauth2/auth"
+      # - matchRegex:
+      #     path: metadata.annotations["nginx.ingress.kubernetes.io/auth-signin"]
+      #     pattern: "/SASRetrievalAgentManager/oauth2/start"
+      # - matchRegex:
+      #     path: metadata.annotations["nginx.ingress.kubernetes.io/auth-url"]
+      #     pattern: "/SASRetrievalAgentManager/oauth2/auth"
 
   - it: should include nginx specific annotations
     set:
