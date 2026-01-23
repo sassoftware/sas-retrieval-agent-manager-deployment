@@ -86,7 +86,8 @@ Before deploying, you'll need to create and edit two configuration files with yo
 docker build -t viya4-iac-azure .
 
 # Deploy the cluster
-sudo docker run --rm \
+docker run --rm --group-add root \
+    --user "$(id -u):$(id -g)" \
     --env-file=azure.env \
     --volume=$HOME/.ssh:/.ssh \
     --volume=$(pwd):/workspace \
