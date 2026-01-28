@@ -100,7 +100,7 @@ helm install nginx-ingress-nginx-controller \
 
 ### Weaviate
 
-SAS Retrieval Agent Manager supports [Weaviate](https://weaviate.io/), a vector database alternative to PGVector storage.
+SAS has partnered with [Weaviate](https://weaviate.io/) and supports it as a vector database alternative to PGVector storage. This installation is not required but is compatible with RAM.
 
 Here is an [Example Weaviate Values File](../../examples/weaviate.yaml). You can edit it as you'd like to fit your deployment.
 
