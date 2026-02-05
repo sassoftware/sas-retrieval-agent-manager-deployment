@@ -45,14 +45,12 @@ transforms:
       del(.stream)
       
 sinks:
-  logs_postgrest:
-    type: http
+  logs_postgres:
+    type: postgres
     inputs:
-      - logs_transform
-    uri: "http://sas-retrieval-agent-manager-postgrest.retagentmgr.svc.cluster.local:3002/logs"
-    encoding:
-      codec: json
-    method: post
+      - kube_logs
+    endpoint: "postgres://<psql_username>:<psql_password>@<psql_host>:5432/SASRetrievalAgentManagerMonitoring?sslmode=require"
+    table: monitoring.logs
 ```
 
 > Note: See a full [Vector example values file here](../../examples/vector.yaml)
