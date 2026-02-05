@@ -2,6 +2,8 @@
 
 The SAS Retrieval Agent Manager (RAM) system collects and processes distributed traces using [Vector](https://vector.dev/), a high-performance observability data pipeline. Vector receives OpenTelemetry traces from applications and routes them to multiple observability backends for analysis and visualization.
 
+> Note: Please have `enable_genai_traces: 'True'` in your RAM values file. The location of this value depends on the version deployed.
+
 ## Architecture Overview
 
 ```text
