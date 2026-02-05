@@ -66,7 +66,7 @@ image:
   pullSecrets: []
   # image.tag -- The tag to use for Vector's image.
   # @default -- Derived from the Chart's appVersion.
-  tag: "nightly-2025-10-25-debian"
+  tag: "nightly-2026-02-05-debian"
   # image.sha -- The SHA to use for Vector's image.
   sha: ""
   # image.base -- The base distribution to use for vector. If set, then the base in appVersion will be replaced with this base alongside the version.
@@ -227,30 +227,23 @@ customConfig:
 
   sinks:
     # Sends otel metrics to postgres via postgrest
-    metrics_postgrest:
-      type: http
+    metrics_postgres:
+      type: postgres
       inputs:
-        - otel.metrics
-      uri: "http://sas-retrieval-agent-manager-postgrest.retagentmgr.svc.cluster.local:3002/metrics"
-      headers:
-        Content-Type: "Application/json"
-      encoding:
-        codec: json
+        - kube_logs
+      endpoint: "postgres://<psql_username>:<psql_password>@<psql_host>:5432/SASRetrievalAgentManagerMonitoring?sslmode=require"
+      table: monitoring.metrics
 
     # Sends kubernetes logs to postgres via postgrest
-    logs_postgrest:
-      type: http
+    logs_postgres:
+      type: postgres
       inputs:
-        - sanitize_logs
-      # Could be different URL depending on postgrest settings
-      uri: "http://sas-retrieval-agent-manager-postgrest.retagentmgr.svc.cluster.local:3002/logs"
-      headers:
-        Content-Type: "Application/json"
-      encoding:
-        codec: json
+        - kube_logs
+      endpoint: "postgres://<psql_username>:<psql_password>@<psql_host>:5432/SASRetrievalAgentManagerMonitoring?sslmode=require"
+      table: monitoring.logs
 
     # Requires Phoenix deployment in cluster
-    phoenix:
+    traces_phoenix:
       inputs: 
         - rebuild_otlp_format
       protocol:
@@ -263,7 +256,7 @@ customConfig:
 
     # Requires account and API key creation in langfuse
     # Requires a public langfuse account
-    langfuse:
+    traces_langfuse:
       inputs: 
         - rebuild_otlp_format
       protocol:
