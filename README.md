@@ -318,8 +318,7 @@ Once you override the desired fields in your values file, upgrade your RAM insta
 
 ```sh
 
-helm upgrade my-sas-retrieval-agent-manager oci://ghcr.io/sassoftware/sas-retrieval-agent-manager-deployment/sas-retrieval-agent-manager \
-  --version <RAM Version> \
+helm upgrade my-sas-retrieval-agent-manager ./sas-retrieval-agent-manager \
   --values <RAM Values file> \
   -n retagentmgr
 
