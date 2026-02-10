@@ -241,7 +241,7 @@ After you have access to the Kubernetes cluster, you must install the necessary 
 |-----------|---------------|---------------------|----------------------------------------------------------------------------------------------|-------------------------|
 | **Weaviate**      |v17.6.0 |[weaviate.yaml](./examples/weaviate.yaml)     | [instructions](./docs/user/DependencyInstall.md#weaviate)          | Vector Database         |
 | **Ollama**        |v1.12.0 |[ollama.yaml](./examples/ollama.yaml)         | [instructions](./docs/llm-connection/ollama.md)                    | LLM Deployment Platform |
-| **Vector**        | 0.46.0 |[vector.yaml](./examples/vector.yaml)         | [instructions](./docs/monitoring/README.md)                        | Storing Logs/Traces     |
+| **Vector**        | 0.53.0 |[vector.yaml](./examples/vector.yaml)         | [instructions](./docs/monitoring/README.md)                        | Storing Logs/Traces     |
 | **Phoenix**       |v4.0.7  |[phoenix.yaml](./examples/phoenix.yaml)       | [instructions](./docs/monitoring/traces.md)                        | Visualizing Traces      |
 
 ### Install SAS Retrieval Agent Manager
