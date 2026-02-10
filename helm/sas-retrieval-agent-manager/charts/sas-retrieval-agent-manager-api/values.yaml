@@ -44,7 +44,7 @@ image:
   # type: string
   # @schema
   # -- API container image tag
-  tag:  1.5.0-20250923.1758633906615
+  tag:  1.5.2-20260115.1768500974089
   # @schema
   # default: IfNotPresent
   # enum: [Always,Never,IfNotPresent]
@@ -1393,7 +1393,7 @@ global:
         # type: string
         # @schema
         # -- Container image tag for vectorization hub
-        tag: 1.4.0-20250910.1757510909689
+        tag: 1.4.1-20260114.1768407642307
       # @schema
       # type: array
       # items:
