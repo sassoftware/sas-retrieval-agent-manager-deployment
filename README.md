@@ -263,12 +263,11 @@ Customize your RAM Values file based on the deployment template for your specifi
 #### Deploy with Helm
 
 ```bash
-helm install my-sas-retrieval-agent-manager oci://ghcr.io/sassoftware/sas-retrieval-agent-manager-deployment/sas-retrieval-agent-manager \
-  --version <RAM Version> \
+helm install my-sas-retrieval-agent-manager ./sas-retrieval-agent-manager \
   --values <RAM Values file> \
   -n retagentmgr \
   --create-namespace
-  --wait # used in version .11 and later
+  --wait
   --timeout 10m
 ```
 

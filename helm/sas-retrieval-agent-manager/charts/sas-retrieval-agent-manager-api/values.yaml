@@ -44,7 +44,7 @@ image:
   # type: string
   # @schema
   # -- API container image tag
-  tag: 1.7.15-20251125.1764086747124
+  tag: 1.7.16-20260115.1768501003768
   # @schema
   # default: IfNotPresent
   # enum: [Always,Never,IfNotPresent]
@@ -1188,7 +1188,7 @@ global:
         # type: string
         # @schema
         # -- Container image tag for evaluation service
-        tag: 1.6.4-20251202.1764685261181
+        tag: 1.6.5-20260115.1768501332185
 
     # @schema
     # required: true
@@ -1241,7 +1241,7 @@ global:
         # type: string
         # @schema
         # -- Container image tag for plugin agent
-        tag: 1.6.8-20251120.1763662950004
+        tag: 1.6.9-20260115.1768501634734
 
     # @schema
     # required: true
@@ -1564,7 +1564,7 @@ global:
         # type: string
         # @schema
         # -- Container image tag for vectorization hub
-        tag: 1.6.4-20251118.1763481842222
+        tag: 1.6.5-20260114.1768407304877
       # @schema
       # type: array
       # items:
