@@ -264,7 +264,7 @@ Customize your RAM Values file based on the deployment template for your specifi
 
 ```bash
 helm install my-sas-retrieval-agent-manager oci://ghcr.io/sassoftware/sas-retrieval-agent-manager-deployment/sas-retrieval-agent-manager \
-  --version <RAM Version> \
+  --version 2025.12.1 \
   --values <RAM Values file> \
   -n retagentmgr \
   --create-namespace \
