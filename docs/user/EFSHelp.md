@@ -49,6 +49,8 @@ helm repo update
 helm install aws-efs-csi-driver aws-efs-csi-driver/aws-efs-csi-driver -n kube-system -f efs-values.yaml
 ```
 
+After the EFS is deployed, attach it to a mount target with the appropriate security groups. You can access [more EFS documentation here](https://docs.aws.amazon.com/efs/latest/ug/accessing-fs.html).
+
 > [Note: you can find an example EFS values file here](../../examples/aws/efs.yaml)
 
 [Back to AWS Deployment Guide](../aws-deployment.md#deploy-rds-ssl-certificate)
