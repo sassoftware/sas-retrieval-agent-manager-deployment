@@ -3404,7 +3404,7 @@ sas-retrieval-agent-manager-api:
       # -- SAS API image
       path: "viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager"
     # -- Image tag (defaults to chart appVersion)
-    tag: "1.9.7-20260115.1768496053008"
+    tag: "1.9.10-20260128.1769612926778"
     # -- Image pull policy
     pullPolicy: IfNotPresent
 
@@ -3864,7 +3864,7 @@ sas-retrieval-agent-manager-app:
       # -- Container image path/name
       path: viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-app
     # -- Container image tag
-    tag: "1.6.3-20260116.1768590906194"
+    tag: "1.6.4-20260129.1769695583215"
     # -- Image pull policy for API container
     pullPolicy: IfNotPresent
 
