@@ -46,4 +46,9 @@ storage:
   
   # -- Storage class name for dynamic volume provisioning
   # -- Uses cloud provider's managed storage class for reliability
+  # use ebs-sc for AWS
   storageClassName: managed
+
+env:
+  # improves performance of indexing by allowing it to run asynchronously in the background
+  ASYNC_INDEXING: true
