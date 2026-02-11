@@ -1,0 +1,12 @@
+---
+controller:
+  serviceAccount:
+    annotations:
+      eks.amazonaws.com/role-arn: <STORAGE_DRIVER_IAM_ROLE_ARN>
+
+storageClasses:
+  - annotations:
+      storageclass.kubernetes.io/is-default-class: 'false'
+    name: ebs-sc
+    reclaimPolicy: Delete
+    volumeBindingMode: Immediate

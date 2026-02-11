@@ -151,7 +151,15 @@ The AWS deployment of RAM requires an AWS EFS with a corresponding role that has
 
 The role that needs to be created should have the `AmazonEFSCSIDriverPolicy` Policy.
 
-[You can do this via the AWS UI or by following the CLI steps here](./user/EFSHelp.md).
+[You can do this via the AWS UI or by following the CLI steps here](./user/AWSStorageHelp.md).
+
+## Deploy EBS (Optional)
+
+The Weaviate deployment on AWS requires a corresponding role that has access to it via the correct policy.
+
+The role that needs to be created should have the `AmazonEBSCSIDriverPolicy` Policy.
+
+[You can do this via the AWS UI or by following the CLI steps here](./user/AWSStorageHelp.md).
 
 ## Deploy RDS SSL Certificate
 

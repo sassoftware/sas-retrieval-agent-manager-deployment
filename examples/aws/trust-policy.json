@@ -10,7 +10,10 @@
             "Condition": {
                 "StringEquals": {
                     "oidc.eks.<region>.amazonaws.com/id/<user-id>:aud": "sts.amazonaws.com",
-                    "oidc.eks.<region>.amazonaws.com/id/<user-id>:sub": "system:serviceaccount:kube-system:efs-csi-controller-sa"
+                    "oidc.eks.<region>.amazonaws.com/id/<user-id>:sub": [
+                        "system:serviceaccount:kube-system:efs-csi-controller-sa",
+                        "system:serviceaccount:kube-system:ebs-csi-controller-sa"
+                    ]
                 }
             }
         }
@@ -21,3 +24,4 @@
 // - Account: aws sts get-caller-identity --query Account --output text
 // - user-id: aws eks describe-cluster --name <cluster_name> --query "cluster.identity.oidc.issuer" --output text | cut -d '/' -f 5
 // - region:  aws configure get region
+// EBS is optional as it supports weaviate
