@@ -262,11 +262,10 @@ Customize your RAM Values file based on the deployment template for your specifi
 
 ```bash
 helm install sas-retrieval-agent-manager oci://ghcr.io/sassoftware/sas-retrieval-agent-manager-deployment/sas-retrieval-agent-manager \
-  --version 2026.1.0 \
+  --version 2026.1.1 \
   --values <RAM Values file> \
   -n retagentmgr \
   --create-namespace \
-  --wait \ # used in version .11 and later
   --timeout 10m
 ```
 
@@ -291,6 +290,10 @@ To add different LLMs for RAM to use, visit the [Connecting an LLM page](./docs/
 To monitor and log agent and LLM activity, visit the [Monitoring setup page](./docs/monitoring/README.md)
 
 ## Troubleshooting
+
+### Node Upgrades
+
+RAM deploys Pod Disruption Budgets for all deployments for better performance. This can cause issues if you are upgrading that node pool and need to drain all nodes. To best get around this, please delete the PDBs, upgrade the node pool, and then redeploy the PDBs.
 
 ### Common Issues
 
