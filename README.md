@@ -17,7 +17,7 @@
   - [Application Deployment Guides](#application-deployment-guide)
     - [Retrieve License](#retrieve-license)
     - [Install Required Dependencies](#install-required-dependencies)
-    - [Optional Components](#optional-components)
+    - [Optional Components](#install-optional-components)
   - [Backup and Restore Guide](#backup-and-restore-guide)
   - [Connect an LLM](#connecting-different-llms)
   - [Monitoring and Logging](#monitoring-and-logging)
@@ -221,7 +221,6 @@ After you have access to the Kubernetes cluster, you must install the necessary 
 |-----------------------------|---------------------|------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | cert-manager, trust-manager | v1.18.2, v0.18.0    | [example](./docs/user/DependencyInstall.md#certificate-and-trust-management) | [cert-manager docs](https://cert-manager.io/docs/installation/helm/), [trust-manager docs](https://cert-manager.io/docs/trust/trust-manager/installation/) |
 | Linkerd                     | 2.17 (edge-24.11.8) | [example](./docs/user/DependencyInstall.md#service-mesh)                     | [docs](https://linkerd.io/2/tasks/install-helm/)                                                                                                           |
-| Ingress-Nginx               | 4.12.3              | [example](./docs/user/DependencyInstall.md#ingress-nginx)                    | [docs](https://kubernetes.github.io/ingress-nginx/deploy/)                                                                                                 |
 | Kueue                       | 0.13.4              | [example](./docs/user/DependencyInstall.md#kueue)                            | [docs](https://kueue.sigs.k8s.io/docs/installation/)                                                                                                       |
 
 > Note: order of installation matters for some dependencies, namely:
@@ -233,9 +232,18 @@ After you have access to the Kubernetes cluster, you must install the necessary 
 >
 > 3. Other dependencies or optional components can be installed in any order after that. They do not have hard dependencies on each other, but
 >    do require the previous two steps to be completed to ensure internal traffic is properly secured.
-> Note: It is critical to provide an `azure-dns-label` for Azure NGINX Controller deployments. This is documented at the top of the example NGINX values file given.
+> Note: It is critical to provide an `azure-dns-label` for Azure ingress controller deployments. This is documented at the top of the example NGINX/Contour values file given.
 
-### Optional Components
+### Install Preferred Ingress Controller
+
+SAS Retrieval Agent Manager supports two ingress controllers as of now; NGINX and contour. Select your preferred one and follow the installation steps accordingly.
+
+| Component   |    Version    |                                                               |                                                            |                         |
+|-------------|---------------|---------------------------------------------------------------|----------------------------------------------------------- |-------------------------|
+| **NGINX**   |v4.12.3        |[example](./docs/user/DependencyInstall.md#nginx)              | [docs](https://kubernetes.github.io/ingress-nginx/deploy/) |                         |
+| **Contour** |v1.33.1        |[example](./docs/user/DependencyInstall.md#contour)            | [docs](https://projectcontour.io/getting-started/)         |                         |
+
+### Install Optional Components
 
 | Component |    Version    | Example Values File |                                   Installation Instructions                                  | Description             |
 |-----------|---------------|---------------------|----------------------------------------------------------------------------------------------|-------------------------|
@@ -262,7 +270,7 @@ Customize your RAM Values file based on the deployment template for your specifi
 
 ```bash
 helm install sas-retrieval-agent-manager oci://ghcr.io/sassoftware/sas-retrieval-agent-manager-deployment/sas-retrieval-agent-manager \
-  --version 2026.1.1 \
+  --version 2026.2.0 \
   --values <RAM Values file> \
   -n retagentmgr \
   --create-namespace \
@@ -348,7 +356,7 @@ helm upgrade sas-retrieval-agent-manager oci://ghcr.io/sassoftware/sas-retrieval
 - Verify TLS certificate validity
 - Check that controller references correct certificate
 - Confirm DNS resolution
-- If on Azure, verify that you have `10.0.0.0/8` in your nginx loadBalancerSourceRange list for intra-cluster services
+- If on Azure, verify that you have `10.0.0.0/8` in your loadBalancerSourceRanges list for intra-cluster services
 
 **API Server or PostgREST Not Responding on login:**
 
