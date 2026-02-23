@@ -175,14 +175,10 @@ Edit your RAM Values file ([See Examples here](./examples/README.md)) to pull fr
 Example Usage:
 
 ```yaml
-# ====================
-# GLOBAL CONFIGURATION
-# ====================
-global:
-  image:
-    repo:
-      # -- Base container registry URL
-      base: 'myregistry.mydomain.com/my-namespace'
+images:
+  repo:
+    # -- Base container registry URL
+    base: 'myregistry.mydomain.com/my-namespace'
 ```
 
 > Note: You can find more information on how to use SAS mirror manager in the [Viya Documentation](https://go.documentation.sas.com/doc/en/itopscdc/v_067/dplyml0phy0dkr/n1h0rgtr10fpnfn1mg0s8fgfuof8.htm).
@@ -260,14 +256,7 @@ After you have configured a Kubernetes cluster and PostgreSQL 15 database, use t
 
 #### Configure RAM Values File
 
-Customize your RAM Values file based on the deployment template for your specific platform.
-
-| Platform                   | RAM Values Examples                              |
-|----------------------------|--------------------------------------------------|
-| **Open Source Kubernetes** | [Example](./examples/k8s/k8s-ram-values.yaml)    |
-| **Azure**                  | [Example](./examples/azure/azure-ram-values.yaml)|
-| **AWS**                    | [Example](./examples/aws/aws-ram-values.yaml)    |
-| **OpenShift**              | [Example](./examples/ocp/ocp-ram-values.yaml)    |
+We have standardized the values required for deployment across all supported platforms. Please see the [example ram values file](./examples/ram-values.yaml) to get a quickstart.
 
 #### Deploy with Helm
 
