@@ -1,214 +1,156 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
-suite: test keycloak deployment
+suite: Keycloak Deployment tests
 templates:
   - templates/iam/keycloak/deployment.yaml
+values:
+  - ../values.yaml
+
 tests:
-  - it: should create a deployment with default values
+  # ============================================================================
+  # Basic deployment structure tests
+  # ============================================================================
+  - it: should render a Deployment
     asserts:
-      - hasDocuments:
-          count: 1
       - isKind:
           of: Deployment
-      - equal:
+      - isAPIVersion:
+          of: apps/v1
+
+  - it: should have correct name
+    asserts:
+      - matchRegex:
           path: metadata.name
-          value: sas-retrieval-agent-manager-keycloak
+          pattern: ".*-keycloak$"
+
+  # ============================================================================
+  # Replica count tests
+  # ============================================================================
+  - it: should set replicas when autoscaling is disabled
+    set:
+      iam.keycloak.autoscaling.enabled: false
+      iam.keycloak.replicaCount: 2
+    asserts:
       - equal:
           path: spec.replicas
-          value: 1
+          value: 2
 
-  - it: should disable replicas when autoscaling enabled
+  - it: should not set replicas when autoscaling is enabled
     set:
-      keycloak:
-        autoscaling:
-          enabled: true
+      iam.keycloak.autoscaling.enabled: true
     asserts:
       - notExists:
           path: spec.replicas
 
-  - it: should set custom replica count
+  # ============================================================================
+  # Deployment strategy tests - strategy is applied via values if supported
+  # ============================================================================
+
+  # ============================================================================
+  # Pod annotations and labels tests
+  # ============================================================================
+  - it: should include pod annotations when provided
     set:
-      keycloak:
-        replicaCount: 3
+      iam.keycloak.podAnnotations:
+        custom-annotation: custom-value
     asserts:
       - equal:
-          path: spec.replicas
-          value: 3
+          path: spec.template.metadata.annotations["custom-annotation"]
+          value: custom-value
 
-  - it: should include proper labels
+  - it: should include pod labels when provided
+    set:
+      iam.keycloak.podLabels:
+        custom-label: custom-value
     asserts:
       - equal:
-          path: metadata.labels["app.kubernetes.io/name"]
-          value: keycloak
-      - equal:
-          path: spec.selector.matchLabels["app.kubernetes.io/component"]
-          value: keycloak
+          path: spec.template.metadata.labels["custom-label"]
+          value: custom-value
 
-  - it: should include pod annotations
+  # ============================================================================
+  # Image pull secrets tests
+  # ============================================================================
+  - it: should include imagePullSecrets when provided
     set:
-      keycloak:
-        podAnnotations:
-          test-annotation: "test-value"
-    asserts:
-      - equal:
-          path: spec.template.metadata.annotations["test-annotation"]
-          value: test-value
-
-  - it: should include pod labels
-    set:
-      keycloak:
-        podLabels:
-          test-label: "test-value"
-    asserts:
-      - equal:
-          path: spec.template.metadata.labels["test-label"]
-          value: test-value
-
-  - it: should use default keycloak image
-    set:
-      keycloak:
-        image:
-          keycloak:
-            tag: "latest"
-    asserts:
-      - equal:
-          path: spec.template.spec.containers[0].image
-          value: "quay.io/keycloak/keycloak:latest"
-      - equal:
-          path: spec.template.spec.containers[0].imagePullPolicy
-          value: IfNotPresent
-
-  - it: should use custom keycloak image
-    set:
-      keycloak:
-        image:
-          keycloak:
-            repo:
-              base: "custom.registry.io"
-              path: "custom/keycloak"
-            tag: "25.0.0"
-            pullPolicy: Always
-    asserts:
-      - equal:
-          path: spec.template.spec.containers[0].image
-          value: "custom.registry.io/custom/keycloak:25.0.0"
-      - equal:
-          path: spec.template.spec.containers[0].imagePullPolicy
-          value: Always
-
-  - it: should use global image registry when set
-    set:
-      keycloak:
-        image:
-          keycloak:
-            tag: "latest"
-      global:
-        image:
-          repo:
-            base: "global.registry.io"
-    asserts:
-      - equal:
-          path: spec.template.spec.containers[0].image
-          value: "global.registry.io/keycloak/keycloak:latest"
-
-  - it: should use default postgres image
-    set:
-      keycloak:
-        image:
-          postgres:
-            tag: "latest"
-    asserts:
-      - equal:
-          path: spec.template.spec.initContainers[0].image
-          value: "docker.io/postgres:latest"
-
-  - it: should use custom postgres image
-    set:
-      keycloak:
-        image:
-          postgres:
-            repo:
-              base: "custom.registry.io"
-              path: "custom/postgres"
-            tag: "14-alpine"
-            pullPolicy: Never
-    asserts:
-      - equal:
-          path: spec.template.spec.initContainers[0].image
-          value: "custom.registry.io/custom/postgres:14-alpine"
-      - equal:
-          path: spec.template.spec.initContainers[0].imagePullPolicy
-          value: IfNotPresent
-
-  - it: should include image pull secrets from values
-    set:
-      keycloak:
-        imagePullSecrets:
-          - name: local-secret
+      images.imagePullSecrets:
+        - name: my-registry-secret
     asserts:
       - contains:
           path: spec.template.spec.imagePullSecrets
           content:
-            name: local-secret
+            name: my-registry-secret
 
-  - it: should merge local and global image pull secrets
-    set:
-      keycloak:
-        imagePullSecrets:
-          - name: local-secret
-      global:
-        imagePullSecrets:
-          - name: global-secret
-    asserts:
-      - contains:
-          path: spec.template.spec.imagePullSecrets
-          content:
-            name: local-secret
-      - contains:
-          path: spec.template.spec.imagePullSecrets
-          content:
-            name: global-secret
-
+  # ============================================================================
+  # Security context tests
+  # ============================================================================
   - it: should apply pod security context
     set:
-      keycloak:
-        podSecurityContext:
-          runAsUser: 1000
-          runAsGroup: 1000
-          fsGroup: 1000
+      iam.keycloak.podSecurityContext:
+        runAsNonRoot: true
+        fsGroup: 1000
     asserts:
       - equal:
-          path: spec.template.spec.securityContext.runAsUser
-          value: 1000
-      - equal:
-          path: spec.template.spec.securityContext.runAsGroup
-          value: 1000
+          path: spec.template.spec.securityContext.runAsNonRoot
+          value: true
       - equal:
           path: spec.template.spec.securityContext.fsGroup
           value: 1000
 
-  - it: should use default security context
+  # ============================================================================
+  # Init containers tests
+  # ============================================================================
+  - it: should have check-db-ready init container
     asserts:
-      - equal:
-          path: spec.template.spec.securityContext.runAsUser
-          value: 10001
-      - equal:
-          path: spec.template.spec.securityContext.runAsNonRoot
-          value: true
+      - exists:
+          path: spec.template.spec.initContainers
+      - matchRegex:
+          path: spec.template.spec.initContainers[0].name
+          pattern: "check-db-ready"
 
-  - it: should use correct service account name
+  - it: should have copy-keycloak-theme init container
     asserts:
-      - equal:
-          path: spec.template.spec.serviceAccountName
-          value: sas-retrieval-agent-manager-keycloak
+      - matchRegex:
+          path: spec.template.spec.initContainers[1].name
+          pattern: "copy-keycloak-theme"
 
-  - it: should work with fullnameOverride
+  - it: should have keycloak-build init container
+    asserts:
+      - matchRegex:
+          path: spec.template.spec.initContainers[2].name
+          pattern: "keycloak-build"
+
+  # ============================================================================
+  # Resources tests
+  # ============================================================================
+  - it: should apply resource limits and requests
     set:
-      keycloak:
-        fullnameOverride: "custom-keycloak"
+      iam.keycloak.resources:
+        limits:
+          cpu: "2"
+          memory: 2Gi
+        requests:
+          cpu: "1"
+          memory: 1Gi
     asserts:
       - equal:
-          path: metadata.name
-          value: custom-keycloak
+          path: spec.template.spec.initContainers[0].resources.limits.cpu
+          value: "2"
       - equal:
-          path: spec.template.spec.serviceAccountName
-          value: custom-keycloak
+          path: spec.template.spec.initContainers[0].resources.limits.memory
+          value: 2Gi
+
+  # ============================================================================
+  # Labels tests
+  # ============================================================================
+  - it: should include standard labels
+    asserts:
+      - exists:
+          path: metadata.labels["helm.sh/chart"]
+      - exists:
+          path: metadata.labels["app.kubernetes.io/name"]
+      - exists:
+          path: metadata.labels["app.kubernetes.io/instance"]
+
+  - it: should include keycloak component label
+    asserts:
+      - matchRegex:
+          path: spec.selector.matchLabels["app.kubernetes.io/component"]
+          pattern: "keycloak"

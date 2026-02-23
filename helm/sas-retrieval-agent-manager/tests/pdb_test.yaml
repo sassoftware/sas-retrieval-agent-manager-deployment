@@ -1,0 +1,133 @@
+suite: PodDisruptionBudget tests
+templates:
+  - templates/api/pdb.yaml
+  - templates/ui/pdb.yaml
+  - templates/iam/keycloak/pdb.yaml
+  - templates/db/rest/pdb.yaml
+values:
+  - ../values.yaml
+
+tests:
+  # ============================================================================
+  # API PDB tests
+  # ============================================================================
+  - it: API - should render PodDisruptionBudget
+    template: templates/api/pdb.yaml
+    asserts:
+      - isKind:
+          of: PodDisruptionBudget
+      - isAPIVersion:
+          of: policy/v1
+
+  - it: API - should have correct name
+    template: templates/api/pdb.yaml
+    asserts:
+      - matchRegex:
+          path: metadata.name
+          pattern: ".*-api-pdb$"
+
+  - it: API - should have minAvailable set
+    template: templates/api/pdb.yaml
+    asserts:
+      - exists:
+          path: spec.minAvailable
+
+  - it: API - should have correct selector
+    template: templates/api/pdb.yaml
+    asserts:
+      - equal:
+          path: spec.selector.matchLabels["app.kubernetes.io/name"]
+          value: api
+
+  # ============================================================================
+  # UI PDB tests
+  # ============================================================================
+  - it: UI - should render PodDisruptionBudget
+    template: templates/ui/pdb.yaml
+    asserts:
+      - isKind:
+          of: PodDisruptionBudget
+      - isAPIVersion:
+          of: policy/v1
+
+  - it: UI - should have correct name
+    template: templates/ui/pdb.yaml
+    asserts:
+      - matchRegex:
+          path: metadata.name
+          pattern: ".*-app-pdb$"
+
+  - it: UI - should have minAvailable set
+    template: templates/ui/pdb.yaml
+    asserts:
+      - exists:
+          path: spec.minAvailable
+
+  - it: UI - should have correct selector
+    template: templates/ui/pdb.yaml
+    asserts:
+      - equal:
+          path: spec.selector.matchLabels["app.kubernetes.io/name"]
+          value: app
+
+  # ============================================================================
+  # Keycloak PDB tests
+  # ============================================================================
+  - it: Keycloak - should render PodDisruptionBudget
+    template: templates/iam/keycloak/pdb.yaml
+    asserts:
+      - isKind:
+          of: PodDisruptionBudget
+      - isAPIVersion:
+          of: policy/v1
+
+  - it: Keycloak - should have correct name
+    template: templates/iam/keycloak/pdb.yaml
+    asserts:
+      - matchRegex:
+          path: metadata.name
+          pattern: ".*-keycloak-pdb$"
+
+  - it: Keycloak - should have minAvailable set
+    template: templates/iam/keycloak/pdb.yaml
+    asserts:
+      - exists:
+          path: spec.minAvailable
+
+  - it: Keycloak - should have correct selector
+    template: templates/iam/keycloak/pdb.yaml
+    asserts:
+      - equal:
+          path: spec.selector.matchLabels["app.kubernetes.io/name"]
+          value: keycloak
+
+  # ============================================================================
+  # PostgREST PDB tests
+  # ============================================================================
+  - it: PostgREST - should render PodDisruptionBudget
+    template: templates/db/rest/pdb.yaml
+    asserts:
+      - isKind:
+          of: PodDisruptionBudget
+      - isAPIVersion:
+          of: policy/v1
+
+  - it: PostgREST - should have correct name
+    template: templates/db/rest/pdb.yaml
+    asserts:
+      - matchRegex:
+          path: metadata.name
+          pattern: ".*-postgrest-pdb$"
+
+  - it: PostgREST - should have minAvailable set
+    template: templates/db/rest/pdb.yaml
+    asserts:
+      - exists:
+          path: spec.minAvailable
+
+  - it: PostgREST - should have correct selector
+    template: templates/db/rest/pdb.yaml
+    asserts:
+      - equal:
+          path: spec.selector.matchLabels["app.kubernetes.io/name"]
+          value: postgrest

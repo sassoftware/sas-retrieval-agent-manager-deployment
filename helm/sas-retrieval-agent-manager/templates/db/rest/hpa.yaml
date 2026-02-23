@@ -1,4 +1,4 @@
-{{- if .Values.postgrest.autoscaling.enabled }}
+{{- if .Values.db.rest.autoscaling.enabled }}
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
@@ -10,23 +10,23 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: {{ include "postgrest.fullname" . }}
-  minReplicas: {{ .Values.postgrest.autoscaling.minReplicas }}
-  maxReplicas: {{ .Values.postgrest.autoscaling.maxReplicas }}
+  minReplicas: {{ .Values.db.rest.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.db.rest.autoscaling.maxReplicas }}
   metrics:
-    {{- if .Values.postgrest.autoscaling.targetCPUUtilizationPercentage }}
+    {{- if .Values.db.rest.autoscaling.targetCPUUtilizationPercentage }}
     - type: Resource
       resource:
         name: cpu
         target:
           type: Utilization
-          averageUtilization: {{ .Values.postgrest.autoscaling.targetCPUUtilizationPercentage }}
+          averageUtilization: {{ .Values.db.rest.autoscaling.targetCPUUtilizationPercentage }}
     {{- end }}
-    {{- if .Values.postgrest.autoscaling.targetMemoryUtilizationPercentage }}
+    {{- if .Values.db.rest.autoscaling.targetMemoryUtilizationPercentage }}
     - type: Resource
       resource:
         name: memory
         target:
           type: Utilization
-          averageUtilization: {{ .Values.postgrest.autoscaling.targetMemoryUtilizationPercentage }}
+          averageUtilization: {{ .Values.db.rest.autoscaling.targetMemoryUtilizationPercentage }}
     {{- end }}
 {{- end }}

@@ -1,0 +1,305 @@
+suite: UI Deployment tests
+templates:
+  - templates/ui/deployment.yaml
+values:
+  - ../values.yaml
+
+tests:
+  # ============================================================================
+  # Conditional rendering tests
+  # ============================================================================
+  - it: should render deployment when ingress.domain is set
+    set:
+      ingress.domain: example.com
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Deployment
+
+  - it: should not render deployment when ingress.domain is empty
+    set:
+      ingress.domain: ""
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  # ============================================================================
+  # Basic deployment structure tests
+  # ============================================================================
+  - it: should have correct name
+    set:
+      ingress.domain: example.com
+    asserts:
+      - matchRegex:
+          path: metadata.name
+          pattern: ".*-app$"
+
+  # ============================================================================
+  # Replica count tests
+  # ============================================================================
+  - it: should set replicas when autoscaling is disabled
+    set:
+      ingress.domain: example.com
+      ui.autoscaling.enabled: false
+      ui.replicaCount: 2
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 2
+
+  - it: should not set replicas when autoscaling is enabled
+    set:
+      ingress.domain: example.com
+      ui.autoscaling.enabled: true
+    asserts:
+      - notExists:
+          path: spec.replicas
+
+  # ============================================================================
+  # Strategy tests - strategy is set via template defaults, not values
+  # ============================================================================
+
+  # ============================================================================
+  # Pod annotations and labels tests
+  # ============================================================================
+  - it: should include pod annotations when provided
+    set:
+      ingress.domain: example.com
+      ui.podAnnotations:
+        custom-annotation: custom-value
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations["custom-annotation"]
+          value: custom-value
+
+  - it: should include pod labels when provided
+    set:
+      ingress.domain: example.com
+      ui.podLabels:
+        custom-label: custom-value
+    asserts:
+      - equal:
+          path: spec.template.metadata.labels["custom-label"]
+          value: custom-value
+
+  # ============================================================================
+  # Image pull secrets tests
+  # ============================================================================
+  - it: should include imagePullSecrets when provided
+    set:
+      ingress.domain: example.com
+      images.imagePullSecrets:
+        - name: my-registry-secret
+    asserts:
+      - contains:
+          path: spec.template.spec.imagePullSecrets
+          content:
+            name: my-registry-secret
+
+  # ============================================================================
+  # Security context tests
+  # ============================================================================
+  - it: should apply pod security context
+    set:
+      ingress.domain: example.com
+      ui.podSecurityContext:
+        runAsNonRoot: true
+        fsGroup: 1000
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext.runAsNonRoot
+          value: true
+      - equal:
+          path: spec.template.spec.securityContext.fsGroup
+          value: 1000
+
+  - it: should apply container security context
+    set:
+      ingress.domain: example.com
+      ui.securityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: false
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.allowPrivilegeEscalation
+          value: false
+
+  # ============================================================================
+  # Container environment variables tests
+  # ============================================================================
+  - it: should set SSL_VERIFY to true from values
+    set:
+      ingress.domain: example.com
+      ui.config.sslVerify: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: SSL_VERIFY
+            value: "true"
+
+  - it: should set SSL_VERIFY to false from values
+    set:
+      ingress.domain: example.com
+      ui.config.sslVerify: false
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: SSL_VERIFY
+            value: "false"
+
+  # ============================================================================
+  # Container ports tests
+  # ============================================================================
+  - it: should expose http port based on service port
+    set:
+      ingress.domain: example.com
+      ui.service.port: 8080
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].ports
+          content:
+            name: http
+            containerPort: 8080
+            protocol: TCP
+
+  # ============================================================================
+  # Resources tests
+  # ============================================================================
+  - it: should apply resource limits and requests
+    set:
+      ingress.domain: example.com
+      ui.resources:
+        limits:
+          cpu: "1"
+          memory: 1Gi
+        requests:
+          cpu: 500m
+          memory: 512Mi
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.cpu
+          value: "1"
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.memory
+          value: 1Gi
+
+  # ============================================================================
+  # Volume mounts tests
+  # ============================================================================
+  - it: should include nginx cache and run volume mounts
+    set:
+      ingress.domain: example.com
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            mountPath: /var/cache/nginx
+            name: cache
+          any: true
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            mountPath: /var/run
+            name: run
+          any: true
+
+  - it: should include custom volumeMounts when provided
+    set:
+      ingress.domain: example.com
+      ui.volumeMounts:
+        - name: custom-volume
+          mountPath: /custom
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: custom-volume
+            mountPath: /custom
+
+  # ============================================================================
+  # Volumes tests
+  # ============================================================================
+  - it: should include emptyDir volumes for cache and run
+    set:
+      ingress.domain: example.com
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: cache
+            emptyDir: {}
+          any: true
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: run
+            emptyDir: {}
+          any: true
+
+  - it: should include custom volumes when provided
+    set:
+      ingress.domain: example.com
+      ui.volumes:
+        - name: custom-volume
+          emptyDir: {}
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: custom-volume
+            emptyDir: {}
+
+  # ============================================================================
+  # Node selector tests
+  # ============================================================================
+  - it: should apply nodeSelector when provided
+    set:
+      ingress.domain: example.com
+      ui.nodeSelector:
+        disktype: ssd
+    asserts:
+      - equal:
+          path: spec.template.spec.nodeSelector.disktype
+          value: ssd
+
+  # ============================================================================
+  # Affinity tests
+  # ============================================================================
+  - it: should apply affinity when provided
+    set:
+      ingress.domain: example.com
+      ui.affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: topology.kubernetes.io/zone
+                    operator: In
+                    values:
+                      - us-east-1a
+    asserts:
+      - exists:
+          path: spec.template.spec.affinity.nodeAffinity
+
+  # ============================================================================
+  # Tolerations tests
+  # ============================================================================
+  - it: should apply tolerations when provided
+    set:
+      ingress.domain: example.com
+      ui.tolerations:
+        - key: "dedicated"
+          operator: "Equal"
+          value: "ui"
+          effect: "NoSchedule"
+    asserts:
+      - contains:
+          path: spec.template.spec.tolerations
+          content:
+            key: "dedicated"
+            operator: "Equal"
+            value: "ui"
+            effect: "NoSchedule"

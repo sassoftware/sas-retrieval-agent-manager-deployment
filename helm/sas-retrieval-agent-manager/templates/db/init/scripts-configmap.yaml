@@ -1,13 +1,15 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "sas-retrieval-agent-manager-db-init.fullname" . }}-scripts
+  name: {{ include "db-initialization.fullname" . }}-scripts
   labels:
-    {{- include "sas-retrieval-agent-manager-db-init.labels" . | nindent 4 }}
+    {{- include "db-initialization.labels" . | nindent 4 }}
 data:
-{{- if  .Values.global.configuration.database.initializeDb }}
+{{- if  .Values.db.init.config.database.initializeDb }}
   initialize_database.sh: |-
+
     #!/bin/bash
+    set -euo pipefail
 
     export PSQL=`which psql`
 
@@ -15,21 +17,36 @@ data:
     PASSWORD_FILE="/secret/admin/password"
     SCRIPT_DIR="/scripts"
     
-    DB_HOST=$(< /config/db/host)
-    DB_PORT=$(< /config/db/port)
+    DB_HOST=$(cat /config/db/host)
+    DB_PORT=$(cat /config/db/port)
     DB_NAME="postgres"
     export INIT_DB_NAME="$DB_NAME"
-    export DB_SSL_MODE=$(< /config/db/sslmode)
+    export DB_SSL_MODE=$(cat /config/db/sslmode)
     echo "Connecting to DB at $DB_HOST:$DB_PORT with SSL mode $DB_SSL_MODE"
 
     # Check if both files exist
-    if [[ -f "$USER_FILE" && -f "$PASSWORD_FILE" ]]; then
-        USER=$(<"$USER_FILE")
-        PASSWORD=$(<"$PASSWORD_FILE")
-    else
-        echo "Credential files are missing. Skipping script execution."
+    WAIT_TIME=0
+    MAX_WAIT=300
+    SLEEP_INTERVAL=1
+    while true; do
+      if [ -f "$USER_FILE" ] && [ -f "$PASSWORD_FILE" ]; then
+        USER=$(cat "$USER_FILE")
+        PASSWORD=$(cat "$PASSWORD_FILE")
+        if [ -n "$USER" ] && [ -n "$PASSWORD" ]; then
+          break
+        fi
+      fi
+      if [ "$WAIT_TIME" -ge "$MAX_WAIT" ]; then
+        echo "Credential files are missing or empty after waiting $MAX_WAIT seconds. Skipping script execution."
+        touch /tmp/skip_cleanup
         exit 0
-    fi
+      fi
+      if [ "$WAIT_TIME" -eq 0 ]; then
+        echo "Waiting for credentials to appear..."
+      fi
+      sleep $SLEEP_INTERVAL
+      WAIT_TIME=$((WAIT_TIME+SLEEP_INTERVAL))
+    done
 
     # Define PostgreSQL connection parameters
     PGHOST="${DB_HOST}"
@@ -38,86 +55,112 @@ data:
 
     # Check if credentials are not empty
     if [[ -n "$USER" && -n "$PASSWORD" ]]; then
-        echo "Credentials found. Checking PostgreSQL readiness..."
+      echo "Credentials found. Checking PostgreSQL readiness..."
 
-        # Export password for pg_isready and scripts that follow
-        export PGPASSWORD="$PASSWORD"
+      # Export password for pg_isready and scripts that follow
+      export PGPASSWORD="$PASSWORD"
 
-        # Wait for PostgreSQL to be ready
+      # Wait for PostgreSQL to be ready (max 5min, poll every 5s)
+      DB_WAIT_TIME=0
+      DB_MAX_WAIT=300
+      DB_SLEEP_INTERVAL=5
+      while true; do
         if pg_isready -h "$PGHOST" -p "$PGPORT" -U "$USER" -d "$PGDATABASE"; then
-            echo "PostgreSQL is ready. Executing initialization scripts..."
+          echo "PostgreSQL is ready. Executing initialization scripts..."
 
-            # Set environment variables for PostgreSQL connection
-            export PGUSER="$USER"
-            export PGPASSWORD="$PASSWORD"
-            export PGHOST="$DB_HOST"
-            export PGPORT="$DB_PORT"
-            export PGDATABASE="$DB_NAME"
-            export PGSSLMODE="$DB_SSL_MODE"
 
-            for script in "$SCRIPT_DIR"/*_initialization.sh; do
-                if [[ -x "$script" ]]; then
-                    echo "Running $script..."
-                    "$script"
-                else
-                    echo "Skipping $script (not executable)"
-                fi
-            done
-        else
-            echo "PostgreSQL is not ready. Skipping script execution."
+          # Set environment variables for PostgreSQL connection and export for child scripts
+          export PGUSER="$USER"
+          export PGPASSWORD="$PASSWORD"
+          export PGHOST="$DB_HOST"
+          export PGPORT="$DB_PORT"
+          export PGDATABASE="$DB_NAME"
+          export PGSSLMODE="$DB_SSL_MODE"
+          export DB_HOST
+          export DB_PORT
+          export DB_NAME
+          export USER
+          export PASSWORD
+          export DB_SSL_MODE
+
+          for script in "$SCRIPT_DIR"/*_initialization.sh; do
+            if [[ -x "$script" ]]; then
+              echo "Running $script..."
+              "$script"
+            else
+              echo "Skipping $script (not executable)"
+            fi
+          done
+          break
         fi
+        if [ "$DB_WAIT_TIME" -ge "$DB_MAX_WAIT" ]; then
+          echo "ERROR: PostgreSQL is not ready after waiting $DB_MAX_WAIT seconds. Failing initialization."
+          exit 1
+        fi
+        if [ "$DB_WAIT_TIME" -eq 0 ]; then
+          echo "Waiting for PostgreSQL to become ready..."
+        fi
+        sleep $DB_SLEEP_INTERVAL
+        DB_WAIT_TIME=$((DB_WAIT_TIME+DB_SLEEP_INTERVAL))
+      done
     else
-        echo "Missing or empty credentials. Skipping script execution."
+      echo "Missing or empty credentials. Skipping script execution."
+      touch /tmp/skip_cleanup
+      exit 0
     fi
 
   application_initialization.sh: |-
-    #!/bin/bash
 
-    DB_NAME=$(< /config/postgrest/db)
-    DB_SCHEMA=$(< /config/postgrest/schema)
+    #!/bin/bash
+    set -euo pipefail
+
+
+    DB_NAME=$(cat /config/postgrest/db)
+    DB_SCHEMA=$(cat /config/postgrest/schema)
 
     MANAGED_USER_FILE="/secret/postgrest/user"
     MANAGED_PASSWORD_FILE="/secret/postgrest/password"
 
-    MANAGED_USER=$(<"$MANAGED_USER_FILE")
-    MANAGED_PASSWORD=$(<"$MANAGED_PASSWORD_FILE")
+    MANAGED_USER=$(cat "$MANAGED_USER_FILE")
+    MANAGED_PASSWORD=$(cat "$MANAGED_PASSWORD_FILE")
 
     MIGRATION_USER_FILE="/secret/migration/user"
     MIGRATION_PASSWORD_FILE="/secret/migration/password"
 
-    MIGRATION_USER=$(<"$MIGRATION_USER_FILE")
-    MIGRATION_PASSWORD=$(<"$MIGRATION_PASSWORD_FILE")
+    MIGRATION_USER=$(cat "$MIGRATION_USER_FILE")
+    MIGRATION_PASSWORD=$(cat "$MIGRATION_PASSWORD_FILE")
 
     VJOB_USER_FILE="/secret/vectorizationjob/user"
     VJOB_PASSWORD_FILE="/secret/vectorizationjob/password"
 
-    VJOB_USER=$(<"$VJOB_USER_FILE")
-    VJOB_PASSWORD=$(<"$VJOB_PASSWORD_FILE")
+    VJOB_USER=$(cat "$VJOB_USER_FILE")
+    VJOB_PASSWORD=$(cat "$VJOB_PASSWORD_FILE")
 
     EMBEDDING_USER_FILE="/secret/embedding/user"
     EMBEDDING_PASSWORD_FILE="/secret/embedding/password"
 
-    EMBEDDING_USER=$(<"$EMBEDDING_USER_FILE")
-    EMBEDDING_PASSWORD=$(<"$EMBEDDING_PASSWORD_FILE")
+    EMBEDDING_USER=$(cat "$EMBEDDING_USER_FILE")
+    EMBEDDING_PASSWORD=$(cat "$EMBEDDING_PASSWORD_FILE")
 
     POSTGREST_ROLES_PATH="/config/application-roles"
 
     # Set environment variables for PostgreSQL connection
 
-    {{- if .Values.global.configuration.application.createDB }}
+    {{- if .Values.db.init.config.application.createDB }}
 
-    # Create the PostgREST app database if it does not exist
+    # Create the PostgREST app database if it does not exist (idempotent)
     echo "Checking if database '$DB_NAME' exists..."
-    if ! $PSQL -h "$DB_HOST" -p "$DB_PORT" -U "$USER" -d "$INIT_DB_NAME" -lqt | cut -d \| -f 1 | grep -qw "$DB_NAME"; then
+    DB_EXISTS=$($PSQL -h "$DB_HOST" -p "$DB_PORT" -U "$USER" -d "$INIT_DB_NAME" -tAc "SELECT 1 FROM pg_database WHERE datname = '$DB_NAME'")
+    if [ "$DB_EXISTS" != "1" ]; then
       echo "Creating database '$DB_NAME'..."
-      $PSQL -h "$DB_HOST" -p "$DB_PORT" -U "$USER" -d "$INIT_DB_NAME" -c "CREATE DATABASE \"$DB_NAME\";"
-      echo "Database '$DB_NAME' created."
+      $PSQL -h "$DB_HOST" -p "$DB_PORT" -U "$USER" -d "$INIT_DB_NAME" -c "CREATE DATABASE \"$DB_NAME\";" || echo "Database '$DB_NAME' already exists or creation failed."
+      echo "Database '$DB_NAME' created or already present."
     else
       echo "Database '$DB_NAME' already exists."
     fi
 
     {{- end }}
-    {{- if .Values.global.configuration.application.createUser }}
+    {{- if .Values.db.init.config.application.createUser }}
 
     # Create the PostgREST user if it does not exist
     echo "Creating PostgREST user if it does not exist..."
@@ -216,7 +259,7 @@ data:
     echo "Embedding user '$EMBEDDING_USER' present."
 
     {{- end }}
-    {{- if .Values.global.configuration.application.createSchema }}
+    {{- if .Values.db.init.config.application.createSchema }}
 
     # Create the PostgREST schema if it does not exist
     echo "Checking if schema '$DB_SCHEMA' exists in database '$DB_NAME'..."
@@ -256,7 +299,7 @@ data:
     echo "Processing PostgREST roles from directory: $POSTGREST_ROLES_PATH"
     for role_file in "$POSTGREST_ROLES_PATH"/*; do
       if [[ -f "$role_file" ]]; then
-        ROLE_NAME=$(<"$role_file")
+        ROLE_NAME=$(cat "$role_file")
         echo "Processing PostgREST role: $ROLE_NAME"
 
         # Create the role with NOLOGIN if it does not exist
@@ -293,34 +336,43 @@ data:
     echo "PostgREST initialization completed."
 
   monitoring_initialization.sh: |-
+
     #!/bin/bash
+    set -euo pipefail
 
-    MONITORING_DB_NAME=$(< /config/monitoring/db)
-    MONITORING_DB_SCHEMA=$(< /config/monitoring/schema)
 
-    MANAGED_USER_FILE="/secret/postgrest/user"
-    MANAGED_PASSWORD_FILE="/secret/postgrest/password"
+    MONITORING_DB_NAME=$(cat /config/monitoring/db)
+    MONITORING_DB_SCHEMA=$(cat /config/monitoring/schema)
 
-    MANAGED_USER=$(<"$MANAGED_USER_FILE")
-    MANAGED_PASSWORD=$(<"$MANAGED_PASSWORD_FILE")
+    MANAGED_USER_FILE="/secret/monitoring/user"
+    MANAGED_PASSWORD_FILE="/secret/monitoring/password"
+
+    MANAGED_USER=$(cat "$MANAGED_USER_FILE")
+    MANAGED_PASSWORD=$(cat "$MANAGED_PASSWORD_FILE")
 
     MIGRATION_USER_FILE="/secret/migration/user"
     MIGRATION_PASSWORD_FILE="/secret/migration/password"
 
-    MIGRATION_USER=$(<"$MIGRATION_USER_FILE")
-    MIGRATION_PASSWORD=$(<"$MIGRATION_PASSWORD_FILE")
+    MIGRATION_USER=$(cat "$MIGRATION_USER_FILE")
+    MIGRATION_PASSWORD=$(cat "$MIGRATION_PASSWORD_FILE")
+
+    EMBEDDING_USER_FILE="/secret/embedding/user"
+    EMBEDDING_PASSWORD_FILE="/secret/embedding/password"
+
+    EMBEDDING_USER=$(cat "$EMBEDDING_USER_FILE")
+    EMBEDDING_PASSWORD=$(cat "$EMBEDDING_PASSWORD_FILE")
 
     OTEL_USER_FILE="/secret/otel/user"
     OTEL_PASSWORD_FILE="/secret/otel/password"
 
-    OTEL_USER=$(<"$OTEL_USER_FILE")
-    OTEL_PASSWORD=$(<"$OTEL_PASSWORD_FILE")
+    OTEL_USER=$(cat "$OTEL_USER_FILE")
+    OTEL_PASSWORD=$(cat "$OTEL_PASSWORD_FILE")
 
-    POSTGREST_ROLES_PATH="/config/application-roles"
+    POSTGREST_ROLES_PATH="/config/monitoring-roles"
 
     # Set environment variables for PostgreSQL connection
 
-    {{- if .Values.global.configuration.application.createDB }}
+    {{- if .Values.db.init.config.monitoring.createDB }}
 
     # Create the PostgREST monitoring database if it does not exist
     echo "Checking if database '$MONITORING_DB_NAME' exists..."
@@ -333,7 +385,55 @@ data:
     fi
 
     {{- end }}
-    {{- if .Values.global.configuration.application.createUser }}
+    {{- if .Values.db.init.config.monitoring.createUser }}
+
+    # Create the PostgREST Monitoring user if it does not exist
+    echo "Creating PostgREST Monitoring user if it does not exist..."
+    echo "Managed User: $MANAGED_USER"
+    $PSQL -h "$DB_HOST" -p "$DB_PORT" -U "$USER" -d "$DB_NAME" <<EOF
+    DO \$\$
+    BEGIN
+      IF NOT EXISTS (
+          SELECT FROM pg_catalog.pg_roles WHERE rolname = '${MANAGED_USER}'
+      ) THEN
+          EXECUTE format(
+              'CREATE ROLE %I LOGIN NOINHERIT CREATEDB NOCREATEROLE NOSUPERUSER PASSWORD %L',
+              '${MANAGED_USER}', '${MANAGED_PASSWORD}'
+          );
+      ELSE
+          EXECUTE format(
+              'ALTER ROLE %I WITH PASSWORD %L',
+              '${MANAGED_USER}', '${MANAGED_PASSWORD}'
+          );
+      END IF;
+    END
+    \$\$;
+    EOF
+    echo "PostgREST Monitoring user '$MANAGED_USER' present."
+
+    # Create the Migration user if it does not exist
+    echo "Creating Migration user if it does not exist..."
+    echo "Migration User: $MIGRATION_USER"
+    $PSQL -h "$DB_HOST" -p "$DB_PORT" -U "$USER" -d "$DB_NAME" <<EOF
+    DO \$\$
+    BEGIN
+      IF NOT EXISTS (
+          SELECT FROM pg_catalog.pg_roles WHERE rolname = '${MIGRATION_USER}'
+      ) THEN
+          EXECUTE format(
+              'CREATE ROLE %I LOGIN NOINHERIT CREATEDB NOCREATEROLE NOSUPERUSER PASSWORD %L',
+              '${MIGRATION_USER}', '${MIGRATION_PASSWORD}'
+          );
+      ELSE
+          EXECUTE format(
+              'ALTER ROLE %I WITH PASSWORD %L',
+              '${MIGRATION_USER}', '${MIGRATION_PASSWORD}'
+          );
+      END IF;
+    END
+    \$\$;
+    EOF
+    echo "Migration user '$MIGRATION_USER' present."
 
     # Create the OTEL user if it does not exist
     echo "Creating OTEL user if it does not exist..."
@@ -360,7 +460,7 @@ data:
     echo "OTEL user '$OTEL_USER' present."
 
     {{- end }}
-    {{- if .Values.global.configuration.application.createSchema }}
+    {{- if .Values.db.init.config.monitoring.createSchema }}
 
     # Create the PostgREST monitoring schema if it does not exist
     echo "Checking if schema '$MONITORING_DB_SCHEMA' exists in database '$MONITORING_DB_NAME'..."
@@ -368,7 +468,7 @@ data:
       echo "Creating schema '$MONITORING_DB_SCHEMA' in database '$MONITORING_DB_NAME'..."
       $PSQL -h "$DB_HOST" -p "$DB_PORT" -U "$USER" -d "$MONITORING_DB_NAME" -c "CREATE SCHEMA \"$MONITORING_DB_SCHEMA\";"
       echo "Schema '$MONITORING_DB_SCHEMA' created in database '$MONITORING_DB_NAME'."
-      {{- if .Values.global.configuration.timescale.enabled }}
+      {{- if .Values.db.init.config.timescale.enabled }}
       $PSQL -h "$DB_HOST" -p "$DB_PORT" -U "$USER" -d "$MONITORING_DB_NAME" -c "CREATE EXTENSION IF NOT EXISTS \"timescaledb\" SCHEMA \"${MONITORING_DB_SCHEMA}\";"
       {{- end }}
     else
@@ -385,6 +485,11 @@ data:
     $PSQL -h "$DB_HOST" -p "$DB_PORT" -U "$USER" -d "$MONITORING_DB_NAME" -c "GRANT ALL ON SCHEMA \"$MONITORING_DB_SCHEMA\" TO \"${MIGRATION_USER}\";"
     echo "User '$MIGRATION_USER' granted privileges on schema '$MONITORING_DB_SCHEMA'."
 
+    # Grant privileges to the Embedding user
+    echo "Granting privileges to user '$EMBEDDING_USER' on schema '$MONITORING_DB_SCHEMA' in database '$MONITORING_DB_NAME'..."
+    $PSQL -h "$DB_HOST" -p "$DB_PORT" -U "$USER" -d "$MONITORING_DB_NAME" -c "GRANT USAGE ON SCHEMA \"$MONITORING_DB_SCHEMA\" TO \"${EMBEDDING_USER}\";"
+    echo "User '$EMBEDDING_USER' granted privileges on schema '$MONITORING_DB_SCHEMA'."
+
     # Grant privileges to the OTEL user
     echo "Granting privileges to user '$OTEL_USER' on schema '$MONITORING_DB_SCHEMA' in database '$MONITORING_DB_NAME'..."
     $PSQL -h "$DB_HOST" -p "$DB_PORT" -U "$USER" -d "$MONITORING_DB_NAME" -c "GRANT USAGE ON SCHEMA \"$MONITORING_DB_SCHEMA\" TO \"${OTEL_USER}\";"
@@ -394,10 +499,28 @@ data:
 
     # Create and Grant the PostgREST roles for monitoring database
     echo "Processing PostgREST roles for monitoring database from directory: $POSTGREST_ROLES_PATH"
+
     for role_file in "$POSTGREST_ROLES_PATH"/*; do
       if [[ -f "$role_file" ]]; then
-        ROLE_NAME=$(<"$role_file")
+        ROLE_NAME=$(cat "$role_file")
         echo "Processing PostgREST role for monitoring: $ROLE_NAME"
+
+        # Create the role with NOLOGIN if it does not exist
+        $PSQL -h "$DB_HOST" -p "$DB_PORT" -U "$USER" -d "$MONITORING_DB_NAME" <<EOF
+    DO \$\$
+    BEGIN
+      IF NOT EXISTS (
+          SELECT FROM pg_catalog.pg_roles WHERE rolname = '${ROLE_NAME}'
+      ) THEN
+          EXECUTE format(
+              'CREATE ROLE %I NOLOGIN',
+              '${ROLE_NAME}'
+          );
+      END IF;
+    END
+    \$\$;
+    EOF
+        echo "Role '$ROLE_NAME' present."
 
         # Grant USAGE on the monitoring schema to the role
         echo "Granting USAGE on schema '$MONITORING_DB_SCHEMA' to role '$ROLE_NAME'..."
@@ -416,19 +539,22 @@ data:
     echo "Monitoring database initialization completed."
 
   keycloak_initialization.sh: |-
-    #!/bin/bash
 
-    DB_NAME=$(< /config/keycloak/db)
-    DB_SCHEMA=$(< /config/keycloak/schema)
+    #!/bin/bash
+    set -euo pipefail
+
+
+    DB_NAME=$(cat /config/keycloak/db)
+    DB_SCHEMA=$(cat /config/keycloak/schema)
 
     MANAGED_USER_FILE="/secret/keycloak/user"
     MANAGED_PASSWORD_FILE="/secret/keycloak/password"
 
-    MANAGED_USER=$(<"$MANAGED_USER_FILE")
-    MANAGED_PASSWORD=$(<"$MANAGED_PASSWORD_FILE")
+    MANAGED_USER=$(cat "$MANAGED_USER_FILE")
+    MANAGED_PASSWORD=$(cat "$MANAGED_PASSWORD_FILE")
 
     # Set environment variables for PostgreSQL connection
-    {{- if .Values.global.configuration.keycloak.createDB }}
+    {{- if .Values.db.init.config.keycloak.createDB }}
 
     # Create the keycloak database if it does not exist
     if ! $PSQL -h "$DB_HOST" -p "$DB_PORT" -U "$USER" -d "$INIT_DB_NAME" -lqt | cut -d \| -f 1 | grep -qw "$DB_NAME"; then
@@ -439,7 +565,7 @@ data:
       echo "Database '$DB_NAME' already exists."
     fi
     {{- end }}
-    {{- if .Values.global.configuration.keycloak.createUser }}
+    {{- if .Values.db.init.config.keycloak.createUser }}
 
     # Create the keycloak user if it does not exist
     echo "Creating Keycloak user if it does not exist..."
@@ -465,7 +591,7 @@ data:
     EOF
     echo "Keycloak user '$MANAGED_USER' present."
     {{- end }}
-    {{- if .Values.global.configuration.keycloak.createSchema }}
+    {{- if .Values.db.init.config.keycloak.createSchema }}
 
     # Create the keycloak schema if it does not exist
     echo "Checking if schema '$DB_SCHEMA' exists in database '$DB_NAME'..."
@@ -485,22 +611,24 @@ data:
 
     echo "Keycloak initialization completed."
 
-  {{- if .Values.global.configuration.vectorStore.enabled }}
+  {{- if .Values.db.init.config.vectorStore.enabled }}
   vector_store_initialization.sh: |-
+
     #!/bin/bash
 
-    DB_NAME=$(< /config/vectorstore/db)
-    DB_SCHEMA=$(< /config/vectorstore/schema)
+
+    DB_NAME=$(cat /config/vectorstore/db)
+    DB_SCHEMA=$(cat /config/vectorstore/schema)
 
     MANAGED_USER_FILE="/secret/vectorstore/user"
     MANAGED_PASSWORD_FILE="/secret/vectorstore/password"
 
-    MANAGED_USER=$(<"$MANAGED_USER_FILE")
-    MANAGED_PASSWORD=$(<"$MANAGED_PASSWORD_FILE")
+    MANAGED_USER=$(cat "$MANAGED_USER_FILE")
+    MANAGED_PASSWORD=$(cat "$MANAGED_PASSWORD_FILE")
 
     # Define the PostgreSQL connection string
     DB_CONN="${BASE_DB_CONN}/${DB_NAME}?sslmode=${DB_SSL_MODE}"
-    {{- if .Values.global.configuration.vectorStore.createDB }}
+    {{- if .Values.db.init.config.vectorStore.createDB }}
 
     # Create the vectorStore database if it does not exist
     if ! $PSQL -h "$DB_HOST" -p "$DB_PORT" -U "$USER" -d "$INIT_DB_NAME" -lqt | cut -d \| -f 1 | grep -qw "$DB_NAME"; then
@@ -511,7 +639,7 @@ data:
       echo "Database '$DB_NAME' already exists."
     fi
     {{- end }}
-    {{- if .Values.global.configuration.vectorStore.createUser }}
+    {{- if .Values.db.init.config.vectorStore.createUser }}
 
     # Create the vectorStore user if it does not exist
     echo "Creating Vector Store user if it does not exist..."
@@ -537,7 +665,7 @@ data:
     EOF
     echo "Vector Store user '$MANAGED_USER' present."
     {{- end }}
-    {{- if .Values.global.configuration.vectorStore.createSchema }}
+    {{- if .Values.db.init.config.vectorStore.createSchema }}
 
     # Create the vectorStore schema if it does not exist
     echo "Checking if schema '$DB_SCHEMA' exists in database '$DB_NAME'..."
@@ -561,6 +689,7 @@ data:
 {{- end }}
 
   clean_admin_secret.sh: |-
+
     #!/bin/bash
 
     KUBECTL=`which kubectl`
@@ -568,9 +697,15 @@ data:
 
     NAMESPACE="{{ .Release.Namespace }}"
 
+    # If /tmp/skip_cleanup exists, skip cleanup
+    if [[ -f /tmp/skip_cleanup ]]; then
+      echo "Init script skipped execution; skipping cleanup."
+      exit 0
+    fi
+
     echo "Cleaning up admin credentials secret in namespace ${NAMESPACE}..."
-    echo $(${KUBECTL} -n ${NAMESPACE} get secret admin-db-credentials)
-    ${KUBECTL} -n ${NAMESPACE} patch secret admin-db-credentials --type=json -p='[{"op": "remove", "path": "/data/user"}]' 2>/dev/null || echo "Key 'user' not present or failed to remove."
-    ${KUBECTL} -n ${NAMESPACE} patch secret admin-db-credentials --type=json -p='[{"op": "remove", "path": "/data/password"}]' 2>/dev/null || echo "Key 'password' not present or failed to remove."
+    echo $(${KUBECTL} -n ${NAMESPACE} get secret {{ printf "%s-admin-db-credentials" (include "retrieval-agent-manager.fullname" .) }})
+    ${KUBECTL} -n ${NAMESPACE} patch secret {{ printf "%s-admin-db-credentials" (include "retrieval-agent-manager.fullname" .) }} --type=json -p='[{"op": "remove", "path": "/data/user"}]' 2>/dev/null || echo "Key 'user' not present or failed to remove."
+    ${KUBECTL} -n ${NAMESPACE} patch secret {{ printf "%s-admin-db-credentials" (include "retrieval-agent-manager.fullname" .) }} --type=json -p='[{"op": "remove", "path": "/data/password"}]' 2>/dev/null || echo "Key 'password' not present or failed to remove."
     echo "Admin credentials secret cleaned up."
 {{- end }}

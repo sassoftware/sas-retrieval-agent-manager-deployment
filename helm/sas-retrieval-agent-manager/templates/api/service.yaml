@@ -1,17 +1,17 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "sas-retrieval-agent-manager-api.fullname" . }}
+  name: {{ include "api.fullname" . }}
   labels:
-    {{- include "sas-retrieval-agent-manager-api.labels" . | nindent 4 }}
+    {{- include "api.labels" . | nindent 4 }}
 spec:
-  type: {{ (index .Values "sas-retrieval-agent-manager-api").service.type }}
+  type: {{ .Values.api.service.type }}
   ports:
     # Main port routes to OAuth2 proxy sidecar (port 4180)
     # OAuth2 proxy then forwards authenticated requests to app on localhost:8765
-    - port: {{ (index .Values "sas-retrieval-agent-manager-api").service.port }}
+    - port: {{ .Values.api.service.port }}
       targetPort: oauth2-proxy0
       protocol: TCP
       name: http
   selector:
-    {{- include "sas-retrieval-agent-manager-api.selectorLabels" . | nindent 4 }}
+    {{- include "api.selectorLabels" . | nindent 4 }}
