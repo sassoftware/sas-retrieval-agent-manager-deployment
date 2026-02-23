@@ -1,0 +1,180 @@
+suite: Extra Objects tests
+templates:
+  - templates/extra-objects.yaml
+values:
+  - ../values.yaml
+
+tests:
+  # ============================================================================
+  # Extra objects creation tests
+  # ============================================================================
+  - it: should not render anything when extraObjects is empty
+    set:
+      extraObjects: []
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render Secret when extraObjects contains a Secret
+    set:
+      extraObjects:
+        - apiVersion: v1
+          kind: Secret
+          metadata:
+            name: my-extra-secret
+          type: Opaque
+          data:
+            key: dmFsdWU=
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Secret
+
+  - it: should render ConfigMap when extraObjects contains a ConfigMap
+    set:
+      extraObjects:
+        - apiVersion: v1
+          kind: ConfigMap
+          metadata:
+            name: my-extra-configmap
+          data:
+            key: value
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: ConfigMap
+
+  # ============================================================================
+  # Multiple objects tests
+  # ============================================================================
+  - it: should render multiple objects when provided
+    set:
+      extraObjects:
+        - apiVersion: v1
+          kind: Secret
+          metadata:
+            name: secret-one
+          type: Opaque
+        - apiVersion: v1
+          kind: ConfigMap
+          metadata:
+            name: configmap-one
+          data:
+            key: value
+    asserts:
+      - hasDocuments:
+          count: 2
+
+  # ============================================================================
+  # Namespace injection tests
+  # ============================================================================
+  - it: should inject release namespace into metadata
+    release:
+      namespace: my-custom-namespace
+    set:
+      extraObjects:
+        - apiVersion: v1
+          kind: Secret
+          metadata:
+            name: my-secret
+          type: Opaque
+    asserts:
+      - equal:
+          path: metadata.namespace
+          value: my-custom-namespace
+
+  # ============================================================================
+  # Labels injection tests
+  # ============================================================================
+  - it: should add managed-by label to extra objects
+    set:
+      extraObjects:
+        - apiVersion: v1
+          kind: Secret
+          metadata:
+            name: my-secret
+          type: Opaque
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/managed-by"]
+          value: Helm
+
+  - it: should preserve existing labels and add managed-by
+    set:
+      extraObjects:
+        - apiVersion: v1
+          kind: Secret
+          metadata:
+            name: my-secret
+            labels:
+              custom-label: custom-value
+          type: Opaque
+    asserts:
+      - equal:
+          path: metadata.labels["custom-label"]
+          value: custom-value
+      - equal:
+          path: metadata.labels["app.kubernetes.io/managed-by"]
+          value: Helm
+
+  # ============================================================================
+  # Annotations injection tests
+  # ============================================================================
+  - it: should add helm release annotations
+    release:
+      name: my-release
+      namespace: my-namespace
+    set:
+      extraObjects:
+        - apiVersion: v1
+          kind: Secret
+          metadata:
+            name: my-secret
+          type: Opaque
+    asserts:
+      - equal:
+          path: metadata.annotations["meta.helm.sh/release-name"]
+          value: my-release
+      - equal:
+          path: metadata.annotations["meta.helm.sh/release-namespace"]
+          value: my-namespace
+
+  - it: should preserve existing annotations and add helm annotations
+    release:
+      name: my-release
+      namespace: my-namespace
+    set:
+      extraObjects:
+        - apiVersion: v1
+          kind: Secret
+          metadata:
+            name: my-secret
+            annotations:
+              custom-annotation: custom-value
+          type: Opaque
+    asserts:
+      - equal:
+          path: metadata.annotations["custom-annotation"]
+          value: custom-value
+      - equal:
+          path: metadata.annotations["meta.helm.sh/release-name"]
+          value: my-release
+
+  # ============================================================================
+  # Object name tests
+  # ============================================================================
+  - it: should preserve object name from extraObjects
+    set:
+      extraObjects:
+        - apiVersion: v1
+          kind: ConfigMap
+          metadata:
+            name: my-specific-config
+          data:
+            key: value
+    asserts:
+      - equal:
+          path: metadata.name
+          value: my-specific-config

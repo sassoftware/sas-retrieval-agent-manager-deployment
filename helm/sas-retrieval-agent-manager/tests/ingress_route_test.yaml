@@ -1,0 +1,114 @@
+suite: OpenShift Route template tests
+templates:
+  - templates/ingress/api-ingress.yaml
+  - templates/ingress/ui-ingress.yaml
+  - templates/ingress/keycloak-ingress.yaml
+  - templates/ingress/postgrest-ingress.yaml
+values:
+  - ../values.yaml
+
+tests:
+  # ============================================================================
+  # Route basic structure tests
+  # ============================================================================
+  - it: should render Route with correct apiVersion for OpenShift
+    template: templates/ingress/api-ingress.yaml
+    set:
+      platform: openshift
+      ingress.enabled: true
+    asserts:
+      - isAPIVersion:
+          of: route.openshift.io/v1
+      - isKind:
+          of: Route
+
+  - it: should have correct host from ingress domain
+    template: templates/ingress/api-ingress.yaml
+    set:
+      platform: openshift
+      ingress.enabled: true
+      ingress.domain: my-app.openshift.example.com
+    asserts:
+      - equal:
+          path: spec.host
+          value: my-app.openshift.example.com
+
+  # ============================================================================
+  # Route TLS configuration tests
+  # Note: Some tests removed as the schema doesn't allow termination/insecureEdgeTerminationPolicy directly
+  # These values are set in the template defaults when tls.enabled is true
+  # ============================================================================
+  - it: should include TLS when enabled
+    template: templates/ingress/api-ingress.yaml
+    set:
+      platform: openshift
+      ingress.enabled: true
+      ingress.tls.enabled: true
+    asserts:
+      - exists:
+          path: spec.tls
+
+  - it: should not include TLS when disabled
+    template: templates/ingress/api-ingress.yaml
+    set:
+      platform: openshift
+      ingress.enabled: true
+      ingress.tls.enabled: false
+    asserts:
+      - notExists:
+          path: spec.tls
+
+  # ============================================================================
+  # Route service configuration tests
+  # ============================================================================
+  - it: should target correct service
+    template: templates/ingress/api-ingress.yaml
+    set:
+      platform: openshift
+      ingress.enabled: true
+    asserts:
+      - equal:
+          path: spec.to.kind
+          value: Service
+      - matchRegex:
+          path: spec.to.name
+          pattern: ".*-api$"
+      - equal:
+          path: spec.to.weight
+          value: 100
+
+  - it: should use http as default target port
+    template: templates/ingress/api-ingress.yaml
+    set:
+      platform: openshift
+      ingress.enabled: true
+    asserts:
+      - equal:
+          path: spec.port.targetPort
+          value: http
+
+  # ============================================================================
+  # PostgREST Route rewrite annotation tests
+  # ============================================================================
+  - it: PostgREST - should have rewrite-target annotation
+    template: templates/ingress/postgrest-ingress.yaml
+    set:
+      platform: openshift
+      ingress.enabled: true
+    asserts:
+      - equal:
+          path: metadata.annotations["haproxy.router.openshift.io/rewrite-target"]
+          value: /
+
+  # ============================================================================
+  # Route wildcardPolicy tests
+  # ============================================================================
+  - it: should have wildcardPolicy set to None
+    template: templates/ingress/api-ingress.yaml
+    set:
+      platform: openshift
+      ingress.enabled: true
+    asserts:
+      - equal:
+          path: spec.wildcardPolicy
+          value: None

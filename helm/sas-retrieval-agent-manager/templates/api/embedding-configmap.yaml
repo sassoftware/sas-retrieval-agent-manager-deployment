@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: embedding-config
+  name: {{ printf "%s-embedding-config" (include "api.fullname" .) }}
   labels:
-    {{- include "sas-retrieval-agent-manager-api.labels" . | nindent 4 }}
+    {{- include "api.labels" . | nindent 4 }}
 data:
-  emb_inference_runner_repo: {{ printf "%s/%s" .Values.global.configuration.embedding.image.repo.base .Values.global.configuration.embedding.image.repo.path }}
-  emb_inference_runner_tag_cpu: {{ .Values.global.configuration.embedding.image.tag_cpu | quote}}
+  emb_inference_runner_repo: {{ printf "%s/%s" .Values.images.embedding.repo.base .Values.images.embedding.repo.path }}
+  emb_inference_runner_tag_cpu: {{ .Values.images.embedding.tag | quote}}
   models_destination_dir: "/mnt/embedding_models"

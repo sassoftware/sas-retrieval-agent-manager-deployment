@@ -15,15 +15,15 @@ data:
     echo "🔍 Checking if GPG secrets already exist..."
     
     # Check if the Secret exists
-    if ${KUBECTL} get secret -n ${NAMESPACE} gpg-private-key >/dev/null 2>&1; then
-      echo "❌ Secret 'gpg-private-key' already exists."
+    if ${KUBECTL} get secret -n ${NAMESPACE} {{ printf "%s-private-key" (include "gpg.fullname" .) }} >/dev/null 2>&1; then
+      echo "❌ Secret '{{ printf "%s-private-key" (include "gpg.fullname" .) }}' already exists."
       touch /shared/secrets-exist
       exit 0
     fi
 
     # Check if the ConfigMap exists
-    if ${KUBECTL} get configmap -n ${NAMESPACE} gpg-public-key >/dev/null 2>&1; then
-      echo "❌ ConfigMap 'gpg-public-key' already exists."
+    if ${KUBECTL} get configmap -n ${NAMESPACE} {{ printf "%s-public-key" (include "gpg.fullname" .) }} >/dev/null 2>&1; then
+      echo "❌ ConfigMap '{{ printf "%s-public-key" (include "gpg.fullname" .) }}' already exists."
       touch /shared/secrets-exist
       exit 0
     fi
@@ -113,12 +113,12 @@ data:
     fi
 
     # Update the Kubernetes Secret with the private key
-    ${KUBECTL} create secret generic -n ${NAMESPACE} gpg-private-key \
+    ${KUBECTL} create secret generic -n ${NAMESPACE} {{ printf "%s-private-key" (include "gpg.fullname" .) }} \
       --from-file=privateKey="$PRIVATE_KEY_PATH" \
       --dry-run=client -o yaml | ${KUBECTL} -n ${NAMESPACE} apply -f -
 
     # Update the ConfigMap with the public key
-    ${KUBECTL} create configmap -n ${NAMESPACE} gpg-public-key \
+    ${KUBECTL} create configmap -n ${NAMESPACE} {{ printf "%s-public-key" (include "gpg.fullname" .) }} \
       --from-file=public="$PUBLIC_KEY_PATH" \
       --dry-run=client -o yaml | ${KUBECTL} -n ${NAMESPACE} apply -f -
 

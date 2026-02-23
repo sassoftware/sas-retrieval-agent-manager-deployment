@@ -41,6 +41,7 @@ SAS Retrieval Agent Manager is a comprehensive solution for managing agents or i
 | **Kubernetes** | Open-Source Kubernetes deployment                  |
 | **Azure**      | Azure Kubernetes Service (AKS) deployment          |
 | **AWS**        | Amazon Elastic Kubernetes Service (EKS) deployment |
+| **OpenShift**  | OpenShift Container Platform (OCP)                 |
 
 ## Prerequisites
 
@@ -74,6 +75,7 @@ Choose your preferred deployment platform and follow the cluster setup guide:
 | **Kubernetes** | 1.30.10            | [Getting Started](./docs/k8s-deployment.md#kubernetes-deployment-guide) |
 | **Azure**      | 1.32               | [Getting Started](./docs/azure-deployment.md#azure-deployment-guide)    |
 | **AWS**        | 1.32               | [Getting Started](./docs/aws-deployment.md)                             |
+| **OpenShift**  | 1.32 (OCP v4.19.1) | [Getting Started](./docs/ocp-deployment.md)                             |
 
 ### Database
 
@@ -260,11 +262,12 @@ After you have configured a Kubernetes cluster and PostgreSQL 15 database, use t
 
 Customize your RAM Values file based on the deployment template for your specific platform.
 
-| Platform              | RAM Values Examples                              |
-|-----------------------|--------------------------------------------------|
-| **Azure**             | [Example](./examples/azure/azure-ram-values.yaml)|
-| **AWS**               | [Example](./examples/aws/aws-ram-values.yaml)    |
-| **Bare-Metal**        | [Example](./examples/k8s/k8s-ram-values.yaml)    |
+| Platform                   | RAM Values Examples                              |
+|----------------------------|--------------------------------------------------|
+| **Open Source Kubernetes** | [Example](./examples/k8s/k8s-ram-values.yaml)    |
+| **Azure**                  | [Example](./examples/azure/azure-ram-values.yaml)|
+| **AWS**                    | [Example](./examples/aws/aws-ram-values.yaml)    |
+| **OpenShift**              | [Example](./examples/ocp/ocp-ram-values.yaml)    |
 
 #### Deploy with Helm
 
@@ -313,22 +316,21 @@ Vectorization Hub PVC:
 
 ```yaml
 
-filebrowser:
-  rootDir:
+storage:
+  application:
     pvc:
       size: <total_gigabytes_purchased> # ex: 20Gi
 
 ```
 
-Embedding PVC (RAM Version 2025.9.60+):
+Embedding PVC:
 
 ```yaml
 
-global:
-  configuration:
-    embedding:
-      pvc:
-        size: <desired_pvc_size> # ex: 20Gi
+storage:
+  embedding:
+    pvc:
+      size: <desired_pvc_size> # ex: 20Gi
 
 ```
 

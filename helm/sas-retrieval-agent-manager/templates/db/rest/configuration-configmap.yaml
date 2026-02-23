@@ -1,45 +1,27 @@
-{{- $dot := . -}}
-{{- $globalEnabled := false -}}
-{{- if hasKey .Values "global" -}}
-{{- if hasKey .Values.global "ingress" -}}
-{{- if .Values.global.ingress.enabled -}}
-{{- $globalEnabled = .Values.global.ingress.enabled -}}
-{{- end -}}
-{{- end -}}
-{{- end -}}
+{{ if .Values.ingress.enabled }}
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "postgrest.fullname" . }}-configuration
+  name: {{ printf "%s-configuration" (include "postgrest.fullname" .) }}
   labels:
     {{- include "postgrest.labels" . | nindent 4 }}
 data:
   postgrest.conf: |-
     db-aggregates-enabled = "true"
 
-    {{- range $k, $v := .Values.global.configuration.postgrest }}
-    {{- if eq $k "base" }}
-    {{- range $bk, $bv := $v }}
-    {{ $bk }} = {{ $bv | toString | quote }}
-    {{- end }}
-    {{- else if and (ne $k "monitoring") (ne $k "db") (ne $k "schema") }}
+    {{- range $k, $v := .Values.db.rest.config }}
     {{ $k }} = {{ $v | toString | quote }}
     {{- end }}
+
+    {{- if eq (hasKey .Values.db.rest.config "jwt-secret") false }}
+    jwt-secret = "@/jwks/certs.json"
     {{- end }}
 
-    {{ if $globalEnabled -}}
-    {{- if eq (hasKey .Values.global.configuration.postgrest "openapi-server-proxy-uri") false }}
-    openapi-server-proxy-uri = "https://{{ .Values.global.domain }}{{ regexReplaceAll "\\(.*" (first .Values.postgrest.ingress.paths).path "" }}"
+    {{- if eq (hasKey .Values.db.rest.config "openapi-server-proxy-uri") false }}
+    openapi-server-proxy-uri = "https://{{ .Values.ingress.domain }}{{ first .Values.ingress.postgrest.paths }}"
     {{- end }}
-    {{- if eq (hasKey .Values.global.configuration.postgrest "server-cors-allowed-origins") false }}
-    server-cors-allowed-origins = "https://{{ .Values.global.domain }}"
+    {{- if eq (hasKey .Values.db.rest.config "server-cors-allowed-origins") false }}
+    server-cors-allowed-origins = "https://{{ .Values.ingress.domain }}"
     {{- end }}
-    {{- else -}}
-    {{- if eq (hasKey .Values.global.configuration.postgrest "openapi-server-proxy-uri") false }}
-    openapi-server-proxy-uri = "https://{{ with (first .Values.postgrest.ingress.hosts) }}{{ .host }}{{ end }}/postgrest/"
-    {{- end }}
-    {{- if eq (hasKey .Values.global.configuration.postgrest "server-cors-allowed-origins") false }}
-    server-cors-allowed-origins = "https://{{ with (first .Values.postgrest.ingress.hosts) }}{{ .host }}{{ end }}"
-    {{- end }}
-    {{- end }}
+{{- end }}

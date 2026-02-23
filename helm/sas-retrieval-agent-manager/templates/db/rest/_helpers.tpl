@@ -2,19 +2,7 @@
 Expand the name of the chart.
 */}}
 {{- define "postgrest.name" -}}
-{{- if .Values.postgrest.nameOverride }}
-{{- .Values.postgrest.nameOverride | trunc 63 | trimSuffix "-" }}
-{{- else }}
-{{- printf "%s-postgrest" (include "sas-retrieval-agent-manager.name" .) | trunc 63 | trimSuffix "-" }}
-{{- end }}
-{{- end }}
-
-{{- define "postgrest.swagger.name" -}}
-{{- if .Values.postgrest.swagger.nameOverride }}
-{{- .Values.postgrest.swagger.nameOverride | trunc 63 | trimSuffix "-" }}
-{{- else }}
-{{- printf "%s-swagger-postgrest" (include "sas-retrieval-agent-manager.name" .) | trunc 63 | trimSuffix "-" }}
-{{- end }}
+{{- printf "%s-postgrest" (include "retrieval-agent-manager.name" .) | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
@@ -23,25 +11,7 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 If release name contains chart name it will be used as a full name.
 */}}
 {{- define "postgrest.fullname" -}}
-{{- if .Values.postgrest.fullnameOverride }}
-{{- .Values.postgrest.fullnameOverride | trunc 63 | trimSuffix "-" }}
-{{- else }}
-{{- printf "%s-postgrest" (include "sas-retrieval-agent-manager.fullname" .) | trunc 63 | trimSuffix "-" }}
-{{- end }}
-{{- end }}
-
-{{- define "postgrest.swagger.fullname" -}}
-{{- if .Values.postgrest.swagger.fullnameOverride }}
-{{- .Values.postgrest.swagger.fullnameOverride | trunc 63 | trimSuffix "-" }}
-{{- else }}
-{{- $defaultPostgrestName := printf "swagger-%s" .Chart.Name -}}
-{{- $swaggerName := default $defaultPostgrestName .Values.postgrest.swagger.nameOverride }}
-{{- if printf "swagger-%s" .Release.Name | contains $swaggerName }}
-{{- printf "swagger-%s" .Release.Name | trunc 63 | trimSuffix "-" }}
-{{- else }}
-{{- printf "swagger-%s-%s" $swaggerName .Release.Name | trunc 63 | trimSuffix "-" }}
-{{- end }}
-{{- end }}
+{{- printf "%s-postgrest" (include "retrieval-agent-manager.fullname" .) | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
@@ -63,47 +33,24 @@ app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
 
-{{- define "postgrest.swagger.labels" -}}
-helm.sh/chart: {{ include "postgrest.chart" . }}
-{{ include "postgrest.swagger.selectorLabels" . }}
-{{- if .Chart.AppVersion }}
-app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
-{{- end }}
-app.kubernetes.io/managed-by: {{ .Release.Service }}
-{{- end }}
-
 {{/*
 Selector labels
 */}}
 {{- define "postgrest.selectorLabels" -}}
 app.kubernetes.io/name: {{ include "postgrest.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
-{{- end }}
-
-{{- define "postgrest.swagger.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "postgrest.swagger.name" . }}
-app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/component: postgrest
+app.kubernetes.io/part-of: {{ include "retrieval-agent-manager.name" . }}
 {{- end }}
 
 {{/*
 Create the name of the service account to use
 */}}
 {{- define "postgrest.serviceAccountName" -}}
-{{- if (index .Values "postgrest").serviceAccount.create }}
-{{- default (include "postgrest.fullname" .) (index .Values "postgrest").serviceAccount.name }}
+{{- if .Values.db.rest.serviceAccount.create }}
+{{- .Values.db.rest.serviceAccount.name | default (include "postgrest.fullname" .) }}
 {{- else }}
-{{- default "default" (index .Values "postgrest").serviceAccount.name }}
-{{- end }}
-{{- end }}
-
-{{/*
-Create the name of the service account to use
-*/}}
-{{- define "postgrest.swagger.serviceAccountName" -}}
-{{- if .Values.postgrest.swagger.serviceAccount.create }}
-{{- default (include "postgrest.swagger.fullname" .) .Values.postgrest.swagger.serviceAccount.name }}
-{{- else }}
-{{- default "default" .Values.postgrest.swagger.serviceAccount.name }}
+{{- .Values.db.rest.serviceAccount.name | default "default" }}
 {{- end }}
 {{- end }}
 
@@ -124,4 +71,96 @@ Usage: {{ include "testValuesPath" (list .Values.postgrest "x" "y" "z") }}
   {{- end }}
 {{- end }}
 {{- $exists }}
+{{- end }}
+
+{{/*
+Default liveness probe configuration for API
+*/}}
+{{- define "postgrest.defaultLivenessProbe" -}}
+# -- HTTP GET probe configuration for liveness
+httpGet:
+  # -- Path to probe for liveness
+  path: /live
+  # -- Port to probe on
+  port: admin
+  # -- HTTP scheme to use
+  scheme: HTTP
+{{- end }}
+
+{{/*
+Default readiness probe configuration for API
+*/}}
+{{- define "postgrest.defaultLivenessProbeMonitoring" -}}
+# -- HTTP GET probe configuration for liveness
+httpGet:
+  # -- Path to probe for liveness
+  path: /live
+  # -- Port to probe on
+  port: admin-monitor
+  # -- HTTP scheme to use
+  scheme: HTTP
+{{- end }}
+
+{{/*
+Default liveness probe configuration for API
+*/}}
+{{- define "postgrest.defaultReadinessProbe" -}}
+# -- HTTP GET probe configuration for readiness
+httpGet:
+  # -- Path to probe for readiness
+  path: /ready
+  # -- Port to probe on
+  port: admin
+  # -- HTTP scheme to use
+  scheme: HTTP
+{{- end }}
+
+{{/*
+Default readiness probe configuration for API
+*/}}
+{{- define "postgrest.defaultReadinessProbeMonitoring" -}}
+# -- HTTP GET probe configuration for readiness
+httpGet:
+  # -- Path to probe for readiness
+  path: /ready
+  # -- Port to probe on
+  port: admin-monitor
+  # -- HTTP scheme to use
+  scheme: HTTP
+{{- end }}
+
+{{/*
+Merged liveness probe - combines defaults with user values
+*/}}
+{{- define "postgrest.livenessProbe" -}}
+{{- $default := fromYaml (include "postgrest.defaultLivenessProbe" .) }}
+{{- $custom := .Values.db.rest.livenessProbe | default dict }}
+{{- toYaml (merge (deepCopy $custom) (deepCopy $default)) }}
+{{- end }}
+
+{{/*
+Merged readiness probe - combines defaults with user values
+*/}}
+{{- define "postgrest.readinessProbe" -}}
+{{- $default := fromYaml (include "postgrest.defaultReadinessProbe" .) }}
+{{- $custom := .Values.db.rest.readinessProbe | default dict }}
+{{- toYaml (merge (deepCopy $custom) (deepCopy $default)) }}
+{{- end }}
+
+{{/*
+Merged liveness probe - combines defaults with user values
+*/}}
+{{- define "postgrest.livenessProbeMonitoring" -}}
+{{- $default := fromYaml (include "postgrest.defaultLivenessProbeMonitoring" .) }}
+{{- $custom := .Values.db.rest.livenessProbeMonitoring | default dict }}
+{{- toYaml (merge (deepCopy $custom) (deepCopy $default)) }}
+{{- end }}
+
+{{/*
+Merged readiness probe - combines defaults with user values
+*/}}
+{{- define "postgrest.readinessProbeMonitoring" -}}
+{{- $default := fromYaml (include "postgrest.defaultReadinessProbeMonitoring" .) }}
+{{- $custom := .Values.db.rest.readinessProbeMonitoring | default dict }}
+{{- toYaml (merge (deepCopy $custom) (deepCopy $default)) }}
 {{- end }}

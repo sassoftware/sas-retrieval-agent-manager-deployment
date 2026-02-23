@@ -1,0 +1,188 @@
+suite: Kueue resources tests
+templates:
+  - templates/kueue/cluster-queue.yaml
+  - templates/kueue/resource-flavor.yaml
+  - templates/kueue/genai-queue.yaml
+values:
+  - ../values.yaml
+
+tests:
+  # ============================================================================
+  # ClusterQueue tests
+  # ============================================================================
+  - it: should not render when kueue is disabled
+    template: templates/kueue/cluster-queue.yaml
+    set:
+      integrations.kueue.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render ClusterQueue
+    template: templates/kueue/cluster-queue.yaml
+    set:
+      integrations.kueue.enabled: true
+    asserts:
+      - isKind:
+          of: ClusterQueue
+      - isAPIVersion:
+          of: kueue.x-k8s.io/v1beta1
+
+  - it: should have correct name
+    template: templates/kueue/cluster-queue.yaml
+    asserts:
+      - equal:
+          path: metadata.name
+          value: cluster-queue
+
+  - it: should use release namespace in selector
+    template: templates/kueue/cluster-queue.yaml
+    release:
+      namespace: my-namespace
+    asserts:
+      - equal:
+          path: spec.namespaceSelector.matchLabels["kubernetes.io/metadata.name"]
+          value: my-namespace
+
+  - it: should use default CPU quota
+    template: templates/kueue/cluster-queue.yaml
+    asserts:
+      - equal:
+          path: spec.resourceGroups[0].flavors[0].resources[0].nominalQuota
+          value: 32
+
+  - it: should use custom CPU quota when provided
+    template: templates/kueue/cluster-queue.yaml
+    set:
+      integrations.kueue.config.cpuQuota: "64"
+    asserts:
+      - equal:
+          path: spec.resourceGroups[0].flavors[0].resources[0].nominalQuota
+          value: 64
+
+  - it: should use default memory quota
+    template: templates/kueue/cluster-queue.yaml
+    asserts:
+      - equal:
+          path: spec.resourceGroups[0].flavors[0].resources[1].nominalQuota
+          value: 128Gi
+
+  - it: should use custom memory quota when provided
+    template: templates/kueue/cluster-queue.yaml
+    set:
+      integrations.kueue.config.memoryQuota: 256Gi
+    asserts:
+      - equal:
+          path: spec.resourceGroups[0].flavors[0].resources[1].nominalQuota
+          value: 256Gi
+
+  - it: should use default pod quota
+    template: templates/kueue/cluster-queue.yaml
+    asserts:
+      - equal:
+          path: spec.resourceGroups[0].flavors[0].resources[2].nominalQuota
+          value: 6
+
+  - it: should use custom pod quota when provided
+    template: templates/kueue/cluster-queue.yaml
+    set:
+      integrations.kueue.config.podQuota: 12
+    asserts:
+      - equal:
+          path: spec.resourceGroups[0].flavors[0].resources[2].nominalQuota
+          value: 12
+
+  - it: should use default nvidia GPU quota
+    template: templates/kueue/cluster-queue.yaml
+    asserts:
+      - equal:
+          path: spec.resourceGroups[0].flavors[0].resources[3].nominalQuota
+          value: 0
+
+  - it: should use custom nvidia GPU quota when provided
+    template: templates/kueue/cluster-queue.yaml
+    set:
+      integrations.kueue.config.nvidiaGpuQuota: 4
+    asserts:
+      - equal:
+          path: spec.resourceGroups[0].flavors[0].resources[3].nominalQuota
+          value: 4
+
+  - it: should cover all resource types
+    template: templates/kueue/cluster-queue.yaml
+    asserts:
+      - contains:
+          path: spec.resourceGroups[0].coveredResources
+          content: cpu
+      - contains:
+          path: spec.resourceGroups[0].coveredResources
+          content: memory
+      - contains:
+          path: spec.resourceGroups[0].coveredResources
+          content: pods
+      - contains:
+          path: spec.resourceGroups[0].coveredResources
+          content: nvidia.com/gpu
+
+  # ============================================================================
+  # ResourceFlavor tests
+  # ============================================================================
+  - it: should render ResourceFlavor
+    template: templates/kueue/resource-flavor.yaml
+    asserts:
+      - isKind:
+          of: ResourceFlavor
+      - isAPIVersion:
+          of: kueue.x-k8s.io/v1beta1
+
+  - it: should have correct name
+    template: templates/kueue/resource-flavor.yaml
+    asserts:
+      - equal:
+          path: metadata.name
+          value: retrieval-agent-manager
+
+  - it: should include standard labels
+    template: templates/kueue/resource-flavor.yaml
+    asserts:
+      - exists:
+          path: metadata.labels["helm.sh/chart"]
+      - exists:
+          path: metadata.labels["app.kubernetes.io/name"]
+      - exists:
+          path: metadata.labels["app.kubernetes.io/instance"]
+
+  # ============================================================================
+  # LocalQueue tests
+  # ============================================================================
+  - it: should render LocalQueue
+    template: templates/kueue/genai-queue.yaml
+    asserts:
+      - isKind:
+          of: LocalQueue
+      - isAPIVersion:
+          of: kueue.x-k8s.io/v1beta1
+
+  - it: should have correct name
+    template: templates/kueue/genai-queue.yaml
+    asserts:
+      - equal:
+          path: metadata.name
+          value: genai-queue
+
+  - it: should reference the cluster-queue
+    template: templates/kueue/genai-queue.yaml
+    asserts:
+      - equal:
+          path: spec.clusterQueue
+          value: cluster-queue
+
+  - it: should include standard labels
+    template: templates/kueue/genai-queue.yaml
+    asserts:
+      - exists:
+          path: metadata.labels["helm.sh/chart"]
+      - exists:
+          path: metadata.labels["app.kubernetes.io/name"]
+      - exists:
+          path: metadata.labels["app.kubernetes.io/instance"]

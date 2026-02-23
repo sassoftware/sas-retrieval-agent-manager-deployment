@@ -156,6 +156,19 @@ data:
       "nodeReRegistrationTimeout": -1,
       "protocolMappers": [
         {
+          "config": {
+            "access.token.claim": "true",
+            "claim.name": "groups",
+            "full.path": "true",
+            "id.token.claim": "true",
+            "userinfo.token.claim": "true"
+          },
+          "consentRequired": false,
+          "name": "KeycloakOIDC",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-group-membership-mapper"
+        },
+        {
           "name": "SAS RAM roles",
           "protocol": "openid-connect",
           "protocolMapper": "oidc-usermodel-client-role-mapper",
@@ -216,6 +229,55 @@ data:
       fi
     }
 
+    function ensure_groups_claim_mapper() {
+      echo "Ensuring group membership mapper is present on API client..."
+      api_client_id="$(/opt/keycloak/bin/kcadm.sh get clients \
+        -r "${KEYCLOAK_REALM}" --config "${KCADM_CFG_PATH}"   \
+        -q "clientId=sas-ram-api" --fields id,clientId        \
+        --format csv | cut -d',' -f1 | sed 's/"//g')"
+      if [ -z "${api_client_id}" ]; then
+        echo "API client 'sas-ram-api' not found in realm '${KEYCLOAK_REALM}'."
+        return 1
+      fi
+
+      # Check if a groups membership mapper already exists by protocolMapper and claim.name
+      existing_mappers="$(/opt/keycloak/bin/kcadm.sh get "clients/${api_client_id}/protocol-mappers/models" \
+        -r "${KEYCLOAK_REALM}" --config "${KCADM_CFG_PATH}" \
+        --fields id,name,protocolMapper,config."claim.name" --format csv --noquotes)"
+
+      if echo "${existing_mappers}" | grep -q ',oidc-group-membership-mapper,groups$'; then
+        echo "Group membership mapper already exists on API client, skipping creation."
+        return 0
+      fi
+
+      # Create the KeycloakOIDC mapper
+      cat > /workdir/keycloak-oidc-mapper.json <<EOF
+    {
+      "config": {
+        "access.token.claim": "true",
+        "claim.name": "groups",
+        "full.path": "true",
+        "id.token.claim": "true",
+        "userinfo.token.claim": "true"
+      },
+      "consentRequired": false,
+      "name": "KeycloakOIDC",
+      "protocol": "openid-connect",
+      "protocolMapper": "oidc-group-membership-mapper"
+    }
+    EOF
+
+      echo "Creating group membership mapper on API client..."
+      if ! /opt/keycloak/bin/kcadm.sh create "clients/${api_client_id}/protocol-mappers/models" \
+        -r "${KEYCLOAK_REALM}" --config "${KCADM_CFG_PATH}" \
+        -f /workdir/keycloak-oidc-mapper.json; then
+        echo "Failed to create group membership mapper on API client."
+        return 1
+      fi
+
+      echo "Successfully created group membership mapper on API client."
+    }
+
     function add_ram_app_scope_mapping() {
       echo "Adding SAS RAM application scope mapping to API client..."
       api_client_id="$(/opt/keycloak/bin/kcadm.sh get clients \
@@ -248,6 +310,8 @@ data:
     }
 
     maybe_create_api_client || exit 1
+
+    ensure_groups_claim_mapper || exit 1
 
     add_ram_app_scope_mapping
 

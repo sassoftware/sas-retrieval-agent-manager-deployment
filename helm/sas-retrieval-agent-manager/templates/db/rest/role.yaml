@@ -4,7 +4,7 @@ metadata:
   name: {{ include "postgrest.serviceAccountName" . }}
   labels:
     {{- include "postgrest.labels" . | nindent 4 }}
-  {{- with (index .Values "postgrest").serviceAccount.annotations }}
+  {{- with .Values.db.rest.serviceAccount.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
   {{- end }}
@@ -14,7 +14,7 @@ rules:
     resources:
       - "secrets"
     resourceNames:
-      - "keycloak-certs"
+      - "{{ include "keycloak.fullname" . }}-certs"
     verbs:
       # - "create"
       - "get"

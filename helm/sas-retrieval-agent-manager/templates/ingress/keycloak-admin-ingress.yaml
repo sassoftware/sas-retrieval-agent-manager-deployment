@@ -1,0 +1,18 @@
+{{- if .Values.ingress.enabled -}}
+{{- $config := dict 
+    "name" (printf "%s-admin" (include "keycloak.fullname" .))
+    "serviceName" (include "keycloak.fullname" .)
+    "labels" "keycloak.labels"
+    "pathsKey" "keycloakAdmin"
+    "annotationsPath" "keycloakAdmin"
+    "servicePort" .Values.iam.keycloak.service.port
+-}}
+{{- $classType := include "retrieval-agent-manager.ingressClassType" . -}}
+{{- if eq $classType "route" -}}
+{{- include "openshift.route" (dict "ctx" . "config" $config) -}}
+{{- else if eq $classType "contour" -}}
+{{- include "contour.httpproxy" (dict "ctx" . "config" $config) -}}
+{{- else -}}
+{{- include "nginx.ingress" (dict "ctx" . "config" $config) -}}
+{{- end -}}
+{{- end -}}
