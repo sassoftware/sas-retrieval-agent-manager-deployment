@@ -1,0 +1,83 @@
+{{/*
+SecurityContextConstraints for OpenShift platform.
+This SCC allows the deployment to run with the required security settings.
+*/}}
+{{- if eq .Values.platform "openshift" -}}
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  name: {{ include "retrieval-agent-manager.fullname" . }}-scc
+  labels:
+    {{- include "retrieval-agent-manager.labels" . | nindent 4 }}
+  annotations:
+    kubernetes.io/description: "SCC for SAS Retrieval Agent Manager components"
+# Allow pods to run as any non-root user
+allowHostDirVolumePlugin: false
+allowHostIPC: false
+allowHostNetwork: false
+allowHostPID: false
+allowHostPorts: false
+allowPrivilegeEscalation: false
+allowPrivilegedContainer: false
+allowedCapabilities:
+  - SYS_NICE
+defaultAddCapabilities: []
+fsGroup:
+  type: RunAsAny
+groups: []
+priority: 10
+readOnlyRootFilesystem: false
+requiredDropCapabilities:
+  - MKNOD
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: MustRunAs
+seccompProfiles:
+  - runtime/default
+supplementalGroups:
+  type: RunAsAny
+users:
+  # API ServiceAccount
+  {{- if .Values.api.serviceAccount.create }}
+  - system:serviceaccount:{{ .Release.Namespace }}:{{ include "api.serviceAccountName" . }}
+  {{- end }}
+  # API Spawn ServiceAccount
+  {{- if .Values.api.spawn.serviceAccount.create }}
+  - system:serviceaccount:{{ .Release.Namespace }}:{{ include "api.spawn.serviceAccountName" . }}
+  {{- end }}
+  # UI ServiceAccount
+  {{- if .Values.ui.serviceAccount.create }}
+  - system:serviceaccount:{{ .Release.Namespace }}:{{ include "ui.serviceAccountName" . }}
+  {{- end }}
+  # Keycloak ServiceAccount
+  {{- if .Values.iam.keycloak.serviceAccount.create }}
+  - system:serviceaccount:{{ .Release.Namespace }}:{{ include "keycloak.serviceAccountName" . }}
+  - system:serviceaccount:{{ .Release.Namespace }}:{{ include "keycloak.serviceAccountName" . }}-realm-update
+  - system:serviceaccount:{{ .Release.Namespace }}:{{ include "keycloak.serviceAccountName" . }}-job
+  {{- end }}
+  # PostgREST ServiceAccount
+  {{- if .Values.db.rest.serviceAccount.create }}
+  - system:serviceaccount:{{ .Release.Namespace }}:{{ include "postgrest.serviceAccountName" . }}
+  {{- end }}
+  # DB Init ServiceAccount
+  {{- if .Values.db.init.serviceAccount.create }}
+  - system:serviceaccount:{{ .Release.Namespace }}:{{ include "db-initialization.serviceAccountName" . }}
+  {{- end }}
+  # DB Migration ServiceAccount
+  {{- if .Values.db.migration.serviceAccount.create }}
+  - system:serviceaccount:{{ .Release.Namespace }}:{{ include "db-migration.serviceAccountName" . }}
+  {{- end }}
+  # GPG ServiceAccount
+  {{- if and (include "gpg.shouldGenerateKeys" .) .Values.security.gpg.serviceAccount.create }}
+  - system:serviceaccount:{{ .Release.Namespace }}:{{ include "gpg.serviceAccountName" . }}
+  {{- end }}
+volumes:
+  - configMap
+  - downwardAPI
+  - emptyDir
+  - ephemeral
+  - persistentVolumeClaim
+  - projected
+  - secret
+{{- end -}}

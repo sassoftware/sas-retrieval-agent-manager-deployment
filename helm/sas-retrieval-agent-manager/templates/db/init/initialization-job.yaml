@@ -1,57 +1,47 @@
-{{- if .Values.global.configuration.database.initializeDb -}}
-{{- $postgres_repo_base := "" -}}
-{{- $kubectl_repo_base := "" -}}
-{{- if ((include "testValuesPath" (list .Values "global" "image" "repo" "base")) | eq "true") -}}
-    {{- $postgres_repo_base = .Values.global.image.repo.base | default (index .Values "sas-retrieval-agent-manager-db-init").image.postgres.repo.base -}}
-    {{- $kubectl_repo_base = .Values.global.image.repo.base | default (index .Values "sas-retrieval-agent-manager-db-init").image.kubectl.repo.base -}}
-{{- else -}}
-  {{- $postgres_repo_base = (index .Values "sas-retrieval-agent-manager-db-init").image.postgres.repo.base -}}
-  {{- $kubectl_repo_base = (index .Values "sas-retrieval-agent-manager-db-init").image.kubectl.repo.base -}}
-{{- end -}}
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ include "sas-retrieval-agent-manager-db-init.fullname" . }}
+  name: {{ include "db-initialization.fullname" . }}
   labels:
-    {{- include "sas-retrieval-agent-manager-db-init.labels" . | nindent 4 }}
+    {{- include "db-initialization.labels" . | nindent 4 }}
     ram-base-job: "true"
   annotations:
     argocd.argoproj.io/sync-options: Skip
-    {{- with (index .Values "sas-retrieval-agent-manager-db-init").annotations }}
+    {{- with .Values.db.init.annotations }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
 spec:
   template:
     metadata:
-      {{- with (index .Values "sas-retrieval-agent-manager-db-init").podAnnotations }}
+      {{- with .Values.db.init.podAnnotations }}
       annotations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "sas-retrieval-agent-manager-db-init.labels" . | nindent 8 }}
-        {{- with (index .Values "sas-retrieval-agent-manager-db-init").podLabels }}
+        {{- include "db-initialization.labels" . | nindent 8 }}
+        {{- with .Values.db.init.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:
-      {{- with uniq (concat ((index .Values "sas-retrieval-agent-manager-db-init").imagePullSecrets | default (list)) (.Values.global.imagePullSecrets | default (list))) }}
+      {{- with .Values.images.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "sas-retrieval-agent-manager-db-init.serviceAccountName" . }}
+      serviceAccountName: {{ include "db-initialization.serviceAccountName" . }}
       securityContext:
-        {{- toYaml (index .Values "sas-retrieval-agent-manager-db-init").podSecurityContext | nindent 8 }}
+        {{- toYaml .Values.db.init.podSecurityContext | nindent 8 }}
       initContainers:
         - name: initialization
           command:
             - "/bin/sh"
             - "-c"
             - "/scripts/initialize_database.sh"
-          image: "{{ $postgres_repo_base }}/{{ (index .Values "sas-retrieval-agent-manager-db-init").image.postgres.repo.path }}:{{ (index .Values "sas-retrieval-agent-manager-db-init").image.postgres.tag }}"
-          imagePullPolicy: {{ (index .Values "sas-retrieval-agent-manager-db-init").image.postgres.pullPolicy }}
+          image: "{{- include "images.postgres" . -}}"
+          imagePullPolicy: {{ .Values.images.postgres.pullPolicy }}
           securityContext:
-            {{- toYaml (index .Values "sas-retrieval-agent-manager-db-init").securityContext | nindent 12 }}
+            {{- toYaml .Values.db.init.securityContext | nindent 12 }}
           resources:
-            {{- toYaml (index .Values "sas-retrieval-agent-manager-db-init").resources | nindent 12 }}
+            {{- toYaml .Values.db.init.resources | nindent 12 }}
           volumeMounts:
             - mountPath: /tmp
               name: temp-storage
@@ -73,8 +63,11 @@ spec:
               readOnly: true
             - name: db-application-connection
               mountPath: /config/postgrest
-            - name: db-monitoring
+            - name: db-monitoring-connection
               mountPath: /config/monitoring
+            - name: db-monitoring-credentials
+              mountPath: /secret/monitoring
+              readOnly: true
             - name: db-otel-credentials
               mountPath: /secret/otel
               readOnly: true
@@ -91,22 +84,22 @@ spec:
               readOnly: true
             - name: application-roles
               mountPath: /config/application-roles
+            - name: monitoring-roles
+              mountPath: /config/monitoring-roles
             - name: configmap-scripts
               mountPath: /scripts
-            - name: db-connection
-              mountPath: /config/db-connection
       containers:
         - name: secret-cleaning
           command:
             - "/bin/sh"
             - "-c"
             - "/scripts/clean_admin_secret.sh"
-          image: "{{ $kubectl_repo_base }}/{{ (index .Values "sas-retrieval-agent-manager-db-init").image.kubectl.repo.path }}:{{ (index .Values "sas-retrieval-agent-manager-db-init").image.kubectl.tag }}"
-          imagePullPolicy: {{ (index .Values "sas-retrieval-agent-manager-db-init").image.kubectl.pullPolicy }}
+          image: "{{- include "images.kubectl" . -}}"
+          imagePullPolicy: {{ .Values.images.kubectl.pullPolicy }}
           securityContext:
-            {{- toYaml (index .Values "sas-retrieval-agent-manager-db-init").securityContext | nindent 12 }}
+            {{- toYaml .Values.db.init.securityContext | nindent 12 }}
           resources:
-            {{- toYaml (index .Values "sas-retrieval-agent-manager-db-init").resources | nindent 12 }}
+            {{- toYaml .Values.db.init.resources | nindent 12 }}
           volumeMounts:
             - mountPath: /workdir
               name: workdir
@@ -115,15 +108,15 @@ spec:
             - name: configmap-scripts
               mountPath: /scripts
       restartPolicy: OnFailure
-      {{- with (index .Values "sas-retrieval-agent-manager-db-init").nodeSelector }}
+      {{- with .Values.db.init.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with (index .Values "sas-retrieval-agent-manager-db-init").affinity }}
+      {{- with .Values.db.init.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with (index .Values "sas-retrieval-agent-manager-db-init").tolerations }}
+      {{- with .Values.db.init.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
@@ -134,49 +127,54 @@ spec:
           emptyDir: {}
         - name: db-connection
           configMap:
-            name: db-connection
+            name: {{ printf "%s-db-connection" (include "retrieval-agent-manager.fullname" .) }}
         - name: db-admin-credentials
           secret:
-            secretName: admin-db-credentials
+            secretName: {{ printf "%s-admin-db-credentials" (include "retrieval-agent-manager.fullname" .) }}
         - name: db-embedding-credentials
           secret:
-            secretName: embedding-db-credentials
+            secretName: {{ printf "%s-embedding-db-credentials" (include "retrieval-agent-manager.fullname" .) }}
         - name: db-keycloak-connection
           configMap:
-            name: db-keycloak
+            name: {{ printf "%s-db-keycloak" (include "retrieval-agent-manager.fullname" .) }}
         - name: db-keycloak-credentials
           secret:
-            secretName: keycloak-db-credentials
+            secretName: {{ printf "%s-keycloak-db-credentials" (include "retrieval-agent-manager.fullname" .) }}
         - name: db-migration-credentials
           secret:
-            secretName: migration-db-credentials
+            secretName: {{ printf "%s-migration-db-credentials" (include "retrieval-agent-manager.fullname" .) }}
         - name: db-application-connection
           configMap:
-            name: db-application
-        - name: db-monitoring
+            name: {{ printf "%s-db-application" (include "retrieval-agent-manager.fullname" .) }}
+        - name: db-monitoring-connection
           configMap:
-            name: db-monitoring
+            name: {{ printf "%s-db-monitoring" (include "retrieval-agent-manager.fullname" .) }}
+        - name: db-monitoring-credentials
+          secret:
+            secretName: {{ printf "%s-monitoring-db-credentials" (include "retrieval-agent-manager.fullname" .) }}
         - name: db-otel-credentials
           secret:
-            secretName: otel-db-credentials
+            secretName: {{ printf "%s-otel-db-credentials" (include "retrieval-agent-manager.fullname" .) }}
         - name: db-application-credentials
           secret:
-            secretName: application-db-credentials
+            secretName: {{ printf "%s-application-db-credentials" (include "retrieval-agent-manager.fullname" .) }}
         - name: db-vector-store-connection
           configMap:
-            name: db-vector-store
+            name: {{ printf "%s-db-vector-store" (include "retrieval-agent-manager.fullname" .) }}
         - name: db-vector-store-credentials
           secret:
-            secretName: vector-store-db-credentials
+            secretName: {{ printf "%s-vector-store-db-credentials" (include "retrieval-agent-manager.fullname" .) }}
         - name: db-vectorization-job-credentials
           secret:
-            secretName: vectorization-job-db-credentials
+            secretName: {{ printf "%s-vector-job-db-credentials" (include "retrieval-agent-manager.fullname" .) }}
         - name: application-roles
           configMap:
-            name: application-roles
+            name: {{ printf "%s-app-roles" (include "retrieval-agent-manager.fullname" .) }}
+        - name: monitoring-roles
+          configMap:
+            name: {{ printf "%s-mon-roles" (include "retrieval-agent-manager.fullname" .) }}
         - name: configmap-scripts
           configMap:
-            name: {{ include "sas-retrieval-agent-manager-db-init.fullname" . }}-scripts
+            name: {{ include "db-initialization.fullname" . }}-scripts
             defaultMode: 0777
   backoffLimit: 1000
-{{- end }}

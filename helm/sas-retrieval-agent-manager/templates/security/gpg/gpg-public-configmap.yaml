@@ -1,22 +1,22 @@
 {{- $publicKey := "" -}}
 {{- $privateKey := "" -}}
-{{- if (include "testValuesPath" (list .Values "global" "configuration" "gpg" "publicKey")) | eq "true" -}}
-  {{- if ne .Values.global.configuration.gpg.publicKey "" -}}
-    {{- $publicKey = .Values.global.configuration.gpg.publicKey -}}
+{{- if (include "testValuesPath" (list .Values "security" "gpg" "config" "publicKey")) | eq "true" -}}
+  {{- if ne .Values.security.gpg.config.publicKey "" -}}
+    {{- $publicKey = .Values.security.gpg.config.publicKey -}}
   {{- end -}}
 {{- end -}}
-{{- if (include "testValuesPath" (list .Values "global" "configuration" "gpg" "privateKey")) | eq "true" -}}
-  {{- if ne .Values.global.configuration.gpg.privateKey "" -}}
-    {{- $privateKey = .Values.global.configuration.gpg.privateKey -}}
+{{- if (include "testValuesPath" (list .Values "security" "gpg" "config" "privateKey")) | eq "true" -}}
+  {{- if ne .Values.security.gpg.config.privateKey "" -}}
+    {{- $privateKey = .Values.security.gpg.config.privateKey -}}
   {{- end -}}
 {{- end -}}
 {{- if and (ne $publicKey "") (ne $privateKey "") -}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: gpg-public-key
+  name: {{ printf "%s-public-key" (include "gpg.fullname" .) }}
   labels:
     {{- include "gpg.labels" . | nindent 4 }}
 data:
-  publicKey: {{ $publicKey | quote }}
+  public: {{ $publicKey | quote }}
 {{- end }}

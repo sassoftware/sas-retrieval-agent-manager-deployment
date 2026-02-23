@@ -1,0 +1,287 @@
+suite: Contour HTTPProxy template tests
+templates:
+  - templates/ingress/root-ingress.yaml
+values:
+  - ../values.yaml
+
+tests:
+  # ============================================================================
+  # HTTPProxy basic structure tests
+  # ============================================================================
+  - it: should render HTTPProxy with correct apiVersion
+    template: templates/ingress/root-ingress.yaml
+    set:
+      platform: azure
+      ingress.enabled: true
+      ingress.classType: contour
+      ingress.domain: test.example.com
+    asserts:
+      - isAPIVersion:
+          of: projectcontour.io/v1
+      - isKind:
+          of: HTTPProxy
+
+  - it: should set ingressClassName to contour
+    template: templates/ingress/root-ingress.yaml
+    set:
+      platform: azure
+      ingress.enabled: true
+      ingress.classType: contour
+      ingress.domain: test.example.com
+    asserts:
+      - equal:
+          path: spec.ingressClassName
+          value: contour
+
+  # ============================================================================
+  # Virtual host configuration tests
+  # ============================================================================
+  - it: should set correct fqdn in virtualhost
+    template: templates/ingress/root-ingress.yaml
+    set:
+      platform: azure
+      ingress.enabled: true
+      ingress.classType: contour
+      ingress.domain: my-app.example.com
+    asserts:
+      - equal:
+          path: spec.virtualhost.fqdn
+          value: my-app.example.com
+
+  # ============================================================================
+  # TLS configuration tests
+  # ============================================================================
+  - it: should include TLS in virtualhost when enabled
+    template: templates/ingress/root-ingress.yaml
+    set:
+      platform: azure
+      ingress.enabled: true
+      ingress.classType: contour
+      ingress.domain: test.example.com
+      ingress.tls.enabled: true
+      ingress.tls.secretName: my-tls-secret
+    asserts:
+      - equal:
+          path: spec.virtualhost.tls.secretName
+          value: my-tls-secret
+
+  - it: should use default secretName (ingress-tls) when not provided
+    template: templates/ingress/root-ingress.yaml
+    set:
+      platform: azure
+      ingress.enabled: true
+      ingress.classType: contour
+      ingress.domain: test.example.com
+      ingress.tls.enabled: true
+    asserts:
+      - equal:
+          path: spec.virtualhost.tls.secretName
+          value: ingress-tls
+
+  - it: should not include TLS when disabled
+    template: templates/ingress/root-ingress.yaml
+    set:
+      platform: azure
+      ingress.enabled: true
+      ingress.classType: contour
+      ingress.domain: test.example.com
+      ingress.tls.enabled: false
+    asserts:
+      - notExists:
+          path: spec.virtualhost.tls
+
+  # ============================================================================
+  # Routes configuration tests
+  # ============================================================================
+  - it: should include all routes in combined HTTPProxy incl root ingress
+    template: templates/ingress/root-ingress.yaml
+    set:
+      platform: azure
+      ingress.enabled: true
+      ingress.classType: contour
+      ingress.domain: test.example.com
+      ingress.enableRootIngress: true
+    asserts:
+      - exists:
+          path: spec.routes
+      - lengthEqual:
+          path: spec.routes
+          count: 9
+
+  - it: should include all routes in combined HTTPProxy excl root ingress
+    template: templates/ingress/root-ingress.yaml
+    set:
+      platform: azure
+      ingress.enabled: true
+      ingress.classType: contour
+      ingress.domain: test.example.com
+      ingress.enableRootIngress: false
+    asserts:
+      - exists:
+          path: spec.routes
+      - lengthEqual:
+          path: spec.routes
+          count: 8
+
+  - it: should include API route with correct service
+    template: templates/ingress/root-ingress.yaml
+    set:
+      platform: azure
+      ingress.enabled: true
+      ingress.classType: contour
+      ingress.domain: test.example.com
+    asserts:
+      - contains:
+          path: spec.routes
+          content:
+            conditions:
+              - prefix: /SASRetrievalAgentManager/api
+            services:
+              - name: retrieval-agent-manager-api
+                port: 80
+
+  - it: should include UI route with correct service
+    template: templates/ingress/root-ingress.yaml
+    set:
+      platform: azure
+      ingress.enabled: true
+      ingress.classType: contour
+      ingress.domain: test.example.com
+    asserts:
+      - contains:
+          path: spec.routes
+          content:
+            conditions:
+              - prefix: /SASRetrievalAgentManager
+            services:
+              - name: retrieval-agent-manager-app
+                port: 8080
+
+  - it: should include Keycloak routes
+    template: templates/ingress/root-ingress.yaml
+    set:
+      platform: azure
+      ingress.enabled: true
+      ingress.classType: contour
+      ingress.domain: test.example.com
+    asserts:
+      - contains:
+          path: spec.routes
+          content:
+            conditions:
+              - prefix: /SASRetrievalAgentManager/auth/realms
+            services:
+              - name: retrieval-agent-manager-keycloak
+                port: 8080
+      - contains:
+          path: spec.routes
+          content:
+            conditions:
+              - prefix: /SASRetrievalAgentManager/auth/resources
+            services:
+              - name: retrieval-agent-manager-keycloak
+                port: 8080
+
+  - it: should include Keycloak admin route
+    template: templates/ingress/root-ingress.yaml
+    set:
+      platform: azure
+      ingress.enabled: true
+      ingress.classType: contour
+      ingress.domain: test.example.com
+    asserts:
+      - contains:
+          path: spec.routes
+          content:
+            conditions:
+              - prefix: /SASRetrievalAgentManager/auth/admin
+            services:
+              - name: retrieval-agent-manager-keycloak
+                port: 8080
+
+  - it: should include PostgREST routes with correct ports and pathRewritePolicy
+    template: templates/ingress/root-ingress.yaml
+    set:
+      platform: azure
+      ingress.enabled: true
+      ingress.classType: contour
+      ingress.domain: test.example.com
+    asserts:
+      - contains:
+          path: spec.routes
+          content:
+            conditions:
+              - prefix: /SASRetrievalAgentManager/postgrest
+            pathRewritePolicy:
+              replacePrefix:
+                - replacement: /
+            services:
+              - name: retrieval-agent-manager-postgrest
+                port: 3000
+      - contains:
+          path: spec.routes
+          content:
+            conditions:
+              - prefix: /SASRetrievalAgentManager/postgrest/monitoring
+            pathRewritePolicy:
+              replacePrefix:
+                - replacement: /
+            services:
+              - name: retrieval-agent-manager-postgrest
+                port: 3002
+
+  # ============================================================================
+  # Contour-specific policy tests
+  # ============================================================================
+  - it: should include timeoutPolicy when configured
+    template: templates/ingress/root-ingress.yaml
+    set:
+      platform: azure
+      ingress.enabled: true
+      ingress.classType: contour
+      ingress.domain: test.example.com
+      ingress.contour.timeoutPolicy:
+        response: 60s
+        idle: 300s
+    asserts:
+      - equal:
+          path: spec.routes[0].timeoutPolicy.response
+          value: 60s
+      - equal:
+          path: spec.routes[0].timeoutPolicy.idle
+          value: 300s
+
+  - it: should not include timeoutPolicy when not configured
+    template: templates/ingress/root-ingress.yaml
+    set:
+      platform: azure
+      ingress.enabled: true
+      ingress.classType: contour
+      ingress.domain: test.example.com
+    asserts:
+      - notExists:
+          path: spec.routes[0].timeoutPolicy
+
+  # ============================================================================
+  # No output for individual ingress files with Contour
+  # ============================================================================
+  - it: should not render when ingress is disabled
+    template: templates/ingress/root-ingress.yaml
+    set:
+      platform: azure
+      ingress.enabled: false
+      ingress.classType: contour
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should not render for non-contour ingress class
+    template: templates/ingress/root-ingress.yaml
+    set:
+      platform: azure
+      ingress.enabled: true
+      ingress.className: nginx
+    asserts:
+      - hasDocuments:
+          count: 0
+

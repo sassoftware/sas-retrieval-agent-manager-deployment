@@ -1,32 +1,32 @@
-{{- if (index .Values "sas-retrieval-agent-manager-app").autoscaling.enabled }}
+{{- if .Values.ui.autoscaling.enabled }}
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: {{ include "sas-retrieval-agent-manager-ui.fullname" . }}
+  name: {{ include "ui.fullname" . }}
   labels:
-    {{- include "sas-retrieval-agent-manager-ui.labels" . | nindent 4 }}
+    {{- include "ui.labels" . | nindent 4 }}
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: {{ include "sas-retrieval-agent-manager-ui.fullname" . }}
-  minReplicas: {{ (index .Values "sas-retrieval-agent-manager-app").autoscaling.minReplicas }}
-  maxReplicas: {{ (index .Values "sas-retrieval-agent-manager-app").autoscaling.maxReplicas }}
+    name: {{ include "ui.fullname" . }}
+  minReplicas: {{ .Values.ui.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.ui.autoscaling.maxReplicas }}
   metrics:
-    {{- if (index .Values "sas-retrieval-agent-manager-app").autoscaling.targetCPUUtilizationPercentage }}
+    {{- if .Values.ui.autoscaling.targetCPUUtilizationPercentage }}
     - type: Resource
       resource:
         name: cpu
         target:
           type: Utilization
-          averageUtilization: {{ (index .Values "sas-retrieval-agent-manager-app").autoscaling.targetCPUUtilizationPercentage }}
+          averageUtilization: {{ .Values.ui.autoscaling.targetCPUUtilizationPercentage }}
     {{- end }}
-    {{- if (index .Values "sas-retrieval-agent-manager-app").autoscaling.targetMemoryUtilizationPercentage }}
+    {{- if .Values.ui.autoscaling.targetMemoryUtilizationPercentage }}
     - type: Resource
       resource:
         name: memory
         target:
           type: Utilization
-          averageUtilization: {{ (index .Values "sas-retrieval-agent-manager-app").autoscaling.targetMemoryUtilizationPercentage }}
+          averageUtilization: {{ .Values.ui.autoscaling.targetMemoryUtilizationPercentage }}
     {{- end }}
 {{- end }}

@@ -1,16 +1,10 @@
-{{- if .Values.global.configuration.llmHydration.enabled }}
-{{- $postgres_repo_base := "" -}}
-{{- if ((include "testValuesPath" (list .Values "global" "image" "repo" "base")) | eq "true") -}}
-  {{- $postgres_repo_base = .Values.global.image.repo.base | default (index .Values "sas-retrieval-agent-manager-db-migration").image.postgres.repo.base -}}
-{{- else -}}
-  {{- $postgres_repo_base = (index .Values "sas-retrieval-agent-manager-db-migration" "image" "postgres" "repo" "base") -}}
-{{- end -}}
+{{- if .Values.db.migration.config.llmHydration.enabled -}}
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ include "sas-retrieval-agent-manager-db-migration.fullname" . }}-llm-hydration
+  name: {{ include "db-migration.fullname" . }}-llm-hydration
   labels:
-    {{- include "sas-retrieval-agent-manager-db-migration.labels" . | nindent 4 }}
+    {{- include "db-migration.labels" . | nindent 4 }}
     ram-base-job: "true"
   annotations:
     argocd.argoproj.io/sync-options: Skip
@@ -19,103 +13,103 @@ metadata:
 spec:
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
+      {{- with .Values.db.migration.podAnnotations }}
       annotations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "sas-retrieval-agent-manager-db-migration.labels" . | nindent 8 }}
-        {{- with .Values.podLabels }}
+        {{- include "db-migration.labels" . | nindent 8 }}
+        {{- with .Values.db.migration.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:
-      {{- with uniq (concat (.Values.imagePullSecrets | default (list)) (.Values.global.imagePullSecrets | default (list))) }}
+      {{- with .Values.images.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "sas-retrieval-agent-manager-db-migration.serviceAccountName" . }}
+      serviceAccountName: {{ include "db-migration.serviceAccountName" . }}
       securityContext:
-        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+        {{- toYaml .Values.db.migration.podSecurityContext | nindent 8 }}
       initContainers:
         - name: wait-for-llm-table
           command:
             - "/bin/sh"
             - "-c"
             - "/scripts/wait_for_llm_table.sh"
-          image: "{{ $postgres_repo_base }}/{{ (index .Values "sas-retrieval-agent-manager-db-migration").image.postgres.repo.path }}:{{ (index .Values "sas-retrieval-agent-manager-db-migration").image.postgres.tag }}"
-          imagePullPolicy: {{ (index .Values "sas-retrieval-agent-manager-db-migration").image.postgres.pullPolicy }}
+          image: "{{- include "images.postgres" . -}}"
+          imagePullPolicy: {{ .Values.images.postgres.pullPolicy }}
           env:
             - name: DB_USER
               valueFrom:
                 secretKeyRef:
                   key: user
-                  name: migration-db-credentials
+                  name: {{ printf "%s-migration-db-credentials" (include "retrieval-agent-manager.fullname" .) }}
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
                   key: password
-                  name: migration-db-credentials
+                  name: {{ printf "%s-migration-db-credentials" (include "retrieval-agent-manager.fullname" .) }}
             - name: DB_HOST
               valueFrom:
                 configMapKeyRef:
                   key: host
-                  name: db-connection
+                  name: {{ printf "%s-db-connection" (include "retrieval-agent-manager.fullname" .) }}
             - name: DB_PORT
               valueFrom:
                 configMapKeyRef:
                   key: port
-                  name: db-connection
+                  name: {{ printf "%s-db-connection" (include "retrieval-agent-manager.fullname" .) }}
             - name: DB_NAME
               valueFrom:
                 configMapKeyRef:
                   key: db
-                  name: db-application
+                  name: {{ printf "%s-db-application" (include "retrieval-agent-manager.fullname" .) }}
             - name: DB_SCHEMA
               valueFrom:
                 configMapKeyRef:
                   key: schema
-                  name: db-application
+                  name: {{ printf "%s-db-application" (include "retrieval-agent-manager.fullname" .) }}
           securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
+            {{- toYaml .Values.db.migration.securityContext | nindent 12 }}
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+            {{- toYaml .Values.db.migration.resources | nindent 12 }}
           volumeMounts:
             - mountPath: "/scripts"
               name: scripts
               readOnly: true
       containers:
         - name: llm-hydration
-          image: "{{ $postgres_repo_base }}/{{ (index .Values "sas-retrieval-agent-manager-db-migration").image.postgres.repo.path }}:{{ (index .Values "sas-retrieval-agent-manager-db-migration").image.postgres.tag }}"
-          imagePullPolicy: {{ (index .Values "sas-retrieval-agent-manager-db-migration").image.postgres.pullPolicy }}
+          image: "{{- include "images.postgres" . -}}"
+          imagePullPolicy: {{ .Values.images.postgres.pullPolicy }}
           command:
             - "/bin/bash"
             - "-c"
             - "/scripts/llm_hydration_initialization.sh"
           securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
+            {{- toYaml .Values.db.migration.securityContext | nindent 12 }}
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+            {{- toYaml .Values.db.migration.resources | nindent 12 }}
           env:
             - name: DB_HOST
               valueFrom:
                 configMapKeyRef:
                   key: host
-                  name: db-connection
+                  name: {{ printf "%s-db-connection" (include "retrieval-agent-manager.fullname" .) }}
             - name: DB_PORT
               valueFrom:
                 configMapKeyRef:
                   key: port
-                  name: db-connection
+                  name: {{ printf "%s-db-connection" (include "retrieval-agent-manager.fullname" .) }}
             - name: USER
               valueFrom:
                 secretKeyRef:
                   key: user
-                  name: migration-db-credentials
+                  name: {{ printf "%s-migration-db-credentials" (include "retrieval-agent-manager.fullname" .) }}
             - name: PGPASSWORD
               valueFrom:
                 secretKeyRef:
                   key: password
-                  name: migration-db-credentials
+                  name: {{ printf "%s-migration-db-credentials" (include "retrieval-agent-manager.fullname" .) }}
             - name: LLM_KEY
               valueFrom:
                 secretKeyRef:
@@ -129,25 +123,25 @@ spec:
               mountPath: /config/db-config
               readOnly: true
       restartPolicy: OnFailure
-      {{- with .Values.nodeSelector }}
+      {{- with .Values.db.migration.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.affinity }}
+      {{- with .Values.db.migration.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.tolerations }}
+      {{- with .Values.db.migration.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       volumes:
         - name: scripts
           configMap:
-            name: {{ .Chart.Name }}-db-migration-scripts
+            name: {{ include "db-migration.fullname" . }}-scripts
             defaultMode: 0777
         - name: db-config
           configMap:
-            name: db-application
+            name: {{ printf "%s-db-application" (include "retrieval-agent-manager.fullname" .) }}
   backoffLimit: 10
-{{- end }}
+{{- end -}}
