@@ -2,7 +2,7 @@
 
 ## Table of Contents
 
-- [OCP Deployment Guide](#ocp-deployment-guide)
+- [OpenShift Deployment Guide](#openshift-deployment-guide)
   - [Table of Contents](#table-of-contents)
   - [Overview](#overview)
   - [Prerequisites](#prerequisites)
@@ -12,12 +12,7 @@
     - [Hardware Requirements](#hardware-requirements)
     - [Infrastructure Requirements](#infrastructure-requirements)
   - [Getting Started](#getting-started)
-    - [Clone the Project](#clone-the-project)
   - [Configuration Setup](#configuration-setup)
-  - [Authentication Setup](#aws-authentication)
-  - [Deploy the Kubernetes Cluster and PostgreSQL Database](#deploy-the-kubernetes-cluster-and-postgresql-database)
-  - [EFS Setup](#deploy-efs-and-dedicated-role)
-  - [RDS SSL Cert Setup](#deploy-rds-ssl-certificate)
   - [Application Deployment](#application-deployment)
 
 ---
@@ -57,7 +52,7 @@ This guide describes deploying an AWS infrastructure on which to deploy SAS Retr
 
 ## Getting Started
 
-We do not support the entire infrastructure deployment process for OpenShift like we do with AWS, Azure, and Open Source Kubernetes. You will need an already functioning OpenShift cluster.
+We do not support the entire infrastructure deployment process for OpenShift like we do with AWS, Azure, and Open Source Kubernetes. You will need an already functioning OpenShift cluster. If you're interested in deploying an OpenShift cluster, [please refer to their documentation here](https://docs.redhat.com/en/documentation/openshift_container_platform/4.14/html/installation_overview/ocp-installation-overview).
 
 ## Configuration Setup
 
