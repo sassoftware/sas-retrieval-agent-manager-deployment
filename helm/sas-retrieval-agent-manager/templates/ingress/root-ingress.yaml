@@ -1,0 +1,6 @@
+{{- if .Values.ingress.enabled -}}
+{{- $classType := include "retrieval-agent-manager.ingressClassType" . -}}
+{{- if eq $classType "contour" -}}
+{{- include "contour.httpproxy.combined" . -}}
+{{- end -}}
+{{- end -}}

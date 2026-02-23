@@ -1,3 +1,7 @@
+#############################################################
+##### NOTICE: YOU MUST CHANGE ANY FIELD ECLOSED WITH <> #####
+#############################################################
+
 # -- Extra Kubernetes objects to deploy alongside the main chart
 # -- Allows deployment of additional secrets, configmaps, or custom resources
 extraObjects: [] # Remove the brackets and add YAML objects(eg. Ingress TLS secret) as needed

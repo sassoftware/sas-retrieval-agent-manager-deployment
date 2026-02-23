@@ -1,10 +1,10 @@
-{{- if .Values.global.configuration.weaviate.enabled }}
+{{- if .Values.db.init.config.weaviate.enabled }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: db-weaviate
+  name: {{ printf "%s-db-weaviate" (include "retrieval-agent-manager.fullname" .) }}
   labels:
-    {{- include "sas-retrieval-agent-manager-db-init.labels" . | nindent 4 }}
+    {{- include "db-initialization.labels" . | nindent 4 }}
 data:
-  enabled: {{ .Values.global.configuration.weaviate.enabled | quote }}
+  enabled: {{ .Values.db.init.config.weaviate.enabled | quote }}
 {{- end }}

@@ -1,15 +1,9 @@
-{{- $repo_base := "" -}}
-{{- if and (hasKey (index .Values "sas-retrieval-agent-manager-api") "global") (hasKey .Values.global "image") (hasKey .Values.global.image "repo") (hasKey .Values.global.image.repo "base") -}}
-  {{- $repo_base = .Values.global.image.repo.base | default .Values.global.configuration.eval.image.repo.base -}}
-{{- else -}}
-  {{- $repo_base = .Values.global.configuration.eval.image.repo.base -}}
-{{- end -}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: eval-config
+  name: {{ printf "%s-evaluation-config" (include "api.fullname" .) }}
   labels:
-    {{- include "sas-retrieval-agent-manager-api.labels" . | nindent 4 }}
+    {{- include "api.labels" . | nindent 4 }}
 data:
-  eval_runner_repo: {{ printf "%s/%s" $repo_base .Values.global.configuration.eval.image.repo.path }}
-  eval_runner_tag: {{ .Values.global.configuration.eval.image.tag  | quote }}
+  eval_runner_repo: {{ printf "%s/%s" (include "images.eval.repo.base" .)  (include "images.eval.repo.path" .) }}
+  eval_runner_tag: {{ include "images.eval.tag" .  | quote }}

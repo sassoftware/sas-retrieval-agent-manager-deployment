@@ -1,15 +1,15 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "sas-retrieval-agent-manager-ui.fullname" . }}
+  name: {{ include "ui.fullname" . }}
   labels:
-    {{- include "sas-retrieval-agent-manager-ui.labels" . | nindent 4 }}
+    {{- include "ui.labels" . | nindent 4 }}
 spec:
-  type: {{ (index .Values "sas-retrieval-agent-manager-app").service.type }}
+  type: {{ .Values.ui.service.type }}
   ports:
-    - port: {{ (index .Values "sas-retrieval-agent-manager-app").service.port }}
+    - port: {{ .Values.ui.service.port }}
       targetPort: oauth2-proxy0
       protocol: TCP
       name: http
   selector:
-    {{- include "sas-retrieval-agent-manager-ui.selectorLabels" . | nindent 4 }}
+    {{- include "ui.selectorLabels" . | nindent 4 }}

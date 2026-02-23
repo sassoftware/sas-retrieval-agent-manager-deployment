@@ -1,0 +1,153 @@
+suite: _lib/_defaults.tpl tests
+templates:
+  - templates/ingress/api-ingress.yaml
+  - templates/ingress/root-ingress.yaml
+  - templates/storage/storageclass.yaml
+  - templates/storage/appData-pvc.yaml
+values:
+  - ../values.yaml
+
+tests:
+  # ============================================================================
+  # retrieval-agent-manager.ingressClassName tests
+  # ============================================================================
+  - it: should use nginx ingress class for azure platform
+    template: templates/ingress/api-ingress.yaml
+    set:
+      platform: azure
+      ingress.enabled: true
+    asserts:
+      - equal:
+          path: spec.ingressClassName
+          value: nginx
+
+  - it: should use nginx ingress class for aws platform
+    template: templates/ingress/api-ingress.yaml
+    set:
+      platform: aws
+      ingress.enabled: true
+    asserts:
+      - equal:
+          path: spec.ingressClassName
+          value: nginx
+
+  - it: should use nginx ingress class for kubernetes platform
+    template: templates/ingress/api-ingress.yaml
+    set:
+      platform: kubernetes
+      ingress.enabled: true
+    asserts:
+      - equal:
+          path: spec.ingressClassName
+          value: nginx
+
+  - it: should render route for openshift platform
+    template: templates/ingress/api-ingress.yaml
+    set:
+      platform: openshift
+      ingress.enabled: true
+    asserts:
+      - isKind:
+          of: Route
+
+  - it: should use custom ingress className when provided
+    template: templates/ingress/api-ingress.yaml
+    set:
+      platform: azure
+      ingress.enabled: true
+      ingress.className: custom-nginx
+    asserts:
+      - equal:
+          path: spec.ingressClassName
+          value: custom-nginx
+
+  - it: should use contour when classType is set to contour
+    template: templates/ingress/root-ingress.yaml
+    set:
+      platform: azure
+      ingress.enabled: true
+      ingress.classType: contour
+      ingress.domain: test.example.com
+    asserts:
+      - isKind:
+          of: HTTPProxy
+
+  # ============================================================================
+  # retrieval-agent-manager.storageClassName tests
+  # ============================================================================
+  - it: should use azurefile-sas storage class for azure platform
+    template: templates/storage/appData-pvc.yaml
+    set:
+      platform: azure
+    asserts:
+      - equal:
+          path: spec.storageClassName
+          value: azurefile-sas
+
+  - it: should use efs-sc storage class for aws platform
+    template: templates/storage/appData-pvc.yaml
+    set:
+      platform: aws
+    asserts:
+      - equal:
+          path: spec.storageClassName
+          value: efs-sc
+
+  - it: should use nfs-client storage class for kubernetes platform
+    template: templates/storage/appData-pvc.yaml
+    set:
+      platform: kubernetes
+    asserts:
+      - equal:
+          path: spec.storageClassName
+          value: nfs-client
+
+  - it: should use nfs-client storage class for openshift platform
+    template: templates/storage/appData-pvc.yaml
+    set:
+      platform: openshift
+    asserts:
+      - equal:
+          path: spec.storageClassName
+          value: nfs-client
+
+  # Note: Custom storageClassName test removed as storage.storageClassName is not in schema
+  # The default values are derived from the platform setting
+
+  # ============================================================================
+  # retrieval-agent-manager.createStorageClass tests
+  # ============================================================================
+  - it: should create storage class for azure platform by default
+    template: templates/storage/storageclass.yaml
+    set:
+      platform: azure
+    asserts:
+      - hasDocuments:
+          count: 1
+
+  - it: should not create storage class for aws platform by default
+    template: templates/storage/storageclass.yaml
+    set:
+      platform: aws
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should not create storage class for kubernetes platform by default
+    template: templates/storage/storageclass.yaml
+    set:
+      platform: kubernetes
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should not create storage class for openshift platform by default
+    template: templates/storage/storageclass.yaml
+    set:
+      platform: openshift
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  # Note: Tests for storage.createStorageClass removed as it is not in the schema
+  # Storage class creation is controlled by platform defaults
