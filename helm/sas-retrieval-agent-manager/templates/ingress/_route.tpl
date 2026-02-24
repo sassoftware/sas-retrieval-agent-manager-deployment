@@ -128,7 +128,7 @@ metadata:
   {{- end }}
 spec:
   host: {{ $ctx.Values.ingress.domain | quote }}
-  {{- if ne $routePath "/" }}
+  {{- if and (ne $routePath "/") (not (default false $config.enableAppRoot)) }}
   path: {{ $routePath }}
   {{- end }}
   to:
@@ -137,7 +137,7 @@ spec:
     weight: 100
   port:
     targetPort: {{ $targetPortName }}
-  {{- if and ((include "testValuesPath" (list $ctx.Values "ingress" "tls" "enabled")) | eq "true" | default false) ($ctx.Values.ingress.tls.enabled | default false) }}
+  {{- if $ctx.Values.ingress.tls.enabled }}
   tls:
     termination: {{ $ctx.Values.ingress.tls.termination | default "edge" }}
     insecureEdgeTerminationPolicy: {{ $ctx.Values.ingress.tls.insecureEdgeTerminationPolicy | default "Redirect" }}
