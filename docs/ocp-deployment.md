@@ -1,4 +1,4 @@
-# Openshift Deployment Guide
+# OpenShift Deployment Guide
 
 ## Table of Contents
 
@@ -19,7 +19,7 @@
 
 ## Overview
 
-This guide describes deploying an AWS infrastructure on which to deploy SAS Retrieval Agent Manager.
+This guide describes deploying SAS Retrieval Agent Manager on an OpenShift cluster.
 
 ## Prerequisites
 
@@ -32,7 +32,7 @@ This guide describes deploying an AWS infrastructure on which to deploy SAS Retr
 
 **Required Access and Tools:**
 
-- Ability to create resources in the Openshift environment for the SAS Retrieval Agent Manager project
+- Ability to create resources in the OpenShift environment for the SAS Retrieval Agent Manager project
 
 ## Requirements
 
@@ -48,7 +48,7 @@ This guide describes deploying an AWS infrastructure on which to deploy SAS Retr
 
 ### Infrastructure Requirements
 
-- Openshift version: 4.19.1
+- OpenShift version: 4.19.1
 
 ## Getting Started
 
