@@ -18,23 +18,17 @@ Parameters (passed via dict):
 */}}
 
 {{- define "oauth2-proxy.sidecar" -}}
-{{- $oauthValues := .Root.Values.keycloak.oauthProxy -}}
+{{- $oauthValues := .Root.Values.iam.oauthProxy -}}
 {{- $upstreamPort := .upstreamPort | required "upstreamPort is required for oauth2-proxy.sidecar" -}}
 {{- $upstreamPath := .upstreamPath | default "" -}}
 {{- $instance := .instance | default 0 -}}
 {{- $containerPort := add 4180 $instance -}}
 {{- $containerName := printf "oauth2-proxy%d" $instance -}}
-{{- $oauthProxy_repo_base := "" -}}
-{{- if ((include "testValuesPath" (list .Root.Values "global" "image" "repo" "base")) | eq "true") -}}
-  {{- $oauthProxy_repo_base = .Root.Values.global.image.repo.base | default (index .Root.Values "keycloak").oauthProxy.image.repo.base -}}
-{{- else -}}
-  {{- $oauthProxy_repo_base = index .Root.Values.keycloak.oauthProxy.image.repo.base -}}
-{{- end -}}
 - name: {{ $containerName }}
   securityContext:
-    {{- toYaml .Root.Values.keycloak.oauthProxy.securityContext | nindent 4 }}
-  image: "{{ $oauthProxy_repo_base }}/{{ .Root.Values.keycloak.oauthProxy.image.repo.path }}:{{ .Root.Values.keycloak.oauthProxy.image.tag | default .Root.Chart.AppVersion }}"
-  imagePullPolicy: {{ .Root.Values.keycloak.oauthProxy.image.pullPolicy }}
+    {{- toYaml .Root.Values.iam.oauthProxy.securityContext | nindent 4 }}
+  image: "{{- include "images.oauthProxy" . -}}"
+  imagePullPolicy: {{ .Root.Values.images.oauthProxy.pullPolicy }}
   args:
     - --config=/config/oauth2-proxy.cfg
   env:
@@ -42,12 +36,12 @@ Parameters (passed via dict):
     - name: OAUTH2_PROXY_CLIENT_ID
       valueFrom:
         secretKeyRef:
-          name: keycloak-client-secret
+          name: {{ printf "%s-client-secret" (include "keycloak.fullname" .Root) }}
           key: sv-client-id
     - name: OAUTH2_PROXY_CLIENT_SECRET
       valueFrom:
         secretKeyRef:
-          name: keycloak-client-secret
+          name: {{ printf "%s-client-secret" (include "keycloak.fullname" .Root) }}
           key: sv-client-secret
     - name: OAUTH2_PROXY_COOKIE_SECRET
       valueFrom:
@@ -151,46 +145,18 @@ Parameters (passed via dict):
 {{- if not $configMapName -}}
   {{- $configMapName = (printf "%s-oauth2-config" (include "oauth2-proxy.fullname" .)) -}}
 {{- end -}}
-{{- $kubectl_repo_base := "" -}}
-{{- if ((include "testValuesPath" (list .Values "global" "image" "repo" "base")) | eq "true") -}}
-  {{- $kubectl_repo_base = .Values.global.image.repo.base | default (index .Values "keycloak").image.kubectl.repo.base -}}
-{{- else -}}
-  {{- $kubectl_repo_base = (index .Values "keycloak").image.kubectl.repo.base -}}
-{{- end -}}
-{{- $globalEnabled := false -}}
-{{- if hasKey .Values "global" -}}
-{{- if hasKey .Values.global "ingress" -}}
-{{- if hasKey .Values.global.ingress "enabled" -}}
-{{- $globalEnabled = .Values.global.ingress.enabled -}}
-{{- end -}}
-{{- end -}}
-{{- end -}}
-{{- $oAuthProxyPath := "" -}}
-{{- if $globalEnabled -}}
-{{- $oAuthProxyPath = regexReplaceAll "\\(.*" (first (index .Values "keycloak").oauthProxy.ingress.paths).path "" -}}
-{{- else -}}
-{{- if (len (index .Values "keycloak").oauthProxy.ingress.hosts) -}}
-{{- $oAuthProxyPath = regexReplaceAll "\\(.*" (first (first (index .Values "keycloak").oauthProxy.ingress.hosts).paths).path "" -}}
-{{- end -}}
-{{- end -}}
-{{- $keycloakPath := "" -}}
-{{- if $globalEnabled -}}
-{{- $keycloakPath = regexReplaceAll "\\(.*" (first (index .Values "keycloak").ingress.paths).path "" -}}
-{{- else -}}
-{{- if (len (index .Values "keycloak").ingress.hosts) -}}
-{{- $keycloakPath = regexReplaceAll "\\(.*" (first (first (index .Values "keycloak").ingress.hosts).paths).path "" -}}
-{{- end -}}
-{{- end -}}
+{{- if .Values.ingress.enabled -}}
+{{- $keycloakPath := first .Values.ingress.keycloak.paths -}}
 - command:
     - /bin/sh
     - -c
     - |
-        while [ $(curl -sw '%{http_code}' "http://{{ include "keycloak.fullname" . | lower }}:{{ (index .Values "keycloak").service.port }}{{ $keycloakPath }}/realms/master" -o /dev/null) -ne 200 ]; do
+        while [ $(curl -sw '%{http_code}' "http://{{ include "keycloak.fullname" . | lower }}:{{ .Values.iam.keycloak.service.port }}{{ $keycloakPath }}/realms/{{ .Values.iam.keycloak.config.realm }}" -o /dev/null) -ne 200 ]; do
           echo "Waiting for ID provider to reach ready state...";
           sleep 15;
         done
-  image: "{{ $kubectl_repo_base }}/{{ (index .Values "keycloak").image.kubectl.repo.path }}:{{ (index .Values "keycloak").image.kubectl.tag }}"
-  imagePullPolicy: {{ (index .Values "keycloak").image.kubectl.pullPolicy }}
+  image: "{{- include "images.kubectl" . -}}"
+  imagePullPolicy: {{ .Values.images.kubectl.pullPolicy }}
   name: idp-ready
   resources:
     limits:
@@ -200,5 +166,6 @@ Parameters (passed via dict):
       cpu: 50m
       memory: 32Mi
   securityContext:
-    {{- toYaml (index .Values "keycloak").oauthProxy.securityContext | nindent 12 }}
-{{- end -}}
+    {{- toYaml .Values.iam.oauthProxy.securityContext | nindent 12 }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,73 @@
+suite: Images helpers tests
+templates:
+  - templates/api/deployment.yaml
+values:
+  - ../values.yaml
+
+tests:
+  # ============================================================================
+  # API image tests
+  # ============================================================================
+  - it: should use images.api configuration
+    set:
+      images.api.repo.base: cr.sas.com
+      images.api.repo.path: viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager
+      images.api.tag: "1.0.0"
+    asserts:
+      - matchRegex:
+          path: spec.template.spec.containers[0].image
+          pattern: "cr.sas.com/viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager:1.0.0"
+
+  - it: should use global repo base when provided
+    set:
+      images.repo.base: my-custom-registry.io
+      images.api.repo.base: cr.sas.com
+      images.api.repo.path: my/api-image
+      images.api.tag: "2.0.0"
+    asserts:
+      - matchRegex:
+          path: spec.template.spec.containers[0].image
+          pattern: "my-custom-registry.io/my/api-image:2.0.0"
+
+  - it: should use IfNotPresent as default pullPolicy
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: IfNotPresent
+
+  - it: should use custom pullPolicy when specified
+    set:
+      images.api.pullPolicy: Always
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: Always
+
+  - it: should use Never pullPolicy when specified
+    set:
+      images.api.pullPolicy: Never
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: Never
+
+  # ============================================================================
+  # Image pull secrets tests
+  # ============================================================================
+  - it: should include multiple imagePullSecrets
+    set:
+      images.imagePullSecrets:
+        - name: secret-one
+        - name: secret-two
+    asserts:
+      - lengthEqual:
+          path: spec.template.spec.imagePullSecrets
+          count: 2
+      - contains:
+          path: spec.template.spec.imagePullSecrets
+          content:
+            name: secret-one
+      - contains:
+          path: spec.template.spec.imagePullSecrets
+          content:
+            name: secret-two

@@ -1,0 +1,67 @@
+{{/*
+ClusterRoleBinding to assign ServiceAccounts to the SCC for OpenShift platform.
+This binds all component ServiceAccounts to the custom SCC.
+*/}}
+{{- if eq .Values.platform "openshift" -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "retrieval-agent-manager.fullname" . }}-scc-binding
+  labels:
+    {{- include "retrieval-agent-manager.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:openshift:scc:{{ include "retrieval-agent-manager.fullname" . }}-scc
+subjects:
+  # API ServiceAccount
+  {{- if .Values.api.serviceAccount.create }}
+  - kind: ServiceAccount
+    name: {{ include "api.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+  {{- end }}
+  # UI ServiceAccount
+  {{- if .Values.ui.serviceAccount.create }}
+  - kind: ServiceAccount
+    name: {{ include "ui.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+  {{- end }}
+  # Keycloak ServiceAccount
+  {{- if .Values.iam.keycloak.serviceAccount.create }}
+  - kind: ServiceAccount
+    name: {{ include "keycloak.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+  # Keycloak Realm Update ServiceAccount
+  - kind: ServiceAccount
+    name: {{ include "keycloak.serviceAccountName" . }}-realm-update
+    namespace: {{ .Release.Namespace }}
+  # Keycloak Fetch Certs Job ServiceAccount
+  - kind: ServiceAccount
+    name: {{ include "keycloak.serviceAccountName" . }}-job
+    namespace: {{ .Release.Namespace }}
+  {{- end }}
+  # PostgREST ServiceAccount
+  {{- if .Values.db.rest.serviceAccount.create }}
+  - kind: ServiceAccount
+    name: {{ include "postgrest.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+  {{- end }}
+  # DB Init ServiceAccount
+  {{- if .Values.db.init.serviceAccount.create }}
+  - kind: ServiceAccount
+    name: {{ include "db-initialization.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+  {{- end }}
+  # DB Migration ServiceAccount
+  {{- if .Values.db.migration.serviceAccount.create }}
+  - kind: ServiceAccount
+    name: {{ include "db-migration.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+  {{- end }}
+  # GPG ServiceAccount
+  {{- if and (include "gpg.shouldGenerateKeys" .) .Values.security.gpg.serviceAccount.create }}
+  - kind: ServiceAccount
+    name: {{ include "gpg.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+  {{- end }}
+{{- end -}}

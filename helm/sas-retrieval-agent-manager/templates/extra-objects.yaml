@@ -1,10 +1,15 @@
 {{- if .Values.extraObjects }}
 {{- range .Values.extraObjects }}
 ---
-{{ if typeIs "string" . }}
-{{- tpl . $ }}
+{{- $obj := . }}
+{{- if typeIs "string" $obj }}
+{{ tpl $obj $ }}
 {{- else }}
-{{- tpl (toYaml .) $ }}
+{{- $merged := deepCopy $obj }}
+{{- $_ := set $merged.metadata "namespace" $.Release.Namespace }}
+{{- $_ := set $merged.metadata "labels" (merge (default dict $merged.metadata.labels) (dict "app.kubernetes.io/managed-by" "Helm")) }}
+{{- $_ := set $merged.metadata "annotations" (merge (default dict $merged.metadata.annotations) (dict "meta.helm.sh/release-name" $.Release.Name "meta.helm.sh/release-namespace" $.Release.Namespace)) }}
+{{ tpl (toYaml $merged) $ }}
 {{- end }}
 {{- end }}
 {{- end }}

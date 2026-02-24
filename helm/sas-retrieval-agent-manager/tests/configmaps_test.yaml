@@ -1,0 +1,221 @@
+suite: Configmap tests
+templates:
+  - templates/api/configmap.yaml
+  - templates/api/agent-configmap.yaml
+  - templates/api/vhub-configmap.yaml
+  - templates/api/plugin-configmap.yaml
+  - templates/api/embedding-configmap.yaml
+  - templates/api/eval-configmap.yaml
+  - templates/ui/configmap.yaml
+values:
+  - ../values.yaml
+
+tests:
+  # ============================================================================
+  # API ConfigMap tests
+  # ============================================================================
+  - it: API - should render ConfigMap
+    template: templates/api/configmap.yaml
+    asserts:
+      - isKind:
+          of: ConfigMap
+
+  - it: API - should have correct name
+    template: templates/api/configmap.yaml
+    asserts:
+      - matchRegex:
+          path: metadata.name
+          pattern: ".*-api-config$"
+
+  - it: API - should include base_path
+    template: templates/api/configmap.yaml
+    set:
+      api.config.base_path: /SASRetrievalAgentManager/api
+    asserts:
+      - equal:
+          path: data.base_path
+          value: /SASRetrievalAgentManager/api
+
+  - it: API - should include standard labels
+    template: templates/api/configmap.yaml
+    asserts:
+      - exists:
+          path: metadata.labels["helm.sh/chart"]
+      - exists:
+          path: metadata.labels["app.kubernetes.io/name"]
+      - exists:
+          path: metadata.labels["app.kubernetes.io/instance"]
+
+  # ============================================================================
+  # Agent ConfigMap tests
+  # ============================================================================
+  - it: Agent - should render ConfigMap
+    template: templates/api/agent-configmap.yaml
+    asserts:
+      - isKind:
+          of: ConfigMap
+
+  - it: Agent - should have correct name
+    template: templates/api/agent-configmap.yaml
+    asserts:
+      - matchRegex:
+          path: metadata.name
+          pattern: ".*-agent-config$"
+
+  - it: Agent - should include agent_runner_tag
+    template: templates/api/agent-configmap.yaml
+    asserts:
+      - exists:
+          path: data.agent_runner_tag
+
+  - it: Agent - should include agent_runner_repo
+    template: templates/api/agent-configmap.yaml
+    asserts:
+      - exists:
+          path: data.agent_runner_repo
+
+  # ============================================================================
+  # VHub ConfigMap tests
+  # ============================================================================
+  - it: VHub - should render ConfigMap
+    template: templates/api/vhub-configmap.yaml
+    asserts:
+      - isKind:
+          of: ConfigMap
+
+  - it: VHub - should have correct name
+    template: templates/api/vhub-configmap.yaml
+    asserts:
+      - matchRegex:
+          path: metadata.name
+          pattern: ".*-vector-hub-config$"
+
+  - it: VHub - should include vhub_tag
+    template: templates/api/vhub-configmap.yaml
+    asserts:
+      - exists:
+          path: data.vhub_tag
+
+  - it: VHub - should include vhub_repository
+    template: templates/api/vhub-configmap.yaml
+    asserts:
+      - exists:
+          path: data.vhub_repository
+
+  - it: VHub - should include required keys
+    template: templates/api/vhub-configmap.yaml
+    asserts:
+      - exists:
+          path: data.vhub_tag
+      - exists:
+          path: data.vhub_repository
+
+  # ============================================================================
+  # Plugin ConfigMap tests
+  # ============================================================================
+  - it: Plugin - should render ConfigMap
+    template: templates/api/plugin-configmap.yaml
+    asserts:
+      - isKind:
+          of: ConfigMap
+
+  - it: Plugin - should have correct name
+    template: templates/api/plugin-configmap.yaml
+    asserts:
+      - matchRegex:
+          path: metadata.name
+          pattern: ".*-plugin-config$"
+
+  - it: Plugin - should include plugin_runner_tag
+    template: templates/api/plugin-configmap.yaml
+    asserts:
+      - exists:
+          path: data.plugin_runner_tag
+
+  - it: Plugin - should include plugin_runner_repo
+    template: templates/api/plugin-configmap.yaml
+    asserts:
+      - exists:
+          path: data.plugin_runner_repo
+
+  # ============================================================================
+  # Embedding ConfigMap tests
+  # ============================================================================
+  - it: Embedding - should render ConfigMap
+    template: templates/api/embedding-configmap.yaml
+    asserts:
+      - isKind:
+          of: ConfigMap
+
+  - it: Embedding - should have correct name
+    template: templates/api/embedding-configmap.yaml
+    asserts:
+      - matchRegex:
+          path: metadata.name
+          pattern: ".*-embedding-config$"
+
+  - it: Embedding - should include emb_inference_runner_repo
+    template: templates/api/embedding-configmap.yaml
+    asserts:
+      - exists:
+          path: data.emb_inference_runner_repo
+
+  - it: Embedding - should include emb_inference_runner_tag_cpu
+    template: templates/api/embedding-configmap.yaml
+    asserts:
+      - exists:
+          path: data.emb_inference_runner_tag_cpu
+
+  # ============================================================================
+  # Eval ConfigMap tests
+  # ============================================================================
+  - it: Eval - should render ConfigMap
+    template: templates/api/eval-configmap.yaml
+    asserts:
+      - isKind:
+          of: ConfigMap
+
+  - it: Eval - should have correct name
+    template: templates/api/eval-configmap.yaml
+    asserts:
+      - matchRegex:
+          path: metadata.name
+          pattern: ".*-evaluation-config$"
+
+  - it: Eval - should include eval_runner_tag
+    template: templates/api/eval-configmap.yaml
+    asserts:
+      - exists:
+          path: data.eval_runner_tag
+
+  - it: Eval - should include eval_runner_repo
+    template: templates/api/eval-configmap.yaml
+    asserts:
+      - exists:
+          path: data.eval_runner_repo
+
+  # ============================================================================
+  # UI ConfigMap tests
+  # ============================================================================
+  - it: UI - should render ConfigMap
+    template: templates/ui/configmap.yaml
+    asserts:
+      - isKind:
+          of: ConfigMap
+
+  - it: UI - should have correct name
+    template: templates/ui/configmap.yaml
+    asserts:
+      - matchRegex:
+          path: metadata.name
+          pattern: ".*-app-configmap$"
+
+  - it: UI - should include standard labels
+    template: templates/ui/configmap.yaml
+    asserts:
+      - exists:
+          path: metadata.labels["helm.sh/chart"]
+      - exists:
+          path: metadata.labels["app.kubernetes.io/name"]
+      - exists:
+          path: metadata.labels["app.kubernetes.io/instance"]

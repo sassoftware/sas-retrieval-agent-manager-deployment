@@ -74,9 +74,11 @@ helm install kueue oci://registry.k8s.io/kueue/charts/kueue \
   --create-namespace
 ```
 
-### Ingress-Nginx
+### Ingress Controllers
 
-SAS Retrieval Agent Manager requires the NGINX Ingress controller for managing incoming traffic.
+SAS Retrieval Agent Manager requires either NGINX or Contour for managing incoming traffic.
+
+#### NGINX
 
 Here is an [Example NGINX Controller Values File](../../examples/nginx.yaml). You can edit it as you'd like to fit your deployment.
 
@@ -95,6 +97,27 @@ helm install nginx-ingress-nginx-controller \
     -f <nginx_values_file> \
     --create-namespace
 ```
+
+#### Contour
+
+Here is an [Example NGINX Controller Values File](../../examples/contour.yaml). You can edit it as you'd like to fit your deployment.
+
+You can install it onto your cluster with the following commands:
+
+```bash
+# Add ingress-nginx helm repository
+helm repo add contour https://projectcontour.github.io/helm-charts/
+helm repo update
+
+# Install ingress-nginx using your custom values file
+helm install contour contour/contour \
+    --namespace contour \
+    --create-namespace \
+    -f <contour_values_file> \
+    --create-namespace
+```
+
+> Note: You will have to change ingress.classType to `contour` in the values file as it is nginx by default.
 
 ## Optional Components
 

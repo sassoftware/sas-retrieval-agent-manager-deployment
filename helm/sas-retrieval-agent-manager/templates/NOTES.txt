@@ -1,48 +1,47 @@
 Thank you for installing the SAS Retrieval Agent Manager Helm chart!
 
+NOTE: This chart includes post-install hooks that may take several minutes to complete.
+      When using --wait, ensure you set an adequate timeout (e.g., --timeout 10m).
+
 You can now access your environment at:
 
-  {{- $app := index .Values "sas-retrieval-agent-manager-app" -}}
-  {{- $ingress := (index $app "ingress") -}}
+  {{- $domain := .Values.ingress.domain -}}
+  {{- $ui_ingress := (index .Values "ingress" "ui") -}}
 
-  {{- $globalPath := (index $ingress.paths 0).path }}
-  {{- $globalExtractedPath := regexFind "^/[^(/]+" $globalPath }}
+  {{- $globalPath := index $ui_ingress.paths 0 }}
 
   {{- $localHost := "" }}
   {{- $localExtractedPath := "" }}
 
-  {{- if and $ingress.hosts (gt (len $ingress.hosts) 0) }}
-    {{- $localHost := (index $ingress.hosts 0).host }}
-    {{- $localHostPath := (index (index $ingress.hosts 0).paths 0).path }}
-    {{- $localExtractedPath := regexFind "^/[^(/]+" $localHostPath }}
+  {{- if and $domain $ui_ingress }}
+    {{- $localHost := $domain }}
+    {{- $localHostPath := index ($ui_ingress).paths 0 }}
+    {{- $localExtractedPath := $localHostPath }}
   {{- end }}
 
-  https://{{ if .Values.global.ingress.enabled | default false }}{{ .Values.global.domain }}{{ $globalExtractedPath }}{{ else }}{{ $localHost }}{{ $localExtractedPath }}{{ end }}
+  https://{{ if .Values.ingress.enabled | default false }}{{ .Values.ingress.domain }}{{ $globalPath }}{{ else }}{{ $localHost }}{{ $localExtractedPath }}{{ end }}
 
 Login with:
 
-  Username: {{ .Values.global.configuration.keycloak.appAdmin }}
+  Username: {{ .Values.users.application.admin.username }}
 
   To get the app password, run the following command:
-  - Powershell: kubectl get secret -n retagentmgr keycloak-appadmin-secret -o jsonpath="{.data.password}" | ForEach-Object { [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($_)) }
-  - Bash: kubectl get secret -n retagentmgr keycloak-appadmin-secret -o jsonpath="{.data.password}" | base64 --decode && echo
+  - Powershell: kubectl get secret -n retagentmgr {{ printf "%s-appadmin-secret" (include "keycloak.fullname" .) }} -o jsonpath="{.data.password}" | ForEach-Object { [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($_)) }
+  - Bash: kubectl get secret -n retagentmgr {{ printf "%s-appadmin-secret" (include "keycloak.fullname" .) }} -o jsonpath="{.data.password}" | base64 --decode && echo
 
 For user management, access Keycloak at:
 
-  {{- $kc := index .Values "keycloak" -}}
-  {{- $ingress := (index $kc "ingress") -}}
+  {{- $kc_ingress := .Values.ingress.keycloakAdmin -}}
+  {{- $adminPath := first $kc_ingress.paths }}
 
-  {{- $adminHost := $ingress.admin.host }}
-  {{- $adminPath := $ingress.admin.path }}
-
-  https://{{ if .Values.global.ingress.enabled | default false }}{{ .Values.global.domain }}{{ $adminPath }}{{ else }}{{ $adminHost }}{{ $adminPath }}{{ end }}
+  https://{{ .Values.ingress.domain }}{{ $adminPath }}
 
 Login with:
 
-  Username: {{ .Values.global.configuration.keycloak.keycloakAdmin }}
+  Username: {{ .Values.users.keycloak.admin.username }}
 
   To get the keycloak password, run the following command:
-  - Powershell: kubectl get secret -n retagentmgr keycloak-admin-secret -o jsonpath="{.data.password}" | ForEach-Object { [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($_)) }
-  - Bash: kubectl get secret -n retagentmgr keycloak-admin-secret -o jsonpath="{.data.password}" | base64 --decode && echo
+  - Powershell: kubectl get secret -n retagentmgr {{ printf "%s-admin-secret" (include "keycloak.fullname" .) }} -o jsonpath="{.data.password}" | ForEach-Object { [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($_)) }
+  - Bash: kubectl get secret -n retagentmgr {{ printf "%s-admin-secret" (include "keycloak.fullname" .) }} -o jsonpath="{.data.password}" | base64 --decode && echo
 
 For further help, check your documentation or contact your SAS Administrator.

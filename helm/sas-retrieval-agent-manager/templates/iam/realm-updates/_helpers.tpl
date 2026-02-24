@@ -1,9 +1,6 @@
 {{/* Keycloak ingress URL */}}
 {{ define "keycloak.internalBaseURL" -}}
-{{ $globalEnabled := (((.Values.global).ingress).enabled | default false) -}}
-{{ if $globalEnabled -}}
-http://{{ include "keycloak.fullname" . }}:{{ (index .Values "keycloak").service.port }}{{ with (first (index .Values "keycloak").ingress.paths) }}{{ regexReplaceAll "\\(.*" .path "" | trimSuffix "/"  }}{{ end -}}
-{{ else -}}
-http://{{ include "keycloak.fullname" . }}:{{ (index .Values "keycloak").service.port }}{{ with (first (index .Values "keycloak").ingress.hosts) }}{{ with (first .paths) }}{{  regexReplaceAll "\\(.*" .path "" | trimSuffix "/" }}{{ end }}{{ end -}}
+{{ if .Values.ingress.enabled | default false -}}
+http://{{ include "keycloak.fullname" . }}:{{ .Values.iam.keycloak.service.port }}{{ first .Values.ingress.keycloak.paths | trimSuffix "/" -}}
 {{ end -}}
 {{- end -}}

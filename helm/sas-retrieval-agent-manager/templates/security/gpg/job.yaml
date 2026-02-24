@@ -1,17 +1,8 @@
 {{- if include "gpg.shouldGenerateKeys" . }}
-{{- $gpg_repo_base := "" -}}
-{{- $kubectl_repo_base := "" -}}
-{{- if ((include "testValuesPath" (list .Values "global" "image" "repo" "base")) | eq "true") -}}
-  {{- $gpg_repo_base = .Values.global.image.repo.base | default (index .Values "gpg").image.gpg.repo.base -}}
-  {{- $kubectl_repo_base = .Values.global.image.repo.base | default (index .Values "gpg").image.kubectl.repo.base -}}
-{{- else -}}
-  {{- $gpg_repo_base = (index .Values "gpg").image.gpg.repo.base -}}
-  {{- $kubectl_repo_base = (index .Values "gpg").image.kubectl.repo.base -}}
-{{- end -}}
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: retagentmgr-gpg-initialization
+  name: {{ include "gpg.fullname" . }}
   labels:
     ram-base-job: "true"
     {{- with (index .Values "gpg").labels }}
@@ -22,39 +13,35 @@ metadata:
 spec:
   template:
     metadata:
-      {{- with (index .Values "gpg").podAnnotations }}
+      {{- with .Values.security.gpg.podAnnotations }}
       annotations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
       {{- include "gpg.labels" . | nindent 8 }}
-      {{- with (index .Values "gpg").podLabels }}
+      {{- with .Values.security.gpg.podLabels }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
     spec:
-      {{- $globalImagePullSecrets := list -}}
-      {{- if ((include "testValuesPath" (list .Values "global" "imagePullSecrets")) | eq "true") -}}
-      {{- $globalImagePullSecrets = .Values.global.imagePullSecrets | default (list) -}}
-      {{- end -}}
-      {{- with uniq (concat ((index .Values "gpg").imagePullSecrets | default (list)) $globalImagePullSecrets) }}
+      {{- with .Values.images.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       serviceAccountName: {{ include "gpg.serviceAccountName" . }}
       securityContext:
-        {{- toYaml (index .Values "gpg").podSecurityContext | nindent 8 }}
+        {{- toYaml .Values.security.gpg.podSecurityContext | nindent 8 }}
       initContainers:
         - name: check-secrets
           command:
             - "/bin/sh"
             - "-c"
             - "sh /scripts/check_secrets_exist.sh"
-          image: "{{ $kubectl_repo_base }}/{{ (index .Values "gpg").image.kubectl.repo.path }}:{{ (index .Values "gpg").image.kubectl.tag }}"
-          imagePullPolicy: {{ (index .Values "gpg").image.kubectl.pullPolicy }}
+          image: "{{- include "images.kubectl" . -}}"
+          imagePullPolicy: {{ .Values.images.kubectl.pullPolicy }}
           securityContext:
-            {{- toYaml (index .Values "gpg").securityContext | nindent 12 }}
+            {{- toYaml .Values.security.gpg.securityContext | nindent 12 }}
           resources:
-            {{- toYaml (index .Values "gpg").resources | nindent 12 }}
+            {{- toYaml .Values.security.gpg.resources | nindent 12 }}
           volumeMounts:
             - name: configmap-scripts
               mountPath: /scripts
@@ -66,43 +53,43 @@ spec:
             - "/bin/sh"
             - "-c"
             - "sh /scripts/generate_gpg_keys.sh"
-          image: "{{ $gpg_repo_base }}/{{ (index .Values "gpg").image.gpg.repo.path }}:{{ (index .Values "gpg").image.gpg.tag }}"
-          imagePullPolicy: {{ (index .Values "gpg").image.gpg.pullPolicy }}
+          image: "{{- include "images.gpg" . -}}"
+          imagePullPolicy: {{ .Values.images.gpg.pullPolicy }}
           securityContext:
-            {{- toYaml (index .Values "gpg").securityContext | nindent 12 }}
+            {{- toYaml .Values.security.gpg.securityContext | nindent 12 }}
           resources:
-            {{- toYaml (index .Values "gpg").resources | nindent 12 }}
+            {{- toYaml .Values.security.gpg.resources | nindent 12 }}
           env:
             - name: KEY_NAME
               valueFrom:
                 configMapKeyRef:
                   key: name
-                  name: {{ include "gpg.fullname" . }}-gpg-settings
+                  name: {{ include "gpg.fullname" . }}-settings
             - name: KEY_EMAIL
               valueFrom:
                 configMapKeyRef:
                   key: email
-                  name: {{ include "gpg.fullname" . }}-gpg-settings
+                  name: {{ include "gpg.fullname" . }}-settings
             - name: KEY_COMMENT
               valueFrom:
                 configMapKeyRef:
                   key: comment
-                  name: {{ include "gpg.fullname" . }}-gpg-settings
+                  name: {{ include "gpg.fullname" . }}-settings
             - name: KEY_LENGTH
               valueFrom:
                 configMapKeyRef:
                   key: length
-                  name: {{ include "gpg.fullname" . }}-gpg-settings
+                  name: {{ include "gpg.fullname" . }}-settings
             - name: KEY_EXPIRE
               valueFrom:
                 configMapKeyRef:
                   key: expire
-                  name: {{ include "gpg.fullname" . }}-gpg-settings
+                  name: {{ include "gpg.fullname" . }}-settings
             - name: KEY_PASSPHRASE
               valueFrom:
                 secretKeyRef:
                   key: passphrase
-                  name: gpg-passphrase
+                  name: {{ printf "%s-passphrase" (include "gpg.fullname" .) }}
           volumeMounts:
             - name: gpg-volume
               mountPath: /config/gpg
@@ -119,12 +106,12 @@ spec:
             - "/bin/sh"
             - "-c"
             - "sh /scripts/apply_secrets.sh"
-          image: "{{ $kubectl_repo_base }}/{{ (index .Values "gpg").image.kubectl.repo.path }}:{{ (index .Values "gpg").image.kubectl.tag }}"
-          imagePullPolicy: {{ (index .Values "gpg").image.kubectl.pullPolicy }}
+          image: "{{- include "images.kubectl" . -}}"
+          imagePullPolicy: {{ .Values.images.kubectl.pullPolicy }}
           securityContext:
-            {{- toYaml (index .Values "gpg").securityContext | nindent 12 }}
+            {{- toYaml .Values.security.gpg.securityContext | nindent 12 }}
           resources:
-            {{- toYaml (index .Values "gpg").resources | nindent 12 }}
+            {{- toYaml .Values.security.gpg.resources | nindent 12 }}
           volumeMounts:
             - name: gpg-volume
               mountPath: /config/gpg
@@ -133,15 +120,15 @@ spec:
             - name: shared-state
               mountPath: /shared
       restartPolicy: OnFailure
-      {{- with (index .Values "gpg").nodeSelector }}
+      {{- with .Values.security.gpg.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with (index .Values "gpg").affinity }}
+      {{- with .Values.security.gpg.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with (index .Values "gpg").tolerations }}
+      {{- with .Values.security.gpg.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}

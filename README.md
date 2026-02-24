@@ -14,14 +14,28 @@
     - [Database](#database)
       - [Automatic Database Initialization](#automatic-database-initialization)
       - [Manual Database Setup (Optional)](#manual-database-setup-optional)
-  - [Application Deployment Guides](#application-deployment-guide)
+  - [Application Deployment Guide](#application-deployment-guide)
     - [Retrieve License](#retrieve-license)
+      - [Direct Download (Recommended Method)](#direct-download-recommended-method)
+        - [Gather Login Credentials](#gather-login-credentials)
+        - [Create Pull Secret](#create-pull-secret)
+      - [Mirrored Registry Download](#mirrored-registry-download)
+        - [Populate the Registry](#populate-the-registry)
+          - [Pull from Registry](#pull-from-registry)
+    - [License Renewal Process](#license-renewal-process)
+    - [Populate Mirror Registry with Depdendencies](#populate-mirror-registry-with-depdendencies)
     - [Install Required Dependencies](#install-required-dependencies)
-    - [Optional Components](#optional-components)
+    - [Install Preferred Ingress Controller](#install-preferred-ingress-controller)
+    - [Install Optional Components](#install-optional-components)
+    - [Install SAS Retrieval Agent Manager](#install-sas-retrieval-agent-manager)
+      - [Configure RAM Values File](#configure-ram-values-file)
+      - [Deploy with Helm](#deploy-with-helm)
+      - [Verify Deployment](#verify-deployment)
   - [Backup and Restore Guide](#backup-and-restore-guide)
-  - [Connect an LLM](#connecting-different-llms)
+  - [Connecting different LLMS](#connecting-different-llms)
   - [Monitoring and Logging](#monitoring-and-logging)
   - [Troubleshooting](#troubleshooting)
+    - [Node Upgrades](#node-upgrades)
     - [Common Issues](#common-issues)
     - [Debug Commands](#debug-commands)
   - [Contributing](#contributing)
@@ -41,6 +55,7 @@ SAS Retrieval Agent Manager is a comprehensive solution for managing agents or i
 | **Kubernetes** | Open-Source Kubernetes deployment                  |
 | **Azure**      | Azure Kubernetes Service (AKS) deployment          |
 | **AWS**        | Amazon Elastic Kubernetes Service (EKS) deployment |
+| **OpenShift**  | OpenShift Container Platform (OCP)                 |
 
 ## Prerequisites
 
@@ -74,6 +89,7 @@ Choose your preferred deployment platform and follow the cluster setup guide:
 | **Kubernetes** | 1.30.10            | [Getting Started](./docs/k8s-deployment.md#kubernetes-deployment-guide) |
 | **Azure**      | 1.32               | [Getting Started](./docs/azure-deployment.md#azure-deployment-guide)    |
 | **AWS**        | 1.32               | [Getting Started](./docs/aws-deployment.md)                             |
+| **OpenShift**  | 1.32 (OCP v4.19.1) | [Getting Started](./docs/ocp-deployment.md)                             |
 
 ### Database
 
@@ -173,14 +189,10 @@ Edit your RAM Values file ([See Examples here](./examples/README.md)) to pull fr
 Example Usage:
 
 ```yaml
-# ====================
-# GLOBAL CONFIGURATION
-# ====================
-global:
-  image:
-    repo:
-      # -- Base container registry URL
-      base: 'myregistry.mydomain.com/my-namespace'
+images:
+  repo:
+    # -- Base container registry URL
+    base: 'myregistry.mydomain.com/my-namespace'
 ```
 
 > Note: You can find more information on how to use SAS mirror manager in the [Viya Documentation](https://go.documentation.sas.com/doc/en/itopscdc/v_067/dplyml0phy0dkr/n1h0rgtr10fpnfn1mg0s8fgfuof8.htm).
@@ -221,7 +233,6 @@ After you have access to the Kubernetes cluster, you must install the necessary 
 |-----------------------------|---------------------|------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | cert-manager, trust-manager | v1.18.2, v0.18.0    | [example](./docs/user/DependencyInstall.md#certificate-and-trust-management) | [cert-manager docs](https://cert-manager.io/docs/installation/helm/), [trust-manager docs](https://cert-manager.io/docs/trust/trust-manager/installation/) |
 | Linkerd                     | 2.17 (edge-24.11.8) | [example](./docs/user/DependencyInstall.md#service-mesh)                     | [docs](https://linkerd.io/2/tasks/install-helm/)                                                                                                           |
-| Ingress-Nginx               | 4.12.3              | [example](./docs/user/DependencyInstall.md#ingress-nginx)                    | [docs](https://kubernetes.github.io/ingress-nginx/deploy/)                                                                                                 |
 | Kueue                       | 0.13.4              | [example](./docs/user/DependencyInstall.md#kueue)                            | [docs](https://kueue.sigs.k8s.io/docs/installation/)                                                                                                       |
 
 > Note: order of installation matters for some dependencies, namely:
@@ -233,9 +244,18 @@ After you have access to the Kubernetes cluster, you must install the necessary 
 >
 > 3. Other dependencies or optional components can be installed in any order after that. They do not have hard dependencies on each other, but
 >    do require the previous two steps to be completed to ensure internal traffic is properly secured.
-> Note: It is critical to provide an `azure-dns-label` for Azure NGINX Controller deployments. This is documented at the top of the example NGINX values file given.
+> Note: It is critical to provide an `azure-dns-label` for Azure ingress controller deployments. This is documented at the top of the example NGINX/Contour values file given.
 
-### Optional Components
+### Install Preferred Ingress Controller
+
+SAS Retrieval Agent Manager supports two ingress controllers as of now; NGINX and contour. Select your preferred one and follow the installation steps accordingly.
+
+| Component   |    Version    |                                                               |                                                            |                         |
+|-------------|---------------|---------------------------------------------------------------|----------------------------------------------------------- |-------------------------|
+| **NGINX**   |v4.12.3        |[example](./docs/user/DependencyInstall.md#nginx)              | [docs](https://kubernetes.github.io/ingress-nginx/deploy/) |                         |
+| **Contour** |v1.33.1        |[example](./docs/user/DependencyInstall.md#contour)            | [docs](https://projectcontour.io/getting-started/)         |                         |
+
+### Install Optional Components
 
 | Component |    Version    | Example Values File |                                   Installation Instructions                                  | Description             |
 |-----------|---------------|---------------------|----------------------------------------------------------------------------------------------|-------------------------|
@@ -250,19 +270,13 @@ After you have configured a Kubernetes cluster and PostgreSQL 15 database, use t
 
 #### Configure RAM Values File
 
-Customize your RAM Values file based on the deployment template for your specific platform.
-
-| Platform              | RAM Values Examples                              |
-|-----------------------|--------------------------------------------------|
-| **Azure**             | [Example](./examples/azure/azure-ram-values.yaml)|
-| **AWS**               | [Example](./examples/aws/aws-ram-values.yaml)    |
-| **Bare-Metal**        | [Example](./examples/k8s/k8s-ram-values.yaml)    |
+We have standardized the values required for deployment across all supported platforms. Please see the [example ram values file](./examples/ram-values.yaml) to get a quickstart.
 
 #### Deploy with Helm
 
 ```bash
 helm install sas-retrieval-agent-manager oci://ghcr.io/sassoftware/sas-retrieval-agent-manager-deployment/sas-retrieval-agent-manager \
-  --version 2026.1.1 \
+  --version 2026.2.0 \
   --values <RAM Values file> \
   -n retagentmgr \
   --create-namespace \
@@ -305,22 +319,21 @@ Vectorization Hub PVC:
 
 ```yaml
 
-filebrowser:
-  rootDir:
+storage:
+  application:
     pvc:
       size: <total_gigabytes_purchased> # ex: 20Gi
 
 ```
 
-Embedding PVC (RAM Version 2025.9.60+):
+Embedding PVC:
 
 ```yaml
 
-global:
-  configuration:
-    embedding:
-      pvc:
-        size: <desired_pvc_size> # ex: 20Gi
+storage:
+  embedding:
+    pvc:
+      size: <desired_pvc_size> # ex: 20Gi
 
 ```
 
@@ -348,7 +361,7 @@ helm upgrade sas-retrieval-agent-manager oci://ghcr.io/sassoftware/sas-retrieval
 - Verify TLS certificate validity
 - Check that controller references correct certificate
 - Confirm DNS resolution
-- If on Azure, verify that you have `10.0.0.0/8` in your nginx loadBalancerSourceRange list for intra-cluster services
+- If on Azure, verify that you have `10.0.0.0/8` in your loadBalancerSourceRanges list for intra-cluster services
 
 **API Server or PostgREST Not Responding on login:**
 
