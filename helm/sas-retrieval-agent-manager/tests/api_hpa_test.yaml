@@ -1,0 +1,150 @@
+suite: API HPA tests
+templates:
+  - templates/api/hpa.yaml
+values:
+  - ../values.yaml
+
+tests:
+  # ============================================================================
+  # HPA creation tests
+  # ============================================================================
+  - it: should not render HPA when autoscaling is disabled
+    set:
+      api.autoscaling.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render HPA when autoscaling is enabled
+    set:
+      api.autoscaling.enabled: true
+      api.autoscaling.minReplicas: 2
+      api.autoscaling.maxReplicas: 10
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: HorizontalPodAutoscaler
+      - isAPIVersion:
+          of: autoscaling/v2
+
+  # ============================================================================
+  # HPA configuration tests
+  # ============================================================================
+  - it: should set minReplicas and maxReplicas
+    set:
+      api.autoscaling.enabled: true
+      api.autoscaling.minReplicas: 3
+      api.autoscaling.maxReplicas: 15
+    asserts:
+      - equal:
+          path: spec.minReplicas
+          value: 3
+      - equal:
+          path: spec.maxReplicas
+          value: 15
+
+  - it: should target the correct deployment
+    set:
+      api.autoscaling.enabled: true
+    asserts:
+      - equal:
+          path: spec.scaleTargetRef.apiVersion
+          value: apps/v1
+      - equal:
+          path: spec.scaleTargetRef.kind
+          value: Deployment
+      - matchRegex:
+          path: spec.scaleTargetRef.name
+          pattern: ".*-api$"
+
+  # ============================================================================
+  # CPU metric tests
+  # ============================================================================
+  - it: should include CPU metric when targetCPUUtilizationPercentage is set
+    set:
+      api.autoscaling.enabled: true
+      api.autoscaling.targetCPUUtilizationPercentage: 80
+    asserts:
+      - contains:
+          path: spec.metrics
+          content:
+            type: Resource
+            resource:
+              name: cpu
+              target:
+                type: Utilization
+                averageUtilization: 80
+
+  - it: should not include CPU metric when targetCPUUtilizationPercentage is not set
+    set:
+      api.autoscaling.enabled: true
+      api.autoscaling.targetCPUUtilizationPercentage: null
+      api.autoscaling.targetMemoryUtilizationPercentage: 70
+    asserts:
+      - notContains:
+          path: spec.metrics
+          content:
+            type: Resource
+            resource:
+              name: cpu
+          any: true
+
+  # ============================================================================
+  # Memory metric tests
+  # ============================================================================
+  - it: should include memory metric when targetMemoryUtilizationPercentage is set
+    set:
+      api.autoscaling.enabled: true
+      api.autoscaling.targetMemoryUtilizationPercentage: 70
+    asserts:
+      - contains:
+          path: spec.metrics
+          content:
+            type: Resource
+            resource:
+              name: memory
+              target:
+                type: Utilization
+                averageUtilization: 70
+
+  - it: should not include memory metric when targetMemoryUtilizationPercentage is not set
+    set:
+      api.autoscaling.enabled: true
+      api.autoscaling.targetCPUUtilizationPercentage: 80
+      api.autoscaling.targetMemoryUtilizationPercentage: null
+    asserts:
+      - notContains:
+          path: spec.metrics
+          content:
+            type: Resource
+            resource:
+              name: memory
+          any: true
+
+  # ============================================================================
+  # Combined metrics tests
+  # ============================================================================
+  - it: should include both CPU and memory metrics when both are set
+    set:
+      api.autoscaling.enabled: true
+      api.autoscaling.targetCPUUtilizationPercentage: 80
+      api.autoscaling.targetMemoryUtilizationPercentage: 70
+    asserts:
+      - lengthEqual:
+          path: spec.metrics
+          count: 2
+
+  # ============================================================================
+  # Labels tests
+  # ============================================================================
+  - it: should include standard labels
+    set:
+      api.autoscaling.enabled: true
+    asserts:
+      - exists:
+          path: metadata.labels["helm.sh/chart"]
+      - exists:
+          path: metadata.labels["app.kubernetes.io/name"]
+      - exists:
+          path: metadata.labels["app.kubernetes.io/instance"]

@@ -5,9 +5,9 @@ metadata:
   labels:
     {{- include "keycloak.labels" . | nindent 4 }}
 spec:
-  type: {{ .Values.keycloak.service.type }}
+  type: {{ .Values.iam.keycloak.service.type }}
   ports:
-    - port: {{ .Values.keycloak.service.port }}
+    - port: {{ .Values.iam.keycloak.service.port }}
       targetPort: http
       protocol: TCP
       name: http

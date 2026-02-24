@@ -1,0 +1,220 @@
+suite: Ingress tests - API, UI, Keycloak, PostgREST
+templates:
+  - templates/ingress/api-ingress.yaml
+  - templates/ingress/ui-ingress.yaml
+  - templates/ingress/keycloak-ingress.yaml
+  - templates/ingress/postgrest-ingress.yaml
+  - templates/ingress/root-ingress.yaml
+values:
+  - ../values.yaml
+
+tests:
+  # ============================================================================
+  # Ingress enabled/disabled tests
+  # ============================================================================
+  - it: API - should not render when ingress is disabled
+    template: templates/ingress/api-ingress.yaml
+    set:
+      ingress.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: API - should render when ingress is enabled
+    template: templates/ingress/api-ingress.yaml
+    set:
+      ingress.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 1
+
+  - it: UI - should not render when ingress is disabled
+    template: templates/ingress/ui-ingress.yaml
+    set:
+      ingress.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: UI - should render when ingress is enabled
+    template: templates/ingress/ui-ingress.yaml
+    set:
+      ingress.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 1
+
+  - it: Keycloak - should not render when ingress is disabled
+    template: templates/ingress/keycloak-ingress.yaml
+    set:
+      ingress.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: Keycloak - should render when ingress is enabled
+    template: templates/ingress/keycloak-ingress.yaml
+    set:
+      ingress.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 1
+
+  - it: PostgREST - should not render when ingress is disabled
+    template: templates/ingress/postgrest-ingress.yaml
+    set:
+      ingress.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: PostgREST - should render when ingress is enabled
+    template: templates/ingress/postgrest-ingress.yaml
+    set:
+      ingress.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 1
+
+  # ============================================================================
+  # Platform-based ingress type tests (nginx vs route vs contour)
+  # ============================================================================
+  - it: API - should render Ingress for azure platform
+    template: templates/ingress/api-ingress.yaml
+    set:
+      platform: azure
+      ingress.enabled: true
+    asserts:
+      - isKind:
+          of: Ingress
+
+  - it: API - should render Ingress for aws platform
+    template: templates/ingress/api-ingress.yaml
+    set:
+      platform: aws
+      ingress.enabled: true
+    asserts:
+      - isKind:
+          of: Ingress
+
+  - it: API - should render Ingress for kubernetes platform
+    template: templates/ingress/api-ingress.yaml
+    set:
+      platform: kubernetes
+      ingress.enabled: true
+    asserts:
+      - isKind:
+          of: Ingress
+
+  - it: API - should render Route for openshift platform
+    template: templates/ingress/api-ingress.yaml
+    set:
+      platform: openshift
+      ingress.enabled: true
+    asserts:
+      - isKind:
+          of: Route
+
+  - it: API - should render HTTPProxy when classType is contour
+    template: templates/ingress/root-ingress.yaml
+    set:
+      platform: azure
+      ingress.enabled: true
+      ingress.classType: contour
+      ingress.domain: test.example.com
+    asserts:
+      - isKind:
+          of: HTTPProxy
+      - contains:
+          path: spec.routes
+          content:
+            conditions:
+              - prefix: /SASRetrievalAgentManager/api
+            services:
+              - name: retrieval-agent-manager-api
+                port: 80
+
+  # ============================================================================
+  # UI ingress specific tests
+  # ============================================================================
+  - it: UI - should render Route for openshift platform
+    template: templates/ingress/ui-ingress.yaml
+    set:
+      platform: openshift
+      ingress.enabled: true
+    asserts:
+      - isKind:
+          of: Route
+
+  - it: UI - should have enableAppRoot configuration
+    template: templates/ingress/ui-ingress.yaml
+    set:
+      platform: azure
+      ingress.enabled: true
+    asserts:
+      - isKind:
+          of: Ingress
+
+  # ============================================================================
+  # Keycloak ingress specific tests
+  # ============================================================================
+  - it: Keycloak - should render Route for openshift platform
+    template: templates/ingress/keycloak-ingress.yaml
+    set:
+      platform: openshift
+      ingress.enabled: true
+    asserts:
+      - isKind:
+          of: Route
+
+  # ============================================================================
+  # PostgREST ingress specific tests
+  # ============================================================================
+  - it: PostgREST - should render Route for openshift platform
+    template: templates/ingress/postgrest-ingress.yaml
+    set:
+      platform: openshift
+      ingress.enabled: true
+    asserts:
+      - isKind:
+          of: Route
+
+  # ============================================================================
+  # TLS configuration tests
+  # ============================================================================
+  - it: API - should include TLS configuration when enabled
+    template: templates/ingress/api-ingress.yaml
+    set:
+      platform: azure
+      ingress.enabled: true
+      ingress.tls.enabled: true
+      ingress.tls.secretName: my-tls-secret
+    asserts:
+      - isKind:
+          of: Ingress
+      - exists:
+          path: spec.tls
+
+  - it: API - should not include TLS when disabled
+    template: templates/ingress/api-ingress.yaml
+    set:
+      platform: azure
+      ingress.enabled: true
+      ingress.tls.enabled: false
+    asserts:
+      - notExists:
+          path: spec.tls
+
+  # ============================================================================
+  # Domain configuration tests
+  # ============================================================================
+  - it: API - should use ingress domain in rules
+    template: templates/ingress/api-ingress.yaml
+    set:
+      platform: azure
+      ingress.enabled: true
+      ingress.domain: my-app.example.com
+    asserts:
+      - equal:
+          path: spec.rules[0].host
+          value: my-app.example.com

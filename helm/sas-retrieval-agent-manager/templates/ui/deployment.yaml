@@ -1,132 +1,100 @@
-{{- $repo_base := "" -}}
-{{- if ((include "testValuesPath" (list .Values "global" "image" "repo" "base")) | eq "true") -}}
-  {{- $repo_base = .Values.global.image.repo.base | default (index .Values "sas-retrieval-agent-manager-app").image.repo.base -}}
-{{- else -}}
-  {{- $repo_base = (index .Values "sas-retrieval-agent-manager-app").image.repo.base -}}
-{{- end -}}
-{{- $globalEnabled := false }}
-{{- if hasKey .Values "global" }}
-{{- if hasKey .Values.global "ingress" }}
-{{- if .Values.global.ingress.enabled }}
-{{- $globalEnabled = .Values.global.ingress.enabled }}
-{{- $globalEnabled = .Values.global.ingress.enabled }}
-{{- end }}
-{{- end }}
-{{- end }}
-{{- $uiPath := "" -}}
-{{- if $globalEnabled }}
-{{- $uiPath = regexReplaceAll "\\(.*" (first (index .Values "sas-retrieval-agent-manager-app").ingress.paths).path "" }}
-{{- else }}
-{{- if (len (index .Values "sas-retrieval-agent-manager-app").ingress.hosts) }}
-{{- $uiPath = regexReplaceAll "\\(.*" (first (first (index .Values "sas-retrieval-agent-manager-app").ingress.hosts).paths).path "" }}
-{{- end }}
-{{- end }}
+
+{{if .Values.ingress.domain }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "sas-retrieval-agent-manager-ui.fullname" . }}
+  name: {{ include "ui.fullname" . }}
   labels:
-    {{- include "sas-retrieval-agent-manager-ui.labels" . | nindent 4 }}
+    {{- include "ui.labels" . | nindent 4 }}
 spec:
-  {{- if not (index .Values "sas-retrieval-agent-manager-app").autoscaling.enabled }}
-  replicas: {{ (index .Values "sas-retrieval-agent-manager-app").replicaCount }}
+  {{- if not .Values.ui.autoscaling.enabled }}
+  replicas: {{ .Values.ui.replicaCount }}
   {{- end }}
-  {{- with (index .Values "sas-retrieval-agent-manager-app").strategy }}
+  {{- with .Values.ui.strategy }}
   strategy:
     {{- toYaml . | nindent 4 }}
   {{- end }}
   selector:
     matchLabels:
-      {{- include "sas-retrieval-agent-manager-ui.selectorLabels" . | nindent 6 }}
+      {{- include "ui.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      {{- with (index .Values "sas-retrieval-agent-manager-app").podAnnotations }}
+      {{- with .Values.ui.podAnnotations }}
       annotations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "sas-retrieval-agent-manager-ui.labels" . | nindent 8 }}
-        {{- with (index .Values "sas-retrieval-agent-manager-app").podLabels }}
+        {{- include "ui.labels" . | nindent 8 }}
+        {{- with .Values.ui.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:
-      {{- with uniq (concat ((index .Values "sas-retrieval-agent-manager-app").imagePullSecrets | default (list)) (.Values.global.imagePullSecrets | default (list))) }}
+      {{- with .Values.images.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "sas-retrieval-agent-manager-ui.serviceAccountName" . }}
+      serviceAccountName: {{ include "ui.serviceAccountName" . }}
       securityContext:
-        {{- toYaml (index .Values "sas-retrieval-agent-manager-app").podSecurityContext | nindent 8 }}
+        {{- toYaml .Values.ui.podSecurityContext | nindent 8 }}
       initContainers:
         {{- include "oauth2-proxy.sidecar.init" . | nindent 8 }}
       containers:
-        - name: {{ .Chart.Name }}
+        - name: ui
           securityContext:
-            {{- toYaml (index .Values "sas-retrieval-agent-manager-app").securityContext | nindent 12 }}
-          image: "{{ $repo_base }}/{{ (index .Values "sas-retrieval-agent-manager-app").image.repo.path }}:{{ (index .Values "sas-retrieval-agent-manager-app").image.tag }}"
-          imagePullPolicy: {{ (index .Values "sas-retrieval-agent-manager-app").image.pullPolicy }}
+            {{- toYaml .Values.ui.securityContext | nindent 12 }}
+          image: "{{- include "images.ui" . -}}"
+          imagePullPolicy: {{ .Values.images.ui.pullPolicy }}
           env:
             - name: LOGOUT_URL
               valueFrom:
                 configMapKeyRef:
-                  name: oauth-proxy-config
+                  name: {{ printf "%s-proxy-config" (include "oauth2-proxy.fullname" .) }}
                   key: logoutUrl
             - name: POSTGREST_SERVICE
               valueFrom:
                 configMapKeyRef:
-                  name: postgrest-configmap
+                  name: {{ printf "%s-config" (include "postgrest.fullname" .) }}
                   key: service
             - name: SSL_VERIFY
-              value: '{{ index .Values.global.configuration.ui "sslVerify" }}'
+              value: '{{ index .Values.ui.config "sslVerify" }}'
           ports:
             - name: http
-              containerPort: {{ (index .Values "sas-retrieval-agent-manager-app").service.port }}
+              containerPort: {{ .Values.ui.service.port }}
               protocol: TCP
           livenessProbe:
-            httpGet:
-              path: {{ $uiPath }}/health
-              port: {{ (index .Values "sas-retrieval-agent-manager-app").livenessProbe.httpGet.port }}
-            timeoutSeconds: {{ (index .Values "sas-retrieval-agent-manager-app").livenessProbe.timeoutSeconds }}
-            periodSeconds: {{ (index .Values "sas-retrieval-agent-manager-app").livenessProbe.periodSeconds }}
-            successThreshold: {{ (index .Values "sas-retrieval-agent-manager-app").livenessProbe.successThreshold }}
-            failureThreshold: {{ (index .Values "sas-retrieval-agent-manager-app").livenessProbe.failureThreshold }}
+            {{ include "ui.livenessProbe" . | nindent 12 }}
           readinessProbe:
-            httpGet:
-              path: {{ $uiPath }}/health
-              port: {{ (index .Values "sas-retrieval-agent-manager-app").readinessProbe.httpGet.port }}
-            timeoutSeconds: {{ (index .Values "sas-retrieval-agent-manager-app").readinessProbe.timeoutSeconds }}
-            periodSeconds: {{ (index .Values "sas-retrieval-agent-manager-app").readinessProbe.periodSeconds }}
-            successThreshold: {{ (index .Values "sas-retrieval-agent-manager-app").readinessProbe.successThreshold }}
-            failureThreshold: {{ (index .Values "sas-retrieval-agent-manager-app").readinessProbe.failureThreshold }}
+            {{ include "ui.readinessProbe" . | nindent 12 }}
           resources:
-            {{- toYaml (index .Values "sas-retrieval-agent-manager-app").resources | nindent 12 }}
+            {{- toYaml .Values.ui.resources | nindent 12 }}
           volumeMounts:
             - mountPath: /var/cache/nginx
               name: cache
             - mountPath: /var/run
               name: run
-          {{- with (index .Values "sas-retrieval-agent-manager-app").volumeMounts }}
+          {{- with .Values.ui.volumeMounts }}
             {{- toYaml . | nindent 12 }}
           {{- end }}
-        {{- include "oauth2-proxy.sidecar" (dict "Root" . "upstreamPort" (index .Values "sas-retrieval-agent-manager-app").service.port) | nindent 8 }}
+        {{- include "oauth2-proxy.sidecar" (dict "Root" . "upstreamPort" .Values.ui.service.port) | nindent 8 }}
       volumes:
         {{- include "oauth2-proxy.sidecar.volumes" . | nindent 8 }}
         - name: cache
           emptyDir: {}
         - name: run
           emptyDir: {}
-      {{- with (index .Values "sas-retrieval-agent-manager-app").volumes }}
+      {{- with .Values.ui.volumes }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with (index .Values "sas-retrieval-agent-manager-app").nodeSelector }}
+      {{- with .Values.ui.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with (index .Values "sas-retrieval-agent-manager-app").affinity }}
+      {{- with .Values.ui.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with (index .Values "sas-retrieval-agent-manager-app").tolerations }}
+      {{- with .Values.ui.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+{{- end }}

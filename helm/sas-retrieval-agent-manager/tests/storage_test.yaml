@@ -1,0 +1,170 @@
+suite: Storage tests - PVC and StorageClass
+templates:
+  - templates/storage/storageclass.yaml
+  - templates/storage/appData-pvc.yaml
+  - templates/storage/embedding-pvc.yaml
+values:
+  - ../values.yaml
+
+tests:
+  # ============================================================================
+  # StorageClass creation tests
+  # ============================================================================
+  - it: should create StorageClass for azure platform by default
+    template: templates/storage/storageclass.yaml
+    set:
+      platform: azure
+    asserts:
+      - isKind:
+          of: StorageClass
+
+  - it: should not create StorageClass for aws platform by default
+    template: templates/storage/storageclass.yaml
+    set:
+      platform: aws
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should not create StorageClass for kubernetes platform by default
+    template: templates/storage/storageclass.yaml
+    set:
+      platform: kubernetes
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should not create StorageClass for openshift platform by default
+    template: templates/storage/storageclass.yaml
+    set:
+      platform: openshift
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  # ============================================================================
+  # StorageClass explicit override tests (removed - storage.createStorageClass not in schema)
+  # Note: Storage class creation is controlled by platform defaults only
+  # ============================================================================
+
+  # ============================================================================
+  # StorageClass configuration tests (Azure)
+  # ============================================================================
+  - it: should use file.csi.azure.com provisioner for Azure
+    template: templates/storage/storageclass.yaml
+    set:
+      platform: azure
+    asserts:
+      - equal:
+          path: provisioner
+          value: file.csi.azure.com
+
+  - it: should allow volume expansion
+    template: templates/storage/storageclass.yaml
+    set:
+      platform: azure
+    asserts:
+      - equal:
+          path: allowVolumeExpansion
+          value: true
+
+  - it: should have correct Azure mount options
+    template: templates/storage/storageclass.yaml
+    set:
+      platform: azure
+    asserts:
+      - contains:
+          path: mountOptions
+          content: dir_mode=0777
+      - contains:
+          path: mountOptions
+          content: file_mode=0777
+      - contains:
+          path: mountOptions
+          content: mfsymlinks
+      - contains:
+          path: mountOptions
+          content: uid=1001
+      - contains:
+          path: mountOptions
+          content: gid=1001
+
+  - it: should have Standard_LRS skuName parameter
+    template: templates/storage/storageclass.yaml
+    set:
+      platform: azure
+    asserts:
+      - equal:
+          path: parameters.skuName
+          value: Standard_LRS
+
+  # ============================================================================
+  # AppData PVC tests
+  # ============================================================================
+  - it: should create appData PVC
+    template: templates/storage/appData-pvc.yaml
+    asserts:
+      - isKind:
+          of: PersistentVolumeClaim
+
+  - it: should use correct storageClassName based on platform
+    template: templates/storage/appData-pvc.yaml
+    set:
+      platform: azure
+    asserts:
+      - equal:
+          path: spec.storageClassName
+          value: azurefile-sas
+
+  # Note: Custom storageClassName test removed - storage.storageClassName not in schema
+
+  - it: should have helm keep resource policy annotation
+    template: templates/storage/appData-pvc.yaml
+    asserts:
+      - equal:
+          path: metadata.annotations["helm.sh/resource-policy"]
+          value: keep
+
+  - it: should use configured access modes
+    template: templates/storage/appData-pvc.yaml
+    set:
+      storage.application.pvc.accessModes:
+        - ReadWriteMany
+    asserts:
+      - contains:
+          path: spec.accessModes
+          content: ReadWriteMany
+
+  - it: should use configured storage size
+    template: templates/storage/appData-pvc.yaml
+    set:
+      storage.application.pvc.size: 50Gi
+    asserts:
+      - equal:
+          path: spec.resources.requests.storage
+          value: 50Gi
+
+  # ============================================================================
+  # Embedding PVC tests
+  # ============================================================================
+  - it: should create embedding PVC
+    template: templates/storage/embedding-pvc.yaml
+    asserts:
+      - isKind:
+          of: PersistentVolumeClaim
+
+  - it: should use correct storageClassName for embedding PVC
+    template: templates/storage/embedding-pvc.yaml
+    set:
+      platform: aws
+    asserts:
+      - equal:
+          path: spec.storageClassName
+          value: efs-sc
+
+  - it: embedding PVC should have keep resource policy
+    template: templates/storage/embedding-pvc.yaml
+    asserts:
+      - equal:
+          path: metadata.annotations["helm.sh/resource-policy"]
+          value: keep

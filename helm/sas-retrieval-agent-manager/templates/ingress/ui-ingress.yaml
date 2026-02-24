@@ -1,0 +1,18 @@
+{{- if .Values.ingress.enabled -}}
+{{- $config := dict 
+    "name" (include "ui.fullname" .)
+    "labels" "ui.labels"
+    "pathsKey" "ui"
+    "servicePort" .Values.ui.service.port
+    "enableAppRoot" (.Values.ingress.enableRootIngress | default false)
+    "appRootDefault" (first .Values.ingress.ui.paths | default "/SASRetrievalAgentManager")
+-}}
+{{- $classType := include "retrieval-agent-manager.ingressClassType" . -}}
+{{- if eq $classType "route" -}}
+{{- include "openshift.route" (dict "ctx" . "config" $config) -}}
+{{- else if eq $classType "contour" -}}
+{{- include "contour.httpproxy" (dict "ctx" . "config" $config) -}}
+{{- else -}}
+{{- include "nginx.ingress" (dict "ctx" . "config" $config) -}}
+{{- end -}}
+{{- end -}}

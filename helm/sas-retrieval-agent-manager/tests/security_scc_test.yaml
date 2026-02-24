@@ -1,0 +1,280 @@
+suite: SecurityContextConstraints tests
+templates:
+  - templates/security/scc/scc.yaml
+values:
+  - ../values.yaml
+
+tests:
+  # ============================================================================
+  # SCC creation tests
+  # ============================================================================
+  - it: should not render SCC for non-openshift platforms
+    set:
+      platform: azure
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should not render SCC for aws platform
+    set:
+      platform: aws
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should not render SCC for kubernetes platform
+    set:
+      platform: kubernetes
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render SCC for openshift platform
+    set:
+      platform: openshift
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: SecurityContextConstraints
+      - isAPIVersion:
+          of: security.openshift.io/v1
+
+  # ============================================================================
+  # SCC name tests
+  # ============================================================================
+  - it: should have correct name
+    set:
+      platform: openshift
+    asserts:
+      - matchRegex:
+          path: metadata.name
+          pattern: ".*-scc$"
+
+  # ============================================================================
+  # SCC security settings tests
+  # ============================================================================
+  - it: should not allow host directory volume plugin
+    set:
+      platform: openshift
+    asserts:
+      - equal:
+          path: allowHostDirVolumePlugin
+          value: false
+
+  - it: should not allow host IPC
+    set:
+      platform: openshift
+    asserts:
+      - equal:
+          path: allowHostIPC
+          value: false
+
+  - it: should not allow host network
+    set:
+      platform: openshift
+    asserts:
+      - equal:
+          path: allowHostNetwork
+          value: false
+
+  - it: should not allow host PID
+    set:
+      platform: openshift
+    asserts:
+      - equal:
+          path: allowHostPID
+          value: false
+
+  - it: should not allow host ports
+    set:
+      platform: openshift
+    asserts:
+      - equal:
+          path: allowHostPorts
+          value: false
+
+  - it: should not allow privilege escalation
+    set:
+      platform: openshift
+    asserts:
+      - equal:
+          path: allowPrivilegeEscalation
+          value: false
+
+  - it: should not allow privileged containers
+    set:
+      platform: openshift
+    asserts:
+      - equal:
+          path: allowPrivilegedContainer
+          value: false
+
+  # ============================================================================
+  # SCC fsGroup configuration tests
+  # ============================================================================
+  - it: should allow any fsGroup
+    set:
+      platform: openshift
+    asserts:
+      - equal:
+          path: fsGroup.type
+          value: RunAsAny
+
+  # ============================================================================
+  # SCC runAsUser configuration tests
+  # ============================================================================
+  - it: should allow any runAsUser
+    set:
+      platform: openshift
+    asserts:
+      - equal:
+          path: runAsUser.type
+          value: RunAsAny
+
+  # ============================================================================
+  # SCC seLinuxContext configuration tests
+  # ============================================================================
+  - it: should use MustRunAs for seLinuxContext
+    set:
+      platform: openshift
+    asserts:
+      - equal:
+          path: seLinuxContext.type
+          value: MustRunAs
+
+  # ============================================================================
+  # SCC supplementalGroups configuration tests
+  # ============================================================================
+  - it: should allow any supplementalGroups
+    set:
+      platform: openshift
+    asserts:
+      - equal:
+          path: supplementalGroups.type
+          value: RunAsAny
+
+  # ============================================================================
+  # SCC required drop capabilities tests
+  # ============================================================================
+  - it: should require dropping MKNOD capability
+    set:
+      platform: openshift
+    asserts:
+      - contains:
+          path: requiredDropCapabilities
+          content: MKNOD
+
+  # ============================================================================
+  # SCC priority tests
+  # ============================================================================
+  - it: should have priority 10
+    set:
+      platform: openshift
+    asserts:
+      - equal:
+          path: priority
+          value: 10
+
+  # ============================================================================
+  # SCC seccomp profiles tests
+  # ============================================================================
+  - it: should use runtime/default seccomp profile
+    set:
+      platform: openshift
+    asserts:
+      - contains:
+          path: seccompProfiles
+          content: runtime/default
+
+  # ============================================================================
+  # SCC allowed volumes tests
+  # ============================================================================
+  - it: should allow required volume types
+    set:
+      platform: openshift
+    asserts:
+      - contains:
+          path: volumes
+          content: configMap
+      - contains:
+          path: volumes
+          content: downwardAPI
+      - contains:
+          path: volumes
+          content: emptyDir
+      - contains:
+          path: volumes
+          content: persistentVolumeClaim
+      - contains:
+          path: volumes
+          content: projected
+      - contains:
+          path: volumes
+          content: secret
+
+  # ============================================================================
+  # SCC service account users tests
+  # ============================================================================
+  - it: should include API service account when create is true
+    set:
+      platform: openshift
+      api.serviceAccount.create: true
+    asserts:
+      - matchRegex:
+          path: users[0]
+          pattern: "system:serviceaccount:.*:.*-api$"
+
+  - it: should include API spawn service account when create is true
+    set:
+      platform: openshift
+      api.spawn.serviceAccount.create: true
+    asserts:
+      - matchRegex:
+          path: users[1]
+          pattern: "system:serviceaccount:.*:.*-spawn$"
+
+  - it: should include UI service account when create is true
+    set:
+      platform: openshift
+      ui.serviceAccount.create: true
+    asserts:
+      - matchRegex:
+          path: users[2]
+          pattern: "system:serviceaccount:.*:.*-app$"
+
+  - it: should include Keycloak service accounts when create is true
+    set:
+      platform: openshift
+      iam.keycloak.serviceAccount.create: true
+    asserts:
+      - matchRegex:
+          path: users[3]
+          pattern: "system:serviceaccount:.*:.*-keycloak$"
+
+  - it: should include PostgREST service account when create is true
+    set:
+      platform: openshift
+      db.rest.serviceAccount.create: true
+    asserts:
+      - matchRegex:
+          path: users[6]
+          pattern: "system:serviceaccount:.*:.*-postgrest$"
+
+  - it: should include DB init service account when create is true
+    set:
+      platform: openshift
+      db.init.serviceAccount.create: true
+    asserts:
+      - matchRegex:
+          path: users[7]
+          pattern: "system:serviceaccount:.*:.*-db-init$"
+
+  - it: should include DB migration service account when create is true
+    set:
+      platform: openshift
+      db.migration.serviceAccount.create: true
+    asserts:
+      - matchRegex:
+          path: users[8]
+          pattern: "system:serviceaccount:.*:.*-db-migration$"

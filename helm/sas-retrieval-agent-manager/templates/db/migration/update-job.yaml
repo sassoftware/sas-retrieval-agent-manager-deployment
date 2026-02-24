@@ -1,14 +1,8 @@
-{{- $kubectl_repo_base := "" -}}
-{{- if ((include "testValuesPath" (list .Values "global" "image" "repo" "base")) | eq "true") -}}
-    {{- $kubectl_repo_base = .Values.global.image.repo.base | default (index .Values "sas-retrieval-agent-manager-db-init").image.kubectl.repo.base -}}
-{{- else -}}
-  {{- $kubectl_repo_base = (index .Values "sas-retrieval-agent-manager-db-init").image.kubectl.repo.base -}}
-{{- end -}}
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ include "sas-retrieval-agent-manager-db-migration.fullname" . }}-cleanup
-  {{- with (index .Values "sas-retrieval-agent-manager-db-migration").labels }}
+  name: {{ include "db-migration.fullname" . }}-cleanup
+  {{- with .Values.db.migration.labels }}
   labels:
     {{- toYaml . | nindent 4 }}
   {{- end }}
@@ -21,14 +15,14 @@ spec:
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: {{ include "sas-retrieval-agent-manager-db-migration.fullname" . }}-cleanup
+        app.kubernetes.io/name: {{ include "db-migration.fullname" . }}-cleanup
         job-type: cleanup
     spec:
-      serviceAccountName: {{ include "sas-retrieval-agent-manager-db-migration.fullname" . }}-cleanup-sa
+      serviceAccountName: {{ include "db-migration.fullname" . }}-cleanup-sa
       restartPolicy: Never
       containers:
       - name: cleanup
-        image: "{{ $kubectl_repo_base }}/{{ (index .Values "sas-retrieval-agent-manager-db-init").image.kubectl.repo.path }}:{{ (index .Values "sas-retrieval-agent-manager-db-init").image.kubectl.tag }}"
+        image: "{{- include "images.kubectl" . -}}"
         command:
         - /bin/bash
         - -c
@@ -48,9 +42,9 @@ spec:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: {{ include "sas-retrieval-agent-manager-db-migration.fullname" . }}-cleanup-sa
+  name: {{ include "db-migration.fullname" . }}-cleanup-sa
   labels:
-    app.kubernetes.io/name: {{ include "sas-retrieval-agent-manager-db-migration.fullname" . }}-cleanup-sa
+    app.kubernetes.io/name: {{ include "db-migration.fullname" . }}-cleanup-sa
     app.kubernetes.io/instance: {{ .Release.Name }}
   annotations:
     helm.sh/hook: pre-upgrade
@@ -60,9 +54,9 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: {{ include "sas-retrieval-agent-manager-db-migration.fullname" . }}-cleanup-role
+  name: {{ include "db-migration.fullname" . }}-cleanup-role
   labels:
-    app.kubernetes.io/name: {{ include "sas-retrieval-agent-manager-db-migration.fullname" . }}-cleanup-role
+    app.kubernetes.io/name: {{ include "db-migration.fullname" . }}-cleanup-role
     app.kubernetes.io/instance: {{ .Release.Name }}
   annotations:
     helm.sh/hook: pre-upgrade
@@ -76,9 +70,9 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: {{ include "sas-retrieval-agent-manager-db-migration.fullname" . }}-cleanup-rolebinding
+  name: {{ include "db-migration.fullname" . }}-cleanup-rolebinding
   labels:
-    app.kubernetes.io/name: {{ include "sas-retrieval-agent-manager-db-migration.fullname" . }}-cleanup-rolebinding
+    app.kubernetes.io/name: {{ include "db-migration.fullname" . }}-cleanup-rolebinding
     app.kubernetes.io/instance: {{ .Release.Name }}
   annotations:
     helm.sh/hook: pre-upgrade
@@ -87,8 +81,8 @@ metadata:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: {{ include "sas-retrieval-agent-manager-db-migration.fullname" . }}-cleanup-role
+  name: {{ include "db-migration.fullname" . }}-cleanup-role
 subjects:
 - kind: ServiceAccount
-  name: {{ include "sas-retrieval-agent-manager-db-migration.fullname" . }}-cleanup-sa
+  name: {{ include "db-migration.fullname" . }}-cleanup-sa
   namespace: {{ .Release.Namespace }}
