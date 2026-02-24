@@ -6,15 +6,15 @@ metadata:
     {{- include "keycloak.labels" . | nindent 4 }}
 
 data:
-  apply.sh: |-
-    #!/usr/bin/env bash
+  init.sh: |-
+    PSQL=$(which psql)
 
-    # This script applies realm updates to a Keycloak server using the Keycloak Admin CLI (kcadm.sh).
-    # It reads admin credentials from mounted Kubernetes secrets and uses an ephemeral work directory
-    # for storing the kcadm.sh configuration file.
-    # It is intended to be run as part of a Kubernetes Job within a Helm chart deployment, and will
-    # execute realm updates defined in additional scripts or commands after authentication. Any
-    # script present in the /updates directory with the suffix "-update.sh" will be executed.
+    until pg_isready -h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER;
+    do
+      echo "Waiting for database to be ready ...";
+      sleep 2;
+    done;
+    echo "The database server is ready";
 
     until psql -h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER -d $POSTGRES_DB -c "SELECT 1";
     do
