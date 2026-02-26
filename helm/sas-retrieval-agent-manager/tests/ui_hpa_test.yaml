@@ -1,0 +1,123 @@
+suite: UI HPA tests
+templates:
+  - templates/ui/hpa.yaml
+values:
+  - ../values.yaml
+
+tests:
+  # ============================================================================
+  # HPA creation tests
+  # ============================================================================
+  - it: should not render HPA when autoscaling is disabled
+    set:
+      ui.autoscaling.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render HPA when autoscaling is enabled
+    set:
+      ui.autoscaling.enabled: true
+      ui.autoscaling.minReplicas: 2
+      ui.autoscaling.maxReplicas: 10
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: HorizontalPodAutoscaler
+      - isAPIVersion:
+          of: autoscaling/v2
+
+  # ============================================================================
+  # HPA configuration tests
+  # ============================================================================
+  - it: should set minReplicas and maxReplicas
+    set:
+      ui.autoscaling.enabled: true
+      ui.autoscaling.minReplicas: 3
+      ui.autoscaling.maxReplicas: 15
+    asserts:
+      - equal:
+          path: spec.minReplicas
+          value: 3
+      - equal:
+          path: spec.maxReplicas
+          value: 15
+
+  - it: should target the correct deployment
+    set:
+      ui.autoscaling.enabled: true
+    asserts:
+      - equal:
+          path: spec.scaleTargetRef.apiVersion
+          value: apps/v1
+      - equal:
+          path: spec.scaleTargetRef.kind
+          value: Deployment
+      - matchRegex:
+          path: spec.scaleTargetRef.name
+          pattern: ".*-app$"
+
+  # ============================================================================
+  # CPU metric tests
+  # ============================================================================
+  - it: should include CPU metric when targetCPUUtilizationPercentage is set
+    set:
+      ui.autoscaling.enabled: true
+      ui.autoscaling.targetCPUUtilizationPercentage: 80
+    asserts:
+      - contains:
+          path: spec.metrics
+          content:
+            type: Resource
+            resource:
+              name: cpu
+              target:
+                type: Utilization
+                averageUtilization: 80
+
+  - it: should not include CPU metric when targetCPUUtilizationPercentage is not set
+    set:
+      ui.autoscaling.enabled: true
+      ui.autoscaling.targetCPUUtilizationPercentage: null
+      ui.autoscaling.targetMemoryUtilizationPercentage: 70
+    asserts:
+      - notContains:
+          path: spec.metrics
+          content:
+            type: Resource
+            resource:
+              name: cpu
+          any: true
+
+  # ============================================================================
+  # Memory metric tests
+  # ============================================================================
+  - it: should include memory metric when targetMemoryUtilizationPercentage is set
+    set:
+      ui.autoscaling.enabled: true
+      ui.autoscaling.targetMemoryUtilizationPercentage: 70
+    asserts:
+      - contains:
+          path: spec.metrics
+          content:
+            type: Resource
+            resource:
+              name: memory
+              target:
+                type: Utilization
+                averageUtilization: 70
+
+  - it: should not include memory metric when targetMemoryUtilizationPercentage is not set
+    set:
+      ui.autoscaling.enabled: true
+      ui.autoscaling.targetCPUUtilizationPercentage: 80
+      ui.autoscaling.targetMemoryUtilizationPercentage: null
+    asserts:
+      - notContains:
+          path: spec.metrics
+          content:
+            type: Resource
+            resource:
+              name: memory
+          any: true

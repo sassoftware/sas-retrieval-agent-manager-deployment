@@ -5,13 +5,13 @@ metadata:
   labels:
     {{- include "postgrest.labels" . | nindent 4 }}
 spec:
-  type: {{ .Values.postgrest.adminService.type }}
+  type: {{ .Values.db.rest.adminService.type }}
   ports:
-    - port: {{ .Values.postgrest.adminService.port }}
+    - port: {{ .Values.db.rest.adminService.port }}
       targetPort: admin
       protocol: TCP
       name: admin
-    - port: {{ index .Values.global.configuration.postgrest.monitoring "admin-server-port" }}
+    - port: {{ .Values.db.rest.monitoring.adminService.port }}
       targetPort: admin-monitor
       protocol: TCP
       name: admin-monitor

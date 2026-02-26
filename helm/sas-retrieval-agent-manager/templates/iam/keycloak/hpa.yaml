@@ -1,4 +1,4 @@
-{{- if .Values.keycloak.autoscaling.enabled }}
+{{- if .Values.iam.keycloak.autoscaling.enabled }}
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
@@ -10,23 +10,23 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: {{ include "keycloak.fullname" . }}
-  minReplicas: {{ .Values.keycloak.autoscaling.minReplicas }}
-  maxReplicas: {{ .Values.keycloak.autoscaling.maxReplicas }}
+  minReplicas: {{ .Values.iam.keycloak.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.iam.keycloak.autoscaling.maxReplicas }}
   metrics:
-    {{- if .Values.keycloak.autoscaling.targetCPUUtilizationPercentage }}
+    {{- if .Values.iam.keycloak.autoscaling.targetCPUUtilizationPercentage }}
     - type: Resource
       resource:
         name: cpu
         target:
           type: Utilization
-          averageUtilization: {{ .Values.keycloak.autoscaling.targetCPUUtilizationPercentage }}
+          averageUtilization: {{ .Values.iam.keycloak.autoscaling.targetCPUUtilizationPercentage }}
     {{- end }}
-    {{- if .Values.keycloak.autoscaling.targetMemoryUtilizationPercentage }}
+    {{- if .Values.iam.keycloak.autoscaling.targetMemoryUtilizationPercentage }}
     - type: Resource
       resource:
         name: memory
         target:
           type: Utilization
-          averageUtilization: {{ .Values.keycloak.autoscaling.targetMemoryUtilizationPercentage }}
+          averageUtilization: {{ .Values.iam.keycloak.autoscaling.targetMemoryUtilizationPercentage }}
     {{- end }}
 {{- end }}

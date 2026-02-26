@@ -1,12 +1,8 @@
 {{/*
 Expand the name of the chart.
 */}}
-{{- define "sas-retrieval-agent-manager-db-migration.name" -}}
-{{- if (index .Values "sas-retrieval-agent-manager-db-migration").nameOverride }}
-{{- (index .Values "sas-retrieval-agent-manager-db-migration").nameOverride | trunc 63 | trimSuffix "-" }}
-{{- else }}
-{{- printf "%s-db-migration" (include "sas-retrieval-agent-manager.name" .) | trunc 63 | trimSuffix "-" }}
-{{- end }}
+{{- define "db-migration.name" -}}
+{{- printf "%s-db-migration" (include "retrieval-agent-manager.name" .) | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
@@ -14,27 +10,23 @@ Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 If release name contains chart name it will be used as a full name.
 */}}
-{{- define "sas-retrieval-agent-manager-db-migration.fullname" -}}
-{{- if (index .Values "sas-retrieval-agent-manager-db-migration").fullnameOverride }}
-{{- (index .Values "sas-retrieval-agent-manager-db-migration").fullnameOverride | trunc 63 | trimSuffix "-" }}
-{{- else }}
-{{- printf "%s-db-migration" (include "sas-retrieval-agent-manager.fullname" .) | trunc 63 | trimSuffix "-" }}
-{{- end }}
+{{- define "db-migration.fullname" -}}
+{{- printf "%s-db-migration" (include "retrieval-agent-manager.fullname" .) | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
 Create chart name and version as used by the chart label.
 */}}
-{{- define "sas-retrieval-agent-manager-db-migration.chart" -}}
+{{- define "db-migration.chart" -}}
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
 Common labels
 */}}
-{{- define "sas-retrieval-agent-manager-db-migration.labels" -}}
-helm.sh/chart: {{ include "sas-retrieval-agent-manager-db-migration.chart" . }}
-{{ include "sas-retrieval-agent-manager-db-migration.selectorLabels" . }}
+{{- define "db-migration.labels" -}}
+helm.sh/chart: {{ include "db-migration.chart" . }}
+{{ include "db-migration.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
@@ -44,25 +36,27 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{/*
 Selector labels
 */}}
-{{- define "sas-retrieval-agent-manager-db-migration.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "sas-retrieval-agent-manager-db-migration.name" . }}
+{{- define "db-migration.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "db-migration.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/component: db-migration
+app.kubernetes.io/part-of: {{ include "retrieval-agent-manager.name" . }}
 {{- end }}
 
 {{/*
 Create the name of the service account to use
 */}}
-{{- define "sas-retrieval-agent-manager-db-migration.serviceAccountName" -}}
-{{- if (index .Values "sas-retrieval-agent-manager-db-migration").serviceAccount.create }}
-{{- default (include "sas-retrieval-agent-manager-db-migration.fullname" .) (index .Values "sas-retrieval-agent-manager-db-migration").serviceAccount.name }}
+{{- define "db-migration.serviceAccountName" -}}
+{{- if .Values.db.migration.serviceAccount.create }}
+{{- default (include "db-migration.fullname" .) .Values.db.migration.serviceAccount.name }}
 {{- else }}
-{{- default "default" (index .Values "sas-retrieval-agent-manager-db-migration").serviceAccount.name }}
+{{- default "default" .Values.db.migration.serviceAccount.name }}
 {{- end }}
 {{- end }}
 
 {{/*
-Check if a nested path exists in .Values.sas-retrieval-agent-manager-db-migration
-Usage: {{ include "testValuesPath" (list .Values.sas-retrieval-agent-manager-db-migration "x" "y" "z") }}
+Check if a nested path exists in .Values.db-migration
+Usage: {{ include "testValuesPath" (list .Values.db-migration "x" "y" "z") }}
 */}}
 {{- define "testValuesPath" -}}
 {{- $root := index . 0 -}}

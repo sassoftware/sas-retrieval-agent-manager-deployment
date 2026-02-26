@@ -2,11 +2,7 @@
 Expand the name of the chart.
 */}}
 {{- define "gpg.name" -}}
-{{- if .Values.gpg.nameOverride }}
-{{- .Values.gpg.nameOverride | trunc 63 | trimSuffix "-" }}
-{{- else }}
-{{- printf "%s-gpg" (include "sas-retrieval-agent-manager.name" .) | trunc 63 | trimSuffix "-" }}
-{{- end }}
+{{- printf "%s-gpg" (include "retrieval-agent-manager.name" .) | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
@@ -15,11 +11,7 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 If release name contains chart name it will be used as a full name.
 */}}
 {{- define "gpg.fullname" -}}
-{{- if .Values.gpg.fullnameOverride }}
-{{- .Values.gpg.fullnameOverride | trunc 63 | trimSuffix "-" }}
-{{- else }}
-{{- printf "%s-gpg" (include "sas-retrieval-agent-manager.fullname" .) | trunc 63 | trimSuffix "-" }}
-{{- end }}
+{{- printf "%s-gpg" (include "retrieval-agent-manager.fullname" .) | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
@@ -47,22 +39,24 @@ Selector labels
 {{- define "gpg.selectorLabels" -}}
 app.kubernetes.io/name: {{ include "gpg.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/component: gpg
+app.kubernetes.io/part-of: {{ include "retrieval-agent-manager.name" . }}
 {{- end }}
 
 {{/*
 Create the name of the service account to use
 */}}
 {{- define "gpg.serviceAccountName" -}}
-{{- if (index .Values "gpg").serviceAccount.create }}
-{{- default (include "gpg.fullname" .) (index .Values "gpg").serviceAccount.name }}
+{{- if .Values.security.gpg.serviceAccount.create }}
+{{- default (include "gpg.fullname" .) .Values.security.gpg.serviceAccount.name }}
 {{- else }}
-{{- default "default" (index .Values "gpg").serviceAccount.name }}
+{{- default "default" .Values.security.gpg.serviceAccount.name }}
 {{- end }}
 {{- end }}
 
 {{/*
-Check if a nested path exists in .Values.gpg
-Usage: {{ include "testValuesPath" (list .Values.gpg "x" "y" "z") }}
+Check if a nested path exists in .Values.security.gpg
+Usage: {{ include "testValuesPath" (list .Values.security.gpg "x" "y" "z") }}
 */}}
 {{- define "testValuesPath" -}}
 {{- $root := index . 0 -}}
@@ -85,14 +79,14 @@ Check if GPG keys need to be generated (when both keys are not provided, or only
 {{- define "gpg.shouldGenerateKeys" -}}
 {{- $publicKey := "" -}}
 {{- $privateKey := "" -}}
-{{- if (include "testValuesPath" (list .Values.gpg "global" "configuration" "gpg" "publicKey")) | eq "true" -}}
-  {{- if ne .Values.global.configuration.gpg.publicKey "" -}}
-    {{- $publicKey = .Values.global.configuration.gpg.publicKey -}}
+{{- if (include "testValuesPath" (list .Values.security.gpg "security" "gpg" "config" "publicKey")) | eq "true" -}}
+  {{- if ne .Values.security.gpg.config.publicKey "" -}}
+    {{- $publicKey = .Values.security.gpg.config.publicKey -}}
   {{- end -}}
 {{- end -}}
-{{- if (include "testValuesPath" (list .Values.gpg "global" "configuration" "gpg" "privateKey")) | eq "true" -}}
-  {{- if ne .Values.global.configuration.gpg.privateKey "" -}}
-    {{- $privateKey = .Values.global.configuration.gpg.privateKey -}}
+{{- if (include "testValuesPath" (list .Values.security.gpg "security" "gpg" "config" "privateKey")) | eq "true" -}}
+  {{- if ne .Values.security.gpg.config.privateKey "" -}}
+    {{- $privateKey = .Values.security.gpg.config.privateKey -}}
   {{- end -}}
 {{- end -}}
 {{- $hasPublic := ne $publicKey "" -}}
@@ -105,14 +99,14 @@ Check if existing GPG public key is available (non-empty)
 */}}
 {{- define "gpg.hasPublicKey" -}}
 {{- $publicKey := "" -}}
-{{- if (include "testValuesPath" (list .Values.gpg "global" "configuration" "gpg" "publicKey")) | eq "true" -}}
-  {{- if ne .Values.global.configuration.gpg.publicKey "" -}}
-    {{- $publicKey = .Values.global.configuration.gpg.publicKey -}}
+{{- if (include "testValuesPath" (list .Values.security.gpg "security" "gpg" "config" "publicKey")) | eq "true" -}}
+  {{- if ne .Values.security.gpg.config.publicKey "" -}}
+    {{- $publicKey = .Values.security.gpg.config.publicKey -}}
   {{- end -}}
 {{- end -}}
-{{- if (include "testValuesPath" (list .Values.gpg "gpg" "publicKey")) | eq "true" -}}
-  {{- if ne .Values.gpg.publicKey "" -}}
-    {{- $publicKey = .Values.gpg.publicKey -}}
+{{- if (include "testValuesPath" (list .Values.security.gpg "config" "publicKey")) | eq "true" -}}
+  {{- if ne .Values.security.gpg.config.publicKey "" -}}
+    {{- $publicKey = .Values.security.gpg.config.publicKey -}}
   {{- end -}}
 {{- end -}}
 {{- ne $publicKey "" -}}
@@ -123,14 +117,14 @@ Check if existing GPG private key is available (non-empty)
 */}}
 {{- define "gpg.hasPrivateKey" -}}
 {{- $privateKey := "" -}}
-{{- if (include "testValuesPath" (list .Values.gpg "global" "configuration" "gpg" "privateKey")) | eq "true" -}}
-  {{- if ne .Values.global.configuration.gpg.privateKey "" -}}
-    {{- $privateKey = .Values.global.configuration.gpg.privateKey -}}
+{{- if (include "testValuesPath" (list .Values.security.gpg "security" "gpg" "config" "privateKey")) | eq "true" -}}
+  {{- if ne .Values.security.gpg.config.privateKey "" -}}
+    {{- $privateKey = .Values.security.gpg.config.privateKey -}}
   {{- end -}}
 {{- end -}}
-{{- if (include "testValuesPath" (list .Values.gpg "gpg" "privateKey")) | eq "true" -}}
-  {{- if ne .Values.gpg.privateKey "" -}}
-    {{- $privateKey = .Values.gpg.privateKey -}}
+{{- if (include "testValuesPath" (list .Values.security.gpg "config" "privateKey")) | eq "true" -}}
+  {{- if ne .Values.security.gpg.config.privateKey "" -}}
+    {{- $privateKey = .Values.security.gpg.config.privateKey -}}
   {{- end -}}
 {{- end -}}
 {{- ne $privateKey "" -}}

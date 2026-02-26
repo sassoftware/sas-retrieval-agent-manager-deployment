@@ -1,0 +1,9 @@
+{{ $values := .Values | toYaml }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ printf "%s-values" (include "retrieval-agent-manager.fullname" .) }}
+  labels:
+    {{- include "retrieval-agent-manager.labels" . | nindent 4 }}
+data:
+  values.yaml: {{ $values | b64enc | quote }}

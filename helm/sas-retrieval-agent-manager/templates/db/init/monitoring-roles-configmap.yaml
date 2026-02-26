@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ printf "%s-mon-roles" (include "retrieval-agent-manager.fullname" .) }}
+data:
+  userRole: {{ .Values.db.init.config.monitoring.userRole | quote }}
+  adminRole: {{ .Values.db.init.config.monitoring.adminRole | quote }}
