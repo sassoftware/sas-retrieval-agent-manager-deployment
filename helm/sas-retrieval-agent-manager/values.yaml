@@ -358,7 +358,7 @@ images:
     # required: true
     # @schema
     # -- Container image tag for plugin agent
-    tag: "1.9.11-20260220.1771610041478"
+    tag: "1.8.4-20260116.1768584402906"
   # @schema
   # type: object
   # required: true
