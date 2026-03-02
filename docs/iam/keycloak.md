@@ -267,20 +267,17 @@ Realm roles apply across the entire realm:
 
 | Field | Description |
 | ----- | ----------- |
-| **Role name** | Unique identifier (e.g., `admin`, `user`) |
+| **Role name** | Unique identifier (e.g., `sas_ram_admin_role`, `sas_ram_user_role`) |
 | **Description** | Purpose of the role |
 
 4. Click **Save**
 
-**Suggested Realm Roles:**
+**Default Realm Roles:**
 
 | Role | Description |
 | ---- | ----------- |
-| `admin` | Full administrative access |
-| `user` | Standard user access |
-| `readonly` | View-only access |
-| `agent-creator` | Can create and manage agents |
-| `agent-executor` | Can execute agents |
+| `sas_ram_admin_role` | Full administrative access |
+| `sas_ram_user_role` | Standard user access |
 
 ### Client Roles
 
