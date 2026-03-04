@@ -44,11 +44,20 @@ This guide describes deploying an Azure infrastructure on which to deploy SAS Re
 
 ### Hardware Requirements
 
+#### AKS Cluster Sizing
+
 |       Node Size      | Minimum Nodes | Maximum Nodes |   Deployment Size  |
 |----------------------|---------------|---------------|--------------------|
 | **Standard_d8s_v5**  |       1       |       3       |      Small         |
 | **Standard_d8s_v5**  |       2       |       6       |      Medium        |
 | **Standard_d16s_v5** |       2       |       8       |      Large         |
+
+#### Postgres Database Sizing
+
+|  Total vCPU(min) | Total RAM(Gb) |   Storage(Gb) |   Deployment Size   |
+|------------------|---------------|---------------|---------------------|
+|        4         |       16      |      128      |       Small         |
+|        8         |       32      |      128      |       Medium        |
 
 ### Infrastructure Requirements
 

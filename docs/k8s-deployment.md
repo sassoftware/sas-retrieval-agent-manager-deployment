@@ -54,13 +54,20 @@ This guide describes deploying an open-source Kubernetes infrastructure on which
 
 ### Hardware Requirements
 
-**Recommended Configuration:**
+#### Kubernetes Cluster Sizing
 
 | Node Type                        | Count | CPUs | RAM  | Disk  | Notes                                                          |
 |----------------------------------|-------|------|------|-------|----------------------------------------------------------------|
 | **Control Plane Node (tainted)** | 1     | 4    | 8GB  | 50GB  |                                                                |
 | **Worker Nodes**                 | 2     | 8    | 16GB | 200GB |                                                                |
 | **NFS Server Node**              | 1     | 8    | 16GB | 200GB | Optional if using CSI storage; can also serve as a worker node |
+
+#### Postgres Database Sizing
+
+|  Total vCPU(min) | Total RAM(Gb) |   Storage(Gb) |   Deployment Size   |
+|------------------|---------------|---------------|---------------------|
+|        4         |       16      |      128      |       Small         |
+|        8         |       32      |      128      |       Medium        |
 
 ### Infrastructure Requirements
 

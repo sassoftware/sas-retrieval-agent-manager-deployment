@@ -43,9 +43,18 @@ This guide describes deploying an AWS infrastructure on which to deploy SAS Retr
 
 ### Hardware Requirements
 
+#### EKS Cluster Sizing
+
 | Node Size        | Status      |
 |------------------|-------------|
 | **r6in.2xlarge** | Recommended |
+
+#### Postgres Database Sizing
+
+|  Total vCPU(min) | Total RAM(Gb) |   Storage(Gb) |   Deployment Size   |
+|------------------|---------------|---------------|---------------------|
+|        4         |       16      |      128      |       Small         |
+|        8         |       32      |      128      |       Medium        |
 
 ### Infrastructure Requirements
 
