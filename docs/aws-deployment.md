@@ -54,7 +54,8 @@ This guide describes deploying an AWS infrastructure on which to deploy SAS Retr
 |  Total vCPU(min) | Total RAM(Gb) |   Storage(Gb) |   Deployment Size   |
 |------------------|---------------|---------------|---------------------|
 |        4         |       16      |      128      |       Small         |
-|        8         |       32      |      128      |       Medium        |
+|        4         |       16      |      128      |       Medium        |
+|        8         |       32      |      128      |       Large         |
 
 ### Infrastructure Requirements
 

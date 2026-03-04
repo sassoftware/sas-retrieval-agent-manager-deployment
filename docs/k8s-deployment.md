@@ -67,7 +67,8 @@ This guide describes deploying an open-source Kubernetes infrastructure on which
 |  Total vCPU(min) | Total RAM(Gb) |   Storage(Gb) |   Deployment Size   |
 |------------------|---------------|---------------|---------------------|
 |        4         |       16      |      128      |       Small         |
-|        8         |       32      |      128      |       Medium        |
+|        4         |       16      |      128      |       Medium        |
+|        8         |       32      |      128      |       Large         |
 
 ### Infrastructure Requirements
 
