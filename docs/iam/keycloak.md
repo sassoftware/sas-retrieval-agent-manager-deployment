@@ -68,6 +68,8 @@ This guide covers user and group management in Keycloak for SAS Retrieval Agent 
   | **Email verified** | Mark email as verified | No |
   | **Enabled** | Allow user to log in | Yes (default: On) |
 
+> **Note:** If email verification is configured as a required action in your Keycloak instance, users will not be able to log in until their email is verified. Either mark **Email verified** as On when creating the user, or ensure users complete the email verification process. If email verification is not required, you can leave this field unverified.
+
 4. Click **Create**
 
 ### Editing Users
