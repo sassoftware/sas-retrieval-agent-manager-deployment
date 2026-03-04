@@ -18,10 +18,19 @@ To back up a PersistentVolumeClaim (PVC) named `vhub-pv` using Velero:
      --namespace 'retagentmgr'
    ```
 
+   or for the embeddings:
+
+   ```sh
+   velero backup create vhub-pv-backup \
+     --include-resources persistentvolumeclaims,persistentvolumes \
+     --selector 'claimName=embedding-pv' \
+     --namesp
+
+
 2. To back up the entire namespace (including the PVC):
 
    ```sh
-   velero backup create vhub-pv-namespace-backup \
+   velero backup create retagentmgr-namespace-backup \
      --namespace 'retagentmgr'
    ```
 
