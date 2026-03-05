@@ -275,7 +275,7 @@ We have standardized the values required for deployment across all supported pla
 #### Deploy with Helm
 
 ```bash
-helm install sas-retrieval-agent-manager oci://ghcr.io/sassoftware/sas-retrieval-agent-manager-deployment/sas-retrieval-agent-manager \
+helm install retrieval-agent-manager oci://ghcr.io/sassoftware/sas-retrieval-agent-manager-deployment/sas-retrieval-agent-manager \
   --version 2026.2.0 \
   --values <RAM Values file> \
   -n retagentmgr \
@@ -283,7 +283,7 @@ helm install sas-retrieval-agent-manager oci://ghcr.io/sassoftware/sas-retrieval
   --timeout 10m
 ```
 
-Note: Use the package section of this repository to find an installable version. Also, if something fails and you need to redeploy, it is recommended that you run `helm uninstall sas-retrieval-agent-manager -n retagentmgr` followed by `kubectl delete ns retagentmgr`. We recommend putting the `ingress-tls` and `cr-sas-secret` secrets in the `extraObjects` of the values install so that you can easily reinstall.
+Note: Use the package section of this repository to find an installable version. Also, if something fails and you need to redeploy, it is recommended that you run `helm uninstall retrieval-agent-manager -n retagentmgr` followed by `kubectl delete ns retagentmgr`. We recommend putting the `ingress-tls` and `cr-sas-secret` secrets in the `extraObjects` of the values install so that you can easily reinstall.
 
 #### Verify Deployment
 
@@ -341,7 +341,7 @@ Once you override the desired fields in your values file, upgrade your RAM insta
 
 ```sh
 
-helm upgrade sas-retrieval-agent-manager oci://ghcr.io/sassoftware/sas-retrieval-agent-manager-deployment/sas-retrieval-agent-manager \
+helm upgrade retrieval-agent-manager oci://ghcr.io/sassoftware/sas-retrieval-agent-manager-deployment/sas-retrieval-agent-manager \
   --version <RAM Version> \
   --values <RAM Values file> \
   -n retagentmgr
