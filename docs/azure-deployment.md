@@ -54,15 +54,11 @@ This guide describes deploying an Azure infrastructure on which to deploy SAS Re
 
 #### Postgres Database Sizing
 
-|  Total vCPU(min) | Total RAM(Gb) |   Storage(Gb) |   Deployment Size   |
-|------------------|---------------|---------------|---------------------|
-|        4         |       16      |      128      |       Small         |
-|        4         |       16      |      128      |       Medium        |
-|        8         |       32      |      128      |       Large         |
+[Follow the PostgreSQL sizing recommendations here.](../README.md#database)
 
 ### Infrastructure Requirements
 
-- AKS version: 1.32
+- AKS version: 1.33+
 
 ## Getting Started
 

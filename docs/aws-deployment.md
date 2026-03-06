@@ -49,17 +49,13 @@ This guide describes deploying an AWS infrastructure on which to deploy SAS Retr
 |------------------|-------------|
 | **r6in.2xlarge** | Recommended |
 
-#### Postgres Database Sizing
+#### PostgreSQL Database Sizing
 
-|  Total vCPU(min) | Total RAM(Gb) |   Storage(Gb) |   Deployment Size   |
-|------------------|---------------|---------------|---------------------|
-|        4         |       16      |      128      |       Small         |
-|        4         |       16      |      128      |       Medium        |
-|        8         |       32      |      128      |       Large         |
+[Follow the PostgreSQL sizing recommendations here.](../README.md#database)
 
 ### Infrastructure Requirements
 
-- AWS version: 1.32
+- AWS version: 1.33+
 
 ## Getting Started
 

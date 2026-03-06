@@ -64,20 +64,11 @@ This guide describes deploying an open-source Kubernetes infrastructure on which
 
 #### Postgres Database Sizing
 
-|  Total vCPU(min) | Total RAM(Gb) |   Storage(Gb) |   Deployment Size   |
-|------------------|---------------|---------------|---------------------|
-|        4         |       16      |      128      |       Small         |
-|        4         |       16      |      128      |       Medium        |
-|        8         |       32      |      128      |       Large         |
+[Follow the PostgreSQL sizing recommendations here.](../README.md#database)
 
 ### Infrastructure Requirements
 
-| Component         | Version           |
-|-------------------|-------------------|
-| Kubernetes        | 1.30.10           |
-| Container Runtime | containerd 1.7.24 |
-| CNI               | Calico 3.29.0     |
-| Load Balancer     | kube-vip 0.7.1    |
+- AKS version: 1.33+
 
 >Note: These should all be deployed automatically via the SAS Viya 4 Infrastructure as Code scripts
 

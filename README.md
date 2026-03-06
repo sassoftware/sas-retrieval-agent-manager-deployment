@@ -93,6 +93,14 @@ Choose your preferred deployment platform and follow the cluster setup guide:
 
 ### Database
 
+Follow your platform-specific infrastructure steps to deploy a PostgreSQL database that aligns with this sizing recommendation:
+
+| Deployment Size  |  Total vCPU(min) | Total RAM(Gb) |   Storage(Gb) |    Queries per day    |   Agents/Custom Sources/MCP Servers |
+|------------------|------------------|---------------|---------------|-----------------------|-------------------------------------|
+|    Small         |        4         |       16      |      128      |        4000           |                 6                   |
+|    Medium        |        4         |       16      |      128      |        8000           |                 20                  |
+|    Large         |        8         |       32      |      128      |        8000+          |                 20+                 |
+
 #### Automatic Database Initialization
 
 SAS Retrieval Agent Manager automatically initializes the required databases during deployment unless specified otherwise. This requires providing database admin credentials in your RAM values file.
@@ -257,8 +265,8 @@ SAS Retrieval Agent Manager supports two ingress controllers as of now; NGINX an
 
 ### Install Optional Components
 
-| Component |    Version    | Example Values File |                                   Installation Instructions                                  | Description             |
-|-----------|---------------|---------------------|----------------------------------------------------------------------------------------------|-------------------------|
+| Component         | Version|               Example Values File            |                      Installation Instructions                     |        Description      |
+|-------------------|--------|----------------------------------------------|--------------------------------------------------------------------|-------------------------|
 | **Weaviate**      |v17.6.0 |[weaviate.yaml](./examples/weaviate.yaml)     | [instructions](./docs/user/DependencyInstall.md#weaviate)          | Vector Database         |
 | **Ollama**        |v1.12.0 |[ollama.yaml](./examples/ollama.yaml)         | [instructions](./docs/llm-connection/ollama.md)                    | LLM Deployment Platform |
 | **Vector**        | 0.53.0 |[vector.yaml](./examples/vector.yaml)         | [instructions](./docs/monitoring/README.md)                        | Storing Logs/Traces     |
@@ -271,6 +279,13 @@ After you have configured a Kubernetes cluster and PostgreSQL 15 database, use t
 #### Configure RAM Values File
 
 We have standardized the values required for deployment across all supported platforms. Please see the [example ram values file](./examples/ram-values.yaml) to get a quickstart.
+
+##### Configure Persistent Volume Size
+
+In the example values file under the `.Storage.embedding.pvc.size` and `.Storage.application.pvc.size` you will want to set the storage capacity. This can be shown in the example values file linked above. The application pvc size starts at 5Gi and increases from there.
+
+>**Note: Please be aware that the application pvc size corresponds with the amount of data purchased from SAS.**
+
 
 #### Deploy with Helm
 
