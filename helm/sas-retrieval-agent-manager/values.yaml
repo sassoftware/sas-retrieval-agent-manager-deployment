@@ -183,7 +183,7 @@ images:
     # required: true
     # @schema
     # -- Image tag (defaults to chart appVersion)
-    tag: "1.11.32-20260220.1771607643613"
+    tag: "1.11.35-20260226.1772142295221"
   # @schema
   # type: object
   # required: true
@@ -218,7 +218,7 @@ images:
     # required: true
     # @schema
     # -- Container image tag
-    tag: "1.7.29-20260223.1771877662256"
+    tag: "1.7.31-20260226.1772138582337"
   # @schema
   # type: object
   # required: true
@@ -288,7 +288,7 @@ images:
     # required: true
     # @schema
     # -- Container image tag for agent
-    tag: "1.9.11-20260220.1771610041478"
+    tag: "1.9.16-20260304.1772634284800"
   # @schema
   # type: object
   # required: true
