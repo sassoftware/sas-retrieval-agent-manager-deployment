@@ -67,6 +67,7 @@ All deployment types require:
 - Database admin privileges for PostgreSQL initialization
 - Access to SAS container registry credentials
 - Valid SAS Retrieval Agent Manager license
+- Valid TLS Certificate for your desired ingress domain
 - Ability to deploy resources in the `retagentmgr` namespace
 
 ### Technical Prerequisites
