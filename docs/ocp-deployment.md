@@ -52,7 +52,7 @@ This guide describes deploying SAS Retrieval Agent Manager on an OpenShift clust
 
 ## Getting Started
 
-We do not support the entire infrastructure deployment process for OpenShift like we do with AWS, Azure, and Open Source Kubernetes. You will need an already functioning OpenShift cluster. If you're interested in deploying an OpenShift cluster, [please refer to their documentation here](https://docs.redhat.com/en/documentation/openshift_container_platform/4.14/html/installation_overview/ocp-installation-overview).
+We do not support the entire infrastructure deployment process for OpenShift like we do with AWS, Azure, and Open Source Kubernetes. You will need an already functioning OpenShift cluster. If you're interested in deploying an OpenShift cluster, [please refer to Red Hat documentation here](https://docs.redhat.com/en/documentation/openshift_container_platform/4.19/html/installation_overview/ocp-installation-overview).
 
 ## Configuration Setup
 
