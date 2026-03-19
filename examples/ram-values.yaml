@@ -101,8 +101,10 @@ security:
   gpg:
     config:
       # MUST BE SET IF UPGRADING RAM TO MAINTAIN DATA ACCESS
+      # Does not need to be set for initial installation
       privateKey: <base64-encoded GPG private key>
       # MUST BE SET IF UPGRADING RAM TO MAINTAIN DATA ACCESS
+      # Does not need to be set for initial installation
       publicKey: <base64-encoded GPG public key>
       # MUST BE SET IF UPGRADING RAM TO MAINTAIN DATA ACCESS
       # Example: passphrase: SomeVeryStrong1000CharPassPhraseThatIsNotUsedAnywhere
@@ -115,8 +117,10 @@ iam:
       adminRole: sas_ram_ram_admin_role
       userRole: sas_ram_ram_user_role
       # Example: plI1xWllgmSNnUZLprWkpSHldFhpWmBRVVnYW2YCcYZ
+      # Any random string of this length will work.
       clientSecret: <your_client_secret_here>
       # Example: ZNmYgcS1pWHkmpRYplUlBrdLVhnFIYVZWSW2lnlxWpC
+      # Any random string of this length will work.
       cookieSecret: <your_cookie_secret_here>
 
 # -- Storage configuration for RAM, including PVC sizes for embedding and application storage

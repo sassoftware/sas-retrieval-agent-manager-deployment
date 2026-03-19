@@ -17,11 +17,7 @@ default_public_access_cidrs = []
 #ssh_public_key              = "~/.ssh/id_rsa.pub"
 # **************  RECOMMENDED  VARIABLES  ***************
 
-# Tags can be specified matching your tagging strategy.
-tags = {} # for example: { "owner|email" = "<you>@<domain>.<com>", "key1" = "value1", "key2" = "value2" }
-
 # RDS PostgreSQL Configuration
-
 # Postgres config - By having this entry a database server is created.
 #                   Default networking option: Public access (allowed IP addresses) is enabled
 #                   If you do not need an external database server remove the 'postgres_servers'
@@ -37,17 +33,16 @@ postgres_servers = {
     # AWS RDS instance class (equivalent to Azure SKU)
 
     # Small Deployment DB Size
-    instance_class           = "db.m5.large"
+    instance_type           = "db.m5.large"
     
     # Medium Deployment DB Size
-    # instance_class          = "db.m5.xlarge"
+    # instance_type          = "db.m5.xlarge"
 
     # Large Deployment DB Size
-    # instance_class          = "db.m5.2xlarge"
+    # instance_type          = "db.m5.2xlarge"
 
-    allocated_storage        = 20                # Storage in GB
-    max_allocated_storage    = 100               # Auto-scaling limit
-    engine_version          = "15.4"             # PostgreSQL version
+    storage_size            = 20                # Storage in GB
+    server_version          = "15.4"             # PostgreSQL version
 
     # PostgreSQL parameters (equivalent to postgresql_configurations)
     parameter_group_parameters = [
@@ -65,16 +60,16 @@ postgres_servers = {
 create_container_registry = false
 # ECR doesn't have SKU tiers like Azure ACR - it's pay-per-use
 # Admin access is managed through IAM policies instead of a single setting
+create_jump_vm = false
 
 # EKS (Elastic Kubernetes Service) config
-kubernetes_version         = "1.32"
+kubernetes_version         = "1.33"
 # Node group configuration
 default_nodepool_min_nodes = 1
 default_nodepool_max_nodes = 5
 
 # AWS EC2 instance type (equivalent to Azure VM type)
-default_nodepool_instance_type = "r6in.2xlarge"  # Equivalent to Standard_D16ds_v4
-cluster_node_pool_mode     = "minimal"
+default_nodepool_vm_type      = "r6in.2xlarge"  # Equivalent to Standard_D16ds_v4
 node_pools = {}
 
 # VPC Configuration (AWS equivalent of Azure VNet)
@@ -83,35 +78,5 @@ vpc_cidr = "192.168.0.0/16"
 # AWS uses EBS (Elastic Block Store) and EFS (Elastic File System)
 storage_type = "standard"
 
-# Options: "none", "ebs-gp3", "ebs-gp2", "efs", "standard"
-
-# EKS Network Configuration
-# AWS EKS CNI plugin (equivalent to Azure CNI)
-cluster_network_plugin = "aws-vpc-cni"
-
-# Additional AWS-specific variables
-# NAT Gateway configuration
-enable_nat_gateway = true
-single_nat_gateway = false  # Set to true for cost savings in dev environments
-
 # EKS cluster logging
 cluster_enabled_log_types = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
-
-# IRSA (IAM Roles for Service Accounts) - AWS equivalent of Azure Workload Identity
-enable_irsa = true
-
-# EKS add-ons
-cluster_addons = {
-  vpc-cni = {
-    version = "latest"
-  }
-  kube-proxy = {
-    version = "latest"
-  }
-  coredns = {
-    version = "latest"
-  }
-  aws-ebs-csi-driver = {
-    version = "latest"
-  }
-}
