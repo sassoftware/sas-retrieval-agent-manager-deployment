@@ -37,7 +37,7 @@ tests:
     asserts:
       - equal:
           path: spec.selector.matchLabels["app.kubernetes.io/name"]
-          value: api
+          value: sas-retrieval-agent-manager-api
 
   # ============================================================================
   # UI PDB tests
@@ -68,7 +68,7 @@ tests:
     asserts:
       - equal:
           path: spec.selector.matchLabels["app.kubernetes.io/name"]
-          value: app
+          value: sas-retrieval-agent-manager-app
 
   # ============================================================================
   # Keycloak PDB tests
@@ -99,7 +99,7 @@ tests:
     asserts:
       - equal:
           path: spec.selector.matchLabels["app.kubernetes.io/name"]
-          value: keycloak
+          value: sas-retrieval-agent-manager-keycloak
 
   # ============================================================================
   # PostgREST PDB tests
@@ -130,4 +130,4 @@ tests:
     asserts:
       - equal:
           path: spec.selector.matchLabels["app.kubernetes.io/name"]
-          value: postgrest
+          value: sas-retrieval-agent-manager-postgrest

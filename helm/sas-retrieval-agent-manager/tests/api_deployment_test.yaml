@@ -401,3 +401,48 @@ tests:
             operator: "Equal"
             value: "api"
             effect: "NoSchedule"
+
+  # ============================================================================
+  # GPG public key volume and volumeMount tests
+  # ============================================================================
+  - it: should include gpg-public-key-volume volumeMount in api container
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: gpg-public-key-volume
+            mountPath: "/mnt/config/gpg-public-key"
+            readOnly: true
+          any: true
+
+  - it: should mount gpg-public-key-volume as readOnly
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: gpg-public-key-volume
+            mountPath: "/mnt/config/gpg-public-key"
+            readOnly: true
+          any: true
+
+  - it: should include gpg-public-key-volume backed by a configmap
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: gpg-public-key-volume
+            configMap:
+              name: retrieval-agent-manager-gpg-public-key
+          any: true
+
+  - it: should name the gpg-public-key configmap using the gpg.fullname helper
+    release:
+      name: my-release
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: gpg-public-key-volume
+            configMap:
+              name: retrieval-agent-manager-gpg-public-key
+          any: true

@@ -1,15 +1,10 @@
 {{- if .Values.ingress.enabled -}}
-{{- $url := "" -}}
 {{- $logoutUrl := "" -}}
-
-{{- if .Values.ingress.oauthProxy.paths -}}
-{{- $url = printf "https://%s%s" .Values.ingress.domain (first .Values.ingress.oauthProxy.paths) -}}
-{{- end -}}
 
 {{- if and .Values.ingress.oauthProxy.paths .Values.ingress.keycloak.paths -}}
 {{- $oauthProxyPath := first .Values.ingress.oauthProxy.paths -}}
 {{- $keycloakPath := first .Values.ingress.keycloak.paths -}}
-{{- $postLogoutUri := printf "https://%s%s" .Values.ingress.domain $oauthProxyPath -}}
+{{- $postLogoutUri := printf "https://%s" .Values.ingress.domain -}}
 {{- $logoutRedirect := printf "https://%s%s/realms/%s/protocol/openid-connect/logout?client_id=%s&post_logout_redirect_uri=%s" .Values.ingress.domain $keycloakPath .Values.iam.keycloak.config.realm .Values.iam.keycloak.config.clientId $postLogoutUri -}}
 {{- $logoutUrl = printf "https://%s%s/sign_out?rd=%s" .Values.ingress.domain $oauthProxyPath ($logoutRedirect | urlquery) -}}
 {{- end -}}
@@ -24,6 +19,5 @@ metadata:
 data:
   namespace: {{ .Release.Namespace }}
   service: {{ include "oauth2-proxy.fullname" . }}
-  url: {{ $url | quote }}
   logoutUrl: {{ $logoutUrl | quote }}
 {{- end -}}

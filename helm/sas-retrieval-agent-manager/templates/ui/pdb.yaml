@@ -7,4 +7,4 @@ spec:
   minAvailable: 10%
   selector:
     matchLabels:
-      app.kubernetes.io/name: app
+      app.kubernetes.io/name: {{ include "ui.name" . }}

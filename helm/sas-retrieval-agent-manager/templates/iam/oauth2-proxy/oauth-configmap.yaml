@@ -11,6 +11,7 @@ data:
     # upstreams is set via OAUTH2_PROXY_UPSTREAMS env var in sidecar (see _oauth_sidecar.tpl)
     reverse_proxy             = true
     ssl_insecure_skip_verify  = false
+    upstream_timeout          = "300s"
 
     # Provider Configuration
     provider                = "oidc"

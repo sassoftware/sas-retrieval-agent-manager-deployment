@@ -1,0 +1,211 @@
+suite: Two-port service architecture tests
+templates:
+  - templates/api/service.yaml
+  - templates/ui/service.yaml
+  - templates/db/rest/service.yaml
+  - templates/api/noauth-service.yaml
+values:
+  - ../values.yaml
+
+tests:
+  # ============================================================================
+  # API Service - Two-port tests
+  # ============================================================================
+  - it: API - should expose both http and http-internal ports
+    template: templates/api/service.yaml
+    asserts:
+      - lengthEqual:
+          path: spec.ports
+          count: 2
+
+  - it: API - http port should route through OAuth2 proxy
+    template: templates/api/service.yaml
+    asserts:
+      - contains:
+          path: spec.ports
+          content:
+            port: 80
+            targetPort: oauth2-proxy0
+            protocol: TCP
+            name: http
+          any: true
+
+  - it: API - http-internal port should bypass OAuth2 proxy
+    template: templates/api/service.yaml
+    asserts:
+      - contains:
+          path: spec.ports
+          content:
+            port: 8765
+            targetPort: http
+            protocol: TCP
+            name: http-internal
+          any: true
+
+  - it: API - http-internal port should use custom internalPort value
+    template: templates/api/service.yaml
+    set:
+      api.service.internalPort: 9999
+    asserts:
+      - contains:
+          path: spec.ports
+          content:
+            port: 9999
+            targetPort: http
+            protocol: TCP
+            name: http-internal
+          any: true
+
+  # ============================================================================
+  # UI Service - Two-port tests
+  # ============================================================================
+  - it: UI - should expose both http and http-internal ports
+    template: templates/ui/service.yaml
+    asserts:
+      - lengthEqual:
+          path: spec.ports
+          count: 2
+
+  - it: UI - http port should route through OAuth2 proxy
+    template: templates/ui/service.yaml
+    asserts:
+      - contains:
+          path: spec.ports
+          content:
+            port: 8080
+            targetPort: oauth2-proxy0
+            protocol: TCP
+            name: http
+          any: true
+
+  - it: UI - http-internal port should bypass OAuth2 proxy
+    template: templates/ui/service.yaml
+    asserts:
+      - contains:
+          path: spec.ports
+          content:
+            port: 8180
+            targetPort: http
+            protocol: TCP
+            name: http-internal
+          any: true
+
+  - it: UI - http-internal port should use custom internalPort value
+    template: templates/ui/service.yaml
+    set:
+      ui.service.internalPort: 9090
+    asserts:
+      - contains:
+          path: spec.ports
+          content:
+            port: 9090
+            targetPort: http
+            protocol: TCP
+            name: http-internal
+          any: true
+
+  # ============================================================================
+  # PostgREST Service - Two-port tests
+  # ============================================================================
+  - it: PostgREST - should expose four ports (http, http-internal, http-monitor, http-mntr-int)
+    template: templates/db/rest/service.yaml
+    asserts:
+      - lengthEqual:
+          path: spec.ports
+          count: 4
+
+  - it: PostgREST - http port should route through OAuth2 proxy
+    template: templates/db/rest/service.yaml
+    asserts:
+      - contains:
+          path: spec.ports
+          content:
+            port: 3000
+            targetPort: oauth2-proxy0
+            protocol: TCP
+            name: http
+          any: true
+
+  - it: PostgREST - http-internal port should bypass OAuth2 proxy
+    template: templates/db/rest/service.yaml
+    asserts:
+      - contains:
+          path: spec.ports
+          content:
+            port: 3100
+            targetPort: http
+            protocol: TCP
+            name: http-internal
+          any: true
+
+  - it: PostgREST - http-monitor port should route through OAuth2 proxy
+    template: templates/db/rest/service.yaml
+    asserts:
+      - contains:
+          path: spec.ports
+          content:
+            port: 3002
+            targetPort: oauth2-proxy1
+            protocol: TCP
+            name: http-monitor
+          any: true
+
+  - it: PostgREST - http-mntr-int port should bypass OAuth2 proxy
+    template: templates/db/rest/service.yaml
+    asserts:
+      - contains:
+          path: spec.ports
+          content:
+            port: 3102
+            targetPort: http-monitor
+            protocol: TCP
+            name: http-mntr-int
+          any: true
+
+  - it: PostgREST - http-internal should use custom internalPort value
+    template: templates/db/rest/service.yaml
+    set:
+      db.rest.service.internalPort: 4000
+    asserts:
+      - contains:
+          path: spec.ports
+          content:
+            port: 4000
+            targetPort: http
+            protocol: TCP
+            name: http-internal
+          any: true
+
+  - it: PostgREST - http-mntr-int should use custom monitoring internalPort value
+    template: templates/db/rest/service.yaml
+    set:
+      db.rest.monitoring.service.internalPort: 4002
+    asserts:
+      - contains:
+          path: spec.ports
+          content:
+            port: 4002
+            targetPort: http-monitor
+            protocol: TCP
+            name: http-mntr-int
+          any: true
+
+  # ============================================================================
+  # Ingress port verification - ensure ingress uses proxy port, not internal port
+  # These tests verify the port values used in ingress configs are the proxy-facing ports
+  # ============================================================================
+  - it: API - proxy port (service.port) and internal port (internalPort) should differ
+    template: templates/api/service.yaml
+    asserts:
+      - contains:
+          path: spec.ports
+          content:
+            name: http
+            port: 80
+          any: true
+      - contains:
+          path: spec.ports
+          content:
+            name: http-internal
+            port: 8765
+          any: true

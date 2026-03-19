@@ -342,8 +342,30 @@
           "required": []
         },
         "service": {
-          "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/service-schema.json",
-          "required": []
+          "additionalProperties": false,
+          "description": "Kubernetes Service configuration",
+          "properties": {
+            "internalPort": {
+              "default": 8765,
+              "required": [],
+              "type": "integer"
+            },
+            "port": {
+              "default": 80,
+              "required": [],
+              "type": "integer"
+            },
+            "type": {
+              "required": [],
+              "type": "string"
+            }
+          },
+          "required": [
+            "port",
+            "internalPort"
+          ],
+          "title": "service",
+          "type": "object"
         },
         "serviceAccount": {
           "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/serviceaccount-schema.json",
@@ -518,7 +540,7 @@
                 },
                 "keycloak": {
                   "additionalProperties": false,
-                  "description": "keycloak database and user configuration\nI believe these keycloak values should be here in the values file as it centralizes \nuser management and we can point to the db.init.config key with customers and let them have at it",
+                  "description": "keycloak database and user configuration\nI believe these keycloak values should be here in the values file as it centralizes\nuser management and we can point to the db.init.config key with customers and let them have at it",
                   "properties": {
                     "createDB": {
                       "default": true,
@@ -896,7 +918,7 @@
                     },
                     "endpoint": {
                       "default": "",
-                      "description": "Endpoint for LLM provider\nExample: ",
+                      "description": "Endpoint for LLM provider\nExample:",
                       "required": [],
                       "title": "endpoint",
                       "type": "string"
@@ -1154,16 +1176,20 @@
                   "additionalProperties": false,
                   "description": "Port for PostgREST monitoring server",
                   "properties": {
+                    "internalPort": {
+                      "default": 3102,
+                      "required": [],
+                      "type": "integer"
+                    },
                     "port": {
                       "default": 3002,
-                      "description": "Kubernetes Service port for PostgREST interface on the monitoring db",
                       "required": [],
-                      "title": "port",
                       "type": "integer"
                     }
                   },
                   "required": [
-                    "port"
+                    "port",
+                    "internalPort"
                   ],
                   "title": "service",
                   "type": "object"
@@ -1311,8 +1337,30 @@
               "required": []
             },
             "service": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/service-schema.json",
-              "required": []
+              "additionalProperties": false,
+              "description": "Kubernetes Service configuration",
+              "properties": {
+                "internalPort": {
+                  "default": 3100,
+                  "required": [],
+                  "type": "integer"
+                },
+                "port": {
+                  "default": 3000,
+                  "required": [],
+                  "type": "integer"
+                },
+                "type": {
+                  "required": [],
+                  "type": "string"
+                }
+              },
+              "required": [
+                "port",
+                "internalPort"
+              ],
+              "title": "service",
+              "type": "object"
             },
             "serviceAccount": {
               "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/serviceaccount-schema.json",
@@ -2197,9 +2245,28 @@
           "required": [],
           "title": "trustedCerts",
           "type": "object"
+        },
+        "viya": {
+          "additionalProperties": false,
+          "description": "Viya configuration for when deploying in parallel",
+          "properties": {
+            "enabled": {
+              "default": false,
+              "description": "Wether or not viya is enabled on the cluster",
+              "required": [],
+              "title": "enabled",
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "enabled"
+          ],
+          "title": "viya",
+          "type": "object"
         }
       },
       "required": [
+        "viya",
         "kueue",
         "trustedCerts"
       ],
@@ -2420,6 +2487,24 @@
           "required": [],
           "type": "object"
         },
+        "customStorageClass": {
+          "properties": {
+            "create": {
+              "required": [],
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "name": {
+              "default": "azurefile-sas",
+              "required": [],
+              "type": "string"
+            }
+          },
+          "required": [],
+          "type": "object"
+        },
         "embedding": {
           "properties": {
             "pvc": {
@@ -2602,8 +2687,30 @@
           "required": []
         },
         "service": {
-          "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/service-schema.json",
-          "required": []
+          "additionalProperties": false,
+          "description": "Kubernetes Service configuration",
+          "properties": {
+            "internalPort": {
+              "default": 8180,
+              "required": [],
+              "type": "integer"
+            },
+            "port": {
+              "default": 8080,
+              "required": [],
+              "type": "integer"
+            },
+            "type": {
+              "required": [],
+              "type": "string"
+            }
+          },
+          "required": [
+            "port",
+            "internalPort"
+          ],
+          "title": "service",
+          "type": "object"
         },
         "serviceAccount": {
           "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/serviceaccount-schema.json",
@@ -2646,338 +2753,174 @@
       "description": "User account configuration for all services",
       "properties": {
         "application": {
-          "additionalProperties": false,
-          "description": "Application user configuration (used to login to SAS Retrieval Agent Manager)",
           "properties": {
-            "admin": {
-              "additionalProperties": false,
-              "description": "Application administrator account",
-              "properties": {
-                "password": {
-                  "default": "",
-                  "description": "Application admin password",
-                  "required": [],
-                  "title": "password",
-                  "type": "string"
-                },
-                "username": {
-                  "default": "AppAdmin",
-                  "description": "Application admin username",
-                  "required": [],
-                  "title": "username",
-                  "type": "string"
-                }
-              },
-              "required": [
-                "username",
-                "password"
-              ],
-              "title": "admin",
-              "type": "object"
+            "password": {
+              "description": "Application administrator account password",
+              "required": [],
+              "type": "string"
+            },
+            "username": {
+              "description": "Application administrator account username",
+              "required": [],
+              "type": "string"
             }
           },
-          "required": [
-            "admin"
-          ],
-          "title": "application",
+          "required": [],
           "type": "object"
         },
         "database": {
-          "additionalProperties": false,
-          "description": "Database administrator account (existing admin role)",
           "properties": {
-            "admin": {
-              "additionalProperties": false,
-              "description": "Database admin configuration",
-              "properties": {
-                "password": {
-                  "default": "",
-                  "description": "Initial admin password (should be provided via secret)",
-                  "required": [],
-                  "title": "password",
-                  "type": "string"
-                },
-                "username": {
-                  "default": "azure_pg_admin",
-                  "description": "Initial admin role for database management",
-                  "required": [],
-                  "title": "username",
-                  "type": "string"
-                }
-              },
-              "required": [
-                "username",
-                "password"
-              ],
-              "title": "admin",
-              "type": "object"
+            "password": {
+              "description": "Database administrator account password",
+              "required": [],
+              "type": "string"
+            },
+            "username": {
+              "description": "Database administrator account username",
+              "required": [],
+              "type": "string"
             }
           },
-          "required": [
-            "admin"
-          ],
-          "title": "database",
+          "required": [],
           "type": "object"
         },
         "embedding": {
-          "additionalProperties": false,
-          "description": "Embedding model service account",
           "properties": {
             "password": {
-              "default": "",
-              "description": "Embedding user password",
+              "description": "Embedding role password",
               "required": [],
-              "title": "password",
               "type": "string"
             },
             "username": {
-              "default": "sas_ram_embedding_user",
-              "description": "Embedding user name",
+              "description": "Embedding role username",
               "required": [],
-              "title": "username",
               "type": "string"
             }
           },
-          "required": [
-            "username",
-            "password"
-          ],
-          "title": "embedding",
+          "required": [],
           "type": "object"
         },
         "keycloak": {
-          "additionalProperties": false,
-          "description": "Keycloak account configuration",
           "properties": {
-            "admin": {
-              "additionalProperties": false,
-              "description": "Keycloak administrator account (used to login to Keycloak)",
-              "properties": {
-                "password": {
-                  "default": "",
-                  "description": "Keycloak admin password",
-                  "required": [],
-                  "title": "password",
-                  "type": "string"
-                },
-                "username": {
-                  "default": "kcAdmin",
-                  "description": "Keycloak admin username",
-                  "required": [],
-                  "title": "username",
-                  "type": "string"
-                }
-              },
-              "required": [
-                "username",
-                "password"
-              ],
-              "title": "admin",
-              "type": "object"
+            "password": {
+              "description": "Keycloak administrator account password",
+              "required": [],
+              "type": "string"
             },
-            "user": {
-              "additionalProperties": false,
-              "description": "Keycloak application service account",
-              "properties": {
-                "password": {
-                  "default": "",
-                  "description": "Keycloak database user password",
-                  "required": [],
-                  "title": "password",
-                  "type": "string"
-                },
-                "username": {
-                  "default": "sas_keycloak_user",
-                  "description": "Keycloak database user name",
-                  "required": [],
-                  "title": "username",
-                  "type": "string"
-                }
-              },
-              "required": [
-                "username",
-                "password"
-              ],
-              "title": "user",
-              "type": "object"
+            "username": {
+              "description": "Keycloak administrator account username",
+              "required": [],
+              "type": "string"
             }
           },
-          "required": [
-            "admin",
-            "user"
-          ],
-          "title": "keycloak",
+          "required": [],
           "type": "object"
         },
         "migration": {
-          "additionalProperties": false,
-          "description": "Database migration service account",
           "properties": {
             "password": {
-              "default": "",
-              "description": "Database migration user password (should be provided via secret)",
+              "description": "Migration role password",
               "required": [],
-              "title": "password",
               "type": "string"
             },
             "username": {
-              "default": "sas_ram_migration",
-              "description": "Database migration user name",
+              "description": "Migration role username",
               "required": [],
-              "title": "username",
               "type": "string"
             }
           },
-          "required": [
-            "username",
-            "password"
-          ],
-          "title": "migration",
+          "required": [],
           "type": "object"
         },
         "monitoring": {
-          "additionalProperties": false,
-          "description": "Monitoring database service account",
           "properties": {
             "password": {
-              "default": "",
-              "description": "Application admin password",
+              "description": "Monitoring role password",
               "required": [],
-              "title": "password",
               "type": "string"
             },
             "username": {
-              "default": "sas_mon_pgrest_user",
-              "description": "Application admin username",
+              "description": "Monitoring role username",
               "required": [],
-              "title": "username",
               "type": "string"
             }
           },
-          "required": [
-            "username",
-            "password"
-          ],
-          "title": "monitoring",
+          "required": [],
           "type": "object"
         },
         "otel": {
-          "additionalProperties": false,
-          "description": "OpenTelemetry database service account",
           "properties": {
             "password": {
-              "default": "",
-              "description": "OpenTelemetry password (should be provided via secret)",
+              "description": "OTEL role password",
               "required": [],
-              "title": "password",
               "type": "string"
             },
             "username": {
-              "default": "sas_ram_otel_user",
-              "description": "OpenTelemetry user for authentication",
+              "description": "OTEL role username",
               "required": [],
-              "title": "username",
               "type": "string"
             }
           },
-          "required": [
-            "username",
-            "password"
-          ],
-          "title": "otel",
+          "required": [],
           "type": "object"
         },
         "postgrest": {
-          "additionalProperties": false,
-          "description": "PostgREST database service account",
           "properties": {
             "password": {
-              "default": "",
-              "description": "Application database user password",
+              "description": "Postgrest role password",
               "required": [],
-              "title": "password",
               "type": "string"
             },
             "username": {
-              "default": "sas_ram_pgrest_user",
-              "description": "Application database user name",
+              "description": "Postgrest role username",
               "required": [],
-              "title": "username",
               "type": "string"
             }
           },
-          "required": [
-            "username",
-            "password"
-          ],
-          "title": "postgrest",
+          "required": [],
           "type": "object"
         },
+        "skipPasswordValidation": {
+          "required": [],
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
         "vectorStore": {
-          "additionalProperties": false,
-          "description": "Vector store database service account",
           "properties": {
             "password": {
-              "default": "",
-              "description": "Vector store database user password",
+              "description": "VectorStore role password",
               "required": [],
-              "title": "password",
               "type": "string"
             },
             "username": {
-              "default": "sas_vector_store_user",
-              "description": "Vector store database user name",
+              "description": "VectorStore role username",
               "required": [],
-              "title": "username",
               "type": "string"
             }
           },
-          "required": [
-            "username",
-            "password"
-          ],
-          "title": "vectorStore",
+          "required": [],
           "type": "object"
         },
         "vectorizationJob": {
-          "additionalProperties": false,
-          "description": "Vectorization job service account",
           "properties": {
             "password": {
-              "default": "",
-              "description": "Vectorization job user password",
+              "description": "Vectorization role password",
               "required": [],
-              "title": "password",
               "type": "string"
             },
             "username": {
-              "default": "sas_ram_vectorization_user",
-              "description": "Vectorization job user name",
+              "description": "Vectorization role username",
               "required": [],
-              "title": "username",
               "type": "string"
             }
           },
-          "required": [
-            "username",
-            "password"
-          ],
-          "title": "vectorizationJob",
+          "required": [],
           "type": "object"
         }
       },
-      "required": [
-        "application",
-        "keycloak",
-        "database",
-        "embedding",
-        "postgrest",
-        "monitoring",
-        "migration",
-        "otel",
-        "vectorizationJob",
-        "vectorStore"
-      ],
+      "required": [],
       "title": "users",
       "type": "object"
     },

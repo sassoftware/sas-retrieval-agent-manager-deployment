@@ -13,5 +13,10 @@ spec:
       targetPort: oauth2-proxy0
       protocol: TCP
       name: http
+    # Internal port bypasses OAuth2 proxy for service-to-service calls
+    - port: {{ .Values.api.service.internalPort }}
+      targetPort: http
+      protocol: TCP
+      name: http-internal
   selector:
     {{- include "api.selectorLabels" . | nindent 4 }}

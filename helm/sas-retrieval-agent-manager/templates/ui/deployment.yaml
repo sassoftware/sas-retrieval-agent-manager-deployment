@@ -56,7 +56,9 @@ spec:
                   name: {{ printf "%s-config" (include "postgrest.fullname" .) }}
                   key: service
             - name: SSL_VERIFY
-              value: '{{ index .Values.ui.config "sslVerify" }}'
+              value: '{{ .Values.ui.config.sslVerify }}'
+            - name: NEXT_PUBLIC_VIYA_ENABLED
+              value: '{{ .Values.integrations.viya.enabled }}'
           ports:
             - name: http
               containerPort: {{ .Values.ui.service.port }}

@@ -240,12 +240,13 @@ data:
         return 1
       fi
 
-      # Check if a groups membership mapper already exists by protocolMapper and claim.name
+      # Check if the KeycloakOIDC mapper already exists by name or by protocolMapper+claim.name
       existing_mappers="$(/opt/keycloak/bin/kcadm.sh get "clients/${api_client_id}/protocol-mappers/models" \
         -r "${KEYCLOAK_REALM}" --config "${KCADM_CFG_PATH}" \
         --fields id,name,protocolMapper,config."claim.name" --format csv --noquotes)"
 
-      if echo "${existing_mappers}" | grep -q ',oidc-group-membership-mapper,groups$'; then
+      # Check by name (KeycloakOIDC) or by protocolMapper+claim combination
+      if echo "${existing_mappers}" | grep -qE '(,KeycloakOIDC,|,oidc-group-membership-mapper,groups$)'; then
         echo "Group membership mapper already exists on API client, skipping creation."
         return 0
       fi

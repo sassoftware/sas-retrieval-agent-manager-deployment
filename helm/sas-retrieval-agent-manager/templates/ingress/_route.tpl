@@ -77,24 +77,6 @@ Returns empty dict for components without specific defaults (keycloak, keycloakA
   {{- end -}}
 {{- end -}}
 
-{{- /* Handle app-root annotation for UI route */ -}}
-{{- if $config.enableAppRoot -}}
-  {{- $rawPath := $config.appRootDefault | default "/SASRetrievalAgentManager" -}}
-  {{- $componentPaths := index $ctx.Values.ingress $pathsKey -}}
-  {{- if and $componentPaths (hasKey $componentPaths "paths") -}}
-    {{- $paths := $componentPaths.paths -}}
-    {{- if and $paths (gt (len $paths) 0) -}}
-      {{- $rawPath = index $paths 0 -}}
-    {{- end -}}
-  {{- end -}}
-  {{- /* Use path directly since it's now a simple string */ -}}
-  {{- $basePath := $rawPath -}}
-  {{- if and (ne $basePath "/") (hasSuffix $basePath "/") -}}
-    {{- $basePath = trimSuffix $basePath "/" -}}
-  {{- end -}}
-  {{- $_ := set $annotations "haproxy.router.openshift.io/app-root" $basePath -}}
-{{- end -}}
-
 {{- /* Get component paths */ -}}
 {{- $componentIngress := index $ctx.Values.ingress $pathsKey -}}
 {{- $paths := $componentIngress.paths -}}

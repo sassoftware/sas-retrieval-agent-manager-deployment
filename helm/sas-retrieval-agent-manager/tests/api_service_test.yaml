@@ -41,7 +41,7 @@ tests:
   # ============================================================================
   # Port configuration tests
   # ============================================================================
-  - it: should configure http port correctly
+  - it: should configure http port correctly (routes through OAuth2 proxy)
     set:
       api.service.port: 8080
     asserts:
@@ -52,6 +52,36 @@ tests:
             targetPort: oauth2-proxy0
             protocol: TCP
             name: http
+          any: true
+
+  - it: should configure http-internal port correctly (bypasses OAuth2 proxy)
+    asserts:
+      - contains:
+          path: spec.ports
+          content:
+            port: 8765
+            targetPort: http
+            protocol: TCP
+            name: http-internal
+          any: true
+
+  - it: should have two ports defined
+    asserts:
+      - lengthEqual:
+          path: spec.ports
+          count: 2
+
+  - it: should use custom internalPort when provided
+    set:
+      api.service.internalPort: 9999
+    asserts:
+      - contains:
+          path: spec.ports
+          content:
+            port: 9999
+            targetPort: http
+            protocol: TCP
+            name: http-internal
           any: true
 
   # ============================================================================
