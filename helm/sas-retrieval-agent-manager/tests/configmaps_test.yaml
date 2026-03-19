@@ -7,6 +7,7 @@ templates:
   - templates/api/embedding-configmap.yaml
   - templates/api/eval-configmap.yaml
   - templates/ui/configmap.yaml
+  - templates/db/rest/postgrest-configmap.yaml
 values:
   - ../values.yaml
 
@@ -219,3 +220,51 @@ tests:
           path: metadata.labels["app.kubernetes.io/name"]
       - exists:
           path: metadata.labels["app.kubernetes.io/instance"]
+
+  # ============================================================================
+  # API ConfigMap - Internal URL (two-port) tests
+  # ============================================================================
+  - it: API - inClusterUrl should use internalPort (bypass OAuth2 proxy)
+    template: templates/api/configmap.yaml
+    asserts:
+      - matchRegex:
+          path: data.inClusterUrl
+          pattern: ":8765"
+
+  - it: API - noauthInClusterUrl should reference separate noauth service
+    template: templates/api/configmap.yaml
+    asserts:
+      - matchRegex:
+          path: data.noauthInClusterUrl
+          pattern: "-noauth:"
+
+  # ============================================================================
+  # PostgREST ConfigMap tests
+  # ============================================================================
+  - it: PostgREST - should render ConfigMap
+    template: templates/db/rest/postgrest-configmap.yaml
+    asserts:
+      - isKind:
+          of: ConfigMap
+
+  - it: PostgREST - inClusterUrl should use internalPort (bypass OAuth2 proxy)
+    template: templates/db/rest/postgrest-configmap.yaml
+    asserts:
+      - matchRegex:
+          path: data.inClusterUrl
+          pattern: ":3100$"
+
+  - it: PostgREST - monitoringInClusterUrl should use monitoring internalPort
+    template: templates/db/rest/postgrest-configmap.yaml
+    asserts:
+      - matchRegex:
+          path: data.monitoringInClusterUrl
+          pattern: ":3102$"
+
+  - it: PostgREST - adminInClusterUrl should still use admin service port (no proxy)
+    template: templates/db/rest/postgrest-configmap.yaml
+    asserts:
+      - matchRegex:
+          path: data.adminInClusterUrl
+          pattern: ":3001$"
+

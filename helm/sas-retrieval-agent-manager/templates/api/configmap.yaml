@@ -16,7 +16,7 @@ data:
   url: "https://{{ .Values.ingress.domain }}{{ first .Values.ingress.api.paths }}"
   docsUrl: "https://{{ .Values.ingress.domain }}{{ first .Values.ingress.api.paths }}/docs"
   base_path: {{ $basePathWithLeadingSlash | quote }}
-  inClusterUrl: "http://{{ include "api.fullname" . }}:{{ .Values.api.service.port }}{{ $basePathWithLeadingSlash }}/{{ .Values.api.latest_version }}"
+  inClusterUrl: "http://{{ include "api.fullname" . }}:{{ .Values.api.service.internalPort }}{{ $basePathWithLeadingSlash }}/{{ .Values.api.latest_version }}"
   noauthInClusterUrl: "http://{{ include "api.fullname" . }}-noauth:{{ .Values.api.service.port }}{{ $basePathWithLeadingSlash }}/{{ .Values.api.latest_version }}"
   spawn_sa_name: {{ include "api.spawn.serviceAccountName" . }}
 {{- if .Values.integrations.trustedCerts.enabled }}

@@ -49,17 +49,17 @@ Otherwise, default based on .Values.platform:
   - aws: "efs-sc"
   - kubernetes, openshift: "nfs-client"
 */}}
-{{- define "retrieval-agent-manager.storageClassName" -}}
-{{- if .Values.storage.storageClassName -}}
-{{- .Values.storage.storageClassName -}}
-{{- else -}}
+{{- define "retrieval-agent-manager.defaultStorageClassName" -}}
 {{- if eq .Values.platform "azure" -}}
+{{- if .Values.storage.customStorageClass.create -}}
+{{- .Values.storage.customStorageClass.name -}}
+{{- else -}}
 azurefile-sas
+{{- end -}}
 {{- else if eq .Values.platform "aws" -}}
 efs-sc
 {{- else -}}
 nfs-client
-{{- end -}}
 {{- end -}}
 {{- end -}}
 
@@ -71,8 +71,8 @@ Otherwise, default based on .Values.platform:
   - aws, kubernetes, openshift: false
 */}}
 {{- define "retrieval-agent-manager.createStorageClass" -}}
-{{- if not (kindIs "invalid" .Values.storage.createStorageClass) -}}
-{{- .Values.storage.createStorageClass -}}
+{{- if not (kindIs "invalid" .Values.storage.customStorageClass.create) -}}
+{{- .Values.storage.customStorageClass.create -}}
 {{- else -}}
 {{- if eq .Values.platform "azure" -}}
 true

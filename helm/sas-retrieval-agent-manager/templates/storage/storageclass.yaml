@@ -1,5 +1,5 @@
 {{- if eq (include "retrieval-agent-manager.createStorageClass" .) "true" }}
-{{- $storageClassName := include "retrieval-agent-manager.storageClassName" . }}
+{{- $storageClassName := .Values.storage.customStorageClass.name }}
 {{- $storageClass := lookup "storage.k8s.io/v1" "StorageClass" "" $storageClassName }}
 {{- if not $storageClass }}
 apiVersion: storage.k8s.io/v1

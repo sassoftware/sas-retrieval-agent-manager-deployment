@@ -21,7 +21,7 @@ rules:
     verbs: ["get", "list"]
   - apiGroups: [""]
     resources: ["secrets"]
-    verbs: ["create", "delete", "list"]
+    verbs: ["create", "delete", "list", "patch"]
   - apiGroups: [""]
     resources: ["secrets"]
     resourceNames: ["{{ include "keycloak.fullname" . }}-certs"]
@@ -31,6 +31,9 @@ rules:
     verbs: ["create", "get", "list", "watch", "delete", "patch"]
   - apiGroups: ["apps"]
     resources: ["deployments", "deployments/status"]
+    verbs: ["create", "get", "list", "watch", "delete", "patch"]
+  - apiGroups: ["autoscaling"]
+    resources: ["horizontalpodautoscalers", "horizontalpodautoscalers/status"]
     verbs: ["create", "get", "list", "watch", "delete", "patch"]
 
   # - apiGroups: ["", "batch", "apps"]

@@ -228,6 +228,9 @@ spec:
             - name: keycloak-volume
               mountPath: {{ .Values.iam.keycloak.config.secret_path }}
               readOnly: true
+            - name: gpg-public-key-volume
+              mountPath: "/mnt/config/gpg-public-key"
+              readOnly: true
             - name: gpg-private-key-volume
               mountPath: {{ .Values.security.gpg.config.private_key_path }}
               readOnly: true
@@ -301,6 +304,9 @@ spec:
                 path: client_id.txt
               - key: sv-client-secret
                 path: client_secret.txt
+        - name: gpg-public-key-volume
+          configMap:
+            name: {{ printf "%s-public-key" (include "gpg.fullname" .) }}
         - name: gpg-private-key-volume
           secret:
             secretName: {{ printf "%s-private-key" (include "gpg.fullname" .) }}

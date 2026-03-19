@@ -10,4 +10,4 @@ spec:
     - key: batch.kubernetes.io/job-name
       operator: DoesNotExist
     matchLabels:
-      app.kubernetes.io/name: keycloak
+      app.kubernetes.io/name: {{ include "keycloak.name" . }}

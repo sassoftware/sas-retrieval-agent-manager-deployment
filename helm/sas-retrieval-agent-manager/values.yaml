@@ -183,7 +183,7 @@ images:
     # required: true
     # @schema
     # -- Image tag (defaults to chart appVersion)
-    tag: "1.11.35-20260226.1772142295221"
+    tag: "1.13.6-20260317.1773773423567"
   # @schema
   # type: object
   # required: true
@@ -218,7 +218,7 @@ images:
     # required: true
     # @schema
     # -- Container image tag
-    tag: "1.7.31-20260226.1772138582337"
+    tag: "1.8.16-20260317.1773757314038"
   # @schema
   # type: object
   # required: true
@@ -253,7 +253,7 @@ images:
     # required: true
     # @schema
     # -- Container image tag for vectorization hub
-    tag: "1.9.7-20260223.1771885378841"
+    tag: "1.10.3-20260317.1773777629672"
   # @schema
   # type: object
   # required: true
@@ -288,7 +288,7 @@ images:
     # required: true
     # @schema
     # -- Container image tag for agent
-    tag: "1.9.16-20260304.1772634284800"
+    tag: "1.11.3-20260318.1773793347174"
   # @schema
   # type: object
   # required: true
@@ -323,7 +323,7 @@ images:
     # required: true
     # @schema
     # -- Container image tag for evaluation service
-    tag: "1.9.1-20260220.1771610061026"
+    tag: "1.10.6-20260317.1773788784504"
   # @schema
   # type: object
   # required: true
@@ -429,7 +429,7 @@ images:
     # required: true
     # @schema
     # -- Goose container image tag
-    tag: "1.9.7-20260220.1771610116315"
+    tag: "1.10.0-20260312.1773348741360"
 
   # ============================================================================
   # 3RD PARTY IMAGES
@@ -765,7 +765,7 @@ ingress:
     # Example overrides:
     # nginx.ingress.kubernetes.io/proxy-buffer-size: 32k
     # nginx.ingress.kubernetes.io/proxy-body-size: 1g
-    
+
   # @schema
   # type: object
   # @schema
@@ -885,227 +885,151 @@ ingress:
       - "/SASRetrievalAgentManager/postgrest/monitoring"
 
 # @schema
-# type: object
 # required: true
+# type: object
+# properties:
+#   skipPasswordValidation:
+#     type:
+#       - boolean
+#       - null
+#   application:
+#     required: true
+#     type: object
+#     properties:
+#       username:
+#         type: string
+#         description: "Application administrator account username"
+#       password:
+#         type: string
+#         description: "Application administrator account password"
+#   keycloak:
+#     required: true
+#     type: object
+#     properties:
+#       username:
+#         type: string
+#         description: "Keycloak administrator account username"
+#       password:
+#         type: string
+#         description: "Keycloak administrator account password"
+#   database:
+#     required: true
+#     type: object
+#     properties:
+#       username:
+#         type: string
+#         description: "Database administrator account username"
+#       password:
+#         type: string
+#         description: "Database administrator account password"
+#   embedding:
+#     required: true
+#     type: object
+#     properties:
+#       username:
+#         type: string
+#         description: "Embedding role username"
+#       password:
+#         type: string
+#         description: "Embedding role password"
+#   postgrest:
+#     required: true
+#     type: object
+#     properties:
+#       username:
+#         type: string
+#         description: "Postgrest role username"
+#       password:
+#         type: string
+#         description: "Postgrest role password"
+#   monitoring:
+#     required: true
+#     type: object
+#     properties:
+#       username:
+#         type: string
+#         description: "Monitoring role username"
+#       password:
+#         type: string
+#         description: "Monitoring role password"
+#   migration:
+#     required: true
+#     type: object
+#     properties:
+#       username:
+#         type: string
+#         description: "Migration role username"
+#       password:
+#         type: string
+#         description: "Migration role password"
+#   otel:
+#     required: true
+#     type: object
+#     properties:
+#       username:
+#         type: string
+#         description: "OTEL role username"
+#       password:
+#         type: string
+#         description: "OTEL role password"
+#   vectorizationJob:
+#     required: true
+#     type: object
+#     properties:
+#       username:
+#         type: string
+#         description: "Vectorization role username"
+#       password:
+#         type: string
+#         description: "Vectorization role password"
+#   vectorStore:
+#     required: true
+#     type: object
+#     properties:
+#       username:
+#         type: string
+#         description: "VectorStore role username"
+#       password:
+#         type: string
+#         description: "VectorStore role password"
 # @schema
 # -- User account configuration for all services
 users:
-  # @schema
-  # type: object
-  # required: true
-  # @schema
-  # -- Application user configuration (used to login to SAS Retrieval Agent Manager)
   application:
-    # @schema
-    # type: object
-    # required: true
-    # @schema
-    # -- Application administrator account
     admin:
-      # @schema
-      # type: string
-      # required: true
-      # @schema
-      # -- Application admin username
       username: AppAdmin
-      # @schema
-      # type: string
-      # required: true
-      # @schema
-      # -- Application admin password
       password: ""
-  # @schema
-  # type: object
-  # required: true
-  # @schema
-  # -- Keycloak account configuration
   keycloak:
-    # @schema
-    # type: object
-    # required: true
-    # @schema
-    # -- Keycloak administrator account (used to login to Keycloak)
     admin:
-      # @schema
-      # type: string
-      # required: true
-      # @schema
-      # -- Keycloak admin username
       username: kcAdmin
-      # @schema
-      # type: string
-      # required: true
-      # @schema
-      # -- Keycloak admin password
       password: ""
-    # @schema
-    # type: object
-    # required: true
-    # @schema
-    # -- Keycloak application service account
     user:
-      # @schema
-      # type: string
-      # required: true
-      # @schema
-      # -- Keycloak database user name
       username: "sas_keycloak_user"
-      # @schema
-      # type: string
-      # required: true
-      # @schema
-      # -- Keycloak database user password
       password: ""
-
-  # @schema
-  # type: object
-  # required: true
-  # @schema
-  # -- Database administrator account (existing admin role)
   database:
-    # @schema
-    # type: object
-    # required: true
-    # @schema
-    # -- Database admin configuration
     admin:
-      # @schema
-      # type: string
-      # required: true
-      # @schema
-      # -- Initial admin role for database management
       username: "azure_pg_admin"
-      # @schema
-      # type: string
-      # required: true
-      # @schema
-      # -- Initial admin password (should be provided via secret)
       password: ""
-  # @schema
-  # type: object
-  # required: true
-  # @schema
-  # -- Embedding model service account
   embedding:
-    # @schema
-    # type: string
-    # required: true
-    # @schema
-    # -- Embedding user name
     username: "sas_ram_embedding_user"
-    # @schema
-    # type: string
-    # required: true
-    # @schema
-    # -- Embedding user password
     password: ""
-  # @schema
-  # type: object
-  # required: true
-  # @schema
-  # -- PostgREST database service account
   postgrest:
-    # @schema
-    # type: string
-    # required: true
-    # @schema
-    # -- Application database user name
     username: "sas_ram_pgrest_user"
-    # @schema
-    # type: string
-    # required: true
-    # @schema
-    # -- Application database user password
     password: ""
-  # @schema
-  # type: object
-  # required: true
-  # @schema
-  # -- Monitoring database service account
   monitoring:
-    # @schema
-    # type: string
-    # required: true
-    # @schema
-    # -- Application admin username
     username: "sas_mon_pgrest_user"
-    # @schema
-    # type: string
-    # required: true
-    # @schema
-    # -- Application admin password
     password: ""
-  # @schema
-  # type: object
-  # required: true
-  # @schema
-  # -- Database migration service account
   migration:
-    # @schema
-    # type: string
-    # required: true
-    # @schema
-    # -- Database migration user name
     username: "sas_ram_migration"
-    # @schema
-    # type: string
-    # required: true
-    # @schema
-    # -- Database migration user password (should be provided via secret)
     password: ""
-  # @schema
-  # type: object
-  # required: true
-  # @schema
-  # -- OpenTelemetry database service account
   otel:
-    # @schema
-    # type: string
-    # required: true
-    # @schema
-    # -- OpenTelemetry user for authentication
     username: "sas_ram_otel_user"
-    # @schema
-    # type: string
-    # required: true
-    # @schema
-    # -- OpenTelemetry password (should be provided via secret)
     password: ""
-  # @schema
-  # type: object
-  # required: true
-  # @schema
-  # -- Vectorization job service account
   vectorizationJob:
-    # @schema
-    # type: string
-    # required: true
-    # @schema
-    # -- Vectorization job user name
     username: "sas_ram_vectorization_user"
-    # @schema
-    # type: string
-    # required: true
-    # @schema
-    # -- Vectorization job user password
     password: ""
-  # @schema
-  # type: object
-  # required: true
-  # @schema
-  # -- Vector store database service account
   vectorStore:
-    # @schema
-    # type: string
-    # required: true
-    # @schema
-    # -- Vector store database user name
     username: "sas_vector_store_user"
-    # @schema
-    # type: string
-    # required: true
-    # @schema
-    # -- Vector store database user password
     password: ""
 
 # @schema
@@ -1333,14 +1257,27 @@ api:
     runAsGroup: 1001
 
   # @schema
-  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/service-schema.json"
+  # type: object
+  # additionalProperties: false
+  # properties:
+  #   type:
+  #     type: string
+  #   port:
+  #     type: integer
+  #     default: 80
+  #   internalPort:
+  #     type: integer
+  #     default: 8765
+  # required: [port, internalPort]
   # @schema
   # -- Kubernetes Service configuration
   service:
     # -- Kubernetes Service type
     type: ClusterIP
-    # -- Kubernetes Service port
+    # -- Kubernetes Service port (routes through OAuth2 proxy for ingress/external traffic)
     port: 80
+    # -- Internal service port (bypasses OAuth2 proxy for service-to-service calls)
+    internalPort: 8765
 
   # @schema
   # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/resources-schema.json"
@@ -1605,7 +1542,7 @@ vectorizationHub:
       #     pattern: "^[0-9]+(Gi)$"
       #   model_default:
       #     type: object
-      #     additionalProperties: 
+      #     additionalProperties:
       #       type: string
       #       pattern: "^[0-9]+(Gi)$"
       # @schema
@@ -1638,7 +1575,7 @@ vectorizationHub:
         # @schema
         # type: object
         # required: true
-        # additionalProperties: 
+        # additionalProperties:
         #   type: string
         #   pattern: "^[0-9]+(Gi|Mi|Ki)$"
         # @schema
@@ -1872,6 +1809,7 @@ vectorizationHub:
         - nld       # Dutch (Nederlands)
         - pol       # Polish
         - por       # Portuguese
+        - ara        # Arabic
         # @schema
         # type: array
         # required: true
@@ -1896,6 +1834,8 @@ vectorizationHub:
         - chi_sim   # Chinese Simplified
         - osd       # Orientation and Script Detection
         - equ       # Math/Equation Detection
+        - ara       # Arabic
+        - tur       # Turkish
 
 # @schema
 # type: object
@@ -2038,7 +1978,7 @@ db:
         # -- SSL mode for database connection
         sslmode: "require"
       # -- keycloak database and user configuration
-      # I believe these keycloak values should be here in the values file as it centralizes 
+      # I believe these keycloak values should be here in the values file as it centralizes
       # user management and we can point to the db.init.config key with customers and let them have at it
       keycloak:
         # @schema
@@ -2357,7 +2297,7 @@ db:
         # default: ""
         # @schema
         # -- Endpoint for LLM provider
-        # -- Example: 
+        # -- Example:
         endpoint: ""
         # @schema
         # type: string
@@ -2630,14 +2570,27 @@ db:
       runAsGroup: 10001
 
     # @schema
-    # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/service-schema.json"
+    # type: object
+    # additionalProperties: false
+    # properties:
+    #   type:
+    #     type: string
+    #   port:
+    #     type: integer
+    #     default: 3000
+    #   internalPort:
+    #     type: integer
+    #     default: 3100
+    # required: [port, internalPort]
     # @schema
     # -- Kubernetes Service configuration
     service:
       # -- Kubernetes Service type
       type: ClusterIP
-      # -- Kubernetes Service port
+      # -- Kubernetes Service port (routes through OAuth2 proxy for ingress/external traffic)
       port: 3000
+      # -- Internal service port (bypasses OAuth2 proxy for service-to-service calls)
+      internalPort: 3100
 
     # @schema
     # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/service-schema.json"
@@ -2659,11 +2612,22 @@ db:
         port: 3003
       # @schema
       # type: object
+      # additionalProperties: false
+      # properties:
+      #   port:
+      #     type: integer
+      #     default: 3002
+      #   internalPort:
+      #     type: integer
+      #     default: 3102
+      # required: [port, internalPort]
       # @schema
       # -- Port for PostgREST monitoring server
       service:
-        # -- Kubernetes Service port for PostgREST interface on the monitoring db
+        # -- Kubernetes Service port for PostgREST interface on the monitoring db (routes through OAuth2 proxy)
         port: 3002
+        # -- Internal monitoring service port (bypasses OAuth2 proxy for service-to-service calls)
+        internalPort: 3102
 
     # @schema
     # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/resources-schema.json"
@@ -3616,14 +3580,27 @@ ui:
     runAsGroup: 10001
 
   # @schema
-  # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/service-schema.json"
+  # type: object
+  # additionalProperties: false
+  # properties:
+  #   type:
+  #     type: string
+  #   port:
+  #     type: integer
+  #     default: 8080
+  #   internalPort:
+  #     type: integer
+  #     default: 8180
+  # required: [port, internalPort]
   # @schema
   # -- Kubernetes Service configuration
   service:
     # -- Kubernetes Service type
     type: ClusterIP
-    # -- Kubernetes Service port
+    # -- Kubernetes Service port (routes through OAuth2 proxy for ingress/external traffic)
     port: 8080
+    # -- Internal service port (bypasses OAuth2 proxy for service-to-service calls)
+    internalPort: 8180
 
   # @schema
   # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/resources-schema.json"
@@ -3799,9 +3776,25 @@ ui:
 #     properties:
 #       pvc:
 #         $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/storage-schema.json"
+#   customStorageClass:
+#     type: object
+#     required: true
+#     properties:
+#       name:
+#         type: string
+#         default: azurefile-sas
+#       create:
+#         type: [boolean, null]
+#         default: null
 # @schema
 # -- SAS Retrieval Agent Manager Storage: Storage services
 storage:
+  # -- allows the creation of a custom storage class, used for an azurefile fix.
+  customStorageClass:
+    # -- Storage class name for the custom storage class (only used for an azurefile fix)
+    name: azurefile-sas
+    # -- Whether to create the custom storage class
+    create: null
   # @schema
   # type: object
   # required: true
@@ -3828,8 +3821,6 @@ storage:
       # @schema
       # -- Storage class name for the embedding PVC
       storageClassName: null
-      # -- Whether to create the storage class if it doesn't exist
-      createStorageClass: null
       # -- Access modes for the embedding PVC
       accessModes:
         - ReadWriteMany
@@ -3852,15 +3843,13 @@ storage:
   # required: true
   # @schema
   # -- Application data storage configuration
-  application: 
+  application:
       # -- Persistent Volume Claim configuration (only used when type is 'pvc')
       pvc:
         # -- Name for the PVC
         name: vhub-pv
         # -- Storage class name for the root directory PVC
         storageClassName: null
-        # -- Whether to create the storage class if it doesn't exist
-        createStorageClass: null
         # -- Access modes for the root directory PVC
         accessModes:
           - ReadWriteOnce
@@ -3875,6 +3864,18 @@ storage:
 # @schema
 # -- Integrations with external services
 integrations:
+  # @schema
+  # type: object
+  # required: true
+  # @schema
+  # -- Viya configuration for when deploying in parallel
+  viya:
+    # @schema
+    # type: boolean
+    # required: true
+    # @schema
+    # -- Wether or not viya is enabled on the cluster
+    enabled: false
   # @schema
   # type: object
   # required: true

@@ -11,9 +11,19 @@ spec:
       targetPort: oauth2-proxy0
       protocol: TCP
       name: http
+    # Internal port bypasses OAuth2 proxy for service-to-service calls
+    - port: {{ .Values.db.rest.service.internalPort }}
+      targetPort: http
+      protocol: TCP
+      name: http-internal
     - port: {{ .Values.db.rest.monitoring.service.port }}
       targetPort: oauth2-proxy1
       protocol: TCP
       name: http-monitor
+    # Internal monitoring port bypasses OAuth2 proxy for service-to-service calls
+    - port: {{ .Values.db.rest.monitoring.service.internalPort }}
+      targetPort: http-monitor
+      protocol: TCP
+      name: http-mntr-int
   selector:
     {{- include "postgrest.selectorLabels" . | nindent 4 }}

@@ -1,3 +1,5 @@
+{{ include "validatePasswords" .}}
+
 Thank you for installing the SAS Retrieval Agent Manager Helm chart!
 
 NOTE: This chart includes post-install hooks that may take several minutes to complete.

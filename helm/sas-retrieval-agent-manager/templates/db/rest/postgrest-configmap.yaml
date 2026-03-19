@@ -19,12 +19,12 @@ data:
   service: {{ include "postgrest.fullname" . }}
   port: "{{ .Values.db.rest.service.port }}"
   adminPort: "{{ .Values.db.rest.adminService.port }}"
-  inClusterUrl: "http://{{ include "postgrest.fullname" . }}:{{ .Values.db.rest.service.port }}"
+  inClusterUrl: "http://{{ include "postgrest.fullname" . }}:{{ .Values.db.rest.service.internalPort }}"
   adminInClusterUrl: "http://{{ include "postgrest.fullname" . }}-admin:{{ .Values.db.rest.adminService.port }}"
   url: "https://{{ .Values.ingress.domain }}{{ $postgrestPath }}"
   monitoringAdminPort: "{{ .Values.db.rest.monitoring.adminService.port }}"
   monitoringPort: "{{ .Values.db.rest.monitoring.service.port }}"
-  monitoringInClusterUrl: "http://{{ include "postgrest.fullname" . }}:{{ .Values.db.rest.monitoring.service.port }}"
+  monitoringInClusterUrl: "http://{{ include "postgrest.fullname" . }}:{{ .Values.db.rest.monitoring.service.internalPort }}"
   {{- if $postgrestMonitoringPath }}
   monitoringUrl: "https://{{ .Values.ingress.domain }}{{ $postgrestMonitoringPath }}"
   {{- end }}
