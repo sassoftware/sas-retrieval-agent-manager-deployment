@@ -41,7 +41,7 @@ postgres_servers = {
     # Large Deployment DB Size
     # instance_type          = "db.m5.2xlarge"
 
-    storage_size            = 20                # Storage in GB
+    storage_size            = 20                 # Storage in GB
     server_version          = "15.4"             # PostgreSQL version
 
     # PostgreSQL parameters (equivalent to postgresql_configurations)
