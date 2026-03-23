@@ -100,7 +100,7 @@ helm install nginx-ingress-nginx-controller \
 
 #### Contour
 
-Here is an [Example NGINX Controller Values File](../../examples/contour.yaml). You can edit it as you'd like to fit your deployment.
+Here is an [Example Contour Controller Values File](../../examples/contour.yaml). You can edit it as you'd like to fit your deployment.
 
 You can install it onto your cluster with the following commands:
 
