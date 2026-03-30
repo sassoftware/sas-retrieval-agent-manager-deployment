@@ -140,7 +140,7 @@ If AKS cluster creation fails, consider:
 
 ### Helm Deployment Issues
 
-If RAM deployment fails, ensure the following requirements are met:
+If the SAS Retrieval Agent Manager deployment fails, ensure the following requirements are met:
 
 - `ram-values.yaml` is properly configured for your environment
 - Ingress-Nginx and Kueue dependencies are successfully installed

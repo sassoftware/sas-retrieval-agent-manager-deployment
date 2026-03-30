@@ -3,7 +3,7 @@
 # Each value corresponds to an environment variable described in https://arize.com/docs/phoenix/self-hosting/configuration.
 extraObjects: []
   ### REQUIRED ###
-  # -- Ingress TLS secret for RAM HTTPS termination
+  # -- Ingress TLS secret for SAS Retrieval Agent Manager HTTPS termination
   # -- TLS Certificate for secure external access
   # - apiVersion: v1
   #   kind: Secret
@@ -51,7 +51,7 @@ ingress:
   annotations: {}
 
   # -- Path prefix for the Phoenix API
-  # Note: we have tested this with it set to "/" and RAM hosted at /SASRetrievalAgentManager
+  # Note: we have tested this with it set to "/" and SAS Retrieval Agent Manager hosted at /SASRetrievalAgentManager
   apiPath: <desired_phoenix_path>
 
   # -- Enable ingress controller for external access

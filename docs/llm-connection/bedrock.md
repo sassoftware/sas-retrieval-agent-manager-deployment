@@ -1,12 +1,12 @@
-# Amazon Bedrock Connection to RAM
+# Amazon Bedrock Connection to SAS Retrieval Agent Manager
 
 ## Introduction
 
-Amazon Bedrock is an LLM provider in AWS that will allow you to connect and query different models from RAM.
+Amazon Bedrock is an LLM provider in AWS that will allow you to connect and query different models from SAS Retrieval Agent Manager.
 
 ## Connection
 
-To connect RAM to the Amazon Bedrock Resource, follow these steps:
+To connect SAS Retrieval Agent Manager to the Amazon Bedrock Resource, follow these steps:
 
 - Open the Settings panel in the top right of the UI
 - Select the Amazon Bedrock model type

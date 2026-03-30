@@ -1,12 +1,12 @@
-# Azure OpenAI Connection to RAM
+# Azure OpenAI Connection to SAS Retrieval Agent Manager
 
 ## Introduction
 
-Azure OpenAI is an LLM provider in Azure that you will need to allow connectivity from the RAM cluster for it to work properly. Once connection is allowed, you can connect models to query from RAM.
+Azure OpenAI is an LLM provider in Azure that you will need to allow connectivity from the SAS Retrieval Agent Manager cluster for it to work properly. Once connection is allowed, you can connect models to query from SAS Retrieval Agent Manager.
 
 ## Allowing a Connection
 
-To allow a connection between RAM and your Azure OpenAI resource, the easiest way to do it, is by completing the following steps:
+To allow a connection between SAS Retrieval Agent Manager and your Azure OpenAI resource, the easiest way to do it, is by completing the following steps:
 
 ### Retrieve egress IP from your API pod
 
@@ -26,7 +26,7 @@ After navigating to the homepage of your Azure OpenAI resource, go to the `Netwo
 
 ## Connection
 
-To connect RAM to the Azure OpenAI Resource after you've added the IP address to the firewall whitelist, follow these steps:
+To connect SAS Retrieval Agent Manager to the Azure OpenAI Resource after you've added the IP address to the firewall whitelist, follow these steps:
 
 - Open the Settings panel in the top right of the UI
 - Select the Azure OpenAI model type

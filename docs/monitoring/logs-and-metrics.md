@@ -53,7 +53,7 @@ sinks:
     table: monitoring.logs
 ```
 
-> Note: See a full [Vector example values file here](../../examples/vector.yaml)
+> Note: See a full [Vector example values file here](../../examples/dependencies/optional/monitoring/vector.yaml)
 
 #### Log Schema
 
@@ -107,7 +107,7 @@ sinks:
 
 ## Installation
 
-To install Vector, edit the [example Vector values file](../../examples/vector.yaml) to your desired settings and run the following commands:
+To install Vector, edit the [example Vector values file](../../examples/dependencies/optional/monitoring/vector.yaml) to your desired settings and run the following commands:
 
 ```sh
 helm repo add vector https://helm.vector.dev

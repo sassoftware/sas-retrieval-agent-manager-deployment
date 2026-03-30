@@ -145,7 +145,7 @@ customConfig:
     playground: false
 
   sources:
-    # Collects traces, logs, and metrics from ram. Accessible through otel.logs, otel.metrics, and otel.traces
+    # Collects traces, logs, and metrics from SAS Retrieval Agent Manager. Accessible through otel.logs, otel.metrics, and otel.traces
     otel:
       type: opentelemetry
       grpc:

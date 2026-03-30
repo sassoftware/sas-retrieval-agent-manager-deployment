@@ -1,6 +1,6 @@
 # AWS Storage Help
 
-In order to create the necessary role, trust policy, and EFS required for RAM, you can follow these commands.
+In order to create the necessary role, trust policy, and EFS required for SAS Retrieval Agent Manager, you can follow these commands.
 
 Start by creating the EFS with the following command:
 
@@ -60,7 +60,7 @@ helm install aws-efs-csi-driver aws-efs-csi-driver/aws-efs-csi-driver -n kube-sy
 
 ## EBS Driver Installation (optional)
 
-If you want to utilize Weaviate with the AWS deployment of RAM, you'll need the EBS csi driver installed onto your cluster using the following commands:
+If you want to utilize Weaviate with the AWS deployment of SAS Retrieval Agent Manager, you'll need the EBS csi driver installed onto your cluster using the following commands:
 
 ```bash
 # Add the EBS Repository to Helm

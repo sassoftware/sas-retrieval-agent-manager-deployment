@@ -112,9 +112,9 @@ aws configure sso
    - Default output format: Recommended to use json
    - Profile name: Enter a name for this profile (e.g., sso-deployment)
 
-After successfully configurating the AWS SSO, you should be able to start deploying resources necsesary for RAM.
+After successfully configurating the AWS SSO, you should be able to start deploying resources necsesary for SAS Retrieval Agent Manager.
 
-An alternative to configuring the SSO would be to have a credentials file in a similar format as the `aws.env` file. This would only be used in the docker deployment of RAM. [An example of an aws credentials file can be found here](../examples/aws/aws.env).
+An alternative to configuring the SSO would be to have a credentials file in a similar format as the `aws.env` file. This would only be used in the docker deployment of SAS Retrieval Agent Manager. [An example of an aws credentials file can be found here](../examples/aws/aws.env).
 
 ## Deploy the Kubernetes Cluster and PostgreSQL Database
 
@@ -153,7 +153,7 @@ sudo docker run --rm \
 
 ## Deploy EFS and Dedicated Role
 
-The AWS deployment of RAM requires an AWS EFS with a corresponding role that has access to it via the correct policy.
+The AWS deployment of SAS Retrieval Agent Manager requires an AWS EFS with a corresponding role that has access to it via the correct policy.
 
 The role that needs to be created should have the `AmazonEFSCSIDriverPolicy` Policy.
 
@@ -169,21 +169,21 @@ The role that needs to be created should have the `AmazonEBSCSIDriverPolicy` Pol
 
 ## Deploy RDS SSL Certificate
 
-The AWS deployment of RAM requires you to pass the appropriate SSL certificate for your RDS region into the values file. You can find which region SSL certificate you need by running the following command:
+The AWS deployment of SAS Retrieval Agent Manager requires you to pass the appropriate SSL certificate for your RDS region into the values file. You can find which region SSL certificate you need by running the following command:
 
 ```bash
 # Find the region you need the RDS SSL Bundle for
 aws rds describe-db-instances --query 'DBInstances[*].[DBInstanceIdentifier,AvailabilityZone]' --output table
 ```
 
-> Note: Using this table, find the RDS instance that you want to connect RAM to
+> Note: Using this table, find the RDS instance that you want to connect SAS Retrieval Agent Manager to
 
 [After finding the correct region, download the correct bundle here](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.SSL.html).
 
 After downloading the SSL bundle, upload it as a secret with the key of `cert.pem`. This can be done with the following command:
 
 ```bash
-# The correct namespace to store all SAS RAM Resources
+# The correct namespace to store all SAS Retrieval Agent Manager Resources
 kubectl create ns retagentmgr
 
 # Create a secret with the RDS SSL Bundle you downloaded

@@ -61,7 +61,7 @@ helm install linkerd ./helm/linkerd \
 
 SAS Retrieval Agent Manager requires Kueue for workload management of vectorization jobs.
 
-Here is an [Example Kueue Values File](../../examples/kueue.yaml). You can edit it as you'd like to fit your deployment.
+Here is an [Example Kueue Values File](../../examples/dependencies/required/kueue.yaml). You can edit it as you'd like to fit your deployment.
 
 You can install it onto your cluster with the following commands:
 
@@ -80,7 +80,7 @@ SAS Retrieval Agent Manager requires either NGINX or Contour for managing incomi
 
 #### NGINX
 
-Here is an [Example NGINX Controller Values File](../../examples/nginx.yaml). You can edit it as you'd like to fit your deployment.
+Here is an [Example NGINX Controller Values File](../../examples/dependencies/required/ingress-controllers/nginx.yaml). You can edit it as you'd like to fit your deployment.
 
 You can install it onto your cluster with the following commands:
 
@@ -100,7 +100,7 @@ helm install nginx-ingress-nginx-controller \
 
 #### Contour
 
-Here is an [Example Contour Controller Values File](../../examples/contour.yaml). You can edit it as you'd like to fit your deployment.
+Here is an [Example Contour Controller Values File](../../examples/dependencies/required/ingress-controllers/contour.yaml). You can edit it as you'd like to fit your deployment.
 
 You can install it onto your cluster with the following commands:
 
@@ -123,9 +123,9 @@ helm install contour contour/contour \
 
 ### Weaviate
 
-SAS has partnered with [Weaviate](https://weaviate.io/) and supports it as a vector database alternative to PGVector storage. This installation is not required but is compatible with RAM.
+SAS has partnered with [Weaviate](https://weaviate.io/) and supports it as a vector database alternative to PGVector storage. This installation is not required but is compatible with SAS Retrieval Agent Manager.
 
-Here is an [Example Weaviate Values File](../../examples/weaviate.yaml). You can edit it as you'd like to fit your deployment.
+Here is an [Example Weaviate Values File](../../examples/dependencies/optional/weaviate.yaml). You can edit it as you'd like to fit your deployment.
 
 You can install it onto your cluster with the following commands:
 
@@ -146,7 +146,7 @@ helm install weaviate weaviate/weaviate \
 
 SAS Retrieval Agent Manager uses Vector for collecting, viewing, and managing logs/metrics.
 
-Here is an [Example Vector Values File](../../examples/vector.yaml). You can edit it as you'd like to fit your deployment.
+Here is an [Example Vector Values File](../../examples/dependencies/optional/monitoring/vector.yaml). You can edit it as you'd like to fit your deployment.
 
 You can install it onto your cluster by reading the [installation instructions found here](../monitoring/logs-and-metrics.md#installation).
 
@@ -154,6 +154,6 @@ You can install it onto your cluster by reading the [installation instructions f
 
 SAS Retrieval Agent Manager supports [Phoenix](https://github.com/Arize-ai/phoenix), an open-source observability platform for LLM applications.
 
-Here is an [Example Phoenix Values File](../../examples/phoenix.yaml). You can edit it as you'd like to fit your deployment.
+Here is an [Example Phoenix Values File](../../examples/dependencies/optional/monitoring/phoenix.yaml). You can edit it as you'd like to fit your deployment.
 
 You can look at [installation instructions here](../monitoring/traces.md#installation).

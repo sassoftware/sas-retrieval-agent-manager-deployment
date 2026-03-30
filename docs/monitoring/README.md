@@ -13,6 +13,6 @@ These documents are intended to help operators and users:
 
 - Deploy Vector and Phoenix in various cloud and on-premises environments
 - Configure the endpoints for trace collection using phoenix or langfuse
-- Adapt the values files to deploy phoenix on your cluster alongside RAM
+- Adapt the values files to deploy phoenix on your cluster alongside SAS Retrieval Agent Manager
 
 Refer to each file for detailed, step-by-step instructions tailored to your platform and use case.
