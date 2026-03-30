@@ -12,8 +12,7 @@
   - [Infrastructure Setup](#infrastructure-setup)
     - [Kubernetes](#kubernetes)
     - [Database](#database)
-      - [Automatic Database Initialization](#automatic-database-initialization)
-      - [Manual Database Setup (Optional)](#manual-database-setup-optional)
+      - [Automatic Database Initialization](#database-initialization)
   - [Application Deployment Guide](#application-deployment-guide)
     - [Retrieve License](#retrieve-license)
       - [Direct Download (Recommended Method)](#direct-download-recommended-method)
@@ -111,20 +110,9 @@ The following extensions are either required or recommended for the Retrieval Ag
 | **PGCrypto**   | Required               | Database encryption of application data                                           |
 | **Vector**     | Recommended            | Storing vector embeddings in the PostgreSQL database (alternative is Weaviate)    |
 
-#### Automatic Database Initialization
+#### Database Initialization
 
 SAS Retrieval Agent Manager automatically initializes the required databases during deployment unless specified otherwise. This requires providing database admin credentials in your RAM values file.
-
-#### Manual Database Setup (Optional)
-
-If you prefer to set up databases manually or need to avoid giving admin-level access to the SAS Retrieval Agent Manager application, see the [Manual Database Setup Guide](./scripts/db-init-scripts/readme.md).
-
-To use manual database setup, set these values to `false` in your RAM Values file:
-
-- `initializeDb`
-- `createUsers`
-- `createSchema`
-- `createDB`
 
 ## Application Deployment Guide
 
