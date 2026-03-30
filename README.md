@@ -12,7 +12,7 @@
   - [Infrastructure Setup](#infrastructure-setup)
     - [Kubernetes](#kubernetes)
     - [Database](#database)
-      - [Automatic Database Initialization](#automatic-database-initialization)
+      - [Automatic Database Initialization](#database-initialization)
   - [Application Deployment Guide](#application-deployment-guide)
     - [Retrieve License](#retrieve-license)
       - [Direct Download (Recommended Method)](#direct-download-recommended-method)
