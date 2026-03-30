@@ -102,6 +102,15 @@ Follow your platform-specific infrastructure steps to deploy a PostgreSQL databa
 |    Medium        |        4         |       16      |      128      |        8000           |                 20                  |
 |    Large         |        8         |       32      |      128      |        8000+          |                 20+                 |
 
+#### Necessary PostgreSQL Extensions
+
+The following extensions are either required or recommended for the Retrieval Agent manager deployment:
+
+| Extension      | Required/Recommended   | Description                                                                       |
+|----------------|------------------------|-----------------------------------------------------------------------------------|
+| **PGCrypto**   | Required               | Database encryption of application data                                           |
+| **Vector**     | Recommended            | Storing vector embeddings in the PostgreSQL database (alternative is Weaviate)    |
+
 #### Automatic Database Initialization
 
 SAS Retrieval Agent Manager automatically initializes the required databases during deployment unless specified otherwise. This requires providing database admin credentials in your RAM values file.
