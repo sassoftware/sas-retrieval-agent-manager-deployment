@@ -22,7 +22,7 @@
         - [Populate the Registry](#populate-the-registry)
           - [Pull from Registry](#pull-from-registry)
     - [License Renewal Process](#license-renewal-process)
-    - [Populate Mirror Registry with Depdendencies](#populate-mirror-registry-with-depdendencies)
+    - [Populate Mirror Registry with Depdendencies](#populate-mirror-registry-with-dependencies)
     - [Install Required Dependencies](#install-required-dependencies)
     - [Install Preferred Ingress Controller](#install-preferred-ingress-controller)
     - [Install Optional Components](#install-optional-components)
