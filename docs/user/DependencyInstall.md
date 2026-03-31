@@ -112,7 +112,6 @@ helm repo update
 # Install ingress-nginx using your custom values file
 helm install contour contour/contour \
     --namespace contour \
-    --create-namespace \
     -f <contour_values_file> \
     --create-namespace
 ```
