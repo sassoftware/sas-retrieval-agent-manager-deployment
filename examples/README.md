@@ -2,8 +2,6 @@
 
 ## Supported Platforms
 
-## Deployment Configuration Files
-
 ### Azure
 
 | File Type | Link | Description                                                                                                        |
@@ -41,5 +39,5 @@
 1. **Choose your platform** - Navigate to the appropriate directory (azure, aws, or k8s)
 2. **Copy templates** - Copy the example files into a local directory
 3. **Customize infrastructure templates** - Edit the infrastructure files with your environment-specific values
-4. **Configure Values File** - Edit the example RAM Values file to your needs
+4. **Configure Values File** - Edit the example SAS Retrieval Agent Manager Values file to your needs
 5. **Deploy** - Use the appropriate deployment tools (Terraform, Helm, Ansible) for your chosen platform

@@ -1,13 +1,13 @@
-# Traces in RAM
+# Traces in SAS Retrieval Agent Manager
 
-The SAS Retrieval Agent Manager (RAM) system collects and processes distributed traces using [Vector](https://vector.dev/), a high-performance observability data pipeline. Vector receives OpenTelemetry traces from applications and routes them to multiple observability backends for analysis and visualization.
+The SAS Retrieval Agent Manager system collects and processes distributed traces using [Vector](https://vector.dev/), a high-performance observability data pipeline. Vector receives OpenTelemetry traces from applications and routes them to multiple observability backends for analysis and visualization.
 
-> Note: Please have `enable_genai_traces: 'True'` in your RAM values file. The location of this value depends on the version deployed.
+> Note: Please have `enable_genai_traces: 'True'` in your SAS Retrieval Agent Manager values file. The location of this value depends on the version deployed.
 
 ## Architecture Overview
 
 ```text
-RAM API → Vector (OTLP) → Phoenix / Langfuse
+SAS Retrieval Agent Manager API → Vector (OTLP) → Phoenix / Langfuse
 ```
 
 Vector runs as a DaemonSet in the cluster, collecting:
@@ -30,7 +30,7 @@ Vector accepts OpenTelemetry traces via both gRPC and HTTP protocols, however, w
 
 ```yaml
 sources:
-  # Collects traces, logs, and metrics from RAM
+  # Collects traces, logs, and metrics from SAS Retrieval Agent Manager
   # Accessible through otel.logs, otel.metrics, and otel.traces
   otel:
     type: opentelemetry
@@ -125,7 +125,7 @@ sinks:
     type: opentelemetry
 ```
 
-> Note: See a full [Vector example values file here](../../examples/vector.yaml) and full [Phoenix example values file here](../../examples/phoenix.yaml)
+> Note: See a full [Vector example values file here](../../examples/dependencies/optional/monitoring/vector.yaml) and full [Phoenix example values file here](../../examples/dependencies/optional/monitoring/phoenix.yaml)
 
 ### OTLP Format Transformation
 
@@ -138,7 +138,7 @@ The `rebuild_otlp_format` transform is critical for ensuring traces conform to t
 
 ## Installation
 
-To install Vector, edit the [example Vector values file](../../examples/vector.yaml) to your desired settings and run the following commands:
+To install Vector, edit the [example Vector values file](../../examples/dependencies/optional/monitoring/vector.yaml) to your desired settings and run the following commands:
 
 ```sh
 helm install vector vector/vector \
@@ -146,7 +146,7 @@ helm install vector vector/vector \
     --create-namespace --version 0.46.0
 ```
 
-To install Phoenix, edit the [example Phoenix values file](../../examples/phoenix.yaml) to your desired settings and run the following commands:
+To install Phoenix, edit the [example Phoenix values file](../../examples/dependencies/optional/monitoring/phoenix.yaml) to your desired settings and run the following commands:
 
 ```sh
 helm install phoenix oci://registry-1.docker.io/arizephoenix/phoenix-helm \

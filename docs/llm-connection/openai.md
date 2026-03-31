@@ -1,12 +1,12 @@
-# OpenAI Connection to RAM
+# OpenAI Connection to SAS Retrieval Agent Manager
 
 ## Introduction
 
-Openai is an LLM provider that will allow you to connect and query different models from RAM.
+Openai is an LLM provider that will allow you to connect and query different models from SAS Retrieval Agent Manager.
 
 ## Connection
 
-To connect RAM to the OpenAI API, follow these steps:
+To connect SAS Retrieval Agent Manager to the OpenAI API, follow these steps:
 
 - Open the Settings panel in the top right of the UI
 - Select the OpenAI type

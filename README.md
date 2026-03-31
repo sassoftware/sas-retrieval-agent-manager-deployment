@@ -22,12 +22,12 @@
         - [Populate the Registry](#populate-the-registry)
           - [Pull from Registry](#pull-from-registry)
     - [License Renewal Process](#license-renewal-process)
-    - [Populate Mirror Registry with Depdendencies](#populate-mirror-registry-with-depdendencies)
+    - [Populate Mirror Registry with Depdendencies](#populate-mirror-registry-with-dependencies)
     - [Install Required Dependencies](#install-required-dependencies)
     - [Install Preferred Ingress Controller](#install-preferred-ingress-controller)
     - [Install Optional Components](#install-optional-components)
     - [Install SAS Retrieval Agent Manager](#install-sas-retrieval-agent-manager)
-      - [Configure RAM Values File](#configure-ram-values-file)
+      - [Configure SAS Retrieval Agent Manager Values File](#configure-values-file)
       - [Deploy with Helm](#deploy-with-helm)
       - [Verify Deployment](#verify-deployment)
   - [Backup and Restore Guide](#backup-and-restore-guide)
@@ -35,8 +35,11 @@
   - [Monitoring and Logging](#monitoring-and-logging)
   - [Troubleshooting](#troubleshooting)
     - [Node Upgrades](#node-upgrades)
-    - [Common Issues](#common-issues)
-    - [Debug Commands](#debug-commands)
+    - [Vectorization Jobs](#vectorization-jobs)
+    - [Encryption/Decryption](#encryptiondecryption)
+    - [Deployment Upgrades](#deployment-upgrades)
+    - [Connection Errors](#connection-errors)
+    - [Increasing PVC Storage Sizes](#increasing-vectorization-or-embedding-storage-sizes)
   - [Contributing](#contributing)
   - [License](#license)
   - [Additional Resources](#additional-resources)
@@ -73,7 +76,7 @@ All deployment types require:
 
 **Required Tools:**
 
-- kubectl
+- Kubectl
 - Helm v3
 - Docker
 - Platform-specific CLI tools (Azure CLI, AWS CLI, etc.)
@@ -112,17 +115,17 @@ The following extensions are either required or recommended for the Retrieval Ag
 
 #### Database Initialization
 
-SAS Retrieval Agent Manager automatically initializes the required databases during deployment unless specified otherwise. This requires providing database admin credentials in your RAM values file.
+SAS Retrieval Agent Manager automatically initializes the required databases during deployment unless specified otherwise. This requires providing database admin credentials in your SAS Retrieval Agent Manager values file.
 
 ## Application Deployment Guide
 
 ### Retrieve License
 
-You can use SAS Mirror Manager to access the required RAM images. There are two ways of accessing these images using SAS Mirror Manager.
+You can use SAS Mirror Manager to access the required SAS Retrieval Agent Manager images. There are two ways of accessing these images using SAS Mirror Manager.
 
-- Direct Download: The user only needs to retrieve the container registry credentials and create the relative secret. Kubernetes then automatically pulls the RAM images directly from cr.sas.com using the SAS Docker credentials.
+- Direct Download: The user only needs to retrieve the container registry credentials and create the relative secret. Kubernetes then automatically pulls the SAS Retrieval Agent Manager images directly from cr.sas.com using the SAS Docker credentials.
 
-- Mirrored Registry Download: Create a mirror registry to pull the RAM images from.
+- Mirrored Registry Download: Create a mirror registry to pull the SAS Retrieval Agent Manager images from.
 
 Both methods will require the following steps initially:
 
@@ -158,7 +161,7 @@ docker login -u 1ABC23 -p 'deFG^hiJkLmn!o456p7q8R{stuVwXy|Z' cr.sas.com
 After getting the login information you can create a secret that is used to pull from the SAS Container Registry using the following command:
 
 ```sh
-# The correct namespace to store all SAS RAM Resources
+# The correct namespace to store all SAS Retrieval Agent Manager Resources
 kubectl create ns retagentmgr
 
 # Generate the kubernetes file to apply the secret
@@ -172,7 +175,7 @@ kubectl create secret docker-registry -n retagentmgr cr-sas-secret \
 kubectl apply -f cr-sas-secret.yaml -n retagentmgr
 ```
 
-After creating the secret, you should be able to pull all RAM images needed from cr.sas.com with the default settings.
+After creating the secret, you should be able to pull all SAS Retrieval Agent Manager images needed from cr.sas.com with the default settings.
 
 #### Mirrored Registry Download
 
@@ -190,7 +193,7 @@ mirrormgr mirror registry \
 
 ###### Pull from Registry
 
-Edit your RAM Values file ([See Examples here](./examples/README.md)) to pull from that registry instead of the default, `cr.sas.com` registry.
+Edit your SAS Retrieval Agent Manager Values file ([See Examples here](./examples/README.md)) to pull from that registry instead of the default, `cr.sas.com` registry.
 
 Example Usage:
 
@@ -205,7 +208,7 @@ images:
 
 ### License Renewal Process
 
-For migrating a license from a renewal to RAM, use the following steps:
+For migrating a license from a renewal to SAS Retrieval Agent Manager, use the following steps:
 
 1. Use the link in your Software License Renewal Confirmation email to go the specific page at my.sas.com for your order.
 
@@ -221,15 +224,15 @@ For migrating a license from a renewal to RAM, use the following steps:
 
 7. Update your license.jwt in the license-secret secret found in the `retagentmgr` namespace with the new license using the following command: `kubectl edit secret license-secret -n retagentmgr`.
 
-8. Restart the `sas-retrieval-agent-manager-api` pod in your RAM deployment.
+8. Restart the `sas-retrieval-agent-manager-api` pod in your SAS Retrieval Agent Manager deployment.
 
 9. Restart your agents via the UI.
 
-### Populate Mirror Registry with Depdendencies
+### Populate Mirror Registry with Dependencies
 
-The RAM package that you receive does not include some images that the RAM Helm chart is dependent on. This is only an issue if you are mirroring the RAM images to a registry before you deploy.
+The SAS Retrieval Agent Manager package that you receive does not include some underlying external dependencies. This is only an issue if you are mirroring the SAS Retrieval Agent Manager images to a registry before you deploy.
 
-Before you install RAM using a mirror registry, you should mirror the images that the RAM Helm chart depends on first. This can be done by using the [mirror registry dependency script](./scripts/mirror-registry-dependencies/README.md).
+To solve this, before you perform the installation using a mirror registry, mirror the images that the SAS Retrieval Agent Manager Helm chart depends on first. These images can be found under the `images` section of the values file.
 
 ### Install Required Dependencies
 
@@ -256,27 +259,27 @@ After you have access to the Kubernetes cluster, you must install the necessary 
 
 SAS Retrieval Agent Manager supports two ingress controllers as of now; NGINX and contour. Select your preferred one and follow the installation steps accordingly.
 
-| Component   |    Version    |                                                               |                                                            |                         |
+| Component   |    Version    |    Installation Example                                       |       Installation Documentation                           |                         |
 |-------------|---------------|---------------------------------------------------------------|----------------------------------------------------------- |-------------------------|
 | **NGINX**   |v4.12.3        |[example](./docs/user/DependencyInstall.md#nginx)              | [docs](https://kubernetes.github.io/ingress-nginx/deploy/) |                         |
 | **Contour** |v1.33.1        |[example](./docs/user/DependencyInstall.md#contour)            | [docs](https://projectcontour.io/getting-started/)         |                         |
 
 ### Install Optional Components
 
-| Component         | Version|               Example Values File            |                      Installation Instructions                     |        Description      |
-|-------------------|--------|----------------------------------------------|--------------------------------------------------------------------|-------------------------|
-| **Weaviate**      |v17.6.0 |[weaviate.yaml](./examples/weaviate.yaml)     | [instructions](./docs/user/DependencyInstall.md#weaviate)          | Vector Database         |
-| **Ollama**        |v1.12.0 |[ollama.yaml](./examples/ollama.yaml)         | [instructions](./docs/llm-connection/ollama.md)                    | LLM Deployment Platform |
-| **Vector**        | 0.53.0 |[vector.yaml](./examples/vector.yaml)         | [instructions](./docs/monitoring/README.md)                        | Storing Logs/Traces     |
-| **Phoenix**       |v4.0.7  |[phoenix.yaml](./examples/phoenix.yaml)       | [instructions](./docs/monitoring/traces.md)                        | Visualizing Traces      |
+| Component         | Version|               Example Values File                                             |                      Installation Instructions                     |        Description      |
+|-------------------|--------|-------------------------------------------------------------------------------|--------------------------------------------------------------------|-------------------------|
+| **Weaviate**      |v17.6.0 |[weaviate.yaml](./examples/dependencies/optional/weaviate.yaml)                | [instructions](./docs/user/DependencyInstall.md#weaviate)          | Vector Database         |
+| **Ollama**        |v1.12.0 |[ollama.yaml](./examples/dependencies/optional/ollama.yaml)                    | [instructions](./docs/llm-connection/ollama.md)                    | LLM Deployment Platform |
+| **Vector**        |0.53.0  |[vector.yaml](./examples/dependencies/optional/monitoring/vector.yaml)         | [instructions](./docs/monitoring/README.md)                        | Storing Logs/Traces     |
+| **Phoenix**       |v4.0.7  |[phoenix.yaml](./examples/dependencies/optional/monitoring/phoenix.yaml)       | [instructions](./docs/monitoring/traces.md)                        | Visualizing Traces      |
 
 ### Install SAS Retrieval Agent Manager
 
 After you have configured a Kubernetes cluster and PostgreSQL 15 database, use the following code to deploy SAS Retrieval Agent Manager on your platform:
 
-#### Configure RAM Values File
+#### Configure Values File
 
-We have standardized the values required for deployment across all supported platforms. Please see the [example ram values file](./examples/ram-values.yaml) to get a quickstart.
+We have standardized the values required for deployment across all supported platforms. Please see the [example SAS Retrieval Agent Manager values file](./examples/ram-values.yaml) to get a quickstart.
 
 ##### Configure Persistent Volume Size
 
@@ -284,13 +287,12 @@ In the example values file under the `.Storage.embedding.pvc.size` and `.Storage
 
 >**Note: Please be aware that the application pvc size corresponds with the amount of data purchased from SAS.**
 
-
 #### Deploy with Helm
 
 ```bash
 helm install retrieval-agent-manager oci://ghcr.io/sassoftware/sas-retrieval-agent-manager-deployment/sas-retrieval-agent-manager \
-  --version 2026.2.0 \
-  --values <RAM Values file> \
+  --version 2026.3.0 \
+  --values <SAS Retrieval Agent Manager Values File> \
   -n retagentmgr \
   --create-namespace \
   --timeout 10m
@@ -306,11 +308,11 @@ kubectl get pods -n retagentmgr
 
 ## Backup and Restore Guide
 
-To backup and restore the data you use RAM for, visit the [Backup and Restore page](./docs/backup-restore/README.md).
+To backup and restore the data you use SAS Retrieval Agent Manager for, visit the [Backup and Restore page](./docs/backup-restore/README.md).
 
 ## Connecting different LLMS
 
-To add different LLMs for RAM to use, visit the [Connecting an LLM page](./docs/llm-connection/README.md).
+To add different LLMs for SAS Retrieval Agent Manager to use, visit the [Connecting an LLM page](./docs/llm-connection/README.md).
 
 ## Monitoring and Logging
 
@@ -320,13 +322,41 @@ To monitor and log agent and LLM activity, visit the [Monitoring setup page](./d
 
 ### Node Upgrades
 
-RAM deploys Pod Disruption Budgets for all deployments for better performance. This can cause issues if you are upgrading that node pool and need to drain all nodes. To best get around this, please delete the PDBs, upgrade the node pool, and then redeploy the PDBs.
+SAS Retrieval Agent Manager deploys Pod Disruption Budgets (PDBs) for all deployments to improve availability. However, these **will** interfere with node pool draining during upgrades. To work around this, delete the PDBs before draining the node pool, then redeploy them once the upgrade is complete.
 
-### Common Issues
+### Vectorization Jobs
 
-**Increasing Vectorization or Embedding PVC Sizes:**
+A vectorization job has failed if it ends in a failed state, or if it completes with a warning and the resulting collection is unusable. If this occurs, verify the following:
 
-Before you deploy RAM, you will need to set the Vectorization Hub PVC size equal to the amount of gigabytes purchased in your order. If you purchase more storage afterwards, you will have to upgrade the vectorization hub PVC. For the embedding-pvc or vhub-pvc, you can change the sizes of them in the values file with the following fields:
+- The `Vector` extension is installed in your PostgreSQL database
+- The `db-init` and `db-migration` jobs completed without errors
+
+If this is the case, please install the `Vector` extension and reinstall SAS Retrieval Agent Manager or use Weaviate as a vector database instead.
+
+### Encryption/Decryption
+
+Encryption issues typically arise when SAS Retrieval Agent Manager is deployed multiple times without GPG keys configured in the values file. If this occurs, verify the following:
+
+- The deployment was upgraded or reinstalled with the correct GPG keys set in the values file
+  - The public key can be found in ConfigMaps, and the private key in Secrets, within the `retagentmgr` namespace
+
+If this is the case, insert the GPG keys in the values file and reinstall SAS Retrieval Agent manager.
+
+### Deployment Upgrades
+
+Issues can occur when installing a newer version of SAS Retrieval Agent Manager over an existing deployment. If this occurs, verify the following:
+
+- The values file used during the upgrade matches the schema and conventions expected by the target version
+
+### Connection Errors
+
+Login issues may present as an error message after login indicating that the API or PostgREST pod is not functioning correctly. If this occurs, verify the following:
+
+- The database and Kubernetes cluster are both running and healthy
+
+### Increasing Vectorization or Embedding Storage Sizes
+
+Before you deploy SAS Retrieval Agent Manager, you will need to set the Vectorization Hub PVC size equal to the amount of gigabytes purchased in your order. If you purchase more storage afterwards, you will have to upgrade the vectorization hub PVC. For the embedding-pvc or vhub-pvc, you can change the sizes of them in the values file with the following fields:
 
 Vectorization Hub PVC:
 
@@ -350,56 +380,18 @@ storage:
 
 ```
 
-Once you override the desired fields in your values file, upgrade your RAM installation with the following command to apply the changes:
+Once you override the desired fields in your values file, upgrade your SAS Retrieval Agent Manager installation with the following command to apply the changes:
 
 ```sh
 
 helm upgrade retrieval-agent-manager oci://ghcr.io/sassoftware/sas-retrieval-agent-manager-deployment/sas-retrieval-agent-manager \
-  --version <RAM Version> \
-  --values <RAM Values file> \
+  --version <SAS Retrieval Agent Manager Version> \
+  --values <SAS Retrieval Agent Manager Values File> \
   -n retagentmgr
 
 ```
 
-> Note: Once you increase a PVC size, you cannot decrease it with an upgrade. You will have to uninstall RAM completely and reinstall from scratch to lower it at that point.
-
-**Database Connection Issues:**
-
-- Check firewall rules and security groups
-- Validate database credentials
-- Ensure bidirectional connectivity between cluster and database
-
-**Ingress Issues:**
-
-- Verify TLS certificate validity
-- Check that controller references correct certificate
-- Confirm DNS resolution
-- If on Azure, verify that you have `10.0.0.0/8` in your loadBalancerSourceRanges list for intra-cluster services
-
-**API Server or PostgREST Not Responding on login:**
-
-- Run the `sas-retagentmgr-fetch-keycloak-certs` cronjob
-- Delete API, PostgREST, and Oauth-proxy pods and let them spin back up
-
-**Unauthorized when adding a source**:
-
-- Delete Oauth-proxy and PostgREST pods and let them spin back up
-
-### Debug Commands
-
-```bash
-# Get detailed pod information
-kubectl describe pod <pod-name> -n retagentmgr
-
-# Check events in namespace
-kubectl get events -n retagentmgr --sort-by='.lastTimestamp'
-
-# View resource status
-kubectl get all -n retagentmgr
-
-# Check logs
-kubectl logs <pod-name> -n retagentmgr
-```
+> Note: Once you increase a PVC size, you cannot decrease it with an upgrade. You will have to uninstall SAS Retrieval Agent Manager completely and reinstall from scratch to lower it at that point.
 
 ## Contributing
 
