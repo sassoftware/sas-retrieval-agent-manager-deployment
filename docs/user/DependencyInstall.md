@@ -66,11 +66,11 @@ Here is an [Example Kueue Values File](../../examples/dependencies/required/kueu
 You can install it onto your cluster with the following commands:
 
 ```bash
-# Install Kueue using your values file
+# Install Kueue using our example values file
 helm install kueue oci://registry.k8s.io/kueue/charts/kueue \
   --version=<kueue_version> \
   --namespace kueue \
-  -f <kueue_values_file> \
+  -f ./examples/dependencies/required/kueue.yaml \
   --create-namespace
 ```
 
@@ -89,12 +89,12 @@ You can install it onto your cluster with the following commands:
 helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
 helm repo update
 
-# Install ingress-nginx using your custom values file
+# Install ingress-nginx using our example values file
 helm install nginx-ingress-nginx-controller \
     ingress-nginx/ingress-nginx \
     --version=<nginx_version> \
     --namespace ingress-nginx \
-    -f <nginx_values_file> \
+    -f ./examples/dependencies/required/ingress-controllers/nginx.yaml \
     --create-namespace
 ```
 
@@ -105,14 +105,15 @@ Here is an [Example Contour Controller Values File](../../examples/dependencies/
 You can install it onto your cluster with the following commands:
 
 ```bash
-# Add ingress-nginx helm repository
+# Add contour helm repository
 helm repo add contour https://projectcontour.github.io/helm-charts/
 helm repo update
 
-# Install ingress-nginx using your custom values file
+# Install contour using our example values file
 helm install contour contour/contour \
+    --version=<contour_version> \
     --namespace contour \
-    -f <contour_values_file> \
+    -f ./examples/dependencies/required/ingress-controllers/contour.yaml \
     --create-namespace
 ```
 
@@ -133,11 +134,11 @@ You can install it onto your cluster with the following commands:
 helm repo add weaviate https://weaviate.github.io/weaviate-helm
 helm repo update
 
-# Install Weaviate using your custom values file
+# Install Weaviate using our example values file
 helm install weaviate weaviate/weaviate \
   --version=<weaviate_version> \
   --namespace weaviate \
-  -f <weaviate_values_file> \
+  -f ./examples/dependencies/optional/weaviate.yaml \
   --create-namespace
 ```
 

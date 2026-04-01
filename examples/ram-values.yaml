@@ -24,6 +24,8 @@ platform: "<your_platform_here>"
 ingress:
   domain: <your_ingress_domain_here>
   enableRootIngress: true
+  # -- Ingress Controller (nginx, contour, route)
+  classType: nginx
   tls:
     secretName: ingress-tls
 
@@ -35,9 +37,6 @@ users:
       username: <your_application_username_here>
       # Password requirements: Minimum 8 characters, at least one uppercase letter, one lowercase letter, one number and one special character
       password: <your_secure_password_here>
-  monitoring:
-    username: sas_ram_mon_pgrest_user
-    password: <your_secure_password_here>
   keycloak:
     admin:
       # This will be used to login to the Keycloak deployment
@@ -48,9 +47,13 @@ users:
       username: sas_ram_keycloak_user
       password: <your_secure_password_here>
   database:
+    # Pre-existing database admin credentials
     admin:
       username: <your_psql_admin_username_here>
       password: <your_psql_admin_password_here>
+  monitoring:
+    username: sas_ram_mon_pgrest_user
+    password: <your_secure_password_here>
   embedding:
     username: sas_ram_embedding_user
     password: <your_secure_password_here>
@@ -76,7 +79,7 @@ api:
     # Set to 'True' to enable GenAI traces in Vector
     enable_genai_traces: 'False'
     license:
-      <your_b64_encoded_license_here>
+      <your_jwt_sas_license_here>
 
 # -- Database configuration for RAM, including host, port, SSL mode, and credentials for application and monitoring database roles
 db:
@@ -87,11 +90,11 @@ db:
         port: '5432'
         sslmode: require
       application:
-        adminRole: sas_ram_ram_admin_role
-        userRole: sas_ram_ram_user_role
+        adminRole: sas_ram_admin_role
+        userRole: sas_ram_user_role
       monitoring:
-        adminRole: sas_ram_ram_admin_role
-        userRole: sas_ram_ram_user_role
+        adminRole: sas_ram_admin_role
+        userRole: sas_ram_user_role
       # -- Auto hydration for local Weaviate installation
       weaviate:
         enabled: false
@@ -102,11 +105,14 @@ security:
     config:
       # MUST BE SET IF UPGRADING RAM TO MAINTAIN DATA ACCESS
       # Does not need to be set for initial installation
-      privateKey: <base64-encoded GPG private key>
+      # privateKey: <base64-encoded GPG private key>
+
       # MUST BE SET IF UPGRADING RAM TO MAINTAIN DATA ACCESS
       # Does not need to be set for initial installation
-      publicKey: <base64-encoded GPG public key>
+      # publicKey: <base64-encoded GPG public key>
+
       # MUST BE SET IF UPGRADING RAM TO MAINTAIN DATA ACCESS
+      # Needs to be set for initial installation
       # Example: passphrase: SomeVeryStrong1000CharPassPhraseThatIsNotUsedAnywhere
       passphrase: <your_secure_passphrase_here>
 
@@ -114,8 +120,8 @@ security:
 iam:
   keycloak:
     config:
-      adminRole: sas_ram_ram_admin_role
-      userRole: sas_ram_ram_user_role
+      adminRole: sas_ram_admin_role
+      userRole: sas_ram_user_role
       # Example: plI1xWllgmSNnUZLprWkpSHldFhpWmBRVVnYW2YCcYZ
       # Any random string of this length will work.
       clientSecret: <your_client_secret_here>
@@ -130,6 +136,7 @@ storage:
       size: 40Gi
   application:
     pvc:
+      # The amount of data purchased by SAS
       size: 20Gi
 
 # -- Vectorization Hub configuration, including PostgreSQL certificate secret for secure database connectivity
