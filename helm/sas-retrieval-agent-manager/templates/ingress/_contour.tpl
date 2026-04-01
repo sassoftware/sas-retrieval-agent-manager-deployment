@@ -43,7 +43,7 @@ spec:
           port: {{ $ctx.Values.api.service.port }}
       {{- if and $ctx.Values.ingress.contour $ctx.Values.ingress.contour.timeoutPolicy }}
       timeoutPolicy:
-        {{- toYaml $ctx.Values.ingress.contour.timeoutPolicy | nindent 8 }}
+        {{- toYaml (default dict $ctx.Values.ingress.contour.timeoutPolicy) | nindent 8 }}
       {{- end }}
     {{- end }}
     # Keycloak admin routes
