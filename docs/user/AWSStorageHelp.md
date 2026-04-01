@@ -24,10 +24,14 @@ aws iam create-role \
 Attach the role policy to the role with the following command:
 
 ```bash
-# Attaches the Role Policy to the Role
+# Attaches the EFS Role Policy to the Role
 aws iam attach-role-policy \
     --role-name <RAM-Storage-Driver-Role> \
-    --policy-arn arn:aws:iam::aws:policy/service-role/AmazonEFSCSIDriverPolicy \
+    --policy-arn arn:aws:iam::aws:policy/service-role/AmazonEFSCSIDriverPolicy
+
+# Attaches the EBS Role Policy to the Role
+aws iam attach-role-policy \
+    --role-name <RAM-Storage-Driver-Role> \
     --policy-arn arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy
 ```
 
@@ -36,8 +40,12 @@ aws iam attach-role-policy \
 Finally, attach the EFS/EBS role policy to the node-group role:
 
 ```bash
+# Attaches the EFS policy to the node group role
 aws iam attach-role-policy --role-name <cluster_name_prefix>-default-eks-node-group \
-    --policy-arn arn:aws:iam::aws:policy/service-role/AmazonEFSCSIDriverPolicy \
+    --policy-arn arn:aws:iam::aws:policy/service-role/AmazonEFSCSIDriverPolicy
+
+# Attaches the EBS policy to the node group role
+aws iam attach-role-policy --role-name <cluster_name_prefix>-default-eks-node-group \
     --policy-arn arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy
 ```
 
