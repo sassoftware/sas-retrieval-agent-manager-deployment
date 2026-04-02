@@ -29,7 +29,7 @@ helm install trust-manager ./helm/trust-manager/ \
 
 ```
 
-> Note: If cert-manager is already installed on the cluster, you'll have to run `kubectl apply -f ./helm/cert-manager/templates/linkerd-certs/ -n cert-manager` instead for the expected result
+> **Note:** If cert-manager is already installed on the cluster, you'll have to run `kubectl apply -f ./helm/cert-manager/templates/linkerd-certs/ -n cert-manager` instead for the expected result
 
 ### Service Mesh
 
@@ -37,7 +37,7 @@ SAS Retrieval Agent Manager uses Linkerd to enable mutual TLS (mTLS) for secure 
 components. The provided chart sets up the necessary configurations to enable mTLS within the application with automated
 rotation of all certificates, except the trust anchor which requires some manual intervention.
 
-> Note: The default Linkerd installation uses a self-signed root certificate authority (CA) to create an intermediate CA
+> **Note:** The default Linkerd installation uses a self-signed root certificate authority (CA) to create an intermediate CA
 > which acts as the trust anchor. The trust anchor certificate has a one-year validity period, with automatic rotation
 > sixty days before expiration.
 >
@@ -116,7 +116,7 @@ helm install contour contour/contour \
     --create-namespace
 ```
 
-> Note: You will have to change ingress.classType to `contour` in the values file as it is nginx by default.
+> **Note:** You will have to change ingress.classType to `contour` in the values file as it is nginx by default.
 
 ## Optional Components
 

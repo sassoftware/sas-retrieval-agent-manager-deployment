@@ -86,7 +86,7 @@ Configure the following settings in the **General options** and **Connection and
 | **Bind DN** | `cn=admin,dc=example,dc=com` | Service account for LDAP binding |
 | **Bind Credential** | `********` | Service account password |
 
-> **Security Note:** Always use LDAPS (LDAP over TLS) or StartTLS in production environments to encrypt LDAP traffic.
+> **Note:** Always use LDAPS (LDAP over TLS) or StartTLS in production environments to encrypt LDAP traffic.
 
 ### Step 4: Configure LDAP Searching and Updating
 

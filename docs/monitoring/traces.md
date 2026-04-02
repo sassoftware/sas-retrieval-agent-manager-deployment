@@ -2,7 +2,7 @@
 
 The SAS Retrieval Agent Manager system collects and processes distributed traces using [Vector](https://vector.dev/), a high-performance observability data pipeline. Vector receives OpenTelemetry traces from applications and routes them to multiple observability backends for analysis and visualization.
 
-> Note: Please have `enable_genai_traces: 'True'` in your SAS Retrieval Agent Manager values file. The location of this value depends on the version deployed.
+> **Note:** Please have `enable_genai_traces: 'True'` in your SAS Retrieval Agent Manager values file. The location of this value depends on the version deployed.
 
 ## Architecture Overview
 
@@ -125,7 +125,7 @@ sinks:
     type: opentelemetry
 ```
 
-> Note: See a full [Vector example values file here](../../examples/dependencies/optional/monitoring/vector.yaml) and full [Phoenix example values file here](../../examples/dependencies/optional/monitoring/phoenix.yaml)
+> **Note:** See a full [Vector example values file here](../../examples/dependencies/optional/monitoring/vector.yaml) and full [Phoenix example values file here](../../examples/dependencies/optional/monitoring/phoenix.yaml)
 
 ### OTLP Format Transformation
 

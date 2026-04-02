@@ -4,7 +4,7 @@
 
 Ollama is the only LLM provider that you will need to install onto the cluster. This can be done using the [example values file provided](../../examples/dependencies/optional/ollama.yaml) or referring to the [official documentation](https://github.com/ollama/ollama).
 
-> Note: We do *allow* Ollama deployments to interact with RAM, *we do not support it*.
+> **Note:** We do *allow* Ollama deployments to interact with RAM, *we do not support it*.
 
 ## Installation
 

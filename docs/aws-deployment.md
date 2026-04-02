@@ -131,7 +131,7 @@ terraform init
 terraform apply
 ```
 
-> Note: A direct terraform approach is recommended only for AWS as opposed to the docker recommendation for Bare-metal and Azure
+> **Note:** A direct terraform approach is recommended only for AWS as opposed to the docker recommendation for Bare-metal and Azure
 
 ### Docker
 
@@ -176,7 +176,7 @@ The AWS deployment of SAS Retrieval Agent Manager requires you to pass the appro
 aws rds describe-db-instances --query 'DBInstances[*].[DBInstanceIdentifier,AvailabilityZone]' --output table
 ```
 
-> Note: Using this table, find the RDS instance that you want to connect SAS Retrieval Agent Manager to
+> **Note:** Using this table, find the RDS instance that you want to connect SAS Retrieval Agent Manager to
 
 [After finding the correct region, download the correct bundle here](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.SSL.html).
 
@@ -190,7 +190,7 @@ kubectl create ns retagentmgr
 kubectl create secret generic rds-ssl-cert --from-file=cert.pem=<your-ssl-bundle>.pem -n retagentmgr
 ```
 
-> Note: It is critical the enter the name of the secret in the `postgreSQLCertSecret` key in the ram-values under global.configuration.vhub. For example, with this secret name, it would be: `postgreSQLCertSecret: 'rds-ssl-cert'`
+> **Note:** It is critical the enter the name of the secret in the `postgreSQLCertSecret` key in the ram-values under global.configuration.vhub. For example, with this secret name, it would be: `postgreSQLCertSecret: 'rds-ssl-cert'`
 
 ## Application Deployment
 

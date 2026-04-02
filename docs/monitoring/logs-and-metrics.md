@@ -53,7 +53,7 @@ sinks:
     table: monitoring.logs
 ```
 
-> Note: See a full [Vector example values file here](../../examples/dependencies/optional/monitoring/vector.yaml)
+> **Note:** See a full [Vector example values file here](../../examples/dependencies/optional/monitoring/vector.yaml)
 
 #### Log Schema
 

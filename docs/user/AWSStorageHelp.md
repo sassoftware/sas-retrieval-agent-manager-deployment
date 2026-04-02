@@ -35,7 +35,7 @@ aws iam attach-role-policy \
     --policy-arn arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy
 ```
 
-> Note: `AmazonEBSCSIDriverPolicy` is optional, as it's only used for weaviate
+> **Note:** `AmazonEBSCSIDriverPolicy` is optional, as it's only used for weaviate
 
 Finally, attach the EFS/EBS role policy to the node-group role:
 
@@ -64,7 +64,7 @@ helm repo update
 helm install aws-efs-csi-driver aws-efs-csi-driver/aws-efs-csi-driver -n kube-system -f efs-values.yaml
 ```
 
-> [Note: you can find an example EFS values file here](../../examples/aws/efs.yaml)
+> [**Note:** you can find an example EFS values file here](../../examples/aws/efs.yaml)
 
 ## EBS Driver Installation (optional)
 
@@ -79,6 +79,6 @@ helm repo update
 helm install aws-ebs-csi-driver aws-ebs-csi-driver/aws-ebs-csi-driver -n kube-system -f ebs-values.yaml
 ```
 
-> [Note: you can find an example EBS values file here](../../examples/aws/ebs.yaml)
+> [**Note:** you can find an example EBS values file here](../../examples/aws/ebs.yaml)
 
 [Back to AWS Deployment Guide](../aws-deployment.md#deploy-rds-ssl-certificate)
