@@ -240,7 +240,7 @@ After you have access to the Kubernetes cluster, you must install the necessary 
 
 | Dependency                  | Version             |                                                                              |                                                                                                                                                            |
 |-----------------------------|---------------------|------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| cert-manager, trust-manager | v1.18.2, v0.18.0    | [example](./docs/user/DependencyInstall.md#certificate-and-trust-management) | [cert-manager docs](https://cert-manager.io/docs/installation/helm/), [trust-manager docs](https://cert-manager.io/docs/trust/trust-manager/installation/) |
+| cert-manager, trust-manager | 1.18.2, 0.18.0      | [example](./docs/user/DependencyInstall.md#certificate-and-trust-management) | [cert-manager docs](https://cert-manager.io/docs/installation/helm/), [trust-manager docs](https://cert-manager.io/docs/trust/trust-manager/installation/) |
 | Linkerd                     | 2.17 (edge-24.11.8) | [example](./docs/user/DependencyInstall.md#service-mesh)                     | [docs](https://linkerd.io/2/tasks/install-helm/)                                                                                                           |
 | Kueue                       | 0.13.4              | [example](./docs/user/DependencyInstall.md#kueue)                            | [docs](https://kueue.sigs.k8s.io/docs/installation/)                                                                                                       |
 
@@ -261,17 +261,17 @@ SAS Retrieval Agent Manager supports two ingress controllers as of now; NGINX an
 
 | Component   |    Version    |    Installation Example                                       |       Installation Documentation                           |                         |
 |-------------|---------------|---------------------------------------------------------------|----------------------------------------------------------- |-------------------------|
-| **NGINX**   |v4.12.3        |[example](./docs/user/DependencyInstall.md#nginx)              | [docs](https://kubernetes.github.io/ingress-nginx/deploy/) |                         |
-| **Contour** |v1.33.1        |[example](./docs/user/DependencyInstall.md#contour)            | [docs](https://projectcontour.io/getting-started/)         |                         |
+| **NGINX**   |4.12.3         |[example](./docs/user/DependencyInstall.md#nginx)              | [docs](https://kubernetes.github.io/ingress-nginx/deploy/) |                         |
+| **Contour** |1.33.1         |[example](./docs/user/DependencyInstall.md#contour)            | [docs](https://projectcontour.io/getting-started/)         |                         |
 
 ### Install Optional Components
 
 | Component         | Version|               Example Values File                                             |                      Installation Instructions                     |        Description      |
 |-------------------|--------|-------------------------------------------------------------------------------|--------------------------------------------------------------------|-------------------------|
-| **Weaviate**      |v17.6.0 |[weaviate.yaml](./examples/dependencies/optional/weaviate.yaml)                | [instructions](./docs/user/DependencyInstall.md#weaviate)          | Vector Database         |
-| **Ollama**        |v1.12.0 |[ollama.yaml](./examples/dependencies/optional/ollama.yaml)                    | [instructions](./docs/llm-connection/ollama.md)                    | LLM Deployment Platform |
+| **Weaviate**      |17.6.0  |[weaviate.yaml](./examples/dependencies/optional/weaviate.yaml)                | [instructions](./docs/user/DependencyInstall.md#weaviate)          | Vector Database         |
+| **Ollama**        |1.12.0  |[ollama.yaml](./examples/dependencies/optional/ollama.yaml)                    | [instructions](./docs/llm-connection/ollama.md)                    | LLM Deployment Platform |
 | **Vector**        |0.53.0  |[vector.yaml](./examples/dependencies/optional/monitoring/vector.yaml)         | [instructions](./docs/monitoring/README.md)                        | Storing Logs/Traces     |
-| **Phoenix**       |v4.0.7  |[phoenix.yaml](./examples/dependencies/optional/monitoring/phoenix.yaml)       | [instructions](./docs/monitoring/traces.md)                        | Visualizing Traces      |
+| **Phoenix**       |4.0.7   |[phoenix.yaml](./examples/dependencies/optional/monitoring/phoenix.yaml)       | [instructions](./docs/monitoring/traces.md)                        | Visualizing Traces      |
 
 ### Install SAS Retrieval Agent Manager
 

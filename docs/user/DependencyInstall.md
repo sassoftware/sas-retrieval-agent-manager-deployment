@@ -51,7 +51,6 @@ cluster with the following commands:
 ```bash
 
 helm install linkerd ./helm/linkerd \
-  -f ./helm/linkerd/values.yaml  \
   -n linkerd \
   --create-namespace
 
