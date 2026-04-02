@@ -35,6 +35,8 @@
 
 This guide covers user and group management in Keycloak for SAS Retrieval Agent Manager. Keycloak provides centralized identity management, allowing administrators to create users, organize them into groups, and assign roles that control access to application features.
 
+> **Note:** Please be aware that Keycloak is a part of the service mesh installed by the SAS Retrieval Agent Manager helm chart. It is not necessary to install separately or perform any additional initial configuration outside of the helm chart deployment.
+
 ## Accessing the Admin Console
 
 1. Navigate to the Keycloak Admin Console:

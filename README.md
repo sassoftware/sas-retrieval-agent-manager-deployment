@@ -204,7 +204,7 @@ images:
     base: 'myregistry.mydomain.com/my-namespace'
 ```
 
-> Note: You can find more information on how to use SAS mirror manager in the [Viya Documentation](https://go.documentation.sas.com/doc/en/itopscdc/v_067/dplyml0phy0dkr/n1h0rgtr10fpnfn1mg0s8fgfuof8.htm).
+> **Note:** You can find more information on how to use SAS mirror manager in the [Viya Documentation](https://go.documentation.sas.com/doc/en/itopscdc/v_067/dplyml0phy0dkr/n1h0rgtr10fpnfn1mg0s8fgfuof8.htm).
 
 ### License Renewal Process
 
@@ -244,7 +244,7 @@ After you have access to the Kubernetes cluster, you must install the necessary 
 | Linkerd                     | 2.17 (edge-24.11.8) | [example](./docs/user/DependencyInstall.md#service-mesh)                     | [docs](https://linkerd.io/2/tasks/install-helm/)                                                                                                           |
 | Kueue                       | 0.13.4              | [example](./docs/user/DependencyInstall.md#kueue)                            | [docs](https://kueue.sigs.k8s.io/docs/installation/)                                                                                                       |
 
-> Note: order of installation matters for some dependencies, namely:
+> **Note:** Order of installation matters for some dependencies, namely:
 >
 > 1. Certificate management components (cert-manager and trust-manager) must be installed first.
 >
@@ -253,7 +253,7 @@ After you have access to the Kubernetes cluster, you must install the necessary 
 >
 > 3. Other dependencies or optional components can be installed in any order after that. They do not have hard dependencies on each other, but
 >    do require the previous two steps to be completed to ensure internal traffic is properly secured.
-> Note: It is critical to provide an `azure-dns-label` for Azure ingress controller deployments. This is documented at the top of the example NGINX/Contour values file given.
+> **Note:** It is critical to provide an `azure-dns-label` for Azure ingress controller deployments. This is documented at the top of the example NGINX/Contour values file given.
 
 ### Install Preferred Ingress Controller
 
@@ -273,6 +273,8 @@ SAS Retrieval Agent Manager supports two ingress controllers as of now; NGINX an
 | **Vector**        |0.53.0  |[vector.yaml](./examples/dependencies/optional/monitoring/vector.yaml)         | [instructions](./docs/monitoring/README.md)                        | Storing Logs/Traces     |
 | **Phoenix**       |4.0.7   |[phoenix.yaml](./examples/dependencies/optional/monitoring/phoenix.yaml)       | [instructions](./docs/monitoring/traces.md)                        | Visualizing Traces      |
 
+> **Note:** If you install SAS Retrieval Agent Manager without these optional components, you can always install them later and connect them to your existing deployment.
+
 ### Install SAS Retrieval Agent Manager
 
 After you have configured a Kubernetes cluster and PostgreSQL 15 database, use the following code to deploy SAS Retrieval Agent Manager on your platform:
@@ -285,7 +287,7 @@ We have standardized the values required for deployment across all supported pla
 
 In the example values file under the `.Storage.embedding.pvc.size` and `.Storage.application.pvc.size` you will want to set the storage capacity. This can be shown in the example values file linked above. The application pvc size starts at 5Gi and increases from there.
 
->**Note: Please be aware that the application pvc size corresponds with the amount of data purchased from SAS.**
+> **Note:** Please be aware that the application pvc size corresponds with the amount of data purchased from SAS.
 
 #### Deploy with Helm
 
@@ -298,7 +300,7 @@ helm install retrieval-agent-manager oci://ghcr.io/sassoftware/sas-retrieval-age
   --timeout 10m
 ```
 
-Note: Use the package section of this repository to find an installable version. Also, if something fails and you need to redeploy, it is recommended that you run `helm uninstall retrieval-agent-manager -n retagentmgr` followed by `kubectl delete ns retagentmgr`. We recommend putting the `ingress-tls` and `cr-sas-secret` secrets in the `extraObjects` of the values install so that you can easily reinstall.
+> **Note:** Use the package section of this repository to find an installable version. Also, if something fails and you need to redeploy, it is recommended that you run `helm uninstall retrieval-agent-manager -n retagentmgr` followed by `kubectl delete ns retagentmgr`. We recommend putting the `ingress-tls` and `cr-sas-secret` secrets in the `extraObjects` of the values install so that you can easily reinstall.
 
 #### Verify Deployment
 
@@ -391,7 +393,7 @@ helm upgrade retrieval-agent-manager oci://ghcr.io/sassoftware/sas-retrieval-age
 
 ```
 
-> Note: Once you increase a PVC size, you cannot decrease it with an upgrade. You will have to uninstall SAS Retrieval Agent Manager completely and reinstall from scratch to lower it at that point.
+> **Note:** Once you increase a PVC size, you cannot decrease it with an upgrade. You will have to uninstall SAS Retrieval Agent Manager completely and reinstall from scratch to lower it at that point.
 
 ## Contributing
 
