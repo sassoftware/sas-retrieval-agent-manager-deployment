@@ -55,7 +55,7 @@ This guide describes deploying an AWS infrastructure on which to deploy SAS Retr
 
 ### Infrastructure Requirements
 
-- AWS version: 1.33+
+- EKS version: 1.33+
 
 ## Getting Started
 
