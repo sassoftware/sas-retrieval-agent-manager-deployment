@@ -2,14 +2,31 @@
 
 ## Table of Contents
 
-- [Overview](#overview)
-- [Prerequisites](#prerequisites)
-- [Requirements](#requirements)
-- [Getting Started](#getting-started)
-- [Configuration Setup](#configuration-setup)
-- [Infrastructure Deployment](#infrastructure-deployment)
-- [Application Deployment](#application-deployment)
-- [Troubleshooting](#troubleshooting)
+- [Azure Deployment Guide](#azure-deployment-guide)
+  - [Table of Contents](#table-of-contents)
+  - [Overview](#overview)
+  - [Prerequisites](#prerequisites)
+    - [Infrastructure Prerequisites](#infrastructure-prerequisites)
+    - [Technical Prerequisites](#technical-prerequisites)
+  - [Requirements](#requirements)
+    - [Hardware Requirements](#hardware-requirements)
+      - [AKS Cluster Sizing](#aks-cluster-sizing)
+      - [Postgres Database Sizing](#postgres-database-sizing)
+    - [Infrastructure Requirements](#infrastructure-requirements)
+  - [Getting Started](#getting-started)
+    - [Clone the Viya IAC Project](#clone-the-viya-iac-project)
+  - [Configuration Setup](#configuration-setup)
+  - [Infrastructure Deployment](#infrastructure-deployment)
+    - [Docker (Recommended)](#docker-recommended)
+  - [Application Deployment](#application-deployment)
+  - [Troubleshooting](#troubleshooting)
+    - [Azure Authentication](#azure-authentication)
+    - [Cluster Deployment](#cluster-deployment)
+    - [Helm Deployment Issues](#helm-deployment-issues)
+  - [Post-Install: Required PostgreSQL Extensions](#post-install-required-postgresql-extensions)
+    - [Allow-list the Extensions on the Flexible Server](#allow-list-the-extensions-on-the-flexible-server)
+    - [Enable the Extensions in PostgreSQL](#enable-the-extensions-in-postgresql)
+    - [One-liner for Scripted Deployments](#one-liner-for-scripted-deployments)
 
 ---
 
@@ -151,3 +168,70 @@ helm status sas-retrieval-agent-manager -n retagentmgr
 ```
 
 > For additional troubleshooting, refer to the main [troubleshooting section](../README.md#troubleshooting)
+
+## Post-Install: Required PostgreSQL Extensions
+
+Azure Database for PostgreSQL Flexible Server requires extensions to be explicitly allow-listed at the server level before they can be activated in a database. These are required (or strongly recommended) by SAS Retrieval Agent Manager — see [Necessary PostgreSQL Extensions](../README.md#necessary-postgresql-extensions).
+
+### Allow-list the Extensions on the Flexible Server
+
+Run the following Azure CLI commands to add `pgcrypto` and `vector` to the server's allowed extensions. Replace the placeholder values with your resource group, server name, and subscription as appropriate.
+
+```bash
+# Allow pgcrypto and vector on the Flexible Server
+az postgres flexible-server parameter set \
+  --resource-group <resource_group> \
+  --server-name <server_name> \
+  --name azure.extensions \
+  --value pgcrypto,vector
+```
+
+> **Note:** If the `azure.extensions` parameter already has values, append the new ones as a comma-separated list rather than replacing them. You can check the current value with:
+>
+> ```bash
+> az postgres flexible-server parameter show \
+>   --resource-group <resource_group> \
+>   --server-name <server_name> \
+>   --name azure.extensions
+> ```
+
+Alternatively, you can allow-list the extensions in the **Azure Portal** by navigating to your Flexible Server → **Server parameters** → search for `azure.extensions` → add `PGCRYPTO` and `VECTOR` to the value list → **Save**.
+
+### Enable the Extensions in PostgreSQL
+
+Once allow-listed, connect to your PostgreSQL instance as a superuser and activate the extensions in the target database (replace `<your_database>` with the actual database name):
+
+```sql
+-- Connect to the target database first
+\c <your_database>
+
+-- Required: encryption support used by SAS Retrieval Agent Manager
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+-- Recommended: vector similarity search for embedding storage
+CREATE EXTENSION IF NOT EXISTS vector;
+```
+
+You can verify the extensions are active with:
+
+```sql
+SELECT name, default_version, installed_version
+FROM pg_available_extensions
+WHERE name IN ('pgcrypto', 'vector');
+```
+
+Both extensions should show a value in `installed_version`.
+
+### One-liner for Scripted Deployments
+
+If you prefer a non-interactive approach (e.g. from a shell script or CI pipeline):
+
+```bash
+PGPASSWORD=<admin_password> psql \
+  -h <server_name>.postgres.database.azure.com \
+  -U <admin_user> \
+  -d <your_database> \
+  -c "CREATE EXTENSION IF NOT EXISTS pgcrypto; CREATE EXTENSION IF NOT EXISTS vector;"
+```
+
+> **Note:** The allow-list step must be completed before running the above command, otherwise `CREATE EXTENSION` will fail with a permission error.
