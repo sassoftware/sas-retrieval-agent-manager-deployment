@@ -2,8 +2,6 @@
 
 ## Requirements
 
-You will need either an AWS IAM user account or an AWS IAM role that has at a minimum the permissions listed in [this policy](../../files/policies/devops-iac-eks-policy.json).
-
 You can either use static credentials (including temporary credentials with a session token) or a [profile with a credentials file](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html).
 
 You can pass AWS credentials to Terraform by using either [AWS environment variables](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-envvars.html) or [TF_VAR_name](https://www.terraform.io/docs/cli/config/environment-variables.html#tf_var_name) environment variables.
