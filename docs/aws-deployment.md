@@ -2,23 +2,18 @@
 
 ## Table of Contents
 
-- [AWS Deployment Guide](#aws-deployment-guide)
-  - [Table of Contents](#table-of-contents)
-  - [Overview](#overview)
-  - [Prerequisites](#prerequisites)
-    - [Infrastructure Prerequisites](#infrastructure-prerequisites)
-    - [Technical Prerequisites](#technical-prerequisites)
-  - [Requirements](#requirements)
-    - [Hardware Requirements](#hardware-requirements)
-    - [Infrastructure Requirements](#infrastructure-requirements)
-  - [Getting Started](#getting-started)
-    - [Clone the Project](#clone-the-project)
-  - [Configuration Setup](#configuration-setup)
-  - [Authentication Setup](#aws-authentication)
-  - [Deploy the Kubernetes Cluster and PostgreSQL Database](#deploy-the-kubernetes-cluster-and-postgresql-database)
-  - [EFS Setup](#deploy-efs-and-dedicated-role)
-  - [RDS SSL Cert Setup](#deploy-rds-ssl-certificate)
-  - [Application Deployment](#application-deployment)
+- [Overview](#overview)
+- [Prerequisites](#prerequisites)
+- [Requirements](#requirements)
+- [Getting Started](#getting-started)
+- [Configuration Setup](#configuration-setup)
+- [Authentication Setup](#aws-authentication)
+- [Infrastructure Deployment](#infrastructure-deployment)
+- [AWS Resource Setup](#aws-resource-setup)
+  - [EFS](#deploy-efs-and-dedicated-role)
+  - [EBS](#deploy-ebs-optional)
+  - [RDS SSL Certificate](#deploy-rds-ssl-certificate)
+- [Application Deployment](#application-deployment)
 
 ---
 
@@ -45,9 +40,11 @@ This guide describes deploying an AWS infrastructure on which to deploy SAS Retr
 
 #### EKS Cluster Sizing
 
-| Node Size        | Status      |
-|------------------|-------------|
-| **r6in.2xlarge** | Recommended |
+| Node Size           | Minimum Nodes | Maximum Nodes | Deployment Size |
+|---------------------|---------------|---------------|-----------------|
+| **r6in.2xlarge**    | 1             | 3             | Small           |
+| **r6in.2xlarge**    | 2             | 6             | Medium          |
+| **r6in.4xlarge**    | 2             | 8             | Large           |
 
 #### PostgreSQL Database Sizing
 
@@ -59,15 +56,17 @@ This guide describes deploying an AWS infrastructure on which to deploy SAS Retr
 
 ## Getting Started
 
-### Clone the Project
+### Clone the Viya IAC Project
 
 ```bash
-# Clone the repository
+# Clone the Viya IAC repository
 git clone https://github.com/sassoftware/viya4-iac-aws
 
 # Navigate to project directory
 cd viya4-iac-aws
 ```
+
+> **Note:** While we use the viya-iac repository, a viya license or deployment is not required to use SAS Retrieval Agent Manager. This is a standalone application that can be deployed independently of a Viya environment.
 
 ## Configuration Setup
 
@@ -116,24 +115,11 @@ After successfully configurating the AWS SSO, you should be able to start deploy
 
 An alternative to configuring the SSO would be to have a credentials file in a similar format as the `aws.env` file. This would only be used in the docker deployment of SAS Retrieval Agent Manager. [An example of an aws credentials file can be found here](../examples/aws/aws.env).
 
-## Deploy the Kubernetes Cluster and PostgreSQL Database
+## Infrastructure Deployment
 
-### Bare-Metal Terraform (Recommended)
+### Docker (Recommended)
 
-```bash
-# Install terraform
-sudo apt install terraform
-
-# Initialize terraform in the iac directory
-terraform init
-
-# Deploy all terraform resources in terraform.tfvars
-terraform apply
-```
-
-> **Note:** A direct terraform approach is recommended only for AWS as opposed to the docker recommendation for Bare-metal and Azure
-
-### Docker
+Use the provided Docker image to deploy the EKS cluster and PostgreSQL database with the [Example Terraform Values File](../examples/aws/terraform.tfvars). This method ensures a consistent environment and simplifies dependency management.
 
 ```bash
 # Build the Docker image
@@ -149,9 +135,9 @@ sudo docker run --rm \
     -var-file=/workspace/terraform.tfvars
 ```
 
-> [Example Terraform Values File](../examples/aws/terraform.tfvars)
+## AWS Resource Setup
 
-## Deploy EFS and Dedicated Role
+### Deploy EFS and Dedicated Role
 
 The AWS deployment of SAS Retrieval Agent Manager requires an AWS EFS with a corresponding role that has access to it via the correct policy.
 
@@ -159,7 +145,7 @@ The role that needs to be created should have the `AmazonEFSCSIDriverPolicy` Pol
 
 [You can do this via the AWS UI or by following the CLI steps here](./user/AWSStorageHelp.md).
 
-## Deploy EBS (Optional)
+### Deploy EBS (Optional)
 
 The Weaviate deployment on AWS requires a corresponding role that has access to it via the correct policy.
 
@@ -167,7 +153,7 @@ The role that needs to be created should have the `AmazonEBSCSIDriverPolicy` Pol
 
 [You can do this via the AWS UI or by following the CLI steps here](./user/AWSStorageHelp.md).
 
-## Deploy RDS SSL Certificate
+### Deploy RDS SSL Certificate
 
 The AWS deployment of SAS Retrieval Agent Manager requires you to pass the appropriate SSL certificate for your RDS region into the values file. You can find which region SSL certificate you need by running the following command:
 
