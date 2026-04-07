@@ -2,24 +2,14 @@
 
 ## Table of Contents
 
-- [Azure Deployment Guide](#azure-deployment-guide)
-  - [Table of Contents](#table-of-contents)
-  - [Overview](#overview)
-  - [Prerequisites](#prerequisites)
-    - [Infrastructure Prerequisites](#infrastructure-prerequisites)
-    - [Technical Prerequisites](#technical-prerequisites)
-  - [Requirements](#requirements)
-    - [Hardware Requirements](#hardware-requirements)
-    - [Infrastructure Requirements](#infrastructure-requirements)
-  - [Getting Started](#getting-started)
-    - [Clone the Project](#clone-the-project)
-  - [Configuration Setup](#configuration-setup)
-  - [Deploy the Kubernetes Cluster and PostgreSQL Database](#deploy-the-kubernetes-cluster-and-postgresql-database)
-  - [Application Deployment](#application-deployment)
-  - [Troubleshooting](#troubleshooting)
-    - [Azure Authentication](#azure-authentication)
-    - [Cluster Deployment](#cluster-deployment)
-    - [Helm Deployment Issues](#helm-deployment-issues)
+- [Overview](#overview)
+- [Prerequisites](#prerequisites)
+- [Requirements](#requirements)
+- [Getting Started](#getting-started)
+- [Configuration Setup](#configuration-setup)
+- [Infrastructure Deployment](#infrastructure-deployment)
+- [Application Deployment](#application-deployment)
+- [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -62,15 +52,17 @@ This guide describes deploying an Azure infrastructure on which to deploy SAS Re
 
 ## Getting Started
 
-### Clone the Project
+### Clone the Viya IAC Project
 
 ```bash
-# Clone the repository
+# Clone the Viya IAC repository
 git clone https://github.com/sassoftware/viya4-iac-azure
 
 # Navigate to project directory
 cd viya4-iac-azure
 ```
+
+> **Note:** While we use the viya-iac repository, a viya license or deployment is not required to use SAS Retrieval Agent Manager. This is a standalone application that can be deployed independently of a Viya environment.
 
 ## Configuration Setup
 
@@ -83,9 +75,11 @@ Before deploying, you'll need to create and edit two configuration files with yo
 
 > **Tip:** If you need help obtaining Azure environemnt variables, contact your Azure Cloud Administrator or refer to our [Azure Help Guide](./user/AzureHelp.md)
 
-## Deploy the Kubernetes Cluster and PostgreSQL Database
+## Infrastructure Deployment
 
 ### Docker (Recommended)
+
+Use the provided Docker image to deploy the AKS cluster and PostgreSQL database with the [Example Terraform Values File](../examples/azure/terraform.tfvars). This method ensures a consistent environment and simplifies dependency management.
 
 ```bash
 # Build the Docker image
@@ -101,8 +95,6 @@ docker run --rm --group-add root \
     apply -auto-approve \
     -var-file=/workspace/terraform.tfvars
 ```
-
-> [Example Terraform Values File](../examples/azure/terraform.tfvars)
 
 ## Application Deployment
 

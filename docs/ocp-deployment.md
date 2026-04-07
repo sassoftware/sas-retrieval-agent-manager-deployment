@@ -2,18 +2,12 @@
 
 ## Table of Contents
 
-- [OpenShift Deployment Guide](#openshift-deployment-guide)
-  - [Table of Contents](#table-of-contents)
-  - [Overview](#overview)
-  - [Prerequisites](#prerequisites)
-    - [Infrastructure Prerequisites](#infrastructure-prerequisites)
-    - [Technical Prerequisites](#technical-prerequisites)
-  - [Requirements](#requirements)
-    - [Hardware Requirements](#hardware-requirements)
-    - [Infrastructure Requirements](#infrastructure-requirements)
-  - [Getting Started](#getting-started)
-  - [Configuration Setup](#configuration-setup)
-  - [Application Deployment](#application-deployment)
+- [Overview](#overview)
+- [Prerequisites](#prerequisites)
+- [Requirements](#requirements)
+- [Getting Started](#getting-started)
+- [Configuration Setup](#configuration-setup)
+- [Application Deployment](#application-deployment)
 
 ---
 

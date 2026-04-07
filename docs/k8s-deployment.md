@@ -2,23 +2,14 @@
 
 ## Table of Contents
 
-- [Kubernetes Deployment Guide](#kubernetes-deployment-guide)
-  - [Table of Contents](#table-of-contents)
-  - [Overview](#overview)
-  - [Prerequisites](#prerequisites)
-    - [Infrastructure Prerequisites](#infrastructure-prerequisites)
-    - [Technical Prerequisites](#technical-prerequisites)
-  - [Requirements](#requirements)
-    - [Hardware Requirements](#hardware-requirements)
-    - [Infrastructure Requirements](#infrastructure-requirements)
-  - [Getting Started](#getting-started)
-    - [Clone the Project](#clone-the-project)
-  - [Configuration Setup](#configuration-setup)
-  - [Deploy the PostgreSQL Database](#deploy-the-postgresql-database)
-  - [Deploy the Kubernetes Cluster](#deploy-the-kubernetes-cluster)
-  - [Application Deployment](#application-deployment)
-  - [Troubleshooting](#troubleshooting)
-    - [Network Configuration](#network-configuration)
+- [Overview](#overview)
+- [Prerequisites](#prerequisites)
+- [Requirements](#requirements)
+- [Getting Started](#getting-started)
+- [Configuration Setup](#configuration-setup)
+- [Infrastructure Deployment](#infrastructure-deployment)
+- [Application Deployment](#application-deployment)
+- [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -74,15 +65,17 @@ This guide describes deploying an open-source Kubernetes infrastructure on which
 
 ## Getting Started
 
-### Clone the Project
+### Clone the Viya IAC Project
 
 ```bash
-# Clone the repository
+# Clone the Viya IAC repository
 git clone https://github.com/sassoftware/viya4-iac-k8s
 
 # Navigate to project directory
 cd viya4-iac-k8s
 ```
+
+> **Note:** While we use the viya-iac repository, a viya license or deployment is not required to use SAS Retrieval Agent Manager. This is a standalone application that can be deployed independently of a Viya environment.
 
 ## Configuration Setup
 
@@ -96,13 +89,15 @@ Before deploying, you'll need to create and edit three configuration files with 
 
 > **Tip:** All example files can be found in the `examples/` directory for easy reference
 
-## Deploy the PostgreSQL Database
+## Infrastructure Deployment
+
+### Deploy the PostgreSQL Database
 
 Follow [these steps](../README.md#database) to deploy a database that SAS Retrieval Agent Manager can connect to.
 
-## Deploy the Kubernetes Cluster
+### Deploy the Kubernetes Cluster
 
-### Docker (Recommended)
+#### Docker (Recommended)
 
 ```bash
 # Build the Docker image
