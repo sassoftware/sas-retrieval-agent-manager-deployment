@@ -218,9 +218,9 @@ After you have access to the Kubernetes cluster, you must install the necessary 
 
 | Dependency                  | Version             |                                                                              |                                                                                                                                                            |
 |-----------------------------|---------------------|------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| cert-manager, trust-manager | 1.18.2, 0.18.0      | [example](./docs/user/DependencyInstall.md#certificate-and-trust-management) | [cert-manager docs](https://cert-manager.io/docs/installation/helm/), [trust-manager docs](https://cert-manager.io/docs/trust/trust-manager/installation/) |
-| Linkerd                     | 2.17 (edge-24.11.8) | [example](./docs/user/DependencyInstall.md#service-mesh)                     | [docs](https://linkerd.io/2/tasks/install-helm/)                                                                                                           |
-| Kueue                       | 0.13.4              | [example](./docs/user/DependencyInstall.md#kueue)                            | [docs](https://kueue.sigs.k8s.io/docs/installation/)                                                                                                       |
+| cert-manager, trust-manager | 1.18.2, 0.18.0      | [Details](./docs/user/DependencyInstall.md#certificate-and-trust-management) | [cert-manager docs](https://cert-manager.io/docs/installation/helm/), [trust-manager docs](https://cert-manager.io/docs/trust/trust-manager/installation/) |
+| Linkerd                     | 2.17 (edge-24.11.8) | [Details](./docs/user/DependencyInstall.md#service-mesh)                     | [docs](https://linkerd.io/2/tasks/install-helm/)                                                                                                           |
+| Kueue                       | 0.13.4              | [Details](./docs/user/DependencyInstall.md#kueue)                            | [docs](https://kueue.sigs.k8s.io/docs/installation/)                                                                                                       |
 
 > **Note:** Order of installation matters for some dependencies, namely:
 >
@@ -231,7 +231,6 @@ After you have access to the Kubernetes cluster, you must install the necessary 
 >
 > 3. Other dependencies or optional components can be installed in any order after that. They do not have hard dependencies on each other, but
 >    do require the previous two steps to be completed to ensure internal traffic is properly secured.
-> **Note:** It is critical to provide an `azure-dns-label` for Azure ingress controller deployments. This is documented at the top of the example NGINX/Contour values file given.
 
 ### Install Preferred Ingress Controller
 
