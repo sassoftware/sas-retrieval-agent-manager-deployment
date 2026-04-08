@@ -174,22 +174,12 @@ The required packages depend on your PostgreSQL version. The example below uses 
 # Update package index
 sudo apt-get update
 
-# Install pgcrypto (ships with the postgresql-contrib package)
-sudo apt-get install -y postgresql-contrib
+# Install pgcrypto (ships with the postgresql-15 package)
+sudo apt-get install -y postgresql-15
 
-# Install pgvector build dependencies
-sudo apt-get install -y build-essential postgresql-server-dev-15 git
-
-# Clone and build pgvector
-git clone --branch v0.7.4 https://github.com/pgvector/pgvector.git
-cd pgvector
-make
-sudo make install
-cd ..
-rm -rf pgvector
+# Install pgvector
+sudo apt-get install -y postgresql-15-pgvector
 ```
-
-> **Note:** Replace `15` with your actual PostgreSQL major version (e.g. `16`) in the package names and `--branch` tag above. Check the [pgvector releases page](https://github.com/pgvector/pgvector/releases) for the latest stable version.
 
 ### Enable the Extensions in PostgreSQL
 
