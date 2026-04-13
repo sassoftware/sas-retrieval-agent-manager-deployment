@@ -9,7 +9,8 @@ Start by creating the EFS with the following command:
 aws efs create-file-system \
     --creation-token <your-efs-name> \
     --performance-mode generalPurpose \
-    --tags Key=Name,Value=RAM_EFS
+    --tags Key=Name,Value=RAM_EFS \
+    --region <your-region>
 ```
 
 After this, copy [this](../../examples/aws/trust-policy.json) trust-policy into your local directory and apply it to a role with the following command:
@@ -18,7 +19,8 @@ After this, copy [this](../../examples/aws/trust-policy.json) trust-policy into 
 # Creates the Role
 aws iam create-role \
     --role-name <RAM-Storage-Driver-Role> \
-    --assume-role-policy-document file://trust-policy.json
+    --assume-role-policy-document file://trust-policy.json \
+    --region <your-region>
 ```
 
 Attach the role policy to the role with the following command:
@@ -27,12 +29,14 @@ Attach the role policy to the role with the following command:
 # Attaches the EFS Role Policy to the Role
 aws iam attach-role-policy \
     --role-name <RAM-Storage-Driver-Role> \
-    --policy-arn arn:aws:iam::aws:policy/service-role/AmazonEFSCSIDriverPolicy
+    --policy-arn arn:aws:iam::aws:policy/service-role/AmazonEFSCSIDriverPolicy \
+    --region <your-region>
 
 # Attaches the EBS Role Policy to the Role
 aws iam attach-role-policy \
     --role-name <RAM-Storage-Driver-Role> \
-    --policy-arn arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy
+    --policy-arn arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy \
+    --region <your-region>
 ```
 
 > **Note:** `AmazonEBSCSIDriverPolicy` is optional, as it's only used for weaviate
@@ -42,11 +46,13 @@ Finally, attach the EFS/EBS role policy to the node-group role:
 ```bash
 # Attaches the EFS policy to the node group role
 aws iam attach-role-policy --role-name <cluster_name_prefix>-default-eks-node-group \
-    --policy-arn arn:aws:iam::aws:policy/service-role/AmazonEFSCSIDriverPolicy
+    --policy-arn arn:aws:iam::aws:policy/service-role/AmazonEFSCSIDriverPolicy \
+    --region <your-region>
 
 # Attaches the EBS policy to the node group role
 aws iam attach-role-policy --role-name <cluster_name_prefix>-default-eks-node-group \
-    --policy-arn arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy
+    --policy-arn arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy \
+    --region <your-region>
 ```
 
 After the EFS is deployed, attach it to a mount target with the appropriate security groups. You can access [more EFS documentation here](https://docs.aws.amazon.com/efs/latest/ug/accessing-fs.html).
