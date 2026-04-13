@@ -20,6 +20,12 @@ if [ -z "$1" ] || [ -z "$2" ]; then
     usage
 fi
 
+if ! yq --version 2>&1 | grep -q "mikefarah\|version v[0-9]"; then
+    echo -e "${RED}ERROR: mikefarah yq v4+ required. Got: $(yq --version 2>&1)${NC}"
+    echo "Install: https://github.com/mikefarah/yq/releases"
+    exit 1
+fi
+
 MIRROR_REGISTRY="$1"
 VALUES_FILE="$2"
 
