@@ -155,23 +155,21 @@ kubectl apply -f cr-sas-secret.yaml -n retagentmgr
 
 After creating the secret, you should be able to pull all SAS Retrieval Agent Manager images needed from cr.sas.com with the default settings.
 
-#### Mirrored Registry Download
+#### Mirror Registry Download
 
 ##### Populate the Registry
 
-Use the following command to populate a mirror registry with the necessary charts for SAS Retrieval Agent Manager:
+Use the [previous docker login command](#gather-login-credentials) provided by SAS Mirror Manager and populate your mirror registry with the SAS Retrieval Agent Manager images using the provided script:
 
 ```sh
-mirrormgr mirror registry \
-    --destination myregistry.mydomain.com/my-namespace \
-    --username myregistryuser \
-    --password myregistrypassword \
-    --deployment-data ~path-to-certs-zip-file
+./scripts/mirror-images.sh \
+  myregistry.mydomain.com \
+  ./helm/sas-retrieval-agent-manager/values.yaml
 ```
 
-###### Pull from Registry
+###### Use the Mirror Registry in the Values File
 
-Edit your SAS Retrieval Agent Manager Values file ([See Examples here](./examples/README.md)) to pull from that registry instead of the default, `cr.sas.com` registry.
+Edit your SAS Retrieval Agent Manager Values file to pull from that registry instead of the default, `cr.sas.com` registry.
 
 Example Usage:
 
@@ -179,10 +177,8 @@ Example Usage:
 images:
   repo:
     # -- Base container registry URL
-    base: 'myregistry.mydomain.com/my-namespace'
+    base: 'myregistry.mydomain.com'
 ```
-
-> **Note:** You can find more information on how to use SAS mirror manager in the [Viya Documentation](https://go.documentation.sas.com/doc/en/itopscdc/v_067/dplyml0phy0dkr/n1h0rgtr10fpnfn1mg0s8fgfuof8.htm).
 
 ### License Renewal Process
 

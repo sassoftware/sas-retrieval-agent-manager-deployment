@@ -142,8 +142,6 @@ spec:
               value: "/"
             - name: KC_HTTP_MANAGEMENT_HEALTH_ENABLED
               value: "true"
-            - name: KC_HEALTH_ENABLED
-              value: "true"
             - name: KC_METRICS_ENABLED
               value: "true"
           command: ["/bin/bash", "-c"]
