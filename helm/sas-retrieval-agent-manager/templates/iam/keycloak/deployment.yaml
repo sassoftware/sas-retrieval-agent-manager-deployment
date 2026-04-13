@@ -285,8 +285,6 @@ spec:
                 configMapKeyRef:
                   key: userRole
                   name: {{ printf "%s-app-roles" (include "retrieval-agent-manager.fullname" .) }}
-            - name: KC_HEALTH_ENABLED
-              value: "true"
             - name: KC_HTTPS_CERTIFICATE_FILE
               value: "/tls/tls.crt"
             - name: KC_HTTPS_CERTIFICATE_KEY_FILE
