@@ -7,7 +7,7 @@
 - [Prerequisites](#prerequisites)
 - [Infrastructure Setup](#infrastructure-setup)
   - [Kubernetes](#kubernetes)
-  - [Database](#database)
+  - [PostgreSQL Database](#database)
 - [Application Deployment Guide](#application-deployment-guide)
   - [Retrieve License](#retrieve-license)
   - [Required Dependencies](#install-required-dependencies)
@@ -94,6 +94,20 @@ The following extensions are either required or recommended for the Retrieval Ag
 #### Database Initialization
 
 SAS Retrieval Agent Manager automatically initializes the required databases during deployment unless specified otherwise. This requires providing database admin credentials in your SAS Retrieval Agent Manager values file.
+
+#### Secure Database Connection
+
+If your database requires SSL, you will need to provide the SSL certificate bundle as a Kubernetes secret in the same namespace as your SAS Retrieval Agent Manager deployment. Upload the bundle as a secret with the key of `cert.pem`. This can be done with the following commands:
+
+```bash
+# The correct namespace to store all SAS Retrieval Agent Manager Resources
+kubectl create ns retagentmgr
+
+# Create a secret with the RDS SSL Bundle you downloaded
+kubectl create secret generic <your-secret-name> --from-file=cert.pem=<your-ssl-bundle>.pem -n retagentmgr
+```
+
+> **Note:** It is critical the enter the name of the secret in the `postgreSQLCertSecret` key in the ram-values under vectorizationHub.config.postgreSQLCertSecret. For example, with this secret name, it would be: `postgreSQLCertSecret: '<your-secret-name>'`
 
 ## Application Deployment Guide
 
