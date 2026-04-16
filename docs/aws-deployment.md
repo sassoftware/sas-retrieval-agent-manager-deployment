@@ -2,18 +2,34 @@
 
 ## Table of Contents
 
-- [Overview](#overview)
-- [Prerequisites](#prerequisites)
-- [Requirements](#requirements)
-- [Getting Started](#getting-started)
-- [Configuration Setup](#configuration-setup)
-- [Authentication Setup](#aws-authentication)
-- [Infrastructure Deployment](#infrastructure-deployment)
-- [AWS Resource Setup](#aws-resource-setup)
-  - [EFS](#deploy-efs-and-dedicated-role)
-  - [EBS](#deploy-ebs-optional)
-  - [RDS SSL Certificate](#deploy-rds-ssl-certificate)
-- [Application Deployment](#application-deployment)
+- [AWS Deployment Guide](#aws-deployment-guide)
+  - [Table of Contents](#table-of-contents)
+  - [Overview](#overview)
+  - [Prerequisites](#prerequisites)
+    - [Infrastructure Prerequisites](#infrastructure-prerequisites)
+    - [Technical Prerequisites](#technical-prerequisites)
+  - [Requirements](#requirements)
+    - [Hardware Requirements](#hardware-requirements)
+      - [EKS Cluster Sizing](#eks-cluster-sizing)
+      - [PostgreSQL Database Sizing](#postgresql-database-sizing)
+    - [Infrastructure Requirements](#infrastructure-requirements)
+  - [Getting Started](#getting-started)
+    - [Clone the Viya IAC Project](#clone-the-viya-iac-project)
+  - [Configuration Setup](#configuration-setup)
+  - [AWS authentication](#aws-authentication)
+  - [Infrastructure Deployment](#infrastructure-deployment)
+    - [Docker (Recommended)](#docker-recommended)
+  - [AWS Resource Setup](#aws-resource-setup)
+    - [Deploy EFS and Dedicated Role](#deploy-efs-and-dedicated-role)
+    - [Deploy EBS (Optional)](#deploy-ebs-optional)
+    - [Deploy RDS SSL Certificate](#deploy-rds-ssl-certificate)
+  - [Application Deployment](#application-deployment)
+  - [Post-Install: Required PostgreSQL Extensions](#post-install-required-postgresql-extensions)
+    - [Enable the Extensions in PostgreSQL](#enable-the-extensions-in-postgresql)
+    - [One-liner for Scripted Deployments](#one-liner-for-scripted-deployments)
+  - [Post-Install: Required PostgreSQL Extensions](#post-install-required-postgresql-extensions-1)
+    - [Enable the Extensions in PostgreSQL](#enable-the-extensions-in-postgresql-1)
+    - [One-liner for Scripted Deployments](#one-liner-for-scripted-deployments-1)
 
 ---
 
@@ -181,3 +197,105 @@ kubectl create secret generic rds-ssl-cert --from-file=cert.pem=<your-ssl-bundle
 ## Application Deployment
 
 Return to the [Application Deployment Guide](../README.md#application-deployment-guide) section of the documentation to continue the deployment.
+
+## Post-Install: Required PostgreSQL Extensions
+
+Amazon RDS for PostgreSQL ships `pgcrypto` and `pgvector` as pre-built extensions — no system package installation is required. You simply need to activate them in your target database. These are required (or strongly recommended) by SAS Retrieval Agent Manager — see [Necessary PostgreSQL Extensions](../README.md#necessary-postgresql-extensions).
+
+> **Note:** `pgvector` is available on RDS PostgreSQL 15.2 and later. Verify your RDS instance meets this requirement before proceeding.
+
+### Enable the Extensions in PostgreSQL
+
+Connect to your RDS instance as the admin user and run the following SQL commands against the target database (replace `<your_database>` with the actual database name):
+
+```sql
+-- Connect to the target database first
+\c <your_database>
+
+-- Required: encryption support used by SAS Retrieval Agent Manager
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+-- Recommended: vector similarity search for embedding storage
+CREATE EXTENSION IF NOT EXISTS vector;
+```
+
+You can verify the extensions are active with:
+
+```sql
+SELECT name, default_version, installed_version
+FROM pg_available_extensions
+WHERE name IN ('pgcrypto', 'vector');
+```
+
+Both extensions should show a value in `installed_version`.
+
+### One-liner for Scripted Deployments
+
+If you prefer a non-interactive approach (e.g. from a shell script or CI pipeline):
+
+```bash
+PGPASSWORD=<admin_password> psql \
+  -h <rds_endpoint> \
+  -U <admin_user> \
+  -d <your_database> \
+  -c "CREATE EXTENSION IF NOT EXISTS pgcrypto; CREATE EXTENSION IF NOT EXISTS vector;"
+```
+
+> **Note:** The RDS endpoint can be found in the AWS Console under **RDS → Databases → <your instance> → Connectivity & security**, or via:
+>
+> ```bash
+> aws rds describe-db-instances \
+>   --query 'DBInstances[*].[DBInstanceIdentifier,Endpoint.Address]' \
+>   --output table
+> ```
+
+## Post-Install: Required PostgreSQL Extensions
+
+Amazon RDS for PostgreSQL ships `pgcrypto` and `pgvector` as pre-built extensions — no system package installation is required. You simply need to activate them in your target database. These are required (or strongly recommended) by SAS Retrieval Agent Manager — see [Necessary PostgreSQL Extensions](../README.md#necessary-postgresql-extensions).
+
+> **Note:** `pgvector` is available on RDS PostgreSQL 15.2 and later. Verify your RDS instance meets this requirement before proceeding.
+
+### Enable the Extensions in PostgreSQL
+
+Connect to your RDS instance as the admin user and run the following SQL commands against the target database (replace `<your_database>` with the actual database name):
+
+```sql
+-- Connect to the target database first
+\c <your_database>
+
+-- Required: encryption support used by SAS Retrieval Agent Manager
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+-- Recommended: vector similarity search for embedding storage
+CREATE EXTENSION IF NOT EXISTS vector;
+```
+
+You can verify the extensions are active with:
+
+```sql
+SELECT name, default_version, installed_version
+FROM pg_available_extensions
+WHERE name IN ('pgcrypto', 'vector');
+```
+
+Both extensions should show a value in `installed_version`.
+
+### One-liner for Scripted Deployments
+
+If you prefer a non-interactive approach (e.g. from a shell script or CI pipeline):
+
+```bash
+PGPASSWORD=<admin_password> psql \
+  -h <rds_endpoint> \
+  -U <admin_user> \
+  -d <your_database> \
+  -c "CREATE EXTENSION IF NOT EXISTS pgcrypto; CREATE EXTENSION IF NOT EXISTS vector;"
+```
+
+> **Note:** The RDS endpoint can be found in the AWS Console under **RDS → Databases → <your instance> → Connectivity & security**, or via:
+>
+> ```bash
+> aws rds describe-db-instances \
+>   --query 'DBInstances[*].[DBInstanceIdentifier,Endpoint.Address]' \
+>   --output table
+> ```
