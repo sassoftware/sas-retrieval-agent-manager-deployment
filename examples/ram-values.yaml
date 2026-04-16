@@ -105,11 +105,11 @@ security:
     config:
       # MUST BE SET IF UPGRADING RAM TO MAINTAIN DATA ACCESS
       # Does not need to be set for initial installation
-      # privateKey: <base64-encoded GPG private key>
+      # privateKey: <decoded GPG private key from secret>
 
       # MUST BE SET IF UPGRADING RAM TO MAINTAIN DATA ACCESS
       # Does not need to be set for initial installation
-      # publicKey: <base64-encoded GPG public key>
+      # publicKey: <decoded GPG public key from configmap>
 
       # MUST BE SET IF UPGRADING RAM TO MAINTAIN DATA ACCESS
       # Needs to be set for initial installation
