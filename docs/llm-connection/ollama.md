@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Ollama is the only LLM provider that you will need to install onto the cluster. This can be done using the [example values file provided](../../examples/dependencies/optional/ollama.yaml) or referring to the [official documentation](https://github.com/ollama/ollama).
+Refer to the [official documentation](https://github.com/ollama/ollama) for Ollama installation instructions.
 
 > **Note:** While we support the integration of Ollama as an LLM provider, we do not assist in the deployment.
 
