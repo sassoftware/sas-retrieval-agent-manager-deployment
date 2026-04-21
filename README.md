@@ -13,7 +13,8 @@
   - [Required Dependencies](#install-required-dependencies)
   - [Preferred Ingress Controller](#install-preferred-ingress-controller)
   - [Optional Components](#install-optional-components)
-  - [SAS Retrieval Agent Manager](#install-sas-retrieval-agent-manager)
+  - [Installing SAS Retrieval Agent Manager](#install-sas-retrieval-agent-manager)
+  - [Upgrading SAS Retrieval Agent Manager](#upgrade-sas-retrieval-agent-manager)
 - [Backup and Restore Guide](#backup-and-restore-guide)
 - [Connecting different LLMS](#connecting-different-llms)
 - [Monitoring and Logging](#monitoring-and-logging)
@@ -295,6 +296,20 @@ helm install retrieval-agent-manager oci://ghcr.io/sassoftware/sas-retrieval-age
 kubectl get pods -n retagentmgr
 ```
 
+### Upgrade SAS Retrieval Agent Manager
+
+Please be aware that you must use the same values file for upgrades as you did for the initial installation, with the addition of the gpg public and private keys ([see why](#encryptiondecryption)). It is recommended to use the example values file for the version you are upgrading to and copy over any custom values you had in your previous file.
+
+```bash
+helm upgrade --install retrieval-agent-manager oci://ghcr.io/sassoftware/sas-retrieval-agent-manager-deployment/sas-retrieval-agent-manager \
+  --version <SAS Retrieval Agent Manager Version> \
+  --values <SAS Retrieval Agent Manager Values File> \
+  -n retagentmgr \
+  --timeout 10m
+```
+
+> **Note:**: You are supposed to enter the decrypted GPG keys into the values file for upgrades.
+
 ## Backup and Restore Guide
 
 To backup and restore the data you use SAS Retrieval Agent Manager for, visit the [Backup and Restore page](./docs/backup-restore/README.md).
@@ -324,12 +339,23 @@ If this is the case, please install the `Vector` extension and reinstall SAS Ret
 
 ### Encryption/Decryption
 
-Encryption issues typically arise when SAS Retrieval Agent Manager is deployed multiple times without GPG keys configured in the values file. If this occurs, verify the following:
+Encryption issues typically arise when SAS Retrieval Agent Manager is deployed multiple times or upgraded without GPG keys configured in the values file. If this occurs, verify the following:
 
 - The deployment was upgraded or reinstalled with the correct GPG keys set in the values file
   - The public key can be found in ConfigMaps, and the private key in Secrets, within the `retagentmgr` namespace
 
 If this is the case, insert the GPG keys in the values file and reinstall SAS Retrieval Agent manager.
+
+Commands to get your gpg keys using kubectl:
+
+```bash
+# Private Key
+kubectl get secret retrieval-agent-manager-gpg-private-key -n retagentmgr -o jsonpath='{.data}'
+
+# Public Key
+kubectl get cm retrieval-agent-manager-gpg-public-key -n retagentmgr -o jsonpath='{.data}'
+
+```
 
 ### Deployment Upgrades
 
@@ -373,7 +399,7 @@ Once you override the desired fields in your values file, upgrade your SAS Retri
 
 ```sh
 
-helm upgrade retrieval-agent-manager oci://ghcr.io/sassoftware/sas-retrieval-agent-manager-deployment/sas-retrieval-agent-manager \
+helm upgrade --install retrieval-agent-manager oci://ghcr.io/sassoftware/sas-retrieval-agent-manager-deployment/sas-retrieval-agent-manager \
   --version <SAS Retrieval Agent Manager Version> \
   --values <SAS Retrieval Agent Manager Values File> \
   -n retagentmgr
