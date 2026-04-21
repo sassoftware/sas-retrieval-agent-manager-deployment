@@ -8,9 +8,11 @@ data:
   vhub_repository: "{{- include "images.vectorizationHub.repo.base" . -}}/{{- include "images.vectorizationHub.repo.path" . -}}"
   vhub_tag: "{{- include "images.vectorizationHub.tag" . -}}"
   
-  {{- with .Values.images.imagePullSecrets }}
-  vhub_pull_secret: {{ (index . 0).name }}
+  {{- $pullSecret := "" }}
+  {{- if .Values.images.imagePullSecrets }}
+  {{- $pullSecret = (index .Values.images.imagePullSecrets 0).name }}
   {{- end }}
+  vhub_pull_secret: {{ $pullSecret }}
   available_hardware: {{ .Values.vectorizationHub.config.availableHardware | toJson | quote }}
   vectorization_job_db_credentials: {{ printf "%s-vector-job-db-credentials" (include "retrieval-agent-manager.fullname" .) }}
   {{- if .Values.vectorizationHub.config.postgreSQLCertSecret | default .Values.vectorizationHub.config.awsCertSecret | quote }}

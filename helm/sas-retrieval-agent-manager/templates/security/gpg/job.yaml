@@ -13,13 +13,13 @@ metadata:
 spec:
   template:
     metadata:
-      {{- with .Values.security.gpg.podAnnotations }}
+      {{- with merge (.Values.security.gpg.podAnnotations | default dict) (.Values.podAnnotations | default dict) }}
       annotations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
       {{- include "gpg.labels" . | nindent 8 }}
-      {{- with .Values.security.gpg.podLabels }}
+      {{- with merge (.Values.security.gpg.podLabels | default dict) (.Values.podLabels | default dict) }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
     spec:

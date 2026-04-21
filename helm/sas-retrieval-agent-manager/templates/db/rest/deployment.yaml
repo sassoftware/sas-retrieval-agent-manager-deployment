@@ -17,13 +17,13 @@ spec:
       {{- include "postgrest.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      {{- with .Values.db.rest.podAnnotations }}
+      {{- with merge (.Values.db.rest.podAnnotations | default dict) (.Values.podAnnotations | default dict) }}
       annotations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
         {{- include "postgrest.labels" . | nindent 8 }}
-        {{- with .Values.db.rest.podLabels }}
+        {{- with merge (.Values.db.rest.podLabels | default dict) (.Values.podLabels | default dict) }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:

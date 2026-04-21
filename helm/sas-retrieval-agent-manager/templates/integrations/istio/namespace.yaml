@@ -1,0 +1,13 @@
+{{- if .Values.integrations.istio.enabled }}
+# Enroll the release namespace in the waypoint proxy.
+# The istio.io/use-waypoint label tells Istio's ztunnel to route all traffic
+# originating from or destined to workloads in this namespace through the
+# waypoint Envoy, enabling L7 processing and X-Forwarded-For header injection.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Release.Namespace }}
+  labels:
+    {{- include "retrieval-agent-manager.labels" . | nindent 4 }}
+    istio.io/use-waypoint: {{ .Values.integrations.istio.waypoint.name | default "waypoint" }}
+{{- end }}

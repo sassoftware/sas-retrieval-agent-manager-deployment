@@ -183,7 +183,7 @@ images:
     # required: true
     # @schema
     # -- Image tag (defaults to chart appVersion)
-    tag: "1.13.9-20260402.1775155892602"
+    tag: "1.16.1-20260416.1776372103298"
   # @schema
   # type: object
   # required: true
@@ -218,7 +218,7 @@ images:
     # required: true
     # @schema
     # -- Container image tag
-    tag: "1.8.18-20260318.1773848799043"
+    tag: "1.9.26-20260409.1775757940388"
   # @schema
   # type: object
   # required: true
@@ -253,7 +253,7 @@ images:
     # required: true
     # @schema
     # -- Container image tag for vectorization hub
-    tag: "1.10.3-20260317.1773777629672"
+    tag: "1.11.5-20260410.1775827791913"
   # @schema
   # type: object
   # required: true
@@ -288,7 +288,7 @@ images:
     # required: true
     # @schema
     # -- Container image tag for agent
-    tag: "1.11.4-20260318.1773845055379"
+    tag: "1.13.5-20260415.1776285843569"
   # @schema
   # type: object
   # required: true
@@ -323,7 +323,7 @@ images:
     # required: true
     # @schema
     # -- Container image tag for evaluation service
-    tag: "1.10.6-20260317.1773788784504"
+    tag: "1.11.1-20260415.1776286071714"
   # @schema
   # type: object
   # required: true
@@ -394,7 +394,7 @@ images:
     # required: true
     # @schema
     # -- Theme container image tag
-    tag: "1.3.3-20260219.1771541283050"
+    tag: "1.3.4-20260413.1776114790179"
   # @schema
   # type: object
   # required: true
@@ -429,7 +429,7 @@ images:
     # required: true
     # @schema
     # -- Goose container image tag
-    tag: "1.10.0-20260312.1773348741360"
+    tag: "1.11.6-20260410.1775849086105"
 
   # ============================================================================
   # 3RD PARTY IMAGES
@@ -1209,9 +1209,7 @@ api:
   # additionalProperties: true
   # @schema
   # -- Labels to add to the pods
-  podLabels:
-    sas.com/deployment: "retrieval-agent-manager"
-    workload.sas.com/class: "ram"
+  podLabels: {}
 
   # @schema
   # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/podsecuritycontext-schema.json"
@@ -2173,9 +2171,7 @@ db:
     # additionalProperties: true
     # @schema
     # -- Labels to add to the pods
-    podLabels:
-      sas.com/deployment: "retrieval-agent-manager"
-      workload.sas.com/class: "ram"
+    podLabels: {}
 
     # @schema
     # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/podsecuritycontext-schema.json"
@@ -2306,18 +2302,27 @@ db:
         # @schema
         # -- B64 Encoded API key for LLM provider
         key: ""
-        # Needs to be seperated by platform at some point... not today
         # @schema
         # type: array
         # items:
-        #   type: string
+        #   type: object
+        #   required:
+        #     - name
+        #   properties:
+        #     name:
+        #       type: string
+        #     context_limit:
+        #       type: integer
         # default: []
         # @schema
-        # -- List of model names to hydrate
+        # -- List of models to hydrate
         # -- Examples:
-        #     - "gpt-4.1"
-        #     - "gpt-4.1-mini"
-        #     - "gpt-4.1-nano"
+        #     - name: "gpt-4.1"
+        #       context_limit: 1047576
+        #     - name: "gpt-4.1-mini"
+        #       context_limit: 1047576
+        #     - name: "gpt-4.1-nano"
+        #       context_limit: 1047576
         models: []
 
       # @schema
@@ -2376,9 +2381,7 @@ db:
     # additionalProperties: true
     # @schema
     # -- Labels to add to the pods
-    podLabels:
-      sas.com/deployment: "retrieval-agent-manager"
-      workload.sas.com/class: "ram"
+    podLabels: {}
 
     # @schema
     # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/podsecuritycontext-schema.json"
@@ -2524,9 +2527,7 @@ db:
     # additionalProperties: true
     # @schema
     # -- Labels to add to the pods
-    podLabels:
-      sas.com/deployment: "retrieval-agent-manager"
-      workload.sas.com/class: "ram"
+    podLabels: {}
 
     # @schema
     # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/podsecuritycontext-schema.json"
@@ -2965,9 +2966,7 @@ iam:
     # additionalProperties: true
     # @schema
     # -- Labels to add to the pods
-    podLabels:
-      sas.com/deployment: "retrieval-agent-manager"
-      workload.sas.com/class: "ram"
+    podLabels: {}
 
     # @schema
     # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/podsecuritycontext-schema.json"
@@ -3294,12 +3293,16 @@ security:
       # @schema
       # type: string
       # @schema
-      # -- Existing GPG public key (base64 encoded). Leave empty to generate a new key pair
+      # -- Existing GPG public key. Leave empty to generate a new key pair
+      # -- Unnecessary on initial installation
+      # -- Necessary on subsequent upgrades or reinstallations
       publicKey: ""
       # @schema
       # type: string
       # @schema
-      # -- Existing GPG private key (base64 encoded). Leave empty to generate a new key pair
+      # -- Existing GPG private key. Leave empty to generate a new key pair
+      # -- Unnecessary on initial installation
+      # -- Necessary on subsequent upgrades or reinstallations
       privateKey: ""
       # @schema
       # type: string
@@ -3307,6 +3310,7 @@ security:
       # default: ""
       # @schema
       # -- Passphrase for the GPG key. Required for both existing keys and key generation
+      # -- Necessary on initial installation and subsequent upgrades
       passphrase: ""
       # @schema
       # type: object
@@ -3384,9 +3388,7 @@ security:
     # additionalProperties: true
     # @schema
     # -- Labels to add to the pods
-    podLabels:
-      sas.com/deployment: "retrieval-agent-manager"
-      workload.sas.com/class: "ram"
+    podLabels: {}
 
     # @schema
     # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/podsecuritycontext-schema.json"
@@ -3534,9 +3536,7 @@ ui:
   # additionalProperties: true
   # @schema
   # -- Labels to add to the pods
-  podLabels:
-    sas.com/deployment: "retrieval-agent-manager"
-    workload.sas.com/class: "ram"
+  podLabels: {}
 
   # @schema
   # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/podsecuritycontext-schema.json"
@@ -3861,6 +3861,24 @@ storage:
 # @schema
 # type: object
 # required: true
+# additionalProperties: true
+# @schema
+# -- Annotations to be added to all pods deployed by the SAS Retrieval Agent manager chart
+podAnnotations: {}
+
+# @schema
+# type: object
+# required: true
+# additionalProperties: true
+# @schema
+# -- Labels to be added to all pods deployed by the SAS Retrieval Agent manager chart
+podLabels:
+  sas.com/deployment: "retrieval-agent-manager"
+  workload.sas.com/class: "ram"
+
+# @schema
+# type: object
+# required: true
 # @schema
 # -- Integrations with external services
 integrations:
@@ -3943,3 +3961,38 @@ integrations:
     # @schema
     # -- Name of the ConfigMap or Secret containing trusted certificates (if enabled)
     name: "trusted-certs-bundle"
+  # @schema
+  # type: object
+  # required: false
+  # @schema
+  # -- Istio ambient mesh integration.
+  # Deploys a waypoint proxy (L7 Envoy) into the release namespace so that
+  # X-Forwarded-For is populated with the real source pod IP for all HTTP traffic.
+  istio:
+    # @schema
+    # type: boolean
+    # required: false
+    # @schema
+    # -- Enable Istio waypoint proxy and namespace enrollment
+    enabled: false
+    # @schema
+    # type: object
+    # required: false
+    # @schema
+    # -- Waypoint proxy configuration
+    waypoint:
+      # @schema
+      # type: string
+      # required: false
+      # @schema
+      # -- Name of the Gateway (waypoint) resource
+      name: waypoint
+      # @schema
+      # enum: [all, service, workload]
+      # required: false
+      # @schema
+      # -- Traffic types handled by the waypoint.
+      # "all" processes both east-west service traffic and ingress workload traffic.
+      # "service" handles east-west service traffic only.
+      # "workload" handles ingress workload traffic only.
+      waypointFor: all

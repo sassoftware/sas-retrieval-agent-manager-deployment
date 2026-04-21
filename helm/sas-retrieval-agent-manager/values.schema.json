@@ -251,24 +251,7 @@
         "podLabels": {
           "additionalProperties": true,
           "description": "Labels to add to the pods",
-          "properties": {
-            "sas.com/deployment": {
-              "default": "retrieval-agent-manager",
-              "required": [],
-              "title": "sas.com/deployment",
-              "type": "string"
-            },
-            "workload.sas.com/class": {
-              "default": "ram",
-              "required": [],
-              "title": "workload.sas.com/class",
-              "type": "string"
-            }
-          },
-          "required": [
-            "sas.com/deployment",
-            "workload.sas.com/class"
-          ],
+          "required": [],
           "title": "podLabels",
           "type": "object"
         },
@@ -820,24 +803,7 @@
             "podLabels": {
               "additionalProperties": true,
               "description": "Labels to add to the pods",
-              "properties": {
-                "sas.com/deployment": {
-                  "default": "retrieval-agent-manager",
-                  "required": [],
-                  "title": "sas.com/deployment",
-                  "type": "string"
-                },
-                "workload.sas.com/class": {
-                  "default": "ram",
-                  "required": [],
-                  "title": "workload.sas.com/class",
-                  "type": "string"
-                }
-              },
-              "required": [
-                "sas.com/deployment",
-                "workload.sas.com/class"
-              ],
+              "required": [],
               "title": "podLabels",
               "type": "object"
             },
@@ -932,10 +898,22 @@
                     },
                     "models": {
                       "default": [],
-                      "description": "Needs to be seperated by platform at some point... not today\nList of model names to hydrate\nExamples:\n    - \"gpt-4.1\"\n    - \"gpt-4.1-mini\"\n    - \"gpt-4.1-nano\"",
+                      "description": "List of models to hydrate\nExamples:\n    - name: \"gpt-4.1\"\n      context_limit: 1047576\n    - name: \"gpt-4.1-mini\"\n      context_limit: 1047576\n    - name: \"gpt-4.1-nano\"\n      context_limit: 1047576",
                       "items": {
-                        "required": [],
-                        "type": "string"
+                        "properties": {
+                          "context_limit": {
+                            "required": [],
+                            "type": "integer"
+                          },
+                          "name": {
+                            "required": [],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "name"
+                        ],
+                        "type": "object"
                       },
                       "required": [],
                       "title": "models",
@@ -965,24 +943,7 @@
             "podLabels": {
               "additionalProperties": true,
               "description": "Labels to add to the pods",
-              "properties": {
-                "sas.com/deployment": {
-                  "default": "retrieval-agent-manager",
-                  "required": [],
-                  "title": "sas.com/deployment",
-                  "type": "string"
-                },
-                "workload.sas.com/class": {
-                  "default": "ram",
-                  "required": [],
-                  "title": "workload.sas.com/class",
-                  "type": "string"
-                }
-              },
-              "required": [
-                "sas.com/deployment",
-                "workload.sas.com/class"
-              ],
+              "required": [],
               "title": "podLabels",
               "type": "object"
             },
@@ -1213,24 +1174,7 @@
             "podLabels": {
               "additionalProperties": true,
               "description": "Labels to add to the pods",
-              "properties": {
-                "sas.com/deployment": {
-                  "default": "retrieval-agent-manager",
-                  "required": [],
-                  "title": "sas.com/deployment",
-                  "type": "string"
-                },
-                "workload.sas.com/class": {
-                  "default": "ram",
-                  "required": [],
-                  "title": "workload.sas.com/class",
-                  "type": "string"
-                }
-              },
-              "required": [
-                "sas.com/deployment",
-                "workload.sas.com/class"
-              ],
+              "required": [],
               "title": "podLabels",
               "type": "object"
             },
@@ -1645,24 +1589,7 @@
             "podLabels": {
               "additionalProperties": true,
               "description": "Labels to add to the pods",
-              "properties": {
-                "sas.com/deployment": {
-                  "default": "retrieval-agent-manager",
-                  "required": [],
-                  "title": "sas.com/deployment",
-                  "type": "string"
-                },
-                "workload.sas.com/class": {
-                  "default": "ram",
-                  "required": [],
-                  "title": "workload.sas.com/class",
-                  "type": "string"
-                }
-              },
-              "required": [
-                "sas.com/deployment",
-                "workload.sas.com/class"
-              ],
+              "required": [],
               "title": "podLabels",
               "type": "object"
             },
@@ -2161,6 +2088,49 @@
       "additionalProperties": false,
       "description": "Integrations with external services",
       "properties": {
+        "istio": {
+          "additionalProperties": false,
+          "description": "Istio ambient mesh integration.\nDeploys a waypoint proxy (L7 Envoy) into the release namespace so that\nX-Forwarded-For is populated with the real source pod IP for all HTTP traffic.",
+          "properties": {
+            "enabled": {
+              "default": false,
+              "description": "Enable Istio waypoint proxy and namespace enrollment",
+              "required": [],
+              "title": "enabled",
+              "type": "boolean"
+            },
+            "waypoint": {
+              "additionalProperties": false,
+              "description": "Waypoint proxy configuration",
+              "properties": {
+                "name": {
+                  "default": "waypoint",
+                  "description": "Name of the Gateway (waypoint) resource",
+                  "required": [],
+                  "title": "name",
+                  "type": "string"
+                },
+                "waypointFor": {
+                  "default": "all",
+                  "description": "Traffic types handled by the waypoint.\n\"all\" processes both east-west service traffic and ingress workload traffic.\n\"service\" handles east-west service traffic only.\n\"workload\" handles ingress workload traffic only.",
+                  "enum": [
+                    "all",
+                    "service",
+                    "workload"
+                  ],
+                  "required": [],
+                  "title": "waypointFor"
+                }
+              },
+              "required": [],
+              "title": "waypoint",
+              "type": "object"
+            }
+          },
+          "required": [],
+          "title": "istio",
+          "type": "object"
+        },
         "kueue": {
           "additionalProperties": false,
           "description": "Kueue configuration for job scheduling and resource management",
@@ -2292,6 +2262,37 @@
       "required": [],
       "title": "platform"
     },
+    "podAnnotations": {
+      "additionalProperties": true,
+      "description": "Annotations to be added to all pods deployed by the SAS Retrieval Agent manager chart",
+      "required": [],
+      "title": "podAnnotations",
+      "type": "object"
+    },
+    "podLabels": {
+      "additionalProperties": true,
+      "description": "Labels to be added to all pods deployed by the SAS Retrieval Agent manager chart",
+      "properties": {
+        "sas.com/deployment": {
+          "default": "retrieval-agent-manager",
+          "required": [],
+          "title": "sas.com/deployment",
+          "type": "string"
+        },
+        "workload.sas.com/class": {
+          "default": "ram",
+          "required": [],
+          "title": "workload.sas.com/class",
+          "type": "string"
+        }
+      },
+      "required": [
+        "sas.com/deployment",
+        "workload.sas.com/class"
+      ],
+      "title": "podLabels",
+      "type": "object"
+    },
     "security": {
       "additionalProperties": false,
       "description": "SAS Retrieval Agent Manager Security: Security services",
@@ -2422,24 +2423,7 @@
             "podLabels": {
               "additionalProperties": true,
               "description": "Labels to add to the pods",
-              "properties": {
-                "sas.com/deployment": {
-                  "default": "retrieval-agent-manager",
-                  "required": [],
-                  "title": "sas.com/deployment",
-                  "type": "string"
-                },
-                "workload.sas.com/class": {
-                  "default": "ram",
-                  "required": [],
-                  "title": "workload.sas.com/class",
-                  "type": "string"
-                }
-              },
-              "required": [
-                "sas.com/deployment",
-                "workload.sas.com/class"
-              ],
+              "required": [],
               "title": "podLabels",
               "type": "object"
             },
@@ -2604,24 +2588,7 @@
         "podLabels": {
           "additionalProperties": true,
           "description": "Labels to add to the pods",
-          "properties": {
-            "sas.com/deployment": {
-              "default": "retrieval-agent-manager",
-              "required": [],
-              "title": "sas.com/deployment",
-              "type": "string"
-            },
-            "workload.sas.com/class": {
-              "default": "ram",
-              "required": [],
-              "title": "workload.sas.com/class",
-              "type": "string"
-            }
-          },
-          "required": [
-            "sas.com/deployment",
-            "workload.sas.com/class"
-          ],
+          "required": [],
           "title": "podLabels",
           "type": "object"
         },
@@ -3220,6 +3187,8 @@
     "db",
     "iam",
     "ui",
+    "podAnnotations",
+    "podLabels",
     "integrations"
   ],
   "type": "object"

@@ -19,13 +19,13 @@ spec:
       {{- include "ui.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      {{- with .Values.ui.podAnnotations }}
+      {{- with merge (.Values.ui.podAnnotations | default dict) (.Values.podAnnotations | default dict) }}
       annotations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
         {{- include "ui.labels" . | nindent 8 }}
-        {{- with .Values.ui.podLabels }}
+        {{- with merge (.Values.ui.podLabels | default dict) (.Values.podLabels | default dict) }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:
@@ -57,7 +57,7 @@ spec:
                   key: service
             - name: SSL_VERIFY
               value: '{{ .Values.ui.config.sslVerify }}'
-            - name: NEXT_PUBLIC_VIYA_ENABLED
+            - name: VIYA_ENABLED
               value: '{{ .Values.integrations.viya.enabled }}'
           ports:
             - name: http

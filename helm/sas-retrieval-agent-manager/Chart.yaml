@@ -1,7 +1,8 @@
 annotations:
   category: Analytics
+  dependencies.istio: optional
   dependencies.keycloak: included
-  dependencies.linkerd: optional
+  dependencies.linkerd: deprecated
   dependencies.oauth2-proxy: included
   dependencies.postgresql: required
   documentation: https://helpcenter.unx.sas.com/doc/en/ragntmgrcdc/v_001/ragntmgrag/titlepage.htm
@@ -54,4 +55,4 @@ name: sas-retrieval-agent-manager
 sources:
 - https://github.com/sas-institute-rnd-internal/tmp-viya-iot-ram-helm
 type: application
-version: 2026.3.0
+version: 2026.4.0

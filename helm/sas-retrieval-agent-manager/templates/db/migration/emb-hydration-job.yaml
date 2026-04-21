@@ -13,13 +13,13 @@ metadata:
 spec:
   template:
     metadata:
-      {{- with .Values.db.migration.podAnnotations }}
+      {{- with merge (.Values.db.migration.podAnnotations | default dict) (.Values.podAnnotations | default dict) }}
       annotations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
         {{- include "db-migration.labels" . | nindent 8 }}
-        {{- with .Values.db.migration.podLabels }}
+        {{- with merge (.Values.db.migration.podLabels | default dict) (.Values.podLabels | default dict) }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:

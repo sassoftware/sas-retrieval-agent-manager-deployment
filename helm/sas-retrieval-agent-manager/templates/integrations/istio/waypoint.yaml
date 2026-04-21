@@ -1,0 +1,22 @@
+{{- if .Values.integrations.istio.enabled }}
+# Waypoint proxy for the release namespace in Istio ambient mode.
+# The Gateway resource causes the Istio gateway controller to deploy an Envoy
+# deployment in this namespace. All pods and services are routed through this
+# Envoy when the namespace carries the istio.io/use-waypoint label (set in
+# namespace.yaml), enabling L7 processing and X-Forwarded-For header injection.
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: {{ .Values.integrations.istio.waypoint.name | default "waypoint" }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "retrieval-agent-manager.labels" . | nindent 4 }}
+    # Controls which traffic types the waypoint processes.
+    istio.io/waypoint-for: {{ .Values.integrations.istio.waypoint.waypointFor | default "all" }}
+spec:
+  gatewayClassName: istio-waypoint
+  listeners:
+    - name: mesh
+      port: 15008
+      protocol: HBONE
+{{- end }}

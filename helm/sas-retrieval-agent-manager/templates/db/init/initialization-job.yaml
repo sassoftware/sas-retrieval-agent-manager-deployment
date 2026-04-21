@@ -13,13 +13,13 @@ metadata:
 spec:
   template:
     metadata:
-      {{- with .Values.db.init.podAnnotations }}
+      {{- with merge (.Values.db.init.podAnnotations | default dict) (.Values.podAnnotations | default dict) }}
       annotations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
         {{- include "db-initialization.labels" . | nindent 8 }}
-        {{- with .Values.db.init.podLabels }}
+        {{- with merge (.Values.db.init.podLabels | default dict) (.Values.podLabels | default dict) }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:

@@ -105,16 +105,16 @@ data:
     
     {{- range $index, $model := .Values.db.migration.config.llmHydration.models }}
     
-    -- Insert model {{ $index }}: {{ $model }}
+    -- Insert model {{ $index }}: {{ $model.name }}
     INSERT INTO llm(
       name, type, description, security_groups, uri, metadata, secrets) 
     VALUES (
-      '{{ $model }}', 
+      '{{ $model.name }}', 
       'azure_openai'::llm_type, 
       'Model from hydration script', 
       '{ "/Admin" }',
       '{{ $.Values.db.migration.config.llmHydration.endpoint }}',
-      '{ "deployment_name": "{{ $model }}"}',
+      '{ "deployment_name": "{{ $model.name }}", "max_context_size": "{{ $model.context_limit | default 0 }}"}',
       convert_to(jsonb_build_object('key', :'llm_key')::text, 'UTF8')
     ) ON CONFLICT DO NOTHING;
     {{- end }}

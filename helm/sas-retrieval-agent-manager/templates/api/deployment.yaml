@@ -17,13 +17,13 @@ spec:
       {{- include "api.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      {{- with .Values.api.podAnnotations }}
+      {{- with merge (.Values.api.podAnnotations | default dict) (.Values.podAnnotations | default dict) }}
       annotations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
         {{- include "api.labels" . | nindent 8 }}
-        {{- with .Values.api.podLabels }}
+        {{- with merge (.Values.api.podLabels | default dict) (.Values.podLabels | default dict) }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:
@@ -288,7 +288,7 @@ spec:
             name: {{ printf "%s-config" (include "postgrest.fullname" .) }}
         - name: license-volume
           secret:
-            secretName: {{ printf "%s-license" (include "retrieval-agent-manager.fullname" .) }}
+            secretName: {{ .Values.api.config.license_secret | default (printf "%s-license" (include "retrieval-agent-manager.fullname" .)) }}
             items:
               - key: license.jwt
                 path: license.jwt
