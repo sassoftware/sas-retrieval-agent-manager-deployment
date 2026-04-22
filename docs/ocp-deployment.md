@@ -9,6 +9,7 @@
 - [Configuration Setup](#configuration-setup)
 - [Database Deployment](#database-deployment)
 - [PostgreSQL SSL Certificate](#deploy-postgresql-ssl-certificate)
+- [Kueue Deployment](#kueue-deployment)
 - [Application Deployment](#application-deployment)
 
 ---
@@ -252,6 +253,76 @@ oc create secret generic postgres-ssl-cert --from-file=cert.pem=combined-cert.pe
 ```
 
 > **Note:** It is critical to enter the name of the secret in the `postgreSQLCertSecret` key in the ram-values under global.configuration.vhub. For example, with this secret name, it would be: `postgreSQLCertSecret: 'postgres-ssl-cert'`
+
+## Kueue Deployment
+
+On OpenShift, Kueue is installed via the **OpenShift Kueue Operator** rather than the upstream Helm chart used on other platforms.
+
+### Install the OpenShift Kueue Operator
+
+1. Log in to the OpenShift web console.
+2. Navigate to **Operators → OperatorHub**.
+3. Search for **"Kueue"** and select the **OpenShift Kueue Operator**.
+4. Click **Install** and accept the defaults.
+
+Alternatively, install via CLI:
+
+```bash
+cat <<EOF | oc apply -f -
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: openshift-kueue-operator
+  namespace: openshift-operators
+spec:
+  channel: stable
+  name: openshift-kueue-operator
+  source: redhat-operators
+  sourceNamespace: openshift-marketplace
+EOF
+```
+
+### Create the Kueue Instance
+
+Once the operator is running, create a `Kueue` cluster resource to enable Kueue with the `BatchJob` integration framework:
+
+```bash
+cat <<EOF | oc apply -f -
+apiVersion: kueue.openshift.io/v1
+kind: Kueue
+metadata:
+  name: cluster
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: kueue-operator
+spec:
+  config:
+    integrations:
+      frameworks:
+        - BatchJob
+  logLevel: Normal
+  managementState: Managed
+  operatorLogLevel: Normal
+EOF
+```
+
+Verify that Kueue is available:
+
+```bash
+oc get kueue cluster -o jsonpath='{.status.conditions}'
+```
+
+The `Available` condition should show `status: "True"` before proceeding.
+
+### Label the SAS Retrieval Agent Manager Namespace
+
+For Kueue to manage workloads in the `retagentmgr` namespace on OpenShift, the following label **must** be applied to the namespace:
+
+```bash
+oc label namespace retagentmgr kueue.openshift.io/managed=true
+```
+
+> **Note:** Without this label, Kueue will not intercept and manage vectorization jobs in the `retagentmgr` namespace and those jobs will fail to be queued correctly.
 
 ## Application Deployment
 
