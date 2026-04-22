@@ -2,18 +2,30 @@
 
 ## Table of Contents
 
-- [Overview](#overview)
-- [Prerequisites](#prerequisites)
-- [Requirements](#requirements)
-- [Getting Started](#getting-started)
-- [Configuration Setup](#configuration-setup)
-- [Authentication Setup](#aws-authentication)
-- [Infrastructure Deployment](#infrastructure-deployment)
-- [AWS Resource Setup](#aws-resource-setup)
-  - [EFS](#deploy-efs-and-dedicated-role)
-  - [EBS](#deploy-ebs-optional)
-  - [RDS SSL Certificate](#deploy-rds-ssl-certificate)
-- [Application Deployment](#application-deployment)
+- [AWS Deployment Guide](#aws-deployment-guide)
+  - [Table of Contents](#table-of-contents)
+  - [Overview](#overview)
+  - [Prerequisites](#prerequisites)
+    - [Infrastructure Prerequisites](#infrastructure-prerequisites)
+    - [Technical Prerequisites](#technical-prerequisites)
+  - [Requirements](#requirements)
+    - [Hardware Requirements](#hardware-requirements)
+      - [EKS Cluster Sizing](#eks-cluster-sizing)
+      - [PostgreSQL Database Sizing](#postgresql-database-sizing)
+    - [Infrastructure Requirements](#infrastructure-requirements)
+  - [Getting Started](#getting-started)
+    - [Clone the Viya IAC Project](#clone-the-viya-iac-project)
+  - [Configuration Setup](#configuration-setup)
+  - [AWS authentication](#aws-authentication)
+  - [Infrastructure Deployment](#infrastructure-deployment)
+    - [Docker (Recommended)](#docker-recommended)
+  - [AWS Resource Setup](#aws-resource-setup)
+    - [Deploy EFS and Dedicated Role](#deploy-efs-and-dedicated-role)
+    - [Deploy EBS (Optional)](#deploy-ebs-optional)
+    - [Deploy RDS SSL Certificate](#deploy-rds-ssl-certificate)
+      - [Construct the Certificate Bundle](#construct-the-certificate-bundle)
+      - [Create the Kubernetes Secret](#create-the-kubernetes-secret)
+  - [Application Deployment](#application-deployment)
 
 ---
 
@@ -166,17 +178,51 @@ aws rds describe-db-instances --query 'DBInstances[*].[DBInstanceIdentifier,Avai
 
 [After finding the correct region, download the correct bundle here](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.SSL.html).
 
-After downloading the SSL bundle, upload it as a secret with the key of `cert.pem`. This can be done with the following command:
+#### Construct the Certificate Bundle
+
+The `cert.pem` secret key must contain a single PEM file that concatenates **four components in the following order**:
+
+1. **Chain certificate** (`trustedcerts.pem`)
+2. **Intermediate certificate** (`ca.crt`)
+3. **Server certificate** (`tls.crt`)
+4. **Private key** (`tls.key`)
+
+The resulting file structure should look like this:
+
+```text
+-----BEGIN CERTIFICATE-----
+<trustedcerts.pem contents>
+-----END CERTIFICATE-----
+-----BEGIN CERTIFICATE-----
+<ca.crt contents>
+-----END CERTIFICATE-----
+-----BEGIN CERTIFICATE-----
+<tls.crt contents>
+-----END CERTIFICATE-----
+-----BEGIN RSA PRIVATE KEY-----
+<tls.key contents>
+-----END RSA PRIVATE KEY-----
+```
+
+You can build this bundle with the following command:
+
+```bash
+cat trustedcerts.pem ca.crt tls.crt tls.key > combined-cert.pem
+```
+
+#### Create the Kubernetes Secret
+
+After constructing the bundle, upload it as a secret with the key of `cert.pem`. This can be done with the following commands:
 
 ```bash
 # The correct namespace to store all SAS Retrieval Agent Manager Resources
 kubectl create ns retagentmgr
 
 # Create a secret with the RDS SSL Bundle you downloaded
-kubectl create secret generic rds-ssl-cert --from-file=cert.pem=<your-ssl-bundle>.pem -n retagentmgr
+kubectl create secret generic rds-ssl-cert --from-file=cert.pem=combined-cert.pem -n retagentmgr
 ```
 
-> **Note:** It is critical the enter the name of the secret in the `postgreSQLCertSecret` key in the ram-values under global.configuration.vhub. For example, with this secret name, it would be: `postgreSQLCertSecret: 'rds-ssl-cert'`
+> **Note:** It is critical to enter the name of the secret in the `postgreSQLCertSecret` key in the ram-values under global.configuration.vhub. For example, with this secret name, it would be: `postgreSQLCertSecret: 'rds-ssl-cert'`
 
 ## Application Deployment
 
