@@ -87,6 +87,8 @@ Before deploying, you'll need to create and edit three configuration files with 
 | `ansible-inventory`     | Target machine definitions    | [Example](https://github.com/sassoftware/viya4-iac-k8s/blob/main/examples/bare-metal/sample-inventory)             |
 | `ansible-creds`         | Ansible access credentials    | [Example](https://github.com/sassoftware/viya4-iac-k8s/blob/main/examples/bare-metal/.bare_metal_creds.env)        |
 
+> Note: While we do fully recommend following the viya4-iac-k8s repository, we do have some differences reguarding node labels. We have provided an example for the `ansible-vars` file [here](../examples/k8s/ansible-vars.yaml)
+
 ## Infrastructure Deployment
 
 ### Deploy the Kubernetes Cluster and PostgreSQL Database
