@@ -61,7 +61,7 @@ This guide describes deploying an open-source Kubernetes infrastructure on which
 
 - AKS version: 1.33+
 
->Note: These should all be deployed automatically via the SAS Viya 4 Infrastructure as Code scripts
+> Note: These should all be deployed automatically via the SAS Viya 4 Infrastructure as Code scripts
 
 ## Getting Started
 
@@ -75,42 +75,31 @@ git clone https://github.com/sassoftware/viya4-iac-k8s
 cd viya4-iac-k8s
 ```
 
-> **Note:** While we use the viya-iac repository, a viya license or deployment is not required to use SAS Retrieval Agent Manager. This is a standalone application that can be deployed independently of a Viya environment.
+> **Note:** While we use the viya-iac deployment repository, a viya license or deployment is not required to use SAS Retrieval Agent Manager. This is a standalone application that can be deployed independently of a Viya environment.
 
 ## Configuration Setup
 
 Before deploying, you'll need to create and edit three configuration files with your custom values:
 
-| File                    | Purpose                       |                                                  |
-|-------------------------|-------------------------------|--------------------------------------------------|
-| `ansible-vars.yaml`     | Environment-specific settings | [Example](../examples/k8s/ansible-vars.yaml)     |
-| `ansible-inventory.ini` | Target machine definitions    | [Example](../examples/k8s/ansible-inventory.ini) |
-| `ansible-creds.env`     | Ansible access credentials    | [Example](../examples/k8s/ansible-creds.env)     |
+| File                    | Purpose                       | Official Documentation Example                                                                                     |
+|-------------------------|-------------------------------|--------------------------------------------------------------------------------------------------------------------|
+| `ansible-vars`          | Environment-specific settings | [Example](https://github.com/sassoftware/viya4-iac-k8s/blob/main/examples/bare-metal/sample-ansible-vars.yaml)     |
+| `ansible-inventory`     | Target machine definitions    | [Example](https://github.com/sassoftware/viya4-iac-k8s/blob/main/examples/bare-metal/sample-inventory)             |
+| `ansible-creds`         | Ansible access credentials    | [Example](https://github.com/sassoftware/viya4-iac-k8s/blob/main/examples/bare-metal/.bare_metal_creds.env)        |
 
-> **Tip:** All example files can be found in the `examples/` directory for easy reference
+> Note: While we do fully recommend following the viya4-iac-k8s repository, we do have some differences reguarding node labels. We have provided an example for the `ansible-vars` file [here](../examples/k8s/ansible-vars.yaml)
 
 ## Infrastructure Deployment
 
-### Deploy the PostgreSQL Database
-
-Follow [these steps](../README.md#database) to deploy a database that SAS Retrieval Agent Manager can connect to.
-
-### Deploy the Kubernetes Cluster
+### Deploy the Kubernetes Cluster and PostgreSQL Database
 
 #### Docker (Recommended)
 
-```bash
-# Build the Docker image
-docker build -t viya4-iac-k8s .
+Follow the viya4-iac-k8s [docker deployment guide](https://github.com/sassoftware/viya4-iac-k8s/blob/main/docs/user/DockerUsage.md) to deploy a Kubernetes cluster using Docker.
 
-# Deploy the cluster
-sudo docker run --rm -it \
-  --env-file $(pwd)/.bare_metal_creds.env \
-  --volume=$HOME/.ssh:/.ssh \
-  --volume=$(pwd):/workspace \
-  viya4-iac-k8s \
-  setup install
-```
+#### Bare Metal
+
+Follow the viya4-iac-k8s [bare metal deployment guide](https://github.com/sassoftware/viya4-iac-k8s/blob/main/docs/user/ScriptUsage.md) to deploy a Kubernetes cluster on bare metal infrastructure.
 
 ## Application Deployment
 
@@ -118,29 +107,6 @@ Return to the [Application Deployment Guide](../README.md#application-deployment
 
 ## Troubleshooting
 
-### Network Configuration
-
-If you are experiencing network errors, ensure the following requirements are met:
-
-- All cluster nodes can communicate with eachother on required ports
-- Load balancer VIP is accessible from client networks
-- DNS resolution works for the cluster FQDN
-- Database connectivity is available from all worker nodes
-
-For debugging load balancer issues:
-
-```bash
-# Check kube-vip status
-kubectl get pods -n kube-system | grep vip
-
-# Verify VIP assignment
-kubectl get svc -A | grep LoadBalancer
-```
-
-If you are experiencing poor performance, consider:
-
-- Adjusting resource requests and limits based on available hardware
-- Configuring node affinity for workload placement
-- Implementing resource quotas and limits
+Please refer to the [troubleshooting section](https://github.com/sassoftware/viya4-iac-k8s) of the main documentation for common issues and resolutions related to viya4-iac-k8s Kubernetes deployments.
 
 >For additional troubleshooting, refer to the main [troubleshooting section](../README.md#troubleshooting)
