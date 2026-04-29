@@ -105,29 +105,6 @@ Return to the [Application Deployment Guide](../README.md#application-deployment
 
 ## Troubleshooting
 
-### Network Configuration
-
-If you are experiencing network errors, ensure the following requirements are met:
-
-- All cluster nodes can communicate with eachother on required ports
-- Load balancer VIP is accessible from client networks
-- DNS resolution works for the cluster FQDN
-- Database connectivity is available from all worker nodes
-
-For debugging load balancer issues:
-
-```bash
-# Check kube-vip status
-kubectl get pods -n kube-system | grep vip
-
-# Verify VIP assignment
-kubectl get svc -A | grep LoadBalancer
-```
-
-If you are experiencing poor performance, consider:
-
-- Adjusting resource requests and limits based on available hardware
-- Configuring node affinity for workload placement
-- Implementing resource quotas and limits
+Please refer to the [troubleshooting section](https://github.com/sassoftware/viya4-iac-k8s) of the main documentation for common issues and resolutions related to viya4-iac-k8s Kubernetes deployments.
 
 >For additional troubleshooting, refer to the main [troubleshooting section](../README.md#troubleshooting)
