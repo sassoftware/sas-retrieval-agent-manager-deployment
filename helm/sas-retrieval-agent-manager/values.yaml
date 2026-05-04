@@ -288,7 +288,7 @@ images:
     # required: true
     # @schema
     # -- Container image tag for agent
-    tag: "1.13.5-20260415.1776285843569"
+    tag: "1.13.6-20260416.1776372043859"
   # @schema
   # type: object
   # required: true
@@ -429,7 +429,7 @@ images:
     # required: true
     # @schema
     # -- Goose container image tag
-    tag: "1.11.6-20260410.1775849086105"
+    tag: "1.11.7-20260416.1776371973310"
 
   # ============================================================================
   # 3RD PARTY IMAGES
