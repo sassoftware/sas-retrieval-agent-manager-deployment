@@ -281,7 +281,7 @@ In the example values file under the `.Storage.embedding.pvc.size` and `.Storage
 
 ```bash
 helm install retrieval-agent-manager oci://ghcr.io/sassoftware/sas-retrieval-agent-manager-deployment/sas-retrieval-agent-manager \
-  --version 2026.4.0 \
+  --version 2026.4.1 \
   --values <SAS Retrieval Agent Manager Values File> \
   -n retagentmgr \
   --create-namespace \

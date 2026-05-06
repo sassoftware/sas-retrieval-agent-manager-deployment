@@ -218,7 +218,7 @@ images:
     # required: true
     # @schema
     # -- Container image tag
-    tag: "1.9.26-20260409.1775757940388"
+    tag: "1.9.34-20260420.1776700070320"
   # @schema
   # type: object
   # required: true
