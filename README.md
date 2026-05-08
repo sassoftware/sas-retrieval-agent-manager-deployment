@@ -327,12 +327,14 @@ To monitor and log agent and LLM activity, visit the [Monitoring setup page](./d
 To troubleshoot common issues with deployment, connectivity, and more, visit the [Troubleshooting page](./docs/troubleshoot.md).
 
 ## Contributing
-
-> We welcome your contributions! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on how to submit contributions to this project.
+We welcome your contributions!
+Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on how to submit contributions to this project.
 
 ## License
+This project is licensed under the [Apache 2.0 License](LICENSE).
 
-> This project is licensed under the [Apache 2.0 License](LICENSE).
+As with any container image, direct and indirect dependencies are governed by their own licenses.
+Users of the published container image are responsible for ensuring that their use complies with all applicable licenses.
 
 ## Additional Resources
 
