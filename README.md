@@ -298,7 +298,7 @@ kubectl get pods -n retagentmgr
 
 ### Upgrade SAS Retrieval Agent Manager
 
-Please be aware that you must use the same values file for upgrades as you did for the initial installation, with the addition of the gpg public and private keys ([see why](#encryptiondecryption)). It is recommended to use the example values file for the version you are upgrading to and copy over any custom values you had in your previous file.
+Please be aware that you must use the same values file for upgrades as you did for the initial installation, with the addition of the gpg public and private keys ([see why](./docs/troubleshoot.md#encryptiondecryption)). It is recommended to use the example values file for the version you are upgrading to and copy over any custom values you had in your previous file.
 
 ```bash
 helm upgrade --install retrieval-agent-manager oci://ghcr.io/sassoftware/sas-retrieval-agent-manager-deployment/sas-retrieval-agent-manager \
@@ -327,10 +327,12 @@ To monitor and log agent and LLM activity, visit the [Monitoring setup page](./d
 To troubleshoot common issues with deployment, connectivity, and more, visit the [Troubleshooting page](./docs/troubleshoot.md).
 
 ## Contributing
+
 We welcome your contributions!
 Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on how to submit contributions to this project.
 
 ## License
+
 This project is licensed under the [Apache 2.0 License](LICENSE).
 
 As with any container image, direct and indirect dependencies are governed by their own licenses.
