@@ -60,7 +60,7 @@ container_registry_admin_enabled    = false
 
 
 # AKS config
-kubernetes_version         = "1.32"
+kubernetes_version         = "1.33"
 
 # Small Deployment Defaults
 default_nodepool_min_nodes = 1
