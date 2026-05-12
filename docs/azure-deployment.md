@@ -69,10 +69,10 @@ cd viya4-iac-azure
 
 Before deploying, you'll need to create and edit two configuration files with your custom values and place them inside of `viya4-iac-azure` repository directory:
 
-| File           | Purpose                                        |                                           |
-|----------------|------------------------------------------------|-------------------------------------------|
+| File               | Purpose                                        |                                               |
+|--------------------|------------------------------------------------|-----------------------------------------------|
 | `terraform.tfvars` | PostgreSQL name, prefix, and location settings | [Example](../examples/azure/terraform.tfvars) |
-| `azure.env`    | Azure credentials and environment variables    | [Example](../examples/azure/azure.env)    |
+| `azure.env`        | Azure credentials and environment variables    | [Example](../examples/azure/azure.env)        |
 
 > **Tip:** If you need help obtaining Azure environemnt variables, contact your Azure Cloud Administrator or refer to our [Azure Help Guide](./user/AzureHelp.md)
 
