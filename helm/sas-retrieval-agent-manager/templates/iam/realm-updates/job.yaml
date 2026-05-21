@@ -13,6 +13,7 @@ metadata:
     helm.sh/hook-delete-policy: before-hook-creation
 spec:
   backoffLimit: 3
+  activeDeadlineSeconds: 600
   ttlSecondsAfterFinished: 300
   template:
     spec:
@@ -36,7 +37,7 @@ spec:
               cpu: 50m
               memory: 32Mi
           securityContext:
-            {{- toYaml .Values.iam.keycloak.securityContext | nindent 12 }}
+            {{- include "ram.securityContext" (list .Values.iam.keycloak.securityContext .Values.platform) | nindent 12 }}
       containers:
         - name: update-realm
           image: "{{- include "images.keycloak" . -}}"
@@ -49,7 +50,7 @@ spec:
             - name: KCADM_CFG_PATH
               value: "/workdir/kcadm.config"
           securityContext:
-            {{- toYaml .Values.iam.keycloak.securityContext | nindent 12 }}
+            {{- include "ram.securityContext" (list .Values.iam.keycloak.securityContext .Values.platform) | nindent 12 }}
           resources:
             limits:
               cpu: 500m

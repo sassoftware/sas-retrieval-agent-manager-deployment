@@ -29,7 +29,7 @@ spec:
       {{- end }}
       serviceAccountName: {{ include "db-migration.serviceAccountName" . }}
       securityContext:
-        {{- toYaml .Values.db.migration.podSecurityContext | nindent 8 }}
+        {{- include "ram.podSecurityContext" (list .Values.db.migration.podSecurityContext .Values.platform) | nindent 8 }}
       initContainers:
         - name: wait-for-embedding-model-table
           command:
@@ -70,7 +70,7 @@ spec:
                   key: schema
                   name: {{ printf "%s-db-application" (include "retrieval-agent-manager.fullname" .) }}
           securityContext:
-            {{- toYaml .Values.db.migration.securityContext | nindent 12 }}
+            {{- include "ram.securityContext" (list .Values.db.migration.securityContext .Values.platform) | nindent 12 }}
           resources:
             {{- toYaml .Values.db.migration.resources | nindent 12 }}
           volumeMounts:
@@ -86,7 +86,7 @@ spec:
             - "-c"
             - "/scripts/emb_model_hydration_initialization.sh"
           securityContext:
-            {{- toYaml .Values.db.migration.securityContext | nindent 12 }}
+            {{- include "ram.securityContext" (list .Values.db.migration.securityContext .Values.platform) | nindent 12 }}
           resources:
             {{- toYaml .Values.db.migration.resources | nindent 12 }}
           env:

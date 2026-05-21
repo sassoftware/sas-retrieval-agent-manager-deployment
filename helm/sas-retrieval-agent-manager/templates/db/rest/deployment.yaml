@@ -34,7 +34,7 @@ spec:
       {{- end }}
       serviceAccountName: {{ include "postgrest.serviceAccountName" . }}
       securityContext:
-        {{- toYaml .Values.db.rest.podSecurityContext | nindent 8 }}
+        {{- include "ram.podSecurityContext" (list .Values.db.rest.podSecurityContext .Values.platform) | nindent 8 }}
       initContainers:
         {{- include "wait-for-db.container" (dict "db" "application" "Root" .) | nindent 8 }}
         {{- include "wait-for-db.container" (dict "db" "monitoring" "Root" .) | nindent 8 }}
@@ -47,6 +47,11 @@ spec:
             - sh
             - -c
             - /scripts/jwks-fetcher.sh
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
           volumeMounts:
             - name: jwks
               mountPath: /jwks
@@ -116,7 +121,7 @@ spec:
           resources:
             {{- toYaml .Values.db.rest.resources | nindent 12 }}
           securityContext:
-            {{- toYaml .Values.db.rest.securityContext | nindent 12 }}
+            {{- include "ram.securityContext" (list .Values.db.rest.securityContext .Values.platform) | nindent 12 }}
           volumeMounts:
             - mountPath: "/config"
               name: scripts
@@ -185,7 +190,7 @@ spec:
           resources:
             {{- toYaml .Values.db.rest.resources | nindent 12 }}
           securityContext:
-            {{- toYaml .Values.db.rest.securityContext | nindent 12 }}
+            {{- include "ram.securityContext" (list .Values.db.rest.securityContext .Values.platform) | nindent 12 }}
           volumeMounts:
             - name: scripts
               readOnly: true

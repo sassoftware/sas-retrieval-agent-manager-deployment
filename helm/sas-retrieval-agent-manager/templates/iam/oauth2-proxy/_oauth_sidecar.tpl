@@ -26,7 +26,7 @@ Parameters (passed via dict):
 {{- $containerName := printf "oauth2-proxy%d" $instance -}}
 - name: {{ $containerName }}
   securityContext:
-    {{- toYaml .Root.Values.iam.oauthProxy.securityContext | nindent 4 }}
+    {{- include "ram.securityContext" (list .Root.Values.iam.oauthProxy.securityContext .Root.Values.platform) | nindent 4 }}
   image: "{{- include "images.oauthProxy" . -}}"
   imagePullPolicy: {{ .Root.Values.images.oauthProxy.pullPolicy }}
   args:
@@ -166,6 +166,6 @@ Parameters (passed via dict):
       cpu: 50m
       memory: 32Mi
   securityContext:
-    {{- toYaml .Values.iam.oauthProxy.securityContext | nindent 12 }}
+    {{- include "ram.securityContext" (list .Values.iam.oauthProxy.securityContext .Values.platform) | nindent 12 }}
 {{- end }}
 {{- end }}

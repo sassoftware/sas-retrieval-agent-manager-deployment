@@ -33,13 +33,13 @@ spec:
       {{- end }}
       serviceAccountName: {{ include "api.serviceAccountName" . }}
       securityContext:
-        {{- toYaml .Values.api.podSecurityContext | nindent 8 }}
+        {{- include "ram.podSecurityContext" (list .Values.api.podSecurityContext .Values.platform) | nindent 8 }}
       initContainers:
         {{- include "oauth2-proxy.sidecar.init" . | nindent 8 }}
       containers:
         - name: api
           securityContext:
-            {{- toYaml .Values.api.securityContext | nindent 12 }}
+            {{- include "ram.securityContext" (list .Values.api.securityContext .Values.platform) | nindent 12 }}
           image: "{{ include "images.api" . }}"
           imagePullPolicy: {{ .Values.images.api.pullPolicy }}
           env:
@@ -94,6 +94,16 @@ spec:
                 configMapKeyRef:
                   name: {{ printf "%s-plugin-config" (include "api.fullname" .) }}
                   key: plugin_runner_repo
+            - name: MCP_TOOLBOX_REPOSITORY
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ printf "%s-mcp-toolbox-config" (include "api.fullname" .) }}
+                  key: mcp_toolbox_repo
+            - name: MCP_TOOLBOX_TAG
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ printf "%s-mcp-toolbox-config" (include "api.fullname" .) }}
+                  key: mcp_toolbox_tag
             - name: EMB_INFERENCE_RUNNER_REPO
               valueFrom:
                 configMapKeyRef:

@@ -230,6 +230,36 @@
   {{- printf "%s/%s:%s" (include "images.embedding.repo.base" .) (include "images.embedding.repo.path" .) (include "images.embedding.tag" .) -}}
 {{- end }}
 
+{{/* ========== psql-toolbox ========== */}}
+{{- define "images.mcpToolbox.repo.base" -}}
+  {{- if and .Values.images.mcpToolbox .Values.images.mcpToolbox.repo }}
+    {{- .Values.images.repo.base | default .Values.images.mcpToolbox.repo.base -}}
+  {{- end }}
+{{- end }}
+
+{{- define "images.mcpToolbox.repo.path" -}}
+  {{- if and .Values.images.mcpToolbox .Values.images.mcpToolbox.repo }}
+    {{- .Values.images.mcpToolbox.repo.path -}}
+  {{- end }}
+{{- end }}
+
+{{- define "images.mcpToolbox.tag" -}}
+  {{- if .Values.images.mcpToolbox }}
+    {{- .Values.images.mcpToolbox.tag -}}
+  {{- end }}
+{{- end }}
+
+{{- define "images.mcpToolbox.pullPolicy" -}}
+  {{- if .Values.images.mcpToolbox }}
+    {{- .Values.images.mcpToolbox.pullPolicy | default "IfNotPresent" }}
+  {{- end }}
+{{- end }}
+
+{{- define "images.mcpToolbox" -}}
+  {{- printf "%s/%s:%s" (include "images.mcpToolbox.repo.base" .) (include "images.mcpToolbox.repo.path" .) (include "images.mcpToolbox.tag" .) -}}
+{{- end }}
+
+
 {{/* ========== postgrest ========== */}}
 {{- define "images.postgrest.repo.base" -}}
   {{- if and .Values.images.postgrest .Values.images.postgrest.repo }}
@@ -257,35 +287,6 @@
 
 {{- define "images.postgrest" -}}
   {{- printf "%s/%s:%s" (include "images.postgrest.repo.base" .) (include "images.postgrest.repo.path" .) (include "images.postgrest.tag" .) -}}
-{{- end }}
-
-{{/* ========== gpg ========== */}}
-{{- define "images.gpg.repo.base" -}}
-  {{- if and .Values.images.gpg .Values.images.gpg.repo }}
-    {{- .Values.images.repo.base | default .Values.images.gpg.repo.base -}}
-  {{- end }}
-{{- end }}
-
-{{- define "images.gpg.repo.path" -}}
-  {{- if and .Values.images.gpg .Values.images.gpg.repo }}
-    {{- .Values.images.gpg.repo.path -}}
-  {{- end }}
-{{- end }}
-
-{{- define "images.gpg.tag" -}}
-  {{- if .Values.images.gpg }}
-    {{- .Values.images.gpg.tag -}}
-  {{- end }}
-{{- end }}
-
-{{- define "images.gpg.pullPolicy" -}}
-  {{- if .Values.images.gpg }}
-    {{- .Values.images.gpg.pullPolicy | default "IfNotPresent" }}
-  {{- end }}
-{{- end }}
-
-{{- define "images.gpg" -}}
-  {{- printf "%s/%s:%s" (include "images.gpg.repo.base" .) (include "images.gpg.repo.path" .) (include "images.gpg.tag" .) -}}
 {{- end }}
 
 {{/* ========== kubectl ========== */}}

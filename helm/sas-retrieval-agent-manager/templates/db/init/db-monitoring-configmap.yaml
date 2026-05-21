@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{ printf "%s-db-monitoring" (include "retrieval-agent-manager.fullname" .) }}
-  namespace: retagentmgr
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "db-initialization.labels" . | nindent 4 }}
 data:

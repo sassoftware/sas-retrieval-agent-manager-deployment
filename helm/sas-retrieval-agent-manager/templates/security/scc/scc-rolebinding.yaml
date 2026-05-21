@@ -58,10 +58,4 @@ subjects:
     name: {{ include "db-migration.serviceAccountName" . }}
     namespace: {{ .Release.Namespace }}
   {{- end }}
-  # GPG ServiceAccount
-  {{- if and (include "gpg.shouldGenerateKeys" .) .Values.security.gpg.serviceAccount.create }}
-  - kind: ServiceAccount
-    name: {{ include "gpg.serviceAccountName" . }}
-    namespace: {{ .Release.Namespace }}
-  {{- end }}
 {{- end -}}

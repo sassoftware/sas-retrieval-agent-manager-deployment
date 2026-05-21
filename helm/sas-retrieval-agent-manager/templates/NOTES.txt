@@ -4,6 +4,11 @@ Thank you for installing the SAS Retrieval Agent Manager Helm chart!
 
 NOTE: This chart includes post-install hooks that may take several minutes to complete.
       When using --wait, ensure you set an adequate timeout (e.g., --timeout 10m).
+{{- if .Values.integrations.istio.enabled }}
+
+NOTE: Istio ambient mode is enabled. Enroll the namespace in the waypoint proxy by running:
+  kubectl label namespace {{ .Release.Namespace }} istio.io/use-waypoint={{ .Values.integrations.istio.waypoint.name | default "waypoint" }} --overwrite
+{{- end }}
 
 You can now access your environment at:
 
@@ -28,8 +33,8 @@ Login with:
   Username: {{ .Values.users.application.admin.username }}
 
   To get the app password, run the following command:
-  - Powershell: kubectl get secret -n retagentmgr {{ printf "%s-appadmin-secret" (include "keycloak.fullname" .) }} -o jsonpath="{.data.password}" | ForEach-Object { [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($_)) }
-  - Bash: kubectl get secret -n retagentmgr {{ printf "%s-appadmin-secret" (include "keycloak.fullname" .) }} -o jsonpath="{.data.password}" | base64 --decode && echo
+  - Powershell: kubectl get secret -n {{ .Release.Namespace }} {{ printf "%s-appadmin-secret" (include "keycloak.fullname" .) }} -o jsonpath="{.data.password}" | ForEach-Object { [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($_)) }
+  - Bash: kubectl get secret -n {{ .Release.Namespace }} {{ printf "%s-appadmin-secret" (include "keycloak.fullname" .) }} -o jsonpath="{.data.password}" | base64 --decode && echo
 
 For user management, access Keycloak at:
 
@@ -43,7 +48,7 @@ Login with:
   Username: {{ .Values.users.keycloak.admin.username }}
 
   To get the keycloak password, run the following command:
-  - Powershell: kubectl get secret -n retagentmgr {{ printf "%s-admin-secret" (include "keycloak.fullname" .) }} -o jsonpath="{.data.password}" | ForEach-Object { [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($_)) }
-  - Bash: kubectl get secret -n retagentmgr {{ printf "%s-admin-secret" (include "keycloak.fullname" .) }} -o jsonpath="{.data.password}" | base64 --decode && echo
+  - Powershell: kubectl get secret -n {{ .Release.Namespace }} {{ printf "%s-admin-secret" (include "keycloak.fullname" .) }} -o jsonpath="{.data.password}" | ForEach-Object { [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($_)) }
+  - Bash: kubectl get secret -n {{ .Release.Namespace }} {{ printf "%s-admin-secret" (include "keycloak.fullname" .) }} -o jsonpath="{.data.password}" | base64 --decode && echo
 
 For further help, check your documentation or contact your SAS Administrator.
