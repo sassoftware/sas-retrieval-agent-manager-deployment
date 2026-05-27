@@ -29,7 +29,7 @@ spec:
       {{- end }}
       serviceAccountName: {{ include "db-initialization.serviceAccountName" . }}
       securityContext:
-        {{- toYaml .Values.db.init.podSecurityContext | nindent 8 }}
+        {{- include "ram.podSecurityContext" (list .Values.db.init.podSecurityContext .Values.platform) | nindent 8 }}
       initContainers:
         - name: initialization
           command:
@@ -39,7 +39,7 @@ spec:
           image: "{{- include "images.postgres" . -}}"
           imagePullPolicy: {{ .Values.images.postgres.pullPolicy }}
           securityContext:
-            {{- toYaml .Values.db.init.securityContext | nindent 12 }}
+            {{- include "ram.securityContext" (list .Values.db.init.securityContext .Values.platform) | nindent 12 }}
           resources:
             {{- toYaml .Values.db.init.resources | nindent 12 }}
           volumeMounts:
@@ -97,7 +97,7 @@ spec:
           image: "{{- include "images.kubectl" . -}}"
           imagePullPolicy: {{ .Values.images.kubectl.pullPolicy }}
           securityContext:
-            {{- toYaml .Values.db.init.securityContext | nindent 12 }}
+            {{- include "ram.securityContext" (list .Values.db.init.securityContext .Values.platform) | nindent 12 }}
           resources:
             {{- toYaml .Values.db.init.resources | nindent 12 }}
           volumeMounts:

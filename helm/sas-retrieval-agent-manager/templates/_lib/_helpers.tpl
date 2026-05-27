@@ -51,3 +51,33 @@ Selector labels
 app.kubernetes.io/name: {{ include "retrieval-agent-manager.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
+
+{{/*
+Render a pod security context, stripping runAsUser/runAsGroup/runAsNonRoot on OpenShift
+so the SCC assigns them from the namespace UID range automatically.
+fsGroup is retained so Kubernetes triggers volume ownership chown on EBS/PVC mounts.
+Usage: {{ include "ram.podSecurityContext" (list .Values.X.podSecurityContext .Values.platform) | nindent 8 }}
+*/}}
+{{- define "ram.podSecurityContext" -}}
+{{- $sc := index . 0 -}}
+{{- $platform := index . 1 -}}
+{{- if eq $platform "openshift" -}}
+{{- omit $sc "runAsUser" "runAsGroup" "runAsNonRoot" | toYaml -}}
+{{- else -}}
+{{- $sc | toYaml -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Render a container security context, stripping runAsUser/runAsGroup on OpenShift.
+Usage: {{ include "ram.securityContext" (list .Values.X.securityContext .Values.platform) | nindent 12 }}
+*/}}
+{{- define "ram.securityContext" -}}
+{{- $sc := index . 0 -}}
+{{- $platform := index . 1 -}}
+{{- if eq $platform "openshift" -}}
+{{- omit $sc "runAsUser" "runAsGroup" "runAsNonRoot" | toYaml -}}
+{{- else -}}
+{{- $sc | toYaml -}}
+{{- end -}}
+{{- end -}}

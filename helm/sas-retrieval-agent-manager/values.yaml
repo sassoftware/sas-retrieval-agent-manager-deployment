@@ -129,6 +129,8 @@ platform: azure
 #     $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/image-schema.json"
 #   plugin:
 #     $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/image-schema.json"
+#   mcpToolbox:
+#     $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/image-schema.json"
 #   embedding:
 #     $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/image-schema.json"
 #   postgrest:
@@ -183,7 +185,7 @@ images:
     # required: true
     # @schema
     # -- Image tag (defaults to chart appVersion)
-    tag: "1.16.1-20260416.1776372103298"
+    tag: "1.17.26-20260515.1778867919105"
   # @schema
   # type: object
   # required: true
@@ -218,7 +220,7 @@ images:
     # required: true
     # @schema
     # -- Container image tag
-    tag: "1.9.34-20260420.1776700070320"
+    tag: "1.10.31-20260519.1779214826538"
   # @schema
   # type: object
   # required: true
@@ -253,7 +255,7 @@ images:
     # required: true
     # @schema
     # -- Container image tag for vectorization hub
-    tag: "1.11.5-20260410.1775827791913"
+    tag: "1.12.17-20260515.1778857970793"
   # @schema
   # type: object
   # required: true
@@ -288,7 +290,7 @@ images:
     # required: true
     # @schema
     # -- Container image tag for agent
-    tag: "1.13.6-20260416.1776372043859"
+    tag: "1.14.6-20260521.1779372858645"
   # @schema
   # type: object
   # required: true
@@ -323,7 +325,7 @@ images:
     # required: true
     # @schema
     # -- Container image tag for evaluation service
-    tag: "1.11.1-20260415.1776286071714"
+    tag: "1.12.0-20260514.1778794293496"
   # @schema
   # type: object
   # required: true
@@ -394,7 +396,7 @@ images:
     # required: true
     # @schema
     # -- Theme container image tag
-    tag: "1.3.4-20260413.1776114790179"
+    tag: "1.3.6-20260518.1779120576369"
   # @schema
   # type: object
   # required: true
@@ -429,7 +431,7 @@ images:
     # required: true
     # @schema
     # -- Goose container image tag
-    tag: "1.11.7-20260416.1776371973310"
+    tag: "1.12.7-20260521.1779382720605"
 
   # ============================================================================
   # 3RD PARTY IMAGES
@@ -473,6 +475,41 @@ images:
   # type: object
   # required: true
   # @schema
+  # -- Container image configuration for PSQL Toolbox MCP Server
+  mcpToolbox:
+    # @schema
+    # type: object
+    # required: true
+    # @schema
+    repo:
+      # @schema
+      # type: string
+      # required: true
+      # @schema
+      # -- Container registry base URL for embedding model inference
+      base: us-central1-docker.pkg.dev
+      # @schema
+      # type: string
+      # required: true
+      # @schema
+      # -- Container image path/name for embedding model inference
+      path: database-toolbox/toolbox/toolbox
+    # @schema
+    # type: string
+    # required: true
+    # @schema
+    # -- Container image tag for embedding model inference with CPU
+    tag: 1.1.0
+    # @schema
+    # required: true
+    # enum: ["Always", "IfNotPresent", "Never"]
+    # @schema
+    # -- Image pull policy
+    pullPolicy: IfNotPresent
+  # @schema
+  # type: object
+  # required: true
+  # @schema
   # -- PostgREST main container image configuration
   postgrest:
     # @schema
@@ -504,42 +541,6 @@ images:
     # @schema
     # -- Image pull policy
     pullPolicy: IfNotPresent
-  # @schema
-  # type: object
-  # required: true
-  # @schema
-  # -- Container image configuration for GPG
-  gpg:
-    # @schema
-    # type: object
-    # required: true
-    # @schema
-    # -- Container image configuration for GPG
-    repo:
-      # @schema
-      # type: string
-      # required: true
-      # @schema
-      # -- Container registry base URL for GPG image
-      base: docker.io
-      # @schema
-      # type: string
-      # required: true
-      # @schema
-      # -- Container image path/name for GPG
-      path: vladgh/gpg
-    # @schema
-    # required: true
-    # enum: ["Always", "IfNotPresent", "Never"]
-    # @schema
-    # -- Image pull policy for GPG container
-    pullPolicy: IfNotPresent
-    # @schema
-    # type: string
-    # required: true
-    # @schema
-    # -- GPG container image tag
-    tag: "1.3.6"
   # @schema
   # type: object
   # required: true
@@ -1593,7 +1594,7 @@ vectorizationHub:
           # type: string
           # pattern: "^[0-9]+(Gi|Mi|Ki)$"
           # @schema
-          GTE-ModernColBERT-v1: 16Gi
+          granite-embedding-278m-multilingual: 16Gi
           # @schema
           # type: string
           # pattern: "^[0-9]+(Gi|Mi|Ki)$"
@@ -3287,68 +3288,16 @@ security:
   # @schema
   gpg:
     # @schema
+    # type: string
+    # @schema
+    # -- Override the base name used for GPG resource naming.
+    # -- Must match --name-override passed to bootstrap-gpg.sh.
+    # -- Default produces: retrieval-agent-manager-gpg-{passphrase,private-key,public-key}
+    nameOverride: ""
+    # @schema
     # type: object
     # @schema
     config:
-      # @schema
-      # type: string
-      # @schema
-      # -- Existing GPG public key. Leave empty to generate a new key pair
-      # -- Unnecessary on initial installation
-      # -- Necessary on subsequent upgrades or reinstallations
-      publicKey: ""
-      # @schema
-      # type: string
-      # @schema
-      # -- Existing GPG private key. Leave empty to generate a new key pair
-      # -- Unnecessary on initial installation
-      # -- Necessary on subsequent upgrades or reinstallations
-      privateKey: ""
-      # @schema
-      # type: string
-      # required: true
-      # default: ""
-      # @schema
-      # -- Passphrase for the GPG key. Required for both existing keys and key generation
-      # -- Necessary on initial installation and subsequent upgrades
-      passphrase: ""
-      # @schema
-      # type: object
-      # required: true
-      # default: {"name":"RAM Secrets","email":"ram@sas.com","comment":"RAM GPG Key","length":4096,"expire":"0"}
-      # @schema
-      # -- Key generation settings (used when publicKey and privateKey are not provided)
-      key:
-        # @schema
-        # type: string
-        # required: true
-        # @schema
-        # -- Name associated with the generated GPG key
-        name: "RAM Secrets"
-        # @schema
-        # type: string
-        # required: true
-        # @schema
-        # -- Email address associated with the generated GPG key
-        email: "ram@sas.com"
-        # @schema
-        # type: string
-        # required: true
-        # @schema
-        # -- Comment for the generated GPG key
-        comment: "RAM GPG Key"
-        # @schema
-        # type: integer
-        # required: true
-        # @schema
-        # -- Key length in bits for RSA keys
-        length: 4096
-        # @schema
-        # type: string
-        # required: true
-        # @schema
-        # -- Key expiration time (0 means never expires)
-        expire: "0"
       # @schema
       # type: string
       # required: true
@@ -3361,127 +3310,6 @@ security:
       # @schema
       # -- Path to GPG passphrase secret mount
       passphrase_path: /mnt/config/gpg_passphrase
-
-    # @schema
-    # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/serviceaccount-schema.json"
-    # @schema
-    # -- Service account configuration for GPG operations
-    serviceAccount:
-      # -- Specifies whether a service account should be created
-      create: true
-      # -- Automatically mount a ServiceAccount's API credentials
-      automount: true
-      # -- Annotations to add to the service account
-      annotations: {}
-      # -- The name of the service account to use. If not set and create is true, a name is generated using the fullname template
-      name: ""
-
-    # @schema
-    # type: object
-    # additionalProperties: true
-    # @schema
-    # -- Annotations to add to the pods
-    podAnnotations: {}
-
-    # @schema
-    # type: object
-    # additionalProperties: true
-    # @schema
-    # -- Labels to add to the pods
-    podLabels: {}
-
-    # @schema
-    # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/podsecuritycontext-schema.json"
-    # @schema
-    # -- The security context for the pods
-    podSecurityContext:
-      # -- Group ID for file system ownership
-      fsGroup: 10001
-      # -- Group ID to run the entrypoint of the container process
-      runAsGroup: 10001
-      # -- Indicates that the container must be run as a non-root user
-      runAsNonRoot: true
-      # -- User ID to run the entrypoint of the container process
-      runAsUser: 10001
-      # -- Seccomp profile for the pod
-      seccompProfile:
-        type: RuntimeDefault
-
-    # @schema
-    # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/securitycontext-schema.json"
-    # @schema
-    # -- The security context for the application container
-    securityContext:
-      # -- Seccomp profile for the container
-      seccompProfile:
-        type: RuntimeDefault
-      # -- Whether a process can gain more privileges than its parent process
-      allowPrivilegeEscalation: false
-      # -- Linux capabilities to add/drop for the container
-      capabilities:
-        add: []
-        drop:
-          - ALL
-      # -- Whether the container has a read-only root filesystem
-      readOnlyRootFilesystem: true
-      # -- Whether the container must be run as a non-root user
-      runAsNonRoot: true
-      # -- User ID to run the entrypoint of the container process
-      runAsUser: 10001
-      # -- Group ID to run the entrypoint of the container process
-      runAsGroup: 10001
-
-    # @schema
-    # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/resources-schema.json"
-    # @schema
-    # -- The resources to allocate for the container
-    resources:
-      # -- Resource limits for the container
-      limits:
-        # -- CPU limit
-        cpu: 200m
-        # -- Memory limit
-        memory: 256Mi
-      # -- Resource requests for the container
-      requests:
-        # -- CPU request
-        cpu: 100m
-        # -- Memory request
-        memory: 128Mi
-
-    # @schema
-    # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/nodeselector-schema.json"
-    # @schema
-    # -- Node labels for pod assignment
-    nodeSelector: {}
-
-    # @schema
-    # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/tolerations-schema.json"
-    # @schema
-    # -- Tolerations for pod assignment
-    tolerations: []
-
-    # @schema
-    # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/affinity-schema.json"
-    # @schema
-    # -- Map of node/pod affinities
-    affinity:
-      nodeAffinity:
-        preferredDuringSchedulingIgnoredDuringExecution:
-        - weight: 1
-          preference:
-            matchExpressions:
-            - key: sas.com/deployment
-              operator: In
-              values:
-              - retrieval-agent-manager
-        - weight: 2
-          preference:
-            matchExpressions:
-            - key: workload.sas.com/class
-              operator: In
-              values:
-              - ram
 
 # @schema
 # type: object

@@ -35,13 +35,13 @@ spec:
       {{- end }}
       serviceAccountName: {{ include "ui.serviceAccountName" . }}
       securityContext:
-        {{- toYaml .Values.ui.podSecurityContext | nindent 8 }}
+        {{- include "ram.podSecurityContext" (list .Values.ui.podSecurityContext .Values.platform) | nindent 8 }}
       initContainers:
         {{- include "oauth2-proxy.sidecar.init" . | nindent 8 }}
       containers:
         - name: ui
           securityContext:
-            {{- toYaml .Values.ui.securityContext | nindent 12 }}
+            {{- include "ram.securityContext" (list .Values.ui.securityContext .Values.platform) | nindent 12 }}
           image: "{{- include "images.ui" . -}}"
           imagePullPolicy: {{ .Values.images.ui.pullPolicy }}
           env:

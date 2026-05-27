@@ -45,13 +45,13 @@ This guide describes deploying an open-source Kubernetes infrastructure on which
 
 ### Hardware Requirements
 
-#### Kubernetes Cluster Sizing
+#### Kubernetes Cluster Sizing Example (Small Size)
 
-| Node Type                        | Count | CPUs | RAM  | Disk  | Notes                                                          |
-|----------------------------------|-------|------|------|-------|----------------------------------------------------------------|
-| **Control Plane Node (tainted)** | 1     | 4    | 8GB  | 50GB  |                                                                |
-| **Worker Nodes**                 | 2     | 8    | 16GB | 200GB |                                                                |
-| **NFS Server Node**              | 1     | 8    | 16GB | 200GB | Optional if using CSI storage; can also serve as a worker node |
+| Node Type                        | Count | CPUs | RAM  | Disk  | Notes                                                                       |
+|----------------------------------|-------|------|------|-------|-----------------------------------------------------------------------------|
+| **Control Plane Node (tainted)** | 1     | 4    | 8GB  | 50GB  |                                                                             |
+| **Worker Nodes**                 | 2     | 8    | 16GB | 200GB |                                                                             |
+| **NFS Server Node**              | 1     | 8    | 16GB | 200GB | Used if your storageClass is `nfs-client`, can also be an extra worker node |
 
 #### Postgres Database Sizing
 

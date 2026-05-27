@@ -70,7 +70,7 @@ USAGE:
       name: db-{{ $db }}-secret
       readOnly: true
   securityContext:
-    {{- toYaml $root.Values.db.rest.securityContext | nindent 12 }}
+    {{- include "ram.securityContext" (list $root.Values.db.rest.securityContext $root.Values.platform) | nindent 12 }}
   resources:
     {{- toYaml $root.Values.db.rest.resources | nindent 12 }}
 {{- end }}
