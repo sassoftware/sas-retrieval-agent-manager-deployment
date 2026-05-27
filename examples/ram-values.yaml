@@ -99,23 +99,6 @@ db:
       weaviate:
         enabled: false
 
-# -- Security configuration for RAM, including GPG passphrase for encrypting sensitive data such as database credentials and API license
-security:
-  gpg:
-    config:
-      # MUST BE SET IF UPGRADING RAM TO MAINTAIN DATA ACCESS
-      # Does not need to be set for initial installation
-      # privateKey: <decoded GPG private key from secret>
-
-      # MUST BE SET IF UPGRADING RAM TO MAINTAIN DATA ACCESS
-      # Does not need to be set for initial installation
-      # publicKey: <decoded GPG public key from configmap>
-
-      # MUST BE SET IF UPGRADING RAM TO MAINTAIN DATA ACCESS
-      # Needs to be set for initial installation
-      # Example: passphrase: SomeVeryStrong1000CharPassPhraseThatIsNotUsedAnywhere
-      passphrase: <your_secure_passphrase_here>
-
 # -- IAM configuration for RAM, including Keycloak roles and credentials for admin and user database roles
 iam:
   keycloak:
