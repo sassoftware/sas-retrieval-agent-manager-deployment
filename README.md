@@ -231,7 +231,7 @@ After you have access to the Kubernetes cluster, you must install the necessary 
 |-----------------------------|---------------------|------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | cert-manager, trust-manager | 1.18.2, 0.18.0      | [Details](./docs/user/DependencyInstall.md#certificate-and-trust-management) | [cert-manager docs](https://cert-manager.io/docs/installation/helm/), [trust-manager docs](https://cert-manager.io/docs/trust/trust-manager/installation/) |
 | Linkerd                     | 2.17 (edge-24.11.8) | [Details](./docs/user/DependencyInstall.md#service-mesh)                     | [docs](https://linkerd.io/2/tasks/install-helm/)                                                                                                           |
-| Kueue                       | 0.13.4              | [Details](./docs/user/DependencyInstall.md#kueue)                            | [docs](https://kueue.sigs.k8s.io/docs/installation/)                                                                                                       |
+| Kueue                       | 0.17.2              | [Details](./docs/user/DependencyInstall.md#kueue)                            | [docs](https://kueue.sigs.k8s.io/docs/installation/)                                                                                                       |
 
 > **Note:** Order of installation matters for some dependencies, namely:
 >
