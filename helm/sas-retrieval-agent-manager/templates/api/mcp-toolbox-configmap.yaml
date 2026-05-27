@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ printf "%s-mcp-toolbox-config" (include "api.fullname" .) }}
+  labels:
+    {{- include "api.labels" . | nindent 4 }}
+data:
+  mcp_toolbox_repo: {{ printf "%s/%s" .Values.images.mcpToolbox.repo.base .Values.images.mcpToolbox.repo.path }}
+  mcp_toolbox_tag: {{ .Values.images.mcpToolbox.tag | quote}}

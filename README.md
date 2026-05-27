@@ -64,7 +64,7 @@ All deployment types require:
 
 ### Kubernetes
 
-Choose your preferred deployment platform and follow the cluster setup guide:
+We use the Viya-iac repositories for Node, Kubernetes, and Database provisioning in each platform for uniformity and ease of use. It is important to note that we do not require a SAS Viya license to deploy the infrastructure or application. Similarly, we do not deploy SAS Viya as part of the deployment, only the necessary infrastructure components to run SAS Retrieval Agent Manager. Follow the Kubernetes deployment guide for detailed instructions on setting up your cluster and database for SAS Retrieval Agent Manager.
 
 | Platform       | Kubernetes Version | Setup Guide                                                             |
 |----------------|--------------------|-------------------------------------------------------------------------|
@@ -231,7 +231,7 @@ After you have access to the Kubernetes cluster, you must install the necessary 
 |-----------------------------|---------------------|------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | cert-manager, trust-manager | 1.18.2, 0.18.0      | [Details](./docs/user/DependencyInstall.md#certificate-and-trust-management) | [cert-manager docs](https://cert-manager.io/docs/installation/helm/), [trust-manager docs](https://cert-manager.io/docs/trust/trust-manager/installation/) |
 | Linkerd                     | 2.17 (edge-24.11.8) | [Details](./docs/user/DependencyInstall.md#service-mesh)                     | [docs](https://linkerd.io/2/tasks/install-helm/)                                                                                                           |
-| Kueue                       | 0.13.4              | [Details](./docs/user/DependencyInstall.md#kueue)                            | [docs](https://kueue.sigs.k8s.io/docs/installation/)                                                                                                       |
+| Kueue                       | 0.17.2              | [Details](./docs/user/DependencyInstall.md#kueue)                            | [docs](https://kueue.sigs.k8s.io/docs/installation/)                                                                                                       |
 
 > **Note:** Order of installation matters for some dependencies, namely:
 >
@@ -265,7 +265,11 @@ SAS Retrieval Agent Manager supports two ingress controllers as of now; NGINX an
 
 ### Install SAS Retrieval Agent Manager
 
-After you have configured a Kubernetes cluster and PostgreSQL 15 database, use the following code to deploy SAS Retrieval Agent Manager on your platform:
+After you have configured a Kubernetes cluster and PostgreSQL 15 database, use the following commands to deploy SAS Retrieval Agent Manager on your platform:
+
+### Deploy GPG Keys as Kubernetes Secrets and Configmap
+
+GPG keys must be deployed as Kubernetes secrets and configmaps before the initial installation of SAS Retrieval Agent Manager. This is required for the encryption and decryption of sensitive data in SAS Retrieval Agent Manager. Use the scripts located in the `/helm/sas-retrieval-agent-manager/scripts` directory to deploy the GPG keys as Kubernetes secrets and configmaps.
 
 #### Configure Values File
 
@@ -281,7 +285,7 @@ In the example values file under the `.Storage.embedding.pvc.size` and `.Storage
 
 ```bash
 helm install retrieval-agent-manager oci://ghcr.io/sassoftware/sas-retrieval-agent-manager-deployment/sas-retrieval-agent-manager \
-  --version 2026.4.1 \
+  --version 2026.5.0 \
   --values <SAS Retrieval Agent Manager Values File> \
   -n retagentmgr \
   --create-namespace \

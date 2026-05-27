@@ -68,10 +68,6 @@ users:
   {{- if .Values.db.migration.serviceAccount.create }}
   - system:serviceaccount:{{ .Release.Namespace }}:{{ include "db-migration.serviceAccountName" . }}
   {{- end }}
-  # GPG ServiceAccount
-  {{- if and (include "gpg.shouldGenerateKeys" .) .Values.security.gpg.serviceAccount.create }}
-  - system:serviceaccount:{{ .Release.Namespace }}:{{ include "gpg.serviceAccountName" . }}
-  {{- end }}
 volumes:
   - configMap
   - downwardAPI

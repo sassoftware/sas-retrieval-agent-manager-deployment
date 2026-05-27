@@ -33,7 +33,7 @@ spec:
       {{- end }}
       serviceAccountName: {{ include "keycloak.serviceAccountName" . }}
       securityContext:
-        {{- toYaml .Values.iam.keycloak.podSecurityContext | nindent 8 }}
+        {{- include "ram.podSecurityContext" (list .Values.iam.keycloak.podSecurityContext .Values.platform) | nindent 8 }}
       initContainers:
         - name: check-db-ready
           image: "{{- include "images.postgres" . -}}"
@@ -71,7 +71,7 @@ spec:
           resources:
             {{- toYaml .Values.iam.keycloak.resources | nindent 12 }}
           securityContext:
-            {{- toYaml .Values.iam.keycloak.securityContext | nindent 12 }}
+            {{- include "ram.securityContext" (list .Values.iam.keycloak.securityContext .Values.platform) | nindent 12 }}
           volumeMounts:
             - mountPath: /scripts
               name: kc-scripts
@@ -86,7 +86,7 @@ spec:
               name: providers
               readOnly: false
           securityContext:
-            {{- toYaml .Values.iam.keycloak.securityContext | nindent 12 }}
+            {{- include "ram.securityContext" (list .Values.iam.keycloak.securityContext .Values.platform) | nindent 12 }}
           resources:
             {{- toYaml .Values.iam.keycloak.resources | nindent 12 }}
         - name: keycloak-build
@@ -132,8 +132,6 @@ spec:
                 configMapKeyRef:
                   key: userRole
                   name: {{ printf "%s-app-roles" (include "retrieval-agent-manager.fullname" .) }}
-            - name: KC_HEALTH_ENABLED
-              value: "true"
             - name: KC_HTTPS_CERTIFICATE_FILE
               value: "/tls/tls.crt"
             - name: KC_HTTPS_CERTIFICATE_KEY_FILE
@@ -142,7 +140,11 @@ spec:
               value: "/"
             - name: KC_HTTP_MANAGEMENT_HEALTH_ENABLED
               value: "true"
+            - name: KC_HEALTH_ENABLED
+              value: "true"
             - name: KC_METRICS_ENABLED
+              value: "true"
+            - name: KC_HEALTH_ENABLED
               value: "true"
           command: ["/bin/bash", "-c"]
           args:
@@ -154,7 +156,7 @@ spec:
           resources:
             {{- toYaml .Values.iam.keycloak.resources | nindent 12 }}
           securityContext:
-            {{- toYaml .Values.iam.keycloak.securityContext | nindent 12 }}
+            {{- include "ram.securityContext" (list .Values.iam.keycloak.securityContext .Values.platform) | nindent 12 }}
           volumeMounts:
             - mountPath: /opt/keycloak/providers
               name: providers
@@ -169,7 +171,7 @@ spec:
       containers:
         - name: keycloak-run
           securityContext:
-            {{- toYaml .Values.iam.keycloak.securityContext | nindent 12 }}
+            {{- include "ram.securityContext" (list .Values.iam.keycloak.securityContext .Values.platform) | nindent 12 }}
           image: "{{- include "images.keycloak" . -}}"
           imagePullPolicy: {{ .Values.images.keycloak.pullPolicy }}
           args:

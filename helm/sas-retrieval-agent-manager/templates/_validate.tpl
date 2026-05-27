@@ -21,7 +21,7 @@
   {{- if lt (len $appPw) 8                                              }}{{- $errors = append $errors "users.application.admin.password must be at least 8 characters"                              }}{{- end }}
   {{- if not (regexMatch `[A-Z]` $appPw)                               }}{{- $errors = append $errors "users.application.admin.password must contain at least one uppercase letter"                }}{{- end }}
   {{- if not (regexMatch `[a-z]` $appPw)                               }}{{- $errors = append $errors "users.application.admin.password must contain at least one lowercase letter"                }}{{- end }}
-  {{- if not (regexMatch `[!@#$%^&*_+|?<>/]` $appPw)                  }}{{- $errors = append $errors "users.application.admin.password must contain at least one special character (!@#$%^&*_+|?<>/)" }}{{- end }}
+  {{- if not (regexMatch `[!@#$%^&*_+|?<>/-]` $appPw)                  }}{{- $errors = append $errors "users.application.admin.password must contain at least one special character (!@#$%^&*_-+|?<>/)" }}{{- end }}
 {{- end }}
 
 {{/* ── keycloak.admin: full policy check ── */}}
@@ -32,7 +32,7 @@
   {{- if lt (len $kcPw) 8                                              }}{{- $errors = append $errors "users.keycloak.admin.password must be at least 8 characters"                              }}{{- end }}
   {{- if not (regexMatch `[A-Z]` $kcPw)                               }}{{- $errors = append $errors "users.keycloak.admin.password must contain at least one uppercase letter"                }}{{- end }}
   {{- if not (regexMatch `[a-z]` $kcPw)                               }}{{- $errors = append $errors "users.keycloak.admin.password must contain at least one lowercase letter"                }}{{- end }}
-  {{- if not (regexMatch `[!@#$%^&*_+|?<>/]` $kcPw)                  }}{{- $errors = append $errors "users.keycloak.admin.password must contain at least one special character (!@#$%^&*_+|?<>/)" }}{{- end }}
+  {{- if not (regexMatch `[!@#$%^&*_+|?<>/-]` $kcPw)                  }}{{- $errors = append $errors "users.keycloak.admin.password must contain at least one special character (!@#$%^&*_-+|?<>/)" }}{{- end }}
 {{- end }}
 
 {{/* ── Emit all errors at once ── */}}

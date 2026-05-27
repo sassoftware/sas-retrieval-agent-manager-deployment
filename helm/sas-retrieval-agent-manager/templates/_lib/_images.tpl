@@ -259,35 +259,6 @@
   {{- printf "%s/%s:%s" (include "images.postgrest.repo.base" .) (include "images.postgrest.repo.path" .) (include "images.postgrest.tag" .) -}}
 {{- end }}
 
-{{/* ========== gpg ========== */}}
-{{- define "images.gpg.repo.base" -}}
-  {{- if and .Values.images.gpg .Values.images.gpg.repo }}
-    {{- .Values.images.repo.base | default .Values.images.gpg.repo.base -}}
-  {{- end }}
-{{- end }}
-
-{{- define "images.gpg.repo.path" -}}
-  {{- if and .Values.images.gpg .Values.images.gpg.repo }}
-    {{- .Values.images.gpg.repo.path -}}
-  {{- end }}
-{{- end }}
-
-{{- define "images.gpg.tag" -}}
-  {{- if .Values.images.gpg }}
-    {{- .Values.images.gpg.tag -}}
-  {{- end }}
-{{- end }}
-
-{{- define "images.gpg.pullPolicy" -}}
-  {{- if .Values.images.gpg }}
-    {{- .Values.images.gpg.pullPolicy | default "IfNotPresent" }}
-  {{- end }}
-{{- end }}
-
-{{- define "images.gpg" -}}
-  {{- printf "%s/%s:%s" (include "images.gpg.repo.base" .) (include "images.gpg.repo.path" .) (include "images.gpg.tag" .) -}}
-{{- end }}
-
 {{/* ========== kubectl ========== */}}
 {{- define "images.kubectl.repo.base" -}}
   {{- if and .Values.images.kubectl .Values.images.kubectl.repo }}

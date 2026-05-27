@@ -26,7 +26,7 @@ tests:
       - isKind:
           of: ClusterQueue
       - isAPIVersion:
-          of: kueue.x-k8s.io/v1beta1
+          of: kueue.x-k8s.io/v1beta2
 
   - it: should have correct name
     template: templates/kueue/cluster-queue.yaml
@@ -133,7 +133,7 @@ tests:
       - isKind:
           of: ResourceFlavor
       - isAPIVersion:
-          of: kueue.x-k8s.io/v1beta1
+          of: kueue.x-k8s.io/v1beta2
 
   - it: should have correct name
     template: templates/kueue/resource-flavor.yaml
@@ -161,7 +161,7 @@ tests:
       - isKind:
           of: LocalQueue
       - isAPIVersion:
-          of: kueue.x-k8s.io/v1beta1
+          of: kueue.x-k8s.io/v1beta2
 
   - it: should have correct name
     template: templates/kueue/genai-queue.yaml

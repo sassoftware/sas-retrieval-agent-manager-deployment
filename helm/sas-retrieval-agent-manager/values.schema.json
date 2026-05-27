@@ -1823,6 +1823,10 @@
           "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/image-schema.json",
           "required": []
         },
+        "mcpToolbox": {
+          "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/image-schema.json",
+          "required": []
+        },
         "pullPolicy": {
           "enum": [
             "IfNotPresent",
@@ -2300,89 +2304,14 @@
         "gpg": {
           "additionalProperties": false,
           "properties": {
-            "affinity": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/affinity-schema.json",
-              "required": []
-            },
             "config": {
               "additionalProperties": false,
               "properties": {
-                "key": {
-                  "additionalProperties": false,
-                  "default": {
-                    "comment": "RAM GPG Key",
-                    "email": "ram@sas.com",
-                    "expire": "0",
-                    "length": 4096,
-                    "name": "RAM Secrets"
-                  },
-                  "description": "Key generation settings (used when publicKey and privateKey are not provided)",
-                  "properties": {
-                    "comment": {
-                      "default": "RAM GPG Key",
-                      "description": "Comment for the generated GPG key",
-                      "required": [],
-                      "title": "comment",
-                      "type": "string"
-                    },
-                    "email": {
-                      "default": "ram@sas.com",
-                      "description": "Email address associated with the generated GPG key",
-                      "required": [],
-                      "title": "email",
-                      "type": "string"
-                    },
-                    "expire": {
-                      "default": "0",
-                      "description": "Key expiration time (0 means never expires)",
-                      "required": [],
-                      "title": "expire",
-                      "type": "string"
-                    },
-                    "length": {
-                      "default": 4096,
-                      "description": "Key length in bits for RSA keys",
-                      "required": [],
-                      "title": "length",
-                      "type": "integer"
-                    },
-                    "name": {
-                      "default": "RAM Secrets",
-                      "description": "Name associated with the generated GPG key",
-                      "required": [],
-                      "title": "name",
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "name",
-                    "email",
-                    "comment",
-                    "length",
-                    "expire"
-                  ],
-                  "title": "key",
-                  "type": "object"
-                },
-                "passphrase": {
-                  "default": "",
-                  "description": "Passphrase for the GPG key. Required for both existing keys and key generation",
-                  "required": [],
-                  "title": "passphrase",
-                  "type": "string"
-                },
                 "passphrase_path": {
                   "default": "/mnt/config/gpg_passphrase",
                   "description": "Path to GPG passphrase secret mount",
                   "required": [],
                   "title": "passphrase_path",
-                  "type": "string"
-                },
-                "privateKey": {
-                  "default": "",
-                  "description": "Existing GPG private key (base64 encoded). Leave empty to generate a new key pair",
-                  "required": [],
-                  "title": "privateKey",
                   "type": "string"
                 },
                 "private_key_path": {
@@ -2391,61 +2320,21 @@
                   "required": [],
                   "title": "private_key_path",
                   "type": "string"
-                },
-                "publicKey": {
-                  "default": "",
-                  "description": "Existing GPG public key (base64 encoded). Leave empty to generate a new key pair",
-                  "required": [],
-                  "title": "publicKey",
-                  "type": "string"
                 }
               },
               "required": [
-                "passphrase",
-                "key",
                 "private_key_path",
                 "passphrase_path"
               ],
               "title": "config",
               "type": "object"
             },
-            "nodeSelector": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/nodeselector-schema.json",
-              "required": []
-            },
-            "podAnnotations": {
-              "additionalProperties": true,
-              "description": "Annotations to add to the pods",
+            "nameOverride": {
+              "default": "",
+              "description": "Override the base name used for GPG resource naming.\nMust match --name-override passed to bootstrap-gpg.sh.\nDefault produces: retrieval-agent-manager-gpg-{passphrase,private-key,public-key}",
               "required": [],
-              "title": "podAnnotations",
-              "type": "object"
-            },
-            "podLabels": {
-              "additionalProperties": true,
-              "description": "Labels to add to the pods",
-              "required": [],
-              "title": "podLabels",
-              "type": "object"
-            },
-            "podSecurityContext": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/podsecuritycontext-schema.json",
-              "required": []
-            },
-            "resources": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/resources-schema.json",
-              "required": []
-            },
-            "securityContext": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/securitycontext-schema.json",
-              "required": []
-            },
-            "serviceAccount": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/serviceaccount-schema.json",
-              "required": []
-            },
-            "tolerations": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/tolerations-schema.json",
-              "required": []
+              "title": "nameOverride",
+              "type": "string"
             }
           },
           "required": [],
