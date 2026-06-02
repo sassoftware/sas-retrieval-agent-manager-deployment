@@ -288,7 +288,7 @@ images:
     # required: true
     # @schema
     # -- Container image tag for agent
-    tag: "1.13.6-20260416.1776372043859"
+    tag: "1.13.15-20260521.1779387806983"
   # @schema
   # type: object
   # required: true
@@ -394,7 +394,7 @@ images:
     # required: true
     # @schema
     # -- Theme container image tag
-    tag: "1.3.4-20260413.1776114790179"
+    tag: "1.3.6-20260518.1779120576369"
   # @schema
   # type: object
   # required: true
