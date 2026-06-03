@@ -17,12 +17,11 @@ If this is the case, please install the `Vector` extension and reinstall SAS Ret
 
 ## Encryption/Decryption
 
-Encryption issues typically arise when SAS Retrieval Agent Manager is deployed multiple times or upgraded without GPG keys configured in the values file. If this occurs, verify the following:
+Encryption issues typically arise when SAS Retrieval Agent Manager is deployed without GPG keys configured. If this occurs, verify the following:
 
-- The deployment was upgraded or reinstalled with the correct GPG keys set in the values file
-  - The public key can be found in ConfigMaps, and the private key in Secrets, within the `retagentmgr` namespace
-
-If this is the case, insert the GPG keys in the values file and reinstall SAS Retrieval Agent manager.
+- The public key can be found in ConfigMaps within the `retagentmgr` namespace
+- The private key can be found in Secrets, within the `retagentmgr` namespace
+- The passphrase can be found in Secrets, within the `retagentmgr` namespace
 
 Commands to get your gpg keys using kubectl:
 
@@ -33,7 +32,12 @@ kubectl get secret retrieval-agent-manager-gpg-private-key -n retagentmgr -o jso
 # Public Key
 kubectl get cm retrieval-agent-manager-gpg-public-key -n retagentmgr -o jsonpath='{.data}'
 
+# Passphrase
+kubectl get secret retrieval-agent-manager-gpg-passphrase -n retagentmgr -o jsonpath='{.data}'
+
 ```
+
+If these are missing, please create them using the instructions in the [gpg helper script](../scripts/gpg/README.md).
 
 ## Deployment Upgrades
 
