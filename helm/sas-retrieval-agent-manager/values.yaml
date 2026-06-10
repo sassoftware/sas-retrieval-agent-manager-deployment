@@ -183,7 +183,7 @@ images:
     # required: true
     # @schema
     # -- Image tag (defaults to chart appVersion)
-    tag: "1.16.1-20260416.1776372103298"
+    tag: "1.16.2-20260605.1780674510482"
   # @schema
   # type: object
   # required: true
