@@ -73,7 +73,7 @@ We use the Viya-iac repositories for Node, Kubernetes, and Database provisioning
 | **AWS**        | 1.33+              | [Getting Started](./docs/aws-deployment.md)                             |
 | **OpenShift**  | 1.32 (OCP v4.19.1) | [Getting Started](./docs/ocp-deployment.md)                             |
 
-### Database
+### Database (PostgreSQL 15)
 
 SAS Retrieval Agent Manager requires a PostgreSQL 15 database for storing application data, vector embeddings, and more. The database can be deployed on any platform as long as it is accessible from the Kubernetes cluster and meets the sizing recommendations based on your expected usage.
 
