@@ -185,7 +185,7 @@ images:
     # required: true
     # @schema
     # -- Image tag (defaults to chart appVersion)
-    tag: "1.17.30-20260529.1780065385842"
+    tag: "1.17.33-20260616.1781629272178"
   # @schema
   # type: object
   # required: true
@@ -255,7 +255,7 @@ images:
     # required: true
     # @schema
     # -- Container image tag for vectorization hub
-    tag: "1.12.17-20260515.1778857970793"
+    tag: "1.12.18-20260615.1781537647650"
   # @schema
   # type: object
   # required: true
@@ -290,7 +290,7 @@ images:
     # required: true
     # @schema
     # -- Container image tag for agent
-    tag: "1.14.6-20260521.1779372858645"
+    tag: "1.14.7-20260615.1781544757046"
   # @schema
   # type: object
   # required: true
@@ -325,7 +325,7 @@ images:
     # required: true
     # @schema
     # -- Container image tag for evaluation service
-    tag: "1.12.0-20260514.1778794293496"
+    tag: "1.12.2-20260616.1781629608984"
   # @schema
   # type: object
   # required: true
@@ -396,7 +396,7 @@ images:
     # required: true
     # @schema
     # -- Theme container image tag
-    tag: "1.3.6-20260518.1779120576369"
+    tag: "1.3.8-20260612.1781252085063"
   # @schema
   # type: object
   # required: true
