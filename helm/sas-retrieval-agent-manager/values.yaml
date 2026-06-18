@@ -127,8 +127,6 @@ platform: azure
 #     $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/image-schema.json"
 #   vectorizationHub:
 #     $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/image-schema.json"
-#   plugin:
-#     $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/image-schema.json"
 #   mcpToolbox:
 #     $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/image-schema.json"
 #   embedding:
@@ -185,7 +183,7 @@ images:
     # required: true
     # @schema
     # -- Image tag (defaults to chart appVersion)
-    tag: "1.17.30-20260529.1780065385842"
+    tag: "1.18.11-20260616.1781629175330"
   # @schema
   # type: object
   # required: true
@@ -220,7 +218,7 @@ images:
     # required: true
     # @schema
     # -- Container image tag
-    tag: "1.10.37-20260603.1780517904807"
+    tag: "1.11.17-20260615.1781537443235"
   # @schema
   # type: object
   # required: true
@@ -255,7 +253,7 @@ images:
     # required: true
     # @schema
     # -- Container image tag for vectorization hub
-    tag: "1.12.17-20260515.1778857970793"
+    tag: "1.13.1-20260612.1781286131089"
   # @schema
   # type: object
   # required: true
@@ -290,7 +288,7 @@ images:
     # required: true
     # @schema
     # -- Container image tag for agent
-    tag: "1.14.6-20260521.1779372858645"
+    tag: "1.15.2-20260612.1781299332920"
   # @schema
   # type: object
   # required: true
@@ -325,42 +323,7 @@ images:
     # required: true
     # @schema
     # -- Container image tag for evaluation service
-    tag: "1.12.0-20260514.1778794293496"
-  # @schema
-  # type: object
-  # required: true
-  # @schema
-  # -- Container image configuration for plugins
-  plugin:
-    # @schema
-    # type: object
-    # required: true
-    # @schema
-    repo:
-      # @schema
-      # type: string
-      # required: true
-      # @schema
-      # -- Container registry base URL for plugin agent
-      base: cr.sas.com
-      # @schema
-      # type: string
-      # required: true
-      # @schema
-      # -- Container image path/name for plugin agent
-      path: viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-agent
-    # @schema
-    # required: true
-    # enum: ["Always", "IfNotPresent", "Never"]
-    # @schema
-    # -- Image pull policy for agent container
-    pullPolicy: IfNotPresent
-    # @schema
-    # type: string
-    # required: true
-    # @schema
-    # -- Container image tag for plugin agent
-    tag: "1.8.4-20260116.1768584402906"
+    tag: "1.13.3-20260616.1781629667706"
   # @schema
   # type: object
   # required: true
@@ -396,7 +359,7 @@ images:
     # required: true
     # @schema
     # -- Theme container image tag
-    tag: "1.3.6-20260518.1779120576369"
+    tag: "1.3.8-20260612.1781252085063"
   # @schema
   # type: object
   # required: true
@@ -431,7 +394,7 @@ images:
     # required: true
     # @schema
     # -- Goose container image tag
-    tag: "1.12.7-20260521.1779382720605"
+    tag: "1.13.6-20260610.1781120139227"
 
   # ============================================================================
   # 3RD PARTY IMAGES
