@@ -183,7 +183,7 @@ images:
     # required: true
     # @schema
     # -- Image tag (defaults to chart appVersion)
-    tag: "1.13.16-20260520.1779319481667"
+    tag: "1.13.18-20260616.1781629136714"
   # @schema
   # type: object
   # required: true
@@ -288,7 +288,7 @@ images:
     # required: true
     # @schema
     # -- Container image tag for agent
-    tag: "1.11.9-20260520.1779319261969"
+    tag: "1.11.11-20260616.1781631821644"
   # @schema
   # type: object
   # required: true
@@ -394,7 +394,7 @@ images:
     # required: true
     # @schema
     # -- Theme container image tag
-    tag: "1.3.6-20260518.1779120576369"
+    tag: "1.3.8-20260612.1781252085063"
   # @schema
   # type: object
   # required: true
