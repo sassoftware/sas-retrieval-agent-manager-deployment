@@ -75,7 +75,9 @@ We use the Viya-iac repositories for Node, Kubernetes, and Database provisioning
 
 ### Database
 
-Follow your platform-specific infrastructure steps to deploy a PostgreSQL database that aligns with this sizing recommendation:
+SAS Retrieval Agent Manager requires a PostgreSQL 15 database for storing application data, vector embeddings, and more. The database can be deployed on any platform as long as it is accessible from the Kubernetes cluster and meets the sizing recommendations based on your expected usage.
+
+Follow your platform-specific infrastructure steps to deploy a PostgreSQL 15 database that aligns with this sizing recommendation:
 
 | Deployment Size  |  Total vCPU(min) | Total RAM(Gb) |   Storage(Gb) |    Queries per day    |   Agents/Custom Sources/MCP Servers |
 |------------------|------------------|---------------|---------------|-----------------------|-------------------------------------|
