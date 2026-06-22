@@ -6,6 +6,7 @@ This document provides instructions for generating GPG keys for use with SAS Ret
 
 - Docker
 - Existing access to Kubernetes cluster
+- Windows, WSL, or Linux OS
 
 ## Generate GPG Keys
 

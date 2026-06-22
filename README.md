@@ -271,7 +271,7 @@ After you have configured a Kubernetes cluster and PostgreSQL 15 database, use t
 
 ### Deploy GPG Keys as Kubernetes Secrets and Configmap
 
-GPG keys must be deployed as Kubernetes secrets and configmaps before the initial installation of SAS Retrieval Agent Manager. This is required for the encryption and decryption of sensitive data in SAS Retrieval Agent Manager. Use the scripts located in the `/helm/sas-retrieval-agent-manager/scripts` directory to deploy the GPG keys as Kubernetes secrets and configmaps.
+GPG keys must be deployed as Kubernetes secrets and configmaps before the initial installation of SAS Retrieval Agent Manager. This is required for the encryption and decryption of sensitive data in SAS Retrieval Agent Manager. Use the scripts located [in the scripts/gpg directory](./scripts/gpg/README.md) to deploy the GPG keys as Kubernetes secrets and configmaps.
 
 #### Configure Values File
 
