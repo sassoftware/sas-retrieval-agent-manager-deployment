@@ -253,7 +253,7 @@ images:
     # required: true
     # @schema
     # -- Container image tag for vectorization hub
-    tag: "1.13.1-20260612.1781286131089"
+    tag: "1.13.2-20260622.1782148791930"
   # @schema
   # type: object
   # required: true
