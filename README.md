@@ -29,7 +29,8 @@
 
 SAS Retrieval Agent Manager is a comprehensive solution for managing agents or interacting directly with LLMs in a RAG or non-RAG context. This documentation provides setup and deployment instructions for multiple platforms, such as Open-Source Kubernetes (k8s), Azure Kubernetes Service (AKS), and Amazon Elastic Kubernetes Service (EKS).
 
-[!CAUTION] GPG Key Warning - Read Before Doing Anything
+[!CAUTION]
+GPG Key Warning - Read Before Doing Anything
 
 GPG keys are the encryption foundation for all sensitive data in SAS Retrieval Agent Manager. Deleting or regenerating existing GPG keys post-deployment will result in permanent, unrecoverable data loss.
 
