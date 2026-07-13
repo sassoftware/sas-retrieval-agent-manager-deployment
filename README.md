@@ -287,6 +287,8 @@ GPG keys encrypt all sensitive data stored by SAS Retrieval Agent Manager. Once 
 
 - NEVER regenerate keys and reapply them to an existing installation.
 
+- BACKUP your GPG keys and store them securely before proceeding with the installation.
+
 GPG keys must be deployed as Kubernetes secrets and configmaps before the initial installation of SAS Retrieval Agent Manager. This is required for the encryption and decryption of sensitive data in SAS Retrieval Agent Manager. Use the scripts located [in the scripts/gpg directory](./scripts/gpg/README.md) to deploy the GPG keys as Kubernetes secrets and configmaps.
 
 #### Configure Values File
