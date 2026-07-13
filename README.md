@@ -32,7 +32,7 @@ SAS Retrieval Agent Manager is a comprehensive solution for managing agents or i
 > [!CAUTION]
 > GPG Key Warning - Read Before Doing Anything
 
-GPG keys are the encryption foundation for all sensitive data in SAS Retrieval Agent Manager. Deleting or regenerating existing GPG keys post-deployment will result in permanent, unrecoverable data loss.
+> GPG keys are the encryption foundation for all sensitive data in SAS Retrieval Agent Manager. Deleting or regenerating existing GPG keys post-deployment will result in permanent, unrecoverable data loss.
 
 ## Supported Deployment Platforms
 
