@@ -29,8 +29,8 @@
 
 SAS Retrieval Agent Manager is a comprehensive solution for managing agents or interacting directly with LLMs in a RAG or non-RAG context. This documentation provides setup and deployment instructions for multiple platforms, such as Open-Source Kubernetes (k8s), Azure Kubernetes Service (AKS), and Amazon Elastic Kubernetes Service (EKS).
 
-[!CAUTION]
-GPG Key Warning - Read Before Doing Anything
+> [!CAUTION]
+> GPG Key Warning - Read Before Doing Anything
 
 GPG keys are the encryption foundation for all sensitive data in SAS Retrieval Agent Manager. Deleting or regenerating existing GPG keys post-deployment will result in permanent, unrecoverable data loss.
 
@@ -276,10 +276,9 @@ After you have configured a Kubernetes cluster and PostgreSQL 15 database, use t
 
 ### Deploy GPG Keys as Kubernetes Secrets and Configmap
 
-[!CAUTION]
-This step is for FIRST-TIME INSTALLATION ONLY.
-
-GPG keys encrypt all sensitive data stored by SAS Retrieval Agent Manager. Once generated and applied before installation, they are permanently tied to that environment's encrypted data. There is no recovery path if existing keys are lost, overwritten, or regenerated against a live installation.
+> [!CAUTION]
+> This step is for FIRST-TIME INSTALLATION ONLY.
+> GPG keys encrypt all sensitive data stored by SAS Retrieval Agent Manager. Once generated and applied before installation, they are permanently tied to that environment's encrypted data. There is no recovery path if existing keys are lost, overwritten, or regenerated against a live installation.
 
 **NEVER run these scripts if GPG keys already exist in the retagentmgr namespace.**
 
@@ -320,10 +319,9 @@ kubectl get pods -n retagentmgr
 
 ### Upgrade SAS Retrieval Agent Manager
 
-[!CAUTION]
-DO NOT redeploy or regenerate GPG keys when upgrading.
-
-Your existing GPG keys must remain in place for the upgraded installation to decrypt its data. Deleting the GPG secrets/configmaps during an upgrade will permanently destroy all encrypted application data with no possibility of recovery. The provided GPG scripts will not run if GPG keys exist, as intended.
+> [!CAUTION]
+> DO NOT redeploy or regenerate GPG keys when upgrading.
+> Your existing GPG keys must remain in place for the upgraded installation to decrypt its data. Deleting the GPG secrets/configmaps during an upgrade will permanently destroy all encrypted application data with no possibility of recovery. The provided GPG scripts will not run if GPG keys exist, as intended.
 
 **NEVER delete or recreate the GPG secrets or configmaps before, during, or after an upgrade.**
 
