@@ -301,6 +301,10 @@ In the example values file under the `.Storage.embedding.pvc.size` and `.Storage
 
 > **Note:** Please be aware that the application pvc size corresponds with the amount of data purchased from SAS.
 
+##### Configure Child Workload Scheduling
+
+The `api.childScheduling` values control the tolerations, node selectors, and affinity for workloads spawned by the API, including agents, evaluations, source pods, and model services. The example values file prefers nodes labeled for RAM; adjust these settings to match your cluster's scheduling configuration.
+
 #### Deploy with Helm
 
 ```bash
@@ -312,7 +316,7 @@ helm install retrieval-agent-manager oci://ghcr.io/sassoftware/sas-retrieval-age
   --timeout 10m
 ```
 
-> **Note:** Use the package section of this repository to find an installable version. Also, if something fails and you need to redeploy, it is recommended that you run `helm uninstall retrieval-agent-manager -n retagentmgr`.
+> **Note:** Use the package section of this repository to find an installable version. Also, if something fails and you need to redeploy, it is recommended that you run `helm uninstall retrieval-agent-manager -n retagentmgr` and retry installation.
 
 #### Verify Deployment
 

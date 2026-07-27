@@ -80,6 +80,49 @@ api:
     enable_genai_traces: 'False'
     license:
       <your_jwt_sas_license_here>
+  # -- Scheduling configuration for workloads spawned by the API (These are the default values)
+  childScheduling:
+    agentDevServer:
+      tolerations: []
+      nodeSelector: {}
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            preference:
+              matchExpressions:
+              - key: sas.com/deployment
+                operator: In
+                values:
+                - retrieval-agent-manager
+          - weight: 2
+            preference:
+              matchExpressions:
+              - key: workload.sas.com/class
+                operator: In
+                values:
+                - ram
+    agentProdServer:
+      tolerations: []
+      nodeSelector: {}
+    eval:
+      tolerations: []
+      nodeSelector: {}
+    vectorizationHub:
+      tolerations: []
+      nodeSelector: {}
+    mcpToolServer:
+      tolerations: []
+      nodeSelector: {}
+    source:
+      tolerations: []
+      nodeSelector: {}
+    embeddingModel:
+      tolerations: []
+      nodeSelector: {}
+    automation:
+      tolerations: []
+      nodeSelector: {}
 
 # -- Database configuration for RAM, including host, port, SSL mode, and credentials for application and monitoring database roles
 db:
