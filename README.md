@@ -29,11 +29,6 @@
 
 SAS Retrieval Agent Manager is a comprehensive solution for managing agents or interacting directly with LLMs in a RAG or non-RAG context. This documentation provides setup and deployment instructions for multiple platforms, such as Open-Source Kubernetes (k8s), Azure Kubernetes Service (AKS), and Amazon Elastic Kubernetes Service (EKS).
 
-> [!CAUTION]
-> GPG Key Warning - Read Before Doing Anything
-
-> GPG keys are the encryption foundation for all sensitive data in SAS Retrieval Agent Manager. Deleting or regenerating existing GPG keys post-deployment will result in permanent, unrecoverable data loss.
-
 ## Supported Deployment Platforms
 
 | Platform       | Description                                        |
@@ -275,19 +270,6 @@ SAS Retrieval Agent Manager supports two ingress controllers as of now; NGINX an
 After you have configured a Kubernetes cluster and PostgreSQL 15 database, use the following commands to deploy SAS Retrieval Agent Manager on your platform:
 
 ### Deploy GPG Keys as Kubernetes Secrets and Configmap
-
-> [!CAUTION]
-> This step is for **FIRST-TIME INSTALLATION ONLY**.
-
-GPG keys encrypt all sensitive data stored by SAS Retrieval Agent Manager. Once generated and applied before installation, they are permanently tied to that environment's encrypted data. There is no recovery path if existing keys are lost, overwritten, or regenerated against a live installation.
-
-- NEVER run these scripts if GPG keys already exist in the retagentmgr namespace.
-
-- NEVER delete the GPG key secrets or configmaps from the cluster.
-
-- NEVER regenerate keys and reapply them to an existing installation.
-
-- BACKUP your GPG keys and store them securely before proceeding with the installation.
 
 GPG keys must be deployed as Kubernetes secrets and configmaps before the initial installation of SAS Retrieval Agent Manager. This is required for the encryption and decryption of sensitive data in SAS Retrieval Agent Manager. Use the scripts located [in the scripts/gpg directory](./scripts/gpg/README.md) to deploy the GPG keys as Kubernetes secrets and configmaps.
 
