@@ -322,6 +322,17 @@ kubectl get pods -n retagentmgr
 
 ### Upgrade SAS Retrieval Agent Manager
 
+> [!CAUTION]
+> DO NOT redeploy or regenerate GPG keys when upgrading.
+
+Your existing GPG keys must remain in place for the upgraded installation to decrypt its data. Deleting the GPG secrets/configmaps during an upgrade will permanently destroy all encrypted application data with no possibility of recovery. The provided GPG scripts will not run if GPG keys exist, as intended.
+
+- NEVER delete or recreate the GPG secrets or configmaps before, during, or after an upgrade.
+
+- NEVER rerun the GPG key deployment scripts against an existing installation.
+
+Please be aware that you must use the same gpg keys and helm values for upgrades as you did for the initial installation. It is also recommended to use the example values file for the version you are upgrading to and copy over any custom values you had in your previous file.
+
 ```bash
 helm upgrade --install retrieval-agent-manager oci://ghcr.io/sassoftware/sas-retrieval-agent-manager-deployment/sas-retrieval-agent-manager \
   --version <SAS Retrieval Agent Manager Version> \
