@@ -19,13 +19,13 @@ You can install both applications onto your cluster and create service mesh prer
 helm install cert-manager ./helm/cert-manager/ \
   --namespace cert-manager \
   --create-namespace \
-  --atomic
+  --rollback-on-failure
 
 # Install trust manager, creating trust anchor
 # bundle for subsequent use.
 helm install trust-manager ./helm/trust-manager/ \
   --namespace cert-manager \
-  --atomic
+  --rollback-on-failure
 
 ```
 
