@@ -10,6 +10,7 @@
 - [Database Deployment](#database-deployment)
 - [PostgreSQL SSL Certificate](#deploy-postgresql-ssl-certificate)
 - [Kueue Deployment](#kueue-deployment)
+- [OpenShift Service Mesh 3 Deployment](#openshift-service-mesh-3-deployment)
 - [Application Deployment](#application-deployment)
 
 ---
@@ -323,6 +324,168 @@ oc label namespace retagentmgr kueue.openshift.io/managed=true
 ```
 
 > **Note:** Without this label, Kueue will not intercept and manage vectorization jobs in the `retagentmgr` namespace and those jobs will fail to be queued correctly.
+
+## OpenShift Service Mesh 3 Deployment
+
+Red Hat OpenShift Service Mesh 3 (OSSM3) is an optional integration that enables L7 traffic management for the SAS Retrieval Agent Manager. When enabled, the Helm chart deploys an Istio **ambient-mode waypoint proxy** into the release namespace. The waypoint is an Envoy sidecar-free proxy that processes all HTTP traffic and injects the `X-Forwarded-For` header with the real source pod IP.
+
+> **Note:** This section requires an OpenShift cluster with the Kubernetes Gateway API CRDs installed (see below). OSSM3 is based on the Sail Operator and uses a fundamentally different resource model from OSSM 1/2 — `ServiceMeshControlPlane` is not used here.
+
+### Install the Kubernetes Gateway API CRDs
+
+OSSM3 ambient mode relies on the Kubernetes Gateway API. Install the standard channel CRDs before installing the operator:
+
+```bash
+oc apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.1/standard-install.yaml
+```
+
+Verify the CRDs are established:
+
+```bash
+oc get crd gateways.gateway.networking.k8s.io httproutes.gateway.networking.k8s.io \
+  referencegrants.gateway.networking.k8s.io grpcroutes.gateway.networking.k8s.io
+```
+
+### Install the OpenShift Service Mesh 3 Operator
+
+#### Via the OpenShift Web Console
+
+1. Log in to the OpenShift web console.
+2. Navigate to **Operators → OperatorHub**.
+3. Search for **"OpenShift Service Mesh"** and select the **Red Hat OpenShift Service Mesh** operator (version 3.x).
+4. Click **Install**, select **All namespaces** scope, and accept the defaults.
+5. Wait for the operator status to show **Succeeded**.
+
+#### Via CLI
+
+```bash
+cat <<EOF | oc apply -f -
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: servicemeshoperator3
+  namespace: openshift-operators
+spec:
+  channel: stable
+  name: servicemeshoperator3
+  source: redhat-operators
+  sourceNamespace: openshift-marketplace
+EOF
+```
+
+Wait for the operator to be ready:
+
+```bash
+oc -n openshift-operators wait --for=condition=Ready pod \
+  -l name=sailoperator --timeout=120s
+```
+
+### Deploy the IstioCNI Resource
+
+Ambient mode requires the Istio CNI plugin to redirect traffic at the node level without injecting sidecars. Create an `IstioCNI` resource in the `istio-cni` namespace:
+
+```bash
+oc new-project istio-cni
+
+cat <<EOF | oc apply -f -
+apiVersion: sailoperator.io/v1
+kind: IstioCNI
+metadata:
+  name: default
+spec:
+  version: v1.24.3
+  namespace: istio-cni
+  profile: openshift-ambient
+EOF
+```
+
+Verify the CNI daemonset is running on all nodes:
+
+```bash
+oc -n istio-cni wait --for=condition=Ready pod \
+  -l k8s-app=istio-cni-node --timeout=180s
+```
+
+### Deploy the Istio Control Plane
+
+Create the `Istio` resource that provisions the `istiod` control plane:
+
+```bash
+oc new-project istio-system
+
+cat <<EOF | oc apply -f -
+apiVersion: sailoperator.io/v1
+kind: Istio
+metadata:
+  name: default
+spec:
+  version: v1.24.3
+  namespace: istio-system
+  profile: openshift-ambient
+EOF
+```
+
+Monitor the control plane until it reaches `Healthy` status:
+
+```bash
+oc -n istio-system wait --for=condition=Ready istio default --timeout=180s
+```
+
+You can also inspect the status in detail:
+
+```bash
+oc -n istio-system get istio default -o jsonpath='{.status}' | jq
+```
+
+### Enroll the Release Namespace in Ambient Mesh
+
+Label the `retagentmgr` namespace to opt it into ambient-mode data-plane processing. This must be done **before** installing the SAS Retrieval Agent Manager Helm chart so that the waypoint Gateway is created in an ambient-enabled namespace.
+
+```bash
+# Enroll the namespace in Istio ambient mode
+oc label namespace retagentmgr istio.io/dataplane-mode=ambient
+
+# Instruct all pods/services in the namespace to route through the waypoint
+oc label namespace retagentmgr istio.io/use-waypoint=waypoint
+```
+
+> **Note:** The `istio.io/use-waypoint` label value must match the `integrations.istio.waypoint.name` value in your `ram-values.yaml` (default: `waypoint`).
+
+### Configure SAS Retrieval Agent Manager to Use the Waypoint
+
+Enable the Istio integration in your `ram-values.yaml`:
+
+```yaml
+integrations:
+  istio:
+    enabled: true
+    waypoint:
+      # Must match the value used in the istio.io/use-waypoint namespace label
+      name: waypoint
+      # "all" processes both east-west service traffic and ingress workload traffic
+      waypointFor: all
+```
+
+When `enabled: true`, the chart creates a `Gateway` resource with `gatewayClassName: istio-waypoint` in the release namespace. The Istio gateway controller detects this and deploys an Envoy waypoint deployment.
+
+### Verify the Waypoint Is Running
+
+After the Helm chart is installed, confirm the waypoint deployment is healthy:
+
+```bash
+# Check the waypoint Gateway resource
+oc -n retagentmgr get gateway waypoint
+
+# Check the Envoy waypoint pod deployed by the Istio gateway controller
+oc -n retagentmgr get pods -l gateway.istio.io/managed=istio.io-mesh-controller
+
+# Confirm the waypoint is programmed (PROGRAMMED=True)
+oc -n retagentmgr get gateway waypoint -o jsonpath='{.status.conditions}' | jq
+```
+
+The `Programmed` condition should show `status: "True"` before proceeding to the Application Deployment step.
+
+---
 
 ## Application Deployment
 
