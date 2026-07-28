@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+set -euo pipefail
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+# shellcheck source=common.sh
+source "$SCRIPT_DIR/common.sh"
+
+: "${APPLICATION_DB:=SASRetrievalAgentManager}"
+: "${APPLICATION_SCHEMA:=retagentmgr}"
+: "${POSTGREST_USER:?Set POSTGREST_USER}"
+: "${POSTGREST_PASSWORD:?Set POSTGREST_PASSWORD}"
+: "${MIGRATION_USER:?Set MIGRATION_USER}"
+: "${MIGRATION_PASSWORD:?Set MIGRATION_PASSWORD}"
+: "${VECTORIZATION_USER:?Set VECTORIZATION_USER}"
+: "${VECTORIZATION_PASSWORD:?Set VECTORIZATION_PASSWORD}"
+: "${EMBEDDING_USER:?Set EMBEDDING_USER}"
+: "${EMBEDDING_PASSWORD:?Set EMBEDDING_PASSWORD}"
+: "${APPLICATION_USER_ROLE:=sas_ram_user_role}"
+: "${APPLICATION_ADMIN_ROLE:=sas_ram_admin_role}"
+
+create_database_if_missing "$APPLICATION_DB"
+ensure_role "$APPLICATION_DB" "$POSTGREST_USER" "$POSTGREST_PASSWORD"
+ensure_role "$APPLICATION_DB" "$MIGRATION_USER" "$MIGRATION_PASSWORD"
+ensure_role "$APPLICATION_DB" "$VECTORIZATION_USER" "$VECTORIZATION_PASSWORD"
+ensure_role "$APPLICATION_DB" "$EMBEDDING_USER" "$EMBEDDING_PASSWORD"
+ensure_schema "$APPLICATION_DB" "$APPLICATION_SCHEMA" pgcrypto
+
+for role in "$POSTGREST_USER" "$MIGRATION_USER"; do
+  grant_schema "$APPLICATION_DB" "$APPLICATION_SCHEMA" ALL "$role"
+done
+for role in "$VECTORIZATION_USER" "$EMBEDDING_USER"; do
+  grant_schema "$APPLICATION_DB" "$APPLICATION_SCHEMA" USAGE "$role"
+done
+ensure_postgrest_role "$APPLICATION_DB" "$APPLICATION_SCHEMA" "$POSTGREST_USER" "$APPLICATION_USER_ROLE"
+ensure_postgrest_role "$APPLICATION_DB" "$APPLICATION_SCHEMA" "$POSTGREST_USER" "$APPLICATION_ADMIN_ROLE"
+
+printf 'Application database initialization completed.\n'
