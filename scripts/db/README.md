@@ -52,8 +52,31 @@ values file uses different names. The relevant variables are
 
 ## Run
 
-Review the values that will be used, then make the scripts executable and run
-the orchestrator:
+### Docker (preferred)
+
+The scripts can run from a container with the PostgreSQL client bundled. Review
+the values that will be used and export them through a secure local mechanism.
+The wrappers pass only environment variables that are already set locally;
+password values are not placed in the Docker command line:
+
+```bash
+scripts/db/run-initialize-db.sh
+```
+
+On Windows PowerShell:
+
+```powershell
+.\scripts\db\run-initialize-db.ps1
+```
+
+The wrapper builds the `ram-initialize-db` image on first use. Set
+`ENABLE_VECTOR_STORE=false` in the environment to skip vector-store
+initialization. Additional arguments are passed to `initialize-db.sh`.
+
+### Bare-metal alternative
+
+When Docker is unavailable, make the scripts executable and run the
+orchestrator directly on a host with Bash and the PostgreSQL client installed:
 
 ```bash
 chmod +x scripts/db/*.sh
