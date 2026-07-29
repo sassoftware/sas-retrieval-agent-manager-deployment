@@ -103,6 +103,22 @@ The following extensions are either required or recommended for the Retrieval Ag
 
 SAS Retrieval Agent Manager automatically initializes the required databases during deployment unless specified otherwise. This requires providing database admin credentials in your SAS Retrieval Agent Manager values file.
 
+#### Manual Database Initialization
+
+If you do not want to provide SAS Retrieval Agent Manager with database-admin-level access, set database initialization to `false` in your values file and initialize the databases separately before installing RAM:
+
+```yaml
+db:
+  init:
+    config:
+      database:
+        initializeDb: "False"
+```
+
+The manual initialization scripts require a PostgreSQL administrator only while the databases, roles, schemas, and required extensions are being prepared. After they complete, RAM can connect using its application-specific database credentials without needing database-admin credentials. Follow the [Manual Database Initialization](./scripts/db/README.md) guide for the required environment variables and Docker or bare-metal commands.
+
+Disable the Helm chart's database initialization before deployment so the chart does not attempt to repeat the manual setup.
+
 #### Secure Database Connection
 
 If your database requires SSL, you will need to provide the SSL certificate bundle as a Kubernetes secret in the same namespace as your SAS Retrieval Agent Manager deployment. Upload the bundle as a secret with the key of `cert.pem`. This can be done with the following commands:
