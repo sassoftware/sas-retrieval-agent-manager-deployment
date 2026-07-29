@@ -19,41 +19,41 @@ psql_admin() {
   psql -v ON_ERROR_STOP=1 "$@"
 }
 
-database_exists() {
-  local database="$1"
-  [[ "$(psql_admin -d postgres -Atqc 'SELECT 1 FROM pg_database WHERE datname = :'"'"'db'"'"'' -v "db=$database")" == "1" ]]
-}
-
+# psql only expands :'name' references when the statement is read from
+# standard input, and never inside a quoted or dollar-quoted string. Every
+# helper therefore pipes SQL through a here-document and keeps the references
+# at statement level, letting format() with \gexec build the final statement.
 create_database_if_missing() {
   local database="$1"
-  if database_exists "$database"; then
+  local found
+  found=$(psql_admin -d postgres -Atq -v db="$database" <<'SQL'
+SELECT 1 FROM pg_database WHERE datname = :'db';
+SQL
+)
+
+  if [[ "$found" == "1" ]]; then
     printf 'Database %s already exists.\n' "$database"
     return
   fi
 
   printf 'Creating database %s.\n' "$database"
   psql_admin -d postgres -v db="$database" <<'SQL'
-SELECT format('CREATE DATABASE %I', :'db')\gexec
+SELECT format('CREATE DATABASE %I', :'db')
+WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = :'db')\gexec
 SQL
 }
 
 ensure_role() {
   local database="$1"
   local role="$2"
-  local password="$3"
-  ROLE_PASSWORD="$password" psql_admin -d "$database" -v role="$role" <<'SQL'
+  # The password is exported for the duration of this call so that it is read
+  # by \getenv instead of appearing in the process list or in shell history.
+  local -x ROLE_PASSWORD="$3"
+  psql_admin -d "$database" -v role="$role" <<'SQL'
 \getenv role_password ROLE_PASSWORD
-DO $$
-BEGIN
-  IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = :'role') THEN
-    EXECUTE format(
-      'CREATE ROLE %I LOGIN NOINHERIT CREATEDB NOCREATEROLE NOSUPERUSER PASSWORD %L',
-      :'role', :'role_password');
-  ELSE
-    EXECUTE format('ALTER ROLE %I WITH PASSWORD %L', :'role', :'role_password');
-  END IF;
-END
-$$;
+SELECT format('CREATE ROLE %I LOGIN NOINHERIT CREATEDB NOCREATEROLE NOSUPERUSER', :'role')
+WHERE NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = :'role')\gexec
+SELECT format('ALTER ROLE %I WITH PASSWORD %L', :'role', :'role_password')\gexec
 SQL
 }
 
@@ -61,16 +61,15 @@ ensure_schema() {
   local database="$1"
   local schema="$2"
   local extension="${3:-}"
-  psql_admin -d "$database" -v schema="$schema" -v extension="$extension" <<'SQL'
+  psql_admin -d "$database" -v schema="$schema" <<'SQL'
 SELECT format('CREATE SCHEMA IF NOT EXISTS %I', :'schema')\gexec
-DO $$
-BEGIN
-  IF :'extension' <> '' THEN
-    EXECUTE format('CREATE EXTENSION IF NOT EXISTS %I SCHEMA %I', :'extension', :'schema');
-  END IF;
-END
-$$;
 SQL
+
+  if [[ -n "$extension" ]]; then
+    psql_admin -d "$database" -v schema="$schema" -v extension="$extension" <<'SQL'
+SELECT format('CREATE EXTENSION IF NOT EXISTS %I SCHEMA %I', :'extension', :'schema')\gexec
+SQL
+  fi
 }
 
 grant_schema() {
