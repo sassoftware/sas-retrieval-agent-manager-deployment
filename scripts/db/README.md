@@ -42,6 +42,33 @@ export VECTOR_STORE_USER='sas_ram_vector_store_user'
 export VECTOR_STORE_PASSWORD='enter-this-locally'
 ```
 
+In Windows PowerShell, use the following equivalent assignments:
+
+```powershell
+$env:DB_HOST = 'postgres.example.com'
+$env:DB_PORT = '5432'
+$env:DB_SSL_MODE = 'require'
+$env:DB_ADMIN_USER = 'postgres-admin'
+$env:DB_ADMIN_PASSWORD = 'enter-this-locally'
+
+$env:POSTGREST_USER = 'sas_ram_pgrest_user'
+$env:POSTGREST_PASSWORD = 'enter-this-locally'
+$env:MIGRATION_USER = 'sas_ram_migration_user'
+$env:MIGRATION_PASSWORD = 'enter-this-locally'
+$env:VECTORIZATION_USER = 'sas_ram_vectorization_user'
+$env:VECTORIZATION_PASSWORD = 'enter-this-locally'
+$env:EMBEDDING_USER = 'sas_ram_embedding_user'
+$env:EMBEDDING_PASSWORD = 'enter-this-locally'
+$env:MONITORING_USER = 'sas_ram_mon_pgrest_user'
+$env:MONITORING_PASSWORD = 'enter-this-locally'
+$env:OTEL_USER = 'sas_ram_otel_user'
+$env:OTEL_PASSWORD = 'enter-this-locally'
+$env:KEYCLOAK_USER = 'sas_ram_keycloak_user'
+$env:KEYCLOAK_PASSWORD = 'enter-this-locally'
+$env:VECTOR_STORE_USER = 'sas_ram_vector_store_user'
+$env:VECTOR_STORE_PASSWORD = 'enter-this-locally'
+```
+
 The database, schema, PostgREST role, and feature settings have defaults that
 match the Helm values. Override them with environment variables when the RAM
 values file uses different names. The relevant variables are

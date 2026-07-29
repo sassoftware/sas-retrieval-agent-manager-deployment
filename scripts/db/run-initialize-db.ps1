@@ -17,12 +17,13 @@
 $ErrorActionPreference = "Stop"
 
 $ImageName = "ram-initialize-db"
+$ImageVersion = "2"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
-docker image inspect $ImageName > $null 2>&1
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "Image '$ImageName' not found -- building..."
-    docker build -t $ImageName $ScriptDir
+$ExistingImageVersion = docker image inspect --format '{{ index .Config.Labels "ram.initialize-db.version" }}' $ImageName 2>$null
+if ($LASTEXITCODE -ne 0 -or $ExistingImageVersion -ne $ImageVersion) {
+    Write-Host "Image '$ImageName' is missing or outdated -- building..."
+    docker build --label "ram.initialize-db.version=$ImageVersion" -t $ImageName $ScriptDir
     if ($LASTEXITCODE -ne 0) {
         Write-Error "Docker build failed."
         exit 1
@@ -42,7 +43,7 @@ $Variables = @(
     "MONITORING_ADMIN_ROLE", "ENABLE_VECTOR_STORE"
 )
 
-$DockerArgs = @("run", "--rm", "-it")
+$DockerArgs = @("run", "--rm")
 foreach ($Variable in $Variables) {
     $Value = [Environment]::GetEnvironmentVariable($Variable)
     if ($null -ne $Value) {
