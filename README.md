@@ -10,6 +10,7 @@ These schemas are externalized to be referenced by multiple Helm charts within t
 
 - **affinity-schema.json** - Pod affinity and anti-affinity rules
 - **autoscaling-schema.json** - Horizontal Pod Autoscaler configuration
+- **childscheduling-schema.json** - Scheduling settings for API-managed child workloads
 - **image-schema.json** - Container image configuration (repository, tag, pull policy)
 - **ingress-schema.json** - Ingress resource configuration
 - **nodeselector-schema.json** - Node selector specifications
