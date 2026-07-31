@@ -25,10 +25,9 @@ tags = {} # for example: { "owner|email" = "<you>@<domain>.<com>", "key1" = "val
 #                   block below.
 postgres_servers = {
   default = {
-# ****************  REQUIRED VARIABLES  ****************
-    administrator_login          = "ram_admin"
-    administrator_password       = "1tsAB3aut1fulDay"
-# ****************  REQUIRED VARIABLES  ***************
+    # ****************  REQUIRED VARIABLES  ****************
+    administrator_login            = "ram_admin"
+    administrator_password         = "1tsAB3aut1fulDay"
     # Small Deployment DB Size
     sku_name                       = "GP_Standard_D4ds_v5"
 
@@ -38,17 +37,18 @@ postgres_servers = {
     # Large Deployment DB Size
     # sku_name                     = "GP_Standard_D16ds_v5"
 
-    version                      = "15"
-   # Necessary extensions for RAM to function
-   # Extensions:
-   #  - PGCRYPTO: Required for basic app functionality
-   #  - VECTOR:   Optional - Needed if not using weaviate / other vector db solution
+    server_version                 = "15"
+
+    # Necessary extensions for RAM to function
+    # Extensions:
+    #  - PGCRYPTO: Required for basic app functionality
+    #  - VECTOR:   Optional - Needed if not using weaviate / other vector db solution
     postgresql_configurations    = [
-       {
-         name  = "azure.extensions"
-         value = "PGCRYPTO,VECTOR"
-       }
-      ]
+      {
+      name  = "azure.extensions"
+      value = "PGCRYPTO,VECTOR"
+      }
+    ]
   },
 }
 
@@ -60,7 +60,7 @@ container_registry_admin_enabled    = false
 
 
 # AKS config
-kubernetes_version         = "1.33"
+kubernetes_version         = "1.34"
 
 # Small Deployment Defaults
 default_nodepool_min_nodes = 1

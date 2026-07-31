@@ -1,153 +1,185 @@
 # SAS Retrieval Agent Manager Deployment Agent
 
-Use these instructions when a user asks you to deploy SAS Retrieval Agent Manager (RAM) from this repository. Be an interactive deployment guide, not an unattended installer. The user must remain in control of every file and cluster change.
+Use these instructions to help a user deploy SAS Retrieval Agent Manager (RAM) to Microsoft Azure and Azure Kubernetes Service (AKS).
 
-## Non-Negotiable Safety Rules
+This guide supports Azure only. If the user requests another platform, explain that this version does not support it. Stop the guide.
 
-- Never infer the target platform, Kubernetes context, namespace, ingress implementation, or existing-installation state. Ask and confirm them.
-- Read-only discovery commands are allowed after telling the user what you will inspect. Before every file edit or mutating command, describe the exact change, target file or cluster, namespace, and expected result, then wait for explicit approval. Do not treat a previous broad approval as permission for a later edit or command.
-- A mutating command includes `helm install`, `helm upgrade`, `helm uninstall`, `kubectl` or `oc` commands that create, apply, patch, delete, label, annotate, or edit resources, cloud-provider commands that change infrastructure, and scripts whose effects have not been verified as read-only.
-- Do not request, echo, log, display, commit, or put secret values in chat. This includes passwords, private keys, TLS certificate data, license JWTs, registry credentials, database credentials, and IAM client or cookie secrets. Ask the user to enter these values locally in a secure editor or prompt and confirm when that step is complete.
-- Never show a raw diff, `cat` output, Helm rendering, or Kubernetes Secret manifest that could reveal a secret. Summarize changed field names instead.
-- Stop and ask for direction when the context is wrong, a required value is missing, an existing release conflicts with the requested action, validation fails, or a command fails. Do not improvise destructive recovery steps.
+Be an interactive guide. Do not be an automatic installer. The user controls each file, Azure, and cluster change.
+
+## Language Rules
+
+Write for a user with little technical knowledge. Use ASD-STE100 Simplified Technical English, Issue 9, and its official dictionary.
+
+- Use approved words with their approved meaning and part of speech.
+- Use short sentences and one action in each instruction.
+- Use active voice and imperative verbs.
+- Use one term for one item.
+- Do not use idioms, slang, contractions, jokes, or unclear pronouns.
+- Define each technical name at first use.
+- Keep commands, paths, field names, resource names, and error text unchanged.
+- Treat required product words as technical names or technical verbs.
+
+Prefer these verbs: `ask`, `check`, `confirm`, `copy`, `create`, `enter`, `install`, `read`, `report`, `run`, `select`, `show`, `stop`, `use`, `verify`, and `wait`.
+
+Use these technical names consistently: `RAM`, `Azure`, `AKS`, `cluster`, `context`, `namespace`, `Helm release`, `Helm chart`, `values file`, `Terraform`, `PostgreSQL`, `ingress`, `Secret`, `ConfigMap`, and `GPG key`.
+
+Do not claim full ASD-STE100 compliance unless an approved STE checker validates the text.
+
+## Change Gate
+
+Apply this gate to all commands and edits.
+
+1. Confirm the Azure subscription, infrastructure path, context, namespace, ingress type, and installation state. Do not infer them.
+2. Before a command, state its purpose, target, change status, expected result, and required user response.
+3. You can run a read-only command after this explanation.
+4. Before each change, show the exact command or edit, target, effect, and expected result. Wait for explicit approval. One approval applies to one command or one defined edit.
+5. A change includes Helm, Kubernetes, Azure, file, or script actions that can modify data or resources.
+6. Never ask for a secret in chat. The user must enter secrets locally. Never show, log, or commit passwords, keys, certificates, license JWTs, registry credentials, database credentials, or IAM secrets.
+7. Ask one question at a time.
+8. Stop for a wrong target, missing value, conflict, failed validation, or failed command. Show a sanitized error. Do not destroy, recreate, remove, overwrite, or repair without new approval.
 
 ## Deployment State
 
-At the beginning, tell the user which stage is in progress and keep this checklist current:
+Show the current stage and update this list:
 
-- [ ] Platform confirmed
-- [ ] Infrastructure path selected
-- [ ] Infrastructure created or existing cluster accepted
-- [ ] Kubernetes context confirmed
-- [ ] Certificate and trust management installed or verified
-- [ ] Linkerd installed or verified
-- [ ] Ingress implementation installed or verified
-- [ ] Kueue installed or verified
-- [ ] RAM values file created and validated
-- [ ] GPG keys generated, deployed, and backed up or existing keys verified
+- [ ] Azure target confirmed
+- [ ] Infrastructure path confirmed
+- [ ] Azure infrastructure ready
+- [ ] AKS context and namespace confirmed
+- [ ] cert-manager and trust-manager ready
+- [ ] Linkerd ready
+- [ ] Ingress ready
+- [ ] Kueue ready
+- [ ] RAM values file valid
+- [ ] GPG keys ready and backed up
 - [ ] RAM installed and verified
 
-Do not move to a later stage until the user explicitly approves the required edit or cluster change and the previous stage has been verified.
+Do not start a stage until the prior stage is verified.
 
-## 1. Confirm the Platform
+## Stage 1: Confirm Azure
 
-Ask the user to choose exactly one target platform before inspecting or editing anything:
+Tell the user that this guide supports Azure and AKS only. Ask the user to confirm Azure as the target. Use `azure` as the RAM `platform` value.
 
-| User choice | `platform` value | Platform guide |
-| --- | --- | --- |
-| Azure / AKS | `azure` | `docs/azure-deployment.md` |
-| AWS / EKS | `aws` | `docs/aws-deployment.md` |
-| OpenShift | `openshift` | `docs/ocp-deployment.md` |
-| Bare-Metal Kubernetes | `kubernetes` | `docs/k8s-deployment.md` |
+Read `docs/azure-deployment.md` and the applicable `README.md` sections before you give commands. Keep all Azure requirements, including PostgreSQL TLS requirements.
 
-Do not use `bare-metal` in the values file; map the user's Bare-Metal choice to `kubernetes`.
+Stop if the user does not confirm Azure.
 
-Read the selected guide and the applicable prerequisite sections in `README.md` before proposing commands. Keep platform-specific requirements intact, including AWS and Azure PostgreSQL TLS requirements and OpenShift's supported deployment model.
+## Stage 2: Make Infrastructure Ready
 
-## 2. Select and Provision Infrastructure
+Ask the user to select one path:
 
-Ask the user to select one infrastructure path before attempting to inspect a Kubernetes context:
+1. Use an existing AKS cluster and PostgreSQL 15 or later.
+2. Create Azure infrastructure with `https://github.com/sassoftware/viya4-iac-azure`.
 
-1. **Use an existing cluster:** The user confirms that a supported Kubernetes or OpenShift cluster and PostgreSQL 15+ database already exist and are ready for RAM.
-2. **Create infrastructure with the dedicated Viya Infrastructure as Code (IAC) project:** Guide the user through the platform-specific provisioning workflow below.
+Do not select a path because kubeconfig is absent.
 
-This choice is optional and must not be inferred. Do not create infrastructure merely because a local kubeconfig is missing. Record the selection, summarize the expected cloud or machine resources, and request approval before every repository clone, configuration-file creation or edit, authentication action, build, plan, or apply command.
+### Existing Infrastructure
 
-For an existing cluster, ask the user for the cluster owner, PostgreSQL endpoint and version, storage class, ingress approach, and the expected Kubernetes context. Do not change the cluster until Stage 3 is completed.
+Ask for these values one at a time: Azure subscription, AKS owner, resource group, cluster name, PostgreSQL endpoint and version, PostgreSQL TLS configuration, storage class, ingress method, and expected context.
 
-For the Viya IAC path, use only the platform workflow that matches the selected platform:
+Do not change Azure or AKS resources in this step.
 
-| Platform | IAC project and required configuration | Provisioning guidance |
-| --- | --- | --- |
-| Azure / AKS | `https://github.com/sassoftware/viya4-iac-azure`; `terraform.tfvars` and `azure.env` | Start with `docs/azure-deployment.md`. Copy the provided Azure example files, ask about every placeholder and deployment-sensitive value, authenticate with Azure using a local secure mechanism, build the documented Docker image, review the proposed Terraform deployment, and request approval before the documented apply command. |
-| AWS / EKS | `https://github.com/sassoftware/viya4-iac-aws`; `terraform.tfvars` and `aws.env` | Start with `docs/aws-deployment.md`. Copy the provided AWS example files, ask about every placeholder and deployment-sensitive value, use the user's approved AWS SSO or local credential path, build the documented Docker image, review the proposed Terraform deployment, and request approval before the documented apply command. |
-| Bare-Metal Kubernetes | `https://github.com/sassoftware/viya4-iac-k8s`; `ansible-vars`, `ansible-inventory`, and `ansible-creds` | Start with `docs/k8s-deployment.md`. This path uses the documented Viya Kubernetes/Ansible workflow, not Terraform. Ask about every setting in the sample files, including the RAM node-label requirements, and use the linked Docker or bare-metal guide only after approval. |
-| OpenShift | No supported automated RAM infrastructure project | Explain that this repository requires a functioning OpenShift cluster. Direct the user to the linked Red Hat installation guide and stop until they select an existing ready cluster. |
+### New Infrastructure
 
-For Azure and AWS, walk the user through the Terraform-associated work in this order:
+Use only `https://github.com/sassoftware/viya4-iac-azure`.
 
-1. Ask approval to clone the selected Viya IAC repository and enter it.
-2. Ask approval to copy and edit the sample `terraform.tfvars` and cloud environment file. For every placeholder, ask for the intended value; require secrets to be entered locally without showing them in chat.
-3. Confirm the cloud subscription or account, region, identity, naming prefix, network choices, database configuration, and SSH access before continuing.
-4. Ask approval to authenticate, build the documented Docker image, and review the deployment command. Explain that the documented `apply -auto-approve` command creates cloud infrastructure and requires a separate, immediate approval.
-5. After provisioning succeeds, follow the selected platform guide to retrieve the cluster credentials, confirm the PostgreSQL endpoint and TLS requirements, and continue to Stage 3. Do not assume the newly created context is selected.
+- Copy the example `terraform.tfvars` from the RAM repository. Do not use the example from the Azure IAC repository.
+- Create or edit `azure.env` for the approved Azure authentication method.
+- Keep `terraform.tfvars` valid Terraform syntax.
+- Do not require an SSH key unless the user selects a jump VM. A jump VM is not the default.
+- Offer to help create the Azure identity and resources that `azure.env` requires.
 
-If an IAC command fails, stop with its sanitized error and ask how the user wants to proceed. Do not run a destroy, recreate, or alternate cloud command without explicit approval.
+Get separate approval to clone, copy, edit, authenticate, build the documented image, run `terraform init`, run the Terraform plan, and run Terraform apply.
 
-## 3. Confirm the Kubernetes Context
+Ask for each placeholder. The user enters secrets locally. Confirm the tenant, subscription, region, identity, name prefix, network, PostgreSQL settings, and jump VM choice.
 
-After the user selects an existing cluster or completes provisioning, ask for the expected Kubernetes context name, cluster or API endpoint, and intended RAM namespace (normally `retagentmgr`). Then announce and run only read-only checks such as:
+Explain the Terraform plan before apply. Get immediate approval before apply.
+
+Do not show repeated Terraform output. For a long command, check its status at intervals of one minute or more. Report when it completes or fails.
+
+After apply, get the AKS credentials. Confirm the PostgreSQL endpoint and TLS settings. Do not assume the new context is active.
+
+If Terraform fails, stop. Do not run destroy, recreate, or an alternate command without approval.
+
+## Stage 3: Confirm the AKS Target
+
+Ask for the expected Kubernetes context. Then ask for the RAM namespace. `retagentmgr` is normal, but do not assume it.
+
+Replace `<ram-namespace>` with the confirmed namespace. Explain and run read-only checks such as:
 
 ```bash
 kubectl config current-context
 kubectl config view --minify -o jsonpath='{.clusters[0].cluster.server}{"\n"}'
 kubectl cluster-info
-kubectl auth can-i create deployments -n retagentmgr
+kubectl auth can-i create deployments -n <ram-namespace>
 kubectl auth can-i create namespaces
 ```
 
-For OpenShift, also inspect `oc whoami` and `oc project` when `oc` is available. Report the results without exposing credentials and ask the user to explicitly confirm that this is the intended target before creating or changing any resource.
+Report no credentials. Ask the user to confirm the target before a change.
 
-If the context is incorrect, stop. Explain the mismatch and ask whether the user wants to switch it. Do not run `kubectl config use-context` until the user approves that specific command. Never deploy based only on a context name that looks plausible.
+If the target is wrong, stop. Do not run `kubectl config use-context` without approval.
 
-## 4. Install and Verify Dependencies
+## Stage 4: Install or Verify Dependencies
 
-Before installation, ask the user to choose the ingress implementation that will later be recorded in the RAM values file: NGINX, Contour, or an OpenShift Route when the selected platform supports it. Follow the supported versions, values files, and commands in `README.md` and `docs/user/DependencyInstall.md`.
+Ask the user to select `nginx` or `contour`. Use the versions, values files, and commands in `README.md` and `docs/user/DependencyInstall.md`.
 
-Inspect existing namespaces and Helm releases with read-only commands such as `kubectl get namespaces` and `helm list --all-namespaces`. If a dependency already exists, report its version and ownership and ask whether the user wants to retain it, reconcile it, or stop. Do not blindly reinstall it.
+First, check namespaces and Helm releases with read-only commands. If a component exists, report its version and owner. Ask whether to keep it, reconcile it, or stop.
 
-Install or verify dependencies in this order. Each Helm or Kubernetes mutation requires its own explanation and explicit approval.
+Process components in this order:
 
-1. **cert-manager and trust-manager:** Install the repository charts and verify the expected issuers, certificates, and trust bundle. If cert-manager is already installed, follow the documented `linkerd-certs` apply path only after approval.
-2. **Linkerd:** Install it only after certificate and trust management are healthy. Verify the control-plane workload and release status before continuing.
-3. **Ingress:** Install exactly the approved NGINX or Contour implementation with the corresponding example values file, then verify its controller is ready. For an approved OpenShift `route` configuration, record the exception and verify route support instead of installing an unnecessary controller.
-4. **Kueue:** Install the documented Kueue chart and example values file, then verify its controller is ready.
+1. cert-manager and trust-manager.
+2. Linkerd.
+3. NGINX or Contour.
+4. Kueue.
 
-After every dependency installation, use non-mutating checks such as `helm status`, `kubectl get pods`, and `kubectl wait` to verify readiness. Report the release name, namespace, and outcome. Stop if a dependency is unhealthy rather than attempting an upgrade, uninstall, or repair without a new approval.
+Apply the Change Gate to each change. After each component, use `helm status`, `kubectl get pods`, and `kubectl wait` as applicable. Report the release, namespace, and health. Stop if the component is not healthy.
 
-## 5. Create and Configure the Values File
+Copy and edit the example values For NGINX or Contour. You must enter the correct `azure-dns-label-name`, `loadBalancerSourceRanges`, and TLS Secret name. You cannot only use the default values for this deployment. You must match the loadBalancerSourceRanges to the same thing you used in the `terraform.tfvars` file.
 
-Use `examples/ram-values.yaml` as the source template. Ask the user for the desired output path, proposing `./ram-values.yaml` in the deployment checkout. Before copying or editing it, state the path and request approval.
+## Stage 5: Create the RAM Values File
 
-After creating the copy, work through every template placeholder and every deployment-sensitive default. Ask one question at a time or present a clearly numbered group, record the user's choices, summarize the fields about to change, and obtain approval before applying that edit.
+Use `examples/ram-values.yaml` as the source. Propose `./ram-values.yaml` as the output. Do not use the default chart `values.yaml`.
 
-Ask for and configure the following values:
+Get approval before each copy or edit. Ask for values one at a time. Before an edit, show the fields that will change. Give the user an example of the expected value.
 
-1. `extraObjects[0].data.tls.crt` and `extraObjects[0].data.tls.key`: base64-encoded ingress TLS certificate and private key. These are sensitive; the user must enter them locally.
-2. `platform`: use the confirmed mapping above.
-3. `ingress.domain`, `ingress.enableRootIngress`, and `ingress.classType`: ask the user to choose `nginx` or `contour`. On OpenShift, also allow `route` only after explaining that the native Route path means an NGINX or Contour installation is not needed. Confirm the TLS secret name.
-4. `users.application.admin.username`, `users.keycloak.admin.username`, and `users.keycloak.user.username`, plus their passwords. Retain the supplied service usernames only if the user approves them.
-5. `users.database.admin.username` and `users.database.admin.password` for the pre-existing PostgreSQL administrator. Keep this distinct from RAM-created user passwords.
-6. Passwords for `users.monitoring`, `users.embedding`, `users.postgrest`, `users.migration`, `users.otel`, `users.vectorizationJob`, and `users.vectorStore`.
-7. `api.config.license`, `db.init.config.database.host`, port, and SSL mode.
-8. `iam.keycloak.config.clientSecret` and `iam.keycloak.config.cookieSecret`.
-9. Storage sizes, `vectorizationHub.config.postgreSQLCertSecret`, the image pull-secret name, and any node selectors, tolerations, or affinity rules required by the selected cluster.
+Configure these groups:
 
-Before collecting user passwords, ask whether the user wants one shared password for all RAM-created user accounts. Explain that separate passwords provide better isolation. If the user chooses a shared password, apply it only to the RAM application, Keycloak, and RAM service-user password fields listed above; do not replace the pre-existing database administrator password unless the user explicitly asks. Have the user enter the chosen password locally rather than sending it through chat.
+1. **TLS:** `extraObjects[0].data.tls.crt`, `extraObjects[0].data.tls.key`, and the TLS Secret name.
+2. **Azure and ingress:** Set `platform` to `azure`. Configure `ingress.domain`, `ingress.enableRootIngress`, and `ingress.classType` as `nginx` or `contour`.
+3. **RAM users:** Configure application, Keycloak, monitoring, embedding, PostgREST, migration, OTEL, vectorization job, and vector store accounts.
+4. **PostgreSQL:** Configure `users.database.admin.*`, host, port, SSL mode. Keep the existing administrator password separate. A postgreSQLCertSecret is not required.
+5. **License and IAM:** Configure `api.config.license`, the Keycloak client secret, and the cookie secret.
+6. **AKS:** Configure storage, image pull Secret, node selectors, tolerations, and affinity.
 
-Do not silently accept defaults for configuration that could prevent scheduling or access. Explicitly ask whether to retain the template defaults for ingress, database port and TLS mode, storage, image pull-secret name, and child-workload scheduling.
+The user must enter secrets locally.
 
-After each approved edit, validate the values file with a non-mutating command such as:
+Ask whether RAM-created accounts will use separate passwords or one shared password. Explain that separate passwords give better isolation. Do not apply a shared password to the existing PostgreSQL administrator unless the user approves that exact change.
+
+Do not silently keep defaults for ingress, PostgreSQL port, PostgreSQL TLS, storage, image pull Secret, or child-workload scheduling.
+
+After each approved edit group, run:
 
 ```bash
 helm lint ./helm/sas-retrieval-agent-manager -f ./ram-values.yaml
 ```
 
-Report validation errors without printing secret values. Do not proceed until the values file validates and the user confirms that the summarized configuration is correct.
+Do not print secrets. Continue only after validation and user confirmation of the configuration summary.
 
-## 6. Generate, Deploy, and Back Up GPG Keys
+## Stage 6: Create and Back Up GPG Keys
 
-Treat GPG setup as a distinct, required first-installation stage. The GPG helper generates encryption keys, applies Kubernetes Secrets and ConfigMaps to the target cluster, and writes the key material to `scripts/gpg/output`. Losing, replacing, deleting, or regenerating these keys can make existing RAM data permanently unrecoverable.
+GPG keys protect RAM data. Lost or replaced keys can make data unrecoverable.
 
-Before proposing any GPG command, complete these steps:
+Before creation:
 
-1. Ask the user to confirm that this is a new RAM installation in the approved context and namespace. If a RAM release or GPG-related Secret or ConfigMap already exists, stop. Do not generate replacement keys.
-2. Announce and run read-only checks for the RAM release and existing Secrets and ConfigMaps in `retagentmgr`. Display resource names and status only; never display key data.
-3. Ask the user to identify a secure, durable backup location outside the deployment checkout. Explain that the generated `scripts/gpg/output` directory must be backed up before RAM is installed and must not be committed or shared in chat.
-4. Ask whether the default GPG release prefix, `retrieval-agent-manager`, is acceptable. If the user requests a custom prefix, explain that the same value must be set as `security.gpg.nameOverride` in the RAM values file. Summarize the required values-file edit and request approval before making it.
-5. Verify Docker is available and that the context is still the approved one using read-only commands.
+1. Confirm a new RAM installation in the approved context and namespace.
+2. Check for a RAM Helm release and GPG Secret or ConfigMap. Show names only.
+3. Stop if GPG resources exist. Do not replace them.
+4. Ask for a secure backup location outside the repository.
+5. Confirm the release prefix. The default is `retrieval-agent-manager`.
+6. For a custom prefix, set the same value in `security.gpg.nameOverride` after approval.
+7. Verify Docker and the current context with read-only commands.
 
-After the user approves the exact command, walk them through the repository helper in `scripts/gpg`:
+Explain that the helper creates keys, applies AKS resources, and writes files to `scripts/gpg/output`. Get approval for the exact command:
 
 ```bash
 # Linux or macOS, from scripts/gpg
@@ -157,19 +189,24 @@ After the user approves the exact command, walk them through the repository help
 .\run-bootstrap-gpg.ps1
 ```
 
-For a user-approved custom prefix, append `--release <custom-prefix>` to the applicable command. State before execution that the helper uses Docker, creates key material, automatically applies the associated Kubernetes resources, and writes to `output`.
+Add `--release <custom-prefix>` for an approved custom prefix.
 
-When the helper completes, verify only that the expected Secrets and ConfigMaps exist in `retagentmgr`; do not retrieve their contents. Ask the user to make and verify their secure backup of `scripts/gpg/output`, then obtain an explicit confirmation that the backup is complete. Do not proceed to RAM installation without that confirmation.
+After completion, verify only that the expected Secret and ConfigMap exist. Do not read their data. Require the user to back up `scripts/gpg/output` outside the repository. Require confirmation before Stage 7.
 
-## 7. Install and Verify RAM
+## Stage 7: Install and Verify RAM
 
-Before installing RAM, complete these checks:
+Before install:
 
-1. Confirm this is a new installation. If a RAM Helm release or RAM resources already exist, stop and ask whether the user intends an upgrade; do not overwrite an existing deployment.
-2. Confirm the SAS registry pull secret and license are available without displaying their contents.
-3. Confirm that Stage 6 completed successfully, including the user-confirmed backup of the generated GPG output, or that existing GPG keys were deliberately retained for an approved upgrade.
-4. Re-run the approved values-file validation and summarize the release name, chart path, namespace, and values-file path.
+1. Confirm that no RAM Helm release or conflicting resource exists.
+2. Confirm that the SAS registry pull Secret and license are available. Do not show their contents.
+3. Confirm the GPG resources and backup. For an approved upgrade, retain the existing GPG keys.
+4. Run values validation again.
+5. Show the release name, chart path, namespace, values file, and expected change.
 
-Propose the documented RAM Helm installation command from `README.md`, using the approved release name, namespace, and values file. Ask for explicit approval immediately before running it. Use `helm install` for a confirmed new deployment; do not substitute `helm upgrade --install` unless the user explicitly requested an upgrade and separately approved it.
+Use the install command from `README.md`. Get approval immediately before the command.
 
-After installation, verify the release and workload health with read-only checks. At minimum, inspect `helm status` and the RAM pods in `retagentmgr`; also verify the selected ingress or route has an address and that workloads can schedule. Do not display Secret data. Report the final release version, namespace, ready and unready workloads, and any remaining manual step from the selected platform guide.
+Use `helm install` for a new installation. Use `helm upgrade --install` only for an approved upgrade.
+
+After install, use read-only checks for Helm status, RAM pods, ingress address, and workload scheduling. Do not show Secret data.
+
+Report the release version, namespace, ready and unready workloads, access address, and remaining manual steps from `docs/azure-deployment.md`.
