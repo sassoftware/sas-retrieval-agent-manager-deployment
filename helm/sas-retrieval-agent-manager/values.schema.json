@@ -14,6 +14,247 @@
           "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/autoscaling-schema.json",
           "required": []
         },
+        "childScheduling": {
+          "additionalProperties": false,
+          "description": "Configuration for scheduling child entities spawned by the API.",
+          "properties": {
+            "agentDevServer": {
+              "additionalProperties": false,
+              "description": "Scheduling configuration for the Agent Development Server",
+              "properties": {
+                "affinity": {
+                  "additionalProperties": true,
+                  "required": [],
+                  "type": "object"
+                },
+                "nodeSelector": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "required": [],
+                  "type": "object"
+                },
+                "tolerations": {
+                  "items": {
+                    "required": [],
+                    "type": "object"
+                  },
+                  "required": [],
+                  "type": "array"
+                }
+              },
+              "required": [],
+              "title": "agentDevServer",
+              "type": "object"
+            },
+            "agentProdServer": {
+              "additionalProperties": false,
+              "description": "Scheduling configuration for the Agent Production Server",
+              "properties": {
+                "affinity": {
+                  "additionalProperties": true,
+                  "required": [],
+                  "type": "object"
+                },
+                "nodeSelector": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "required": [],
+                  "type": "object"
+                },
+                "tolerations": {
+                  "items": {
+                    "required": [],
+                    "type": "object"
+                  },
+                  "required": [],
+                  "type": "array"
+                }
+              },
+              "required": [],
+              "title": "agentProdServer",
+              "type": "object"
+            },
+            "automation": {
+              "additionalProperties": false,
+              "description": "Scheduling configuration for the automation pods",
+              "properties": {
+                "affinity": {
+                  "additionalProperties": true,
+                  "required": [],
+                  "type": "object"
+                },
+                "nodeSelector": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "required": [],
+                  "type": "object"
+                },
+                "tolerations": {
+                  "items": {
+                    "required": [],
+                    "type": "object"
+                  },
+                  "required": [],
+                  "type": "array"
+                }
+              },
+              "required": [],
+              "title": "automation",
+              "type": "object"
+            },
+            "embeddingModel": {
+              "additionalProperties": false,
+              "description": "Scheduling configuration for the embedding model pods",
+              "properties": {
+                "affinity": {
+                  "additionalProperties": true,
+                  "required": [],
+                  "type": "object"
+                },
+                "nodeSelector": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "required": [],
+                  "type": "object"
+                },
+                "tolerations": {
+                  "items": {
+                    "required": [],
+                    "type": "object"
+                  },
+                  "required": [],
+                  "type": "array"
+                }
+              },
+              "required": [],
+              "title": "embeddingModel",
+              "type": "object"
+            },
+            "eval": {
+              "additionalProperties": false,
+              "description": "Scheduling configuration for the Evaluation pods",
+              "properties": {
+                "affinity": {
+                  "additionalProperties": true,
+                  "required": [],
+                  "type": "object"
+                },
+                "nodeSelector": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "required": [],
+                  "type": "object"
+                },
+                "tolerations": {
+                  "items": {
+                    "required": [],
+                    "type": "object"
+                  },
+                  "required": [],
+                  "type": "array"
+                }
+              },
+              "required": [],
+              "title": "eval",
+              "type": "object"
+            },
+            "mcpToolServer": {
+              "additionalProperties": false,
+              "description": "Scheduling configuration for the MCP Tool Server pods",
+              "properties": {
+                "affinity": {
+                  "additionalProperties": true,
+                  "required": [],
+                  "type": "object"
+                },
+                "nodeSelector": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "required": [],
+                  "type": "object"
+                },
+                "tolerations": {
+                  "items": {
+                    "required": [],
+                    "type": "object"
+                  },
+                  "required": [],
+                  "type": "array"
+                }
+              },
+              "required": [],
+              "title": "mcpToolServer",
+              "type": "object"
+            },
+            "source": {
+              "additionalProperties": false,
+              "description": "Scheduling configuration for the Custom and Git source pods",
+              "properties": {
+                "affinity": {
+                  "additionalProperties": true,
+                  "required": [],
+                  "type": "object"
+                },
+                "nodeSelector": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "required": [],
+                  "type": "object"
+                },
+                "tolerations": {
+                  "items": {
+                    "required": [],
+                    "type": "object"
+                  },
+                  "required": [],
+                  "type": "array"
+                }
+              },
+              "required": [],
+              "title": "source",
+              "type": "object"
+            },
+            "vectorizationHub": {
+              "additionalProperties": false,
+              "description": "Scheduling configuration for the Vectorization Hub pods",
+              "properties": {
+                "affinity": {
+                  "additionalProperties": true,
+                  "required": [],
+                  "type": "object"
+                },
+                "nodeSelector": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "required": [],
+                  "type": "object"
+                },
+                "tolerations": {
+                  "items": {
+                    "required": [],
+                    "type": "object"
+                  },
+                  "required": [],
+                  "type": "array"
+                }
+              },
+              "required": [],
+              "title": "vectorizationHub",
+              "type": "object"
+            }
+          },
+          "required": [],
+          "title": "childScheduling",
+          "type": "object"
+        },
         "config": {
           "additionalProperties": false,
           "properties": {
@@ -1807,11 +2048,11 @@
           "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/image-schema.json",
           "required": []
         },
-        "oauthProxy": {
+        "mcpToolbox": {
           "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/image-schema.json",
           "required": []
         },
-        "plugin": {
+        "oauthProxy": {
           "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/image-schema.json",
           "required": []
         },
@@ -1820,10 +2061,6 @@
           "required": []
         },
         "postgrest": {
-          "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/image-schema.json",
-          "required": []
-        },
-        "mcpToolbox": {
           "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/image-schema.json",
           "required": []
         },

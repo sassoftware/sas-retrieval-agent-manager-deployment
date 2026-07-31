@@ -103,6 +103,22 @@ The following extensions are either required or recommended for the Retrieval Ag
 
 SAS Retrieval Agent Manager automatically initializes the required databases during deployment unless specified otherwise. This requires providing database admin credentials in your SAS Retrieval Agent Manager values file.
 
+#### Manual Database Initialization
+
+If you do not want to provide SAS Retrieval Agent Manager with database-admin-level access, set database initialization to `false` in your values file and initialize the databases separately before installing RAM:
+
+```yaml
+db:
+  init:
+    config:
+      database:
+        initializeDb: "False"
+```
+
+The manual initialization scripts require a PostgreSQL administrator only while the databases, roles, schemas, and required extensions are being prepared. After they complete, RAM can connect using its application-specific database credentials without needing database-admin credentials. Follow the [Manual Database Initialization](./scripts/db/README.md) guide for the required environment variables and Docker or bare-metal commands.
+
+Disable the Helm chart's database initialization before deployment so the chart does not attempt to repeat the manual setup.
+
 #### Secure Database Connection
 
 If your database requires SSL, you will need to provide the SSL certificate bundle as a Kubernetes secret in the same namespace as your SAS Retrieval Agent Manager deployment. Upload the bundle as a secret with the key of `cert.pem`. This can be done with the following commands:
@@ -301,6 +317,10 @@ In the example values file under the `.Storage.embedding.pvc.size` and `.Storage
 
 > **Note:** Please be aware that the application pvc size corresponds with the amount of data purchased from SAS.
 
+##### Configure Child Workload Scheduling
+
+The `api.childScheduling` values control the tolerations, node selectors, and affinity for workloads spawned by the API, including agents, evaluations, source pods, and model services. The example values file prefers nodes labeled for RAM; adjust these settings to match your cluster's scheduling configuration.
+
 #### Deploy with Helm
 
 ```bash
@@ -312,7 +332,7 @@ helm install retrieval-agent-manager oci://ghcr.io/sassoftware/sas-retrieval-age
   --timeout 10m
 ```
 
-> **Note:** Use the package section of this repository to find an installable version. Also, if something fails and you need to redeploy, it is recommended that you run `helm uninstall retrieval-agent-manager -n retagentmgr`.
+> **Note:** Use the package section of this repository to find an installable version. Also, if something fails and you need to redeploy, it is recommended that you run `helm uninstall retrieval-agent-manager -n retagentmgr` and retry installation.
 
 #### Verify Deployment
 

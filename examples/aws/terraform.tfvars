@@ -63,7 +63,7 @@ create_container_registry = false
 create_jump_vm = false
 
 # EKS (Elastic Kubernetes Service) config
-kubernetes_version         = "1.33"
+kubernetes_version         = "1.34"
 # Node group configuration
 default_nodepool_min_nodes = 1
 default_nodepool_max_nodes = 5
