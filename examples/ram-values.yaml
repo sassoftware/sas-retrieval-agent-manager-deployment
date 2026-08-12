@@ -78,7 +78,7 @@ api:
   config:
     # Set to 'True' to enable GenAI traces in Vector
     enable_genai_traces: 'False'
-    license:
+    license: |
       <your_jwt_sas_license_here>
 
 # -- Database configuration for RAM, including host, port, SSL mode, and credentials for application and monitoring database roles
