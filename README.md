@@ -252,12 +252,18 @@ After you have access to the Kubernetes cluster, you must install the necessary 
 
 ### Install Preferred Ingress Controller
 
-SAS Retrieval Agent Manager supports two ingress controllers as of now; NGINX and contour. Select your preferred one and follow the installation steps accordingly.
+SAS Retrieval Agent Manager supports NGINX and Contour ingress controllers on standard Kubernetes deployments. On OpenShift, the built-in OpenShift Router is used, and services are exposed via `Route` resources instead of `Ingress`.
+
+**For Kubernetes (non-OpenShift):**
 
 | Component   |    Version    |    Installation Example                                       |       Installation Documentation                           |                         |
 |-------------|---------------|---------------------------------------------------------------|----------------------------------------------------------- |-------------------------|
 | **NGINX**   |4.12.3         |[example](./docs/user/DependencyInstall.md#nginx)              | [docs](https://kubernetes.github.io/ingress-nginx/deploy/) |                         |
 | **Contour** |1.33.1         |[example](./docs/user/DependencyInstall.md#contour)            | [docs](https://projectcontour.io/getting-started/)         |                         |
+
+**For OpenShift:**
+
+OpenShift uses the built-in OpenShift Router and `Route` resources for ingress. No separate ingress controller installation is needed. However, you must configure TLS certificates for your Routes. See the [OpenShift Route TLS Configuration](./docs/ocp-deployment.md#openshift-route-tls-configuration) section in the OpenShift deployment guide for details on securing Routes with inline certificates or cert-manager integration.
 
 ### Install Optional Components
 

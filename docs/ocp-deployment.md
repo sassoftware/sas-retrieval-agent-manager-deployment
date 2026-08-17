@@ -11,6 +11,7 @@
 - [PostgreSQL SSL Certificate](#deploy-postgresql-ssl-certificate)
 - [Kueue Deployment](#kueue-deployment)
 - [OpenShift Service Mesh 3 Deployment](#openshift-service-mesh-3-deployment)
+- [OpenShift Route TLS Configuration](#openshift-route-tls-configuration)
 - [Application Deployment](#application-deployment)
 
 ---
@@ -484,6 +485,190 @@ oc -n retagentmgr get gateway waypoint -o jsonpath='{.status.conditions}' | jq
 ```
 
 The `Programmed` condition should show `status: "True"` before proceeding to the Application Deployment step.
+
+---
+
+## OpenShift Route TLS Configuration
+
+SAS Retrieval Agent Manager exposes services on OpenShift via `Route` resources, which need to be secured with TLS certificates. OpenShift's `Route` API does not support referencing a `Secret` by name (unlike Kubernetes `Ingress`); instead, the certificate and private key must be embedded directly in the Route's `spec.tls` section.
+
+This section explains how to configure TLS for OpenShift Routes using two approaches:
+
+1. **Inline certificates** — provide PEM-encoded certificate and key directly in Helm values
+2. **cert-manager integration** — use cert-manager to automate certificate issuance and renewal
+
+### Option 1: Inline Certificates (Manual)
+
+The simplest approach is to provide your certificate and private key as PEM-encoded text in the Helm values file.
+
+#### Prerequisites
+
+- A valid TLS certificate (`.crt` file) in PEM format
+- A corresponding private key (`.key` file) in PEM format
+- Optionally, a CA certificate (`.crt` file) for certificate chains
+
+#### Obtain Your Certificate
+
+Get or generate your certificate through any means (commercial CA, self-signed, Let's Encrypt, etc.). For example:
+
+```bash
+# Self-signed example (valid for testing; do NOT use in production)
+openssl req -x509 -newkey rsa:4096 -keyout tls.key -out tls.crt -days 365 -nodes \
+  -subj "/CN=aiagent.sasram.kh.asegroup.com"
+```
+
+#### Encode as Base64
+
+Encode the certificate and key for use in Helm values:
+
+```bash
+# Display certificate content as base64 (for the values file)
+cat tls.crt | base64 -w 0
+
+# Display key content as base64 (for the values file)
+cat tls.key | base64 -w 0
+
+# Optional: display CA certificate if you have a certificate chain
+cat ca.crt | base64 -w 0
+```
+
+#### Configure in Helm Values
+
+In your `ram-values.yaml`:
+
+```yaml
+ingress:
+  enabled: true
+  classType: route  # "route" for OpenShift
+  domain: aiagent.sasram.kh.asegroup.com
+  tls:
+    enabled: true
+    secretName: ingress-tls  # Name for the Kubernetes secret created by the chart
+    certificate: |
+      -----BEGIN CERTIFICATE-----
+      MIIDXTCCAkWgAwIBAgIJAJC1...
+      ...
+      -----END CERTIFICATE-----
+    key: |
+      -----BEGIN RSA PRIVATE KEY-----
+      MIIEpAIBAAKCAQEA2Z3x4...
+      ...
+      -----END RSA PRIVATE KEY-----
+    caCertificate: |
+      -----BEGIN CERTIFICATE-----
+      MIIDgTCCAmkCAQAwDQYJ...
+      ...
+      -----END CERTIFICATE-----
+```
+
+> **Note:** The chart will create a Kubernetes `Secret` named `ingress-tls` from these values. This secret is used by nginx/contour ingress resources (if configured), and for cert-manager CertificateRequest objects when needed.
+
+### Option 2: cert-manager Integration (Automated)
+
+For automated certificate issuance and renewal, integrate with cert-manager using the OpenShift Routes controller add-on. This approach uses annotations on the Route to request and manage certificates from a cert-manager `Issuer` or `ClusterIssuer`.
+
+#### Prerequisites
+
+- **cert-manager** installed in the cluster (e.g., via Red Hat's cert-manager Operator for OpenShift)
+- **openshift-routes controller** installed separately (NOT included with standard cert-manager)
+- A cert-manager `Issuer` or `ClusterIssuer` configured in your cluster (e.g., ACME-based, self-signed, or corporate PKI)
+
+#### Install the openshift-routes Controller
+
+The `openshift-routes` controller is a separate add-on from the cert-manager project. It watches `Route` resources for cert-manager annotations and patches their `spec.tls` section with certificate and key data.
+
+```bash
+# Install openshift-routes in the cert-manager namespace
+helm install openshift-routes -n cert-manager \
+  oci://ghcr.io/cert-manager/charts/openshift-routes \
+  --version v0.10.0
+```
+
+Verify the controller is running:
+
+```bash
+oc -n cert-manager get pods -l app.kubernetes.io/name=openshift-routes
+```
+
+#### Create a cert-manager Issuer or ClusterIssuer
+
+If you don't already have an Issuer configured, create one. This example uses ACME with Let's Encrypt:
+
+```bash
+cat <<EOF | oc apply -f -
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: your-email@example.com
+    privateKeySecretRef:
+      name: letsencrypt-prod
+    solvers:
+      - http01:
+          ingress: {}
+EOF
+```
+
+For self-signed or corporate CA Issuers, refer to the [cert-manager documentation](https://cert-manager.io/docs/configuration/).
+
+#### Configure in Helm Values
+
+In your `ram-values.yaml`:
+
+```yaml
+ingress:
+  enabled: true
+  classType: route  # "route" for OpenShift
+  domain: aiagent.sasram.kh.asegroup.com
+  tls:
+    enabled: true
+    secretName: ingress-tls
+    # Leave certificate/key/caCertificate empty when using cert-manager
+    certificate: ""
+    key: ""
+    caCertificate: ""
+    certManager:
+      enabled: true
+      issuerRef:
+        name: letsencrypt-prod  # Name of your ClusterIssuer or Issuer
+        kind: ClusterIssuer     # Use "Issuer" for namespace-scoped, "ClusterIssuer" for cluster-scoped
+      dnsNames:
+        - aiagent.example.com   # Additional DNS names (optional; ingress.domain is always included)
+      duration: 2160h           # Certificate lifetime (optional; defaults to cert-manager default)
+      renewBefore: 360h         # How long before expiry to renew (optional; defaults to 1/3 of duration)
+```
+
+When `certManager.enabled: true`, the chart:
+1. Adds cert-manager annotations (`cert-manager.io/issuer-name`, etc.) to all Route resources
+2. The openshift-routes controller detects these annotations and creates a `CertificateRequest` through cert-manager
+3. The Issuer issues a certificate and signs the request
+4. The openshift-routes controller patches the Route's `spec.tls.certificate` and `spec.tls.key` with the signed certificate
+5. On renewal (default: 2/3 through the certificate lifetime), the process repeats automatically
+
+Verify the Routes have certificates:
+
+```bash
+# List routes in the retagentmgr namespace
+oc -n retagentmgr get routes
+
+# Inspect a specific route's TLS section
+oc -n retagentmgr get route <route-name> -o jsonpath='{.spec.tls}' | jq
+```
+
+#### Security Considerations
+
+The openshift-routes controller is designed for single-tenant clusters. Important caveats:
+
+- **Multi-tenant risk**: Any user who can edit a `Route` can request certificates for any domain via the annotations. This grants cluster-wide certificate request capability to Route editors. On shared clusters, use one or more of:
+  - RBAC to restrict who can edit Routes
+  - Domain-validating (ACME) Issuers to prevent arbitrary domains
+  - cert-manager's [approver-policy](https://cert-manager.io/docs/policy/approval/approver-policy/) to gate issuance
+- **Namespace isolation**: The controller reconciles Routes across all namespaces using a single service account, so consider applying namespace-level RBAC as well.
+
+For more details, see the [openshift-routes project README](https://github.com/cert-manager/openshift-routes#usage).
 
 ---
 
