@@ -60,22 +60,22 @@ container_registry_admin_enabled    = false
 
 
 # AKS config
-kubernetes_version         = "1.34"
+kubernetes_version         = "1.35"
 
 # Small Deployment Defaults
 default_nodepool_min_nodes = 1
 default_nodepool_max_nodes = 3
-default_nodepool_vm_type   = "Standard_d8s_v5"
+default_nodepool_vm_type   = "Standard_d16s_v7"
 
 # Medium Deployment Defaults
 # default_nodepool_min_nodes = 2
 # default_nodepool_max_nodes = 6
-# default_nodepool_vm_type   = "Standard_d8s_v5"
+# default_nodepool_vm_type   = "Standard_d8s_v7"
 
 # Large Deployment Defaults
 # default_nodepool_min_nodes = 2
 # default_nodepool_max_nodes = 8
-# default_nodepool_vm_type   = "Standard_d16s_v5"
+# default_nodepool_vm_type   = "Standard_d16s_v7"
 
 
 aks_network_plugin         = "azure"

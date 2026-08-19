@@ -38,7 +38,7 @@ fi
 
 mkdir -p "${SCRIPT_DIR}/output"
 
-docker run --rm -it \
+docker run --rm -i \
   -v "${KUBECONFIG_PATH}:/root/.kube/config:ro" \
   -v "${SCRIPT_DIR}/output:/output" \
   "${IMAGE_NAME}" \

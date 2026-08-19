@@ -197,12 +197,97 @@ After creating the secret, you should be able to pull all SAS Retrieval Agent Ma
 
 ##### Populate the Registry
 
-Use the [previous docker login command](#gather-login-credentials) provided by SAS Mirror Manager and populate your mirror registry with the SAS Retrieval Agent Manager images using the provided script:
+The mirror script uses Azure Container Registry (ACR) server-side import. The host does not need network access to a private ACR endpoint.
 
-```sh
+The script renders each Helm chart and imports its active workload images. It preserves the source repository path after the source registry name. For example, it imports `quay.io/jetstack/trust-manager:v0.18.0` as `<acr-login-server>/jetstack/trust-manager:v0.18.0`.
+
+Install these commands before you run the script:
+
+- Azure CLI
+- Helm
+- Mike Farah `yq` version 4 or later
+
+Sign in to Azure. Use an identity that can import images into the target ACR.
+
+```bash
+az login
+```
+
+Run the commands from the repository root. Replace `<acr-login-server>` with the ACR login server.
+
+Mirror the SAS Retrieval Agent Manager images:
+
+```bash
 ./scripts/mirror-images.sh \
-  myregistry.mydomain.com \
+  <acr-login-server> \
   ./helm/sas-retrieval-agent-manager/values.yaml
+```
+
+The script asks for `cr.sas.com` credentials from SAS Mirror Manager. It does not save the password.
+
+Mirror the local dependency charts:
+
+```bash
+./scripts/mirror-images.sh <acr-login-server> ./helm/cert-manager
+./scripts/mirror-images.sh <acr-login-server> ./helm/trust-manager
+./scripts/mirror-images.sh <acr-login-server> ./helm/linkerd
+```
+
+Mirror Kueue version `0.17.2`:
+
+```bash
+./scripts/mirror-images.sh \
+  <acr-login-server> \
+  ./examples/dependencies/required/kueue.yaml
+```
+
+Mirror NGINX version `4.12.3`:
+
+```bash
+./scripts/mirror-images.sh \
+  <acr-login-server> \
+  ./examples/dependencies/required/ingress-controllers/nginx.yaml
+```
+
+Mirror Contour chart version `0.2.1` and application version `1.33.1`:
+
+```bash
+./scripts/mirror-images.sh \
+  <acr-login-server> \
+  ./examples/dependencies/required/ingress-controllers/contour.yaml
+```
+
+Contour uses an Envoy image from Docker Hub. The script asks for a Docker Hub username and personal access token. This authentication prevents anonymous pull rate-limit errors.
+
+The local Helm chart tarballs do not need to change. Add an ACR override values file when you install each chart. The override must set each image repository or registry to `<acr-login-server>`.
+
+Example dependency installation:
+
+```bash
+helm upgrade --install trust-manager ./helm/trust-manager \
+  --namespace cert-manager \
+  --values /path/to/trust-manager-acr.yaml
+
+helm upgrade --install linkerd ./helm/linkerd \
+  --namespace linkerd \
+  --create-namespace \
+  --values /path/to/linkerd-acr.yaml
+
+helm upgrade --install kueue \
+  oci://registry.k8s.io/kueue/charts/kueue \
+  --version 0.17.2 \
+  --namespace kueue \
+  --create-namespace \
+  --values ./examples/dependencies/required/kueue.yaml \
+  --values /path/to/kueue-acr.yaml
+```
+
+The Helm chart source can remain external or in a local tarball. The cluster pulls only the container images named in the rendered Kubernetes objects. In a network-isolated environment, download external chart packages before you remove installer egress.
+
+Run the script without arguments to show its current supported inputs and pinned versions:
+
+```bash
+./scripts/mirror-images.sh
 ```
 
 ###### Use the Mirror Registry in the Values File

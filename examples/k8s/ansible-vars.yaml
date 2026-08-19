@@ -8,7 +8,7 @@ prefix          : "ram-k8s-cluster" # Prefix for the deployment e.g. prod.
 # Kubernetes - Common
 #
 # Consult SAS Viya Documentation for supported kubernetes versions for the release that is being deployed.
-kubernetes_version         : "1.33.1" # Supported versions "1.31.x" - "1.33.x
+kubernetes_version         : "1.35" # Supported versions "1.31.x" - "1.33.x
 kubernetes_cri_version     : "1.7.28" # Choices : [Ubuntu 22.04: "1.7.24", Ubuntu 24.04: "1.7.28"]
 kubernetes_cluster_dns     : "192.123.456.10" # DNS IP for kubelet (should be service_subnet first IP + .10)
 
