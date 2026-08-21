@@ -15,6 +15,7 @@
   - [Optional Components](#install-optional-components)
   - [Installing SAS Retrieval Agent Manager](#install-sas-retrieval-agent-manager)
   - [Upgrading SAS Retrieval Agent Manager](#upgrade-sas-retrieval-agent-manager)
+- [Conversational Deployment](#conversational-deployment)
 - [Backup and Restore Guide](#backup-and-restore-guide)
 - [Connecting different LLMS](#connecting-different-llms)
 - [Monitoring and Logging](#monitoring-and-logging)
@@ -339,6 +340,23 @@ helm upgrade --install retrieval-agent-manager oci://ghcr.io/sassoftware/sas-ret
   -n retagentmgr \
   --timeout 10m
 ```
+
+## Conversational Deployment
+
+You can use a coding assistant to guide an Azure and Azure Kubernetes Service (AKS) deployment. Use a coding assistant that supports repository instructions in an `AGENTS.md` file.
+
+1. Clone this repository.
+2. Open the repository root in your coding assistant.
+3. Confirm that the assistant can read [AGENTS.md](./AGENTS.md).
+4. Ask the assistant: `Help me deploy SAS Retrieval Agent Manager by following AGENTS.md.`
+5. Answer one question at a time.
+6. Review each proposed command or file change.
+7. Approve each change only after you confirm its target and effect.
+8. Enter all secrets directly in your local terminal. Do not enter secrets in the assistant chat.
+
+The `AGENTS.md` file gives the assistant the deployment sequence and safety rules. The assistant checks the Azure subscription, infrastructure path, AKS context, namespace, dependencies, values file, GPG keys, installation, and deployment status. The assistant must stop when a check fails or a target is not clear.
+
+This conversational workflow supports Azure and AKS only. Use the platform guides in this README for other deployment platforms.
 
 ## Backup and Restore Guide
 
