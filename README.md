@@ -15,6 +15,7 @@
   - [Optional Components](#install-optional-components)
   - [Installing SAS Retrieval Agent Manager](#install-sas-retrieval-agent-manager)
   - [Upgrading SAS Retrieval Agent Manager](#upgrade-sas-retrieval-agent-manager)
+- [Conversational Deployment](#conversational-deployment)
 - [Backup and Restore Guide](#backup-and-restore-guide)
 - [Connecting different LLMS](#connecting-different-llms)
 - [Monitoring and Logging](#monitoring-and-logging)
@@ -103,6 +104,22 @@ The following extensions are either required or recommended for the Retrieval Ag
 
 SAS Retrieval Agent Manager automatically initializes the required databases during deployment unless specified otherwise. This requires providing database admin credentials in your SAS Retrieval Agent Manager values file.
 
+#### Manual Database Initialization
+
+If you do not want to provide SAS Retrieval Agent Manager with database-admin-level access, set database initialization to `false` in your values file and initialize the databases separately before installing RAM:
+
+```yaml
+db:
+  init:
+    config:
+      database:
+        initializeDb: "False"
+```
+
+The manual initialization scripts require a PostgreSQL administrator only while the databases, roles, schemas, and required extensions are being prepared. After they complete, RAM can connect using its application-specific database credentials without needing database-admin credentials. Follow the [Manual Database Initialization](./scripts/db/README.md) guide for the required environment variables and Docker or bare-metal commands.
+
+Disable the Helm chart's database initialization before deployment so the chart does not attempt to repeat the manual setup.
+
 #### Secure Database Connection
 
 If your database requires SSL, you will need to provide the SSL certificate bundle as a Kubernetes secret in the same namespace as your SAS Retrieval Agent Manager deployment. Upload the bundle as a secret with the key of `cert.pem`. This can be done with the following commands:
@@ -179,28 +196,7 @@ After creating the secret, you should be able to pull all SAS Retrieval Agent Ma
 
 #### Mirror Registry Download
 
-##### Populate the Registry
-
-Use the [previous docker login command](#gather-login-credentials) provided by SAS Mirror Manager and populate your mirror registry with the SAS Retrieval Agent Manager images using the provided script:
-
-```sh
-./scripts/mirror-images.sh \
-  myregistry.mydomain.com \
-  ./helm/sas-retrieval-agent-manager/values.yaml
-```
-
-###### Use the Mirror Registry in the Values File
-
-Edit your SAS Retrieval Agent Manager Values file to pull from that registry instead of the default, `cr.sas.com` registry.
-
-Example Usage:
-
-```yaml
-images:
-  repo:
-    # -- Base container registry URL
-    base: 'myregistry.mydomain.com'
-```
+See [Mirror Container Images](scripts/mirror/README.md) for requirements and usage instructions.
 
 ### License Renewal Process
 
@@ -307,6 +303,10 @@ In the example values file under the `.Storage.embedding.pvc.size` and `.Storage
 
 > **Note:** Please be aware that the application pvc size corresponds with the amount of data purchased from SAS.
 
+##### Configure Child Workload Scheduling
+
+The `api.childScheduling` values control the tolerations, node selectors, and affinity for workloads spawned by the API, including agents, evaluations, source pods, and model services. The example values file prefers nodes labeled for RAM; adjust these settings to match your cluster's scheduling configuration.
+
 #### Deploy with Helm
 
 ```bash
@@ -318,7 +318,7 @@ helm install retrieval-agent-manager oci://ghcr.io/sassoftware/sas-retrieval-age
   --timeout 10m
 ```
 
-> **Note:** Use the package section of this repository to find an installable version. Also, if something fails and you need to redeploy, it is recommended that you run `helm uninstall retrieval-agent-manager -n retagentmgr`.
+> **Note:** Use the package section of this repository to find an installable version. Also, if something fails and you need to redeploy, it is recommended that you run `helm uninstall retrieval-agent-manager -n retagentmgr` and retry installation.
 
 #### Verify Deployment
 
@@ -346,6 +346,23 @@ helm upgrade --install retrieval-agent-manager oci://ghcr.io/sassoftware/sas-ret
   -n retagentmgr \
   --timeout 10m
 ```
+
+## Conversational Deployment
+
+You can use a coding assistant to guide an Azure and Azure Kubernetes Service (AKS) deployment. Use a coding assistant that supports repository instructions in an `AGENTS.md` file.
+
+1. Clone this repository.
+2. Open the repository root in your coding assistant.
+3. Confirm that the assistant can read [AGENTS.md](./AGENTS.md).
+4. Ask the assistant: `Help me deploy SAS Retrieval Agent Manager by following AGENTS.md.`
+5. Answer one question at a time.
+6. Review each proposed command or file change.
+7. Approve each change only after you confirm its target and effect.
+8. Enter all secrets directly in your local terminal. Do not enter secrets in the assistant chat.
+
+The `AGENTS.md` file gives the assistant the deployment sequence and safety rules. The assistant checks the Azure subscription, infrastructure path, AKS context, namespace, dependencies, values file, GPG keys, installation, and deployment status. The assistant must stop when a check fails or a target is not clear.
+
+This conversational workflow supports Azure and AKS only. Use the platform guides in this README for other deployment platforms.
 
 ## Backup and Restore Guide
 

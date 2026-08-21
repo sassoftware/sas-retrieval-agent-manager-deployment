@@ -1160,6 +1160,309 @@ api:
       create: true
       # -- The name of the service account to use. If not set and create is true, a name is generated using the fullname template
       name: ''
+  
+  # @schema
+  # type: object
+  # additionalProperties: false
+  # @schema
+  # -- Configuration for scheduling child entities spawned by the API.
+  childScheduling:
+    # @schema
+    # type: object
+    # additionalProperties: false
+    # properties:
+    #   tolerations:
+    #     type: array
+    #     items:
+    #       type: object
+    #   nodeSelector:
+    #     type: object
+    #     additionalProperties:
+    #       type: string
+    #   affinity:
+    #     type: object
+    #     additionalProperties: true
+    # @schema
+    # -- Scheduling configuration for the Agent Development Server
+    agentDevServer:
+      tolerations: []
+      nodeSelector: {}
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            preference:
+              matchExpressions:
+              - key: sas.com/deployment
+                operator: In
+                values:
+                - retrieval-agent-manager
+          - weight: 2
+            preference:
+              matchExpressions:
+              - key: workload.sas.com/class
+                operator: In
+                values:
+                - ram
+    # @schema
+    # type: object
+    # additionalProperties: false
+    # properties:
+    #   tolerations:
+    #     type: array
+    #     items:
+    #       type: object
+    #   nodeSelector:
+    #     type: object
+    #     additionalProperties:
+    #       type: string
+    #   affinity:
+    #     type: object
+    #     additionalProperties: true
+    # @schema
+    # -- Scheduling configuration for the Agent Production Server
+    agentProdServer:
+      tolerations: []
+      nodeSelector: {}
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            preference:
+              matchExpressions:
+              - key: sas.com/deployment
+                operator: In
+                values:
+                - retrieval-agent-manager
+          - weight: 2
+            preference:
+              matchExpressions:
+              - key: workload.sas.com/class
+                operator: In
+                values:
+                - ram
+    # @schema
+    # type: object
+    # additionalProperties: false
+    # properties:
+    #   tolerations:
+    #     type: array
+    #     items:
+    #       type: object
+    #   nodeSelector:
+    #     type: object
+    #     additionalProperties:
+    #       type: string
+    #   affinity:
+    #     type: object
+    #     additionalProperties: true
+    # @schema
+    # -- Scheduling configuration for the Evaluation pods
+    eval:
+      tolerations: []
+      nodeSelector: {}
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            preference:
+              matchExpressions:
+              - key: sas.com/deployment
+                operator: In
+                values:
+                - retrieval-agent-manager
+          - weight: 2
+            preference:
+              matchExpressions:
+              - key: workload.sas.com/class
+                operator: In
+                values:
+                - ram
+    # @schema
+    # type: object
+    # additionalProperties: false
+    # properties:
+    #   tolerations:
+    #     type: array
+    #     items:
+    #       type: object
+    #   nodeSelector:
+    #     type: object
+    #     additionalProperties:
+    #       type: string
+    #   affinity:
+    #     type: object
+    #     additionalProperties: true
+    # @schema
+    # -- Scheduling configuration for the Vectorization Hub pods
+    vectorizationHub:
+      tolerations: []
+      nodeSelector: {}
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            preference:
+              matchExpressions:
+              - key: sas.com/deployment
+                operator: In
+                values:
+                - retrieval-agent-manager
+          - weight: 2
+            preference:
+              matchExpressions:
+              - key: workload.sas.com/class
+                operator: In
+                values:
+                - ram
+    # @schema
+    # type: object
+    # additionalProperties: false
+    # properties:
+    #   tolerations:
+    #     type: array
+    #     items:
+    #       type: object
+    #   nodeSelector:
+    #     type: object
+    #     additionalProperties:
+    #       type: string
+    #   affinity:
+    #     type: object
+    #     additionalProperties: true
+    # @schema
+    # -- Scheduling configuration for the MCP Tool Server pods
+    mcpToolServer:
+      tolerations: []
+      nodeSelector: {}
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            preference:
+              matchExpressions:
+              - key: sas.com/deployment
+                operator: In
+                values:
+                - retrieval-agent-manager
+          - weight: 2
+            preference:
+              matchExpressions:
+              - key: workload.sas.com/class
+                operator: In
+                values:
+                - ram
+    # @schema
+    # type: object
+    # additionalProperties: false
+    # properties:
+    #   tolerations:
+    #     type: array
+    #     items:
+    #       type: object
+    #   nodeSelector:
+    #     type: object
+    #     additionalProperties:
+    #       type: string
+    #   affinity:
+    #     type: object
+    #     additionalProperties: true
+    # @schema
+    # -- Scheduling configuration for the Custom and Git source pods
+    source:
+      tolerations: []
+      nodeSelector: {}
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            preference:
+              matchExpressions:
+              - key: sas.com/deployment
+                operator: In
+                values:
+                - retrieval-agent-manager
+          - weight: 2
+            preference:
+              matchExpressions:
+              - key: workload.sas.com/class
+                operator: In
+                values:
+                - ram
+    # @schema
+    # type: object
+    # additionalProperties: false
+    # properties:
+    #   tolerations:
+    #     type: array
+    #     items:
+    #       type: object
+    #   nodeSelector:
+    #     type: object
+    #     additionalProperties:
+    #       type: string
+    #   affinity:
+    #     type: object
+    #     additionalProperties: true
+    # @schema
+    # -- Scheduling configuration for the embedding model pods
+    embeddingModel:
+      tolerations: []
+      nodeSelector: {}
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            preference:
+              matchExpressions:
+              - key: sas.com/deployment
+                operator: In
+                values:
+                - retrieval-agent-manager
+          - weight: 2
+            preference:
+              matchExpressions:
+              - key: workload.sas.com/class
+                operator: In
+                values:
+                - ram
+    # @schema
+    # type: object
+    # additionalProperties: false
+    # properties:
+    #   tolerations:
+    #     type: array
+    #     items:
+    #       type: object
+    #   nodeSelector:
+    #     type: object
+    #     additionalProperties:
+    #       type: string
+    #   affinity:
+    #     type: object
+    #     additionalProperties: true
+    # @schema
+    # -- Scheduling configuration for the automation pods
+    automation:
+      tolerations: []
+      nodeSelector: {}
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            preference:
+              matchExpressions:
+              - key: sas.com/deployment
+                operator: In
+                values:
+                - retrieval-agent-manager
+          - weight: 2
+            preference:
+              matchExpressions:
+              - key: workload.sas.com/class
+                operator: In
+                values:
+                - ram
 
   # @schema
   # type: object
