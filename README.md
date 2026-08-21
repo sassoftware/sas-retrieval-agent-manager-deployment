@@ -311,7 +311,7 @@ The `api.childScheduling` values control the tolerations, node selectors, and af
 
 ```bash
 helm install retrieval-agent-manager oci://ghcr.io/sassoftware/sas-retrieval-agent-manager-deployment/sas-retrieval-agent-manager \
-  --version 2026.7.0 \
+  --version 2026.8.0 \
   --values <SAS Retrieval Agent Manager Values File> \
   -n retagentmgr \
   --create-namespace \
