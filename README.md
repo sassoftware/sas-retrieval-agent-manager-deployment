@@ -74,9 +74,9 @@ We use the Viya-iac repositories for Node, Kubernetes, and Database provisioning
 
 | Platform       | Kubernetes Version | Setup Guide                                                             |
 |----------------|--------------------|-------------------------------------------------------------------------|
-| **Kubernetes** | 1.33+              | [Getting Started](./docs/k8s-deployment.md#kubernetes-deployment-guide) |
-| **Azure**      | 1.33+              | [Getting Started](./docs/azure-deployment.md#azure-deployment-guide)    |
-| **AWS**        | 1.33+              | [Getting Started](./docs/aws-deployment.md)                             |
+| **Kubernetes** | 1.35+              | [Getting Started](./docs/k8s-deployment.md#kubernetes-deployment-guide) |
+| **Azure**      | 1.35+              | [Getting Started](./docs/azure-deployment.md#azure-deployment-guide)    |
+| **AWS**        | 1.35+              | [Getting Started](./docs/aws-deployment.md)                             |
 | **OpenShift**  | 1.32 (OCP v4.19.1) | [Getting Started](./docs/ocp-deployment.md)                             |
 
 ### Database (PostgreSQL 15)

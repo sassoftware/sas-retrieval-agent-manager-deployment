@@ -59,7 +59,7 @@ This guide describes deploying an open-source Kubernetes infrastructure on which
 
 ### Infrastructure Requirements
 
-- AKS version: 1.33+
+- AKS version: 1.35+
 
 > Note: These should all be deployed automatically via the SAS Viya 4 Infrastructure as Code scripts
 
