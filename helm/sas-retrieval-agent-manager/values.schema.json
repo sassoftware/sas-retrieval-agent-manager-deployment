@@ -19,236 +19,36 @@
           "description": "Configuration for scheduling child entities spawned by the API.",
           "properties": {
             "agentDevServer": {
-              "additionalProperties": false,
-              "description": "Scheduling configuration for the Agent Development Server",
-              "properties": {
-                "affinity": {
-                  "additionalProperties": true,
-                  "required": [],
-                  "type": "object"
-                },
-                "nodeSelector": {
-                  "additionalProperties": {
-                    "type": "string"
-                  },
-                  "required": [],
-                  "type": "object"
-                },
-                "tolerations": {
-                  "items": {
-                    "required": [],
-                    "type": "object"
-                  },
-                  "required": [],
-                  "type": "array"
-                }
-              },
-              "required": [],
-              "title": "agentDevServer",
-              "type": "object"
+              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/childscheduling-schema.json",
+              "required": []
             },
             "agentProdServer": {
-              "additionalProperties": false,
-              "description": "Scheduling configuration for the Agent Production Server",
-              "properties": {
-                "affinity": {
-                  "additionalProperties": true,
-                  "required": [],
-                  "type": "object"
-                },
-                "nodeSelector": {
-                  "additionalProperties": {
-                    "type": "string"
-                  },
-                  "required": [],
-                  "type": "object"
-                },
-                "tolerations": {
-                  "items": {
-                    "required": [],
-                    "type": "object"
-                  },
-                  "required": [],
-                  "type": "array"
-                }
-              },
-              "required": [],
-              "title": "agentProdServer",
-              "type": "object"
+              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/childscheduling-schema.json",
+              "required": []
             },
             "automation": {
-              "additionalProperties": false,
-              "description": "Scheduling configuration for the automation pods",
-              "properties": {
-                "affinity": {
-                  "additionalProperties": true,
-                  "required": [],
-                  "type": "object"
-                },
-                "nodeSelector": {
-                  "additionalProperties": {
-                    "type": "string"
-                  },
-                  "required": [],
-                  "type": "object"
-                },
-                "tolerations": {
-                  "items": {
-                    "required": [],
-                    "type": "object"
-                  },
-                  "required": [],
-                  "type": "array"
-                }
-              },
-              "required": [],
-              "title": "automation",
-              "type": "object"
+              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/childscheduling-schema.json",
+              "required": []
             },
             "embeddingModel": {
-              "additionalProperties": false,
-              "description": "Scheduling configuration for the embedding model pods",
-              "properties": {
-                "affinity": {
-                  "additionalProperties": true,
-                  "required": [],
-                  "type": "object"
-                },
-                "nodeSelector": {
-                  "additionalProperties": {
-                    "type": "string"
-                  },
-                  "required": [],
-                  "type": "object"
-                },
-                "tolerations": {
-                  "items": {
-                    "required": [],
-                    "type": "object"
-                  },
-                  "required": [],
-                  "type": "array"
-                }
-              },
-              "required": [],
-              "title": "embeddingModel",
-              "type": "object"
+              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/childscheduling-schema.json",
+              "required": []
             },
             "eval": {
-              "additionalProperties": false,
-              "description": "Scheduling configuration for the Evaluation pods",
-              "properties": {
-                "affinity": {
-                  "additionalProperties": true,
-                  "required": [],
-                  "type": "object"
-                },
-                "nodeSelector": {
-                  "additionalProperties": {
-                    "type": "string"
-                  },
-                  "required": [],
-                  "type": "object"
-                },
-                "tolerations": {
-                  "items": {
-                    "required": [],
-                    "type": "object"
-                  },
-                  "required": [],
-                  "type": "array"
-                }
-              },
-              "required": [],
-              "title": "eval",
-              "type": "object"
+              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/childscheduling-schema.json",
+              "required": []
             },
             "mcpToolServer": {
-              "additionalProperties": false,
-              "description": "Scheduling configuration for the MCP Tool Server pods",
-              "properties": {
-                "affinity": {
-                  "additionalProperties": true,
-                  "required": [],
-                  "type": "object"
-                },
-                "nodeSelector": {
-                  "additionalProperties": {
-                    "type": "string"
-                  },
-                  "required": [],
-                  "type": "object"
-                },
-                "tolerations": {
-                  "items": {
-                    "required": [],
-                    "type": "object"
-                  },
-                  "required": [],
-                  "type": "array"
-                }
-              },
-              "required": [],
-              "title": "mcpToolServer",
-              "type": "object"
+              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/childscheduling-schema.json",
+              "required": []
             },
             "source": {
-              "additionalProperties": false,
-              "description": "Scheduling configuration for the Custom and Git source pods",
-              "properties": {
-                "affinity": {
-                  "additionalProperties": true,
-                  "required": [],
-                  "type": "object"
-                },
-                "nodeSelector": {
-                  "additionalProperties": {
-                    "type": "string"
-                  },
-                  "required": [],
-                  "type": "object"
-                },
-                "tolerations": {
-                  "items": {
-                    "required": [],
-                    "type": "object"
-                  },
-                  "required": [],
-                  "type": "array"
-                }
-              },
-              "required": [],
-              "title": "source",
-              "type": "object"
+              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/childscheduling-schema.json",
+              "required": []
             },
             "vectorizationHub": {
-              "additionalProperties": false,
-              "description": "Scheduling configuration for the Vectorization Hub pods",
-              "properties": {
-                "affinity": {
-                  "additionalProperties": true,
-                  "required": [],
-                  "type": "object"
-                },
-                "nodeSelector": {
-                  "additionalProperties": {
-                    "type": "string"
-                  },
-                  "required": [],
-                  "type": "object"
-                },
-                "tolerations": {
-                  "items": {
-                    "required": [],
-                    "type": "object"
-                  },
-                  "required": [],
-                  "type": "array"
-                }
-              },
-              "required": [],
-              "title": "vectorizationHub",
-              "type": "object"
+              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/childscheduling-schema.json",
+              "required": []
             }
           },
           "required": [],
@@ -1506,7 +1306,7 @@
               "type": "object"
             },
             "replicaCount": {
-              "default": 1,
+              "default": 2,
               "description": "Number of replicas to run. Chart is not designed to scale horizontally, use at your own risk",
               "minimum": 0,
               "required": [],
@@ -1872,7 +1672,7 @@
               "type": "object"
             },
             "replicaCount": {
-              "default": 1,
+              "default": 2,
               "description": "Number of replicas to run. Chart is not designed to scale horizontally, use at your own risk",
               "minimum": 0,
               "required": [],
@@ -2269,6 +2069,97 @@
         "tls": {
           "additionalProperties": false,
           "properties": {
+            "caCertificate": {
+              "default": "",
+              "description": "PEM-encoded CA certificate content, paired with `certificate`",
+              "required": [],
+              "title": "caCertificate",
+              "type": "string"
+            },
+            "certManager": {
+              "additionalProperties": false,
+              "description": "Manage the TLS certificate through cert-manager instead of supplying it directly\nFor nginx/contour, the chart creates a cert-manager `Certificate` issuing into\n`secretName`. For OpenShift Routes, the chart instead adds cert-manager.io/*\nannotations and relies on the openshift-routes controller\n(github.com/cert-manager/openshift-routes) being installed to patch the Route.\nIMPORTANT: For OpenShift Routes, you MUST have cert-manager/openshift-routes\ninstalled in your cluster. It is NOT included with the standard cert-manager\nor Red Hat's cert-manager Operator. Install it with:\n`helm install openshift-routes -n cert-manager oci://ghcr.io/cert-manager/charts/openshift-routes`\nRoutes without the openshift-routes controller will have annotations but no\ncertificate will be populated into spec.tls.",
+              "properties": {
+                "dnsNames": {
+                  "description": "Additional DNS names for the certificate\n`ingress.domain` is always included",
+                  "items": {
+                    "required": []
+                  },
+                  "required": [],
+                  "title": "dnsNames",
+                  "type": [
+                    "array",
+                    "null"
+                  ]
+                },
+                "duration": {
+                  "default": "null",
+                  "description": "Certificate validity duration (e.g. 2160h)\nIf not set, cert-manager's default is used",
+                  "required": [],
+                  "title": "duration",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "enabled": {
+                  "default": false,
+                  "description": "When true, TLS for this chart's ingress resources is managed by cert-manager\ninstead of `certificate`/`key`/`caCertificate`.\nFor OpenShift Routes, requires openshift-routes controller to be installed.",
+                  "required": [],
+                  "title": "enabled",
+                  "type": "boolean"
+                },
+                "issuerRef": {
+                  "additionalProperties": false,
+                  "description": "Reference to the cert-manager Issuer/ClusterIssuer that signs the certificate.\nFor nginx/contour, a Certificate object is created to request certs from this Issuer.\nFor OpenShift Routes, these values are passed as annotations to the openshift-routes\ncontroller (requires openshift-routes to be installed separately).",
+                  "properties": {
+                    "kind": {
+                      "default": "ClusterIssuer",
+                      "description": "Kind of issuer: Issuer or ClusterIssuer",
+                      "required": [],
+                      "title": "kind",
+                      "type": "string"
+                    },
+                    "name": {
+                      "default": "",
+                      "description": "Name of the Issuer or ClusterIssuer",
+                      "required": [],
+                      "title": "name",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "kind"
+                  ],
+                  "title": "issuerRef",
+                  "type": "object"
+                },
+                "renewBefore": {
+                  "default": "null",
+                  "description": "How long before expiry to renew (e.g. 360h)\nIf not set, cert-manager's default is used",
+                  "required": [],
+                  "title": "renewBefore",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "enabled",
+                "issuerRef"
+              ],
+              "title": "certManager",
+              "type": "object"
+            },
+            "certificate": {
+              "default": "",
+              "description": "PEM-encoded certificate content\nUsed directly by the Route template, and to create `secretName` for nginx/contour,\nwhen `certManager.enabled` is false\nIgnored when `certManager.enabled` is true",
+              "required": [],
+              "title": "certificate",
+              "type": "string"
+            },
             "enabled": {
               "default": true,
               "description": "Enable TLS/SSL termination",
@@ -2276,16 +2167,24 @@
               "title": "enabled",
               "type": "boolean"
             },
+            "key": {
+              "default": "",
+              "description": "PEM-encoded private key content, paired with `certificate`",
+              "required": [],
+              "title": "key",
+              "type": "string"
+            },
             "secretName": {
               "default": "",
-              "description": "Name of TLS secret",
+              "description": "Name of the TLS secret\nFor nginx/contour this is referenced directly (and created by the chart from\n`certificate`/`key`/`caCertificate`, or by cert-manager when `certManager.enabled`)\nNot used for OpenShift Routes, which have no secretName field: the certificate is\neither supplied inline via `certificate`/`key`/`caCertificate`, or (when\n`certManager.enabled`) patched onto the Route directly by the openshift-routes\ncontroller (github.com/cert-manager/openshift-routes) using the annotations below",
               "required": [],
               "title": "secretName",
               "type": "string"
             }
           },
           "required": [
-            "enabled"
+            "enabled",
+            "certManager"
           ],
           "title": "tls",
           "type": "object"
@@ -2764,7 +2663,7 @@
           "type": "object"
         },
         "replicaCount": {
-          "default": 1,
+          "default": 2,
           "description": "Number of replicas to run. Chart is not designed to scale horizontally, use at your own risk",
           "minimum": 0,
           "required": [],

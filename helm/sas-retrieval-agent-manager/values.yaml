@@ -715,8 +715,95 @@ ingress:
     # @schema
     # type: string
     # @schema
-    # -- Name of TLS secret
+    # -- Name of the TLS secret
+    # -- For nginx/contour this is referenced directly (and created by the chart from
+    # -- `certificate`/`key`/`caCertificate`, or by cert-manager when `certManager.enabled`)
+    # -- Not used for OpenShift Routes, which have no secretName field: the certificate is
+    # -- either supplied inline via `certificate`/`key`/`caCertificate`, or (when
+    # -- `certManager.enabled`) patched onto the Route directly by the openshift-routes
+    # -- controller (github.com/cert-manager/openshift-routes) using the annotations below
     secretName: ""
+    # @schema
+    # type: string
+    # @schema
+    # -- PEM-encoded certificate content
+    # -- Used directly by the Route template, and to create `secretName` for nginx/contour,
+    # -- when `certManager.enabled` is false
+    # -- Ignored when `certManager.enabled` is true
+    certificate: ""
+    # @schema
+    # type: string
+    # @schema
+    # -- PEM-encoded private key content, paired with `certificate`
+    key: ""
+    # @schema
+    # type: string
+    # @schema
+    # -- PEM-encoded CA certificate content, paired with `certificate`
+    caCertificate: ""
+    # @schema
+    # type: object
+    # required: true
+    # @schema
+    # -- Manage the TLS certificate through cert-manager instead of supplying it directly
+    # -- For nginx/contour, the chart creates a cert-manager `Certificate` issuing into
+    # -- `secretName`. For OpenShift Routes, the chart instead adds cert-manager.io/*
+    # -- annotations and relies on the openshift-routes controller
+    # -- (github.com/cert-manager/openshift-routes) being installed to patch the Route.
+    # -- IMPORTANT: For OpenShift Routes, you MUST have cert-manager/openshift-routes
+    # -- installed in your cluster. It is NOT included with the standard cert-manager
+    # -- or Red Hat's cert-manager Operator. Install it with:
+    # -- `helm install openshift-routes -n cert-manager oci://ghcr.io/cert-manager/charts/openshift-routes`
+    # -- Routes without the openshift-routes controller will have annotations but no
+    # -- certificate will be populated into spec.tls.
+    certManager:
+      # @schema
+      # type: boolean
+      # required: true
+      # @schema
+      # -- When true, TLS for this chart's ingress resources is managed by cert-manager
+      # -- instead of `certificate`/`key`/`caCertificate`.
+      # -- For OpenShift Routes, requires openshift-routes controller to be installed.
+      enabled: false
+      # @schema
+      # type: object
+      # required: true
+      # @schema
+      # -- Reference to the cert-manager Issuer/ClusterIssuer that signs the certificate.
+      # -- For nginx/contour, a Certificate object is created to request certs from this Issuer.
+      # -- For OpenShift Routes, these values are passed as annotations to the openshift-routes
+      # -- controller (requires openshift-routes to be installed separately).
+      issuerRef:
+        # @schema
+        # type: string
+        # required: true
+        # @schema
+        # -- Name of the Issuer or ClusterIssuer
+        name: ""
+        # @schema
+        # type: string
+        # required: true
+        # @schema
+        # -- Kind of issuer: Issuer or ClusterIssuer
+        kind: ClusterIssuer
+      # @schema
+      # type: [array,null]
+      # @schema
+      # -- Additional DNS names for the certificate
+      # -- `ingress.domain` is always included
+      dnsNames: []
+      # @schema
+      # type: [string,null]
+      # @schema
+      # -- Certificate validity duration (e.g. 2160h)
+      # -- If not set, cert-manager's default is used
+      duration: null
+      # @schema
+      # type: [string,null]
+      # @schema
+      # -- How long before expiry to renew (e.g. 360h)
+      # -- If not set, cert-manager's default is used
+      renewBefore: null
 
   # @schema
   # type: object
@@ -877,7 +964,7 @@ ingress:
 #         type: string
 #         description: "Keycloak administrator account password"
 #   database:
-#     required: true
+#     required: false
 #     type: object
 #     properties:
 #       username:
@@ -1119,7 +1206,7 @@ api:
   # default: 1
   # @schema
   # -- Number of replicas to run. Chart is not designed to scale horizontally, use at your own risk
-  replicaCount: 1
+  replicaCount: 2
 
   # @schema
   # type: string
@@ -1164,25 +1251,26 @@ api:
   # @schema
   # type: object
   # additionalProperties: false
+  # properties:
+  #   agentDevServer:
+  #     $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/childscheduling-schema.json"
+  #   agentProdServer:
+  #     $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/childscheduling-schema.json"
+  #   eval:
+  #     $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/childscheduling-schema.json"
+  #   vectorizationHub:
+  #     $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/childscheduling-schema.json"
+  #   mcpToolServer:
+  #     $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/childscheduling-schema.json"
+  #   source:
+  #     $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/childscheduling-schema.json"
+  #   embeddingModel:
+  #     $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/childscheduling-schema.json"
+  #   automation:
+  #     $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/childscheduling-schema.json"
   # @schema
   # -- Configuration for scheduling child entities spawned by the API.
   childScheduling:
-    # @schema
-    # type: object
-    # additionalProperties: false
-    # properties:
-    #   tolerations:
-    #     type: array
-    #     items:
-    #       type: object
-    #   nodeSelector:
-    #     type: object
-    #     additionalProperties:
-    #       type: string
-    #   affinity:
-    #     type: object
-    #     additionalProperties: true
-    # @schema
     # -- Scheduling configuration for the Agent Development Server
     agentDevServer:
       tolerations: []
@@ -1204,22 +1292,6 @@ api:
                 operator: In
                 values:
                 - ram
-    # @schema
-    # type: object
-    # additionalProperties: false
-    # properties:
-    #   tolerations:
-    #     type: array
-    #     items:
-    #       type: object
-    #   nodeSelector:
-    #     type: object
-    #     additionalProperties:
-    #       type: string
-    #   affinity:
-    #     type: object
-    #     additionalProperties: true
-    # @schema
     # -- Scheduling configuration for the Agent Production Server
     agentProdServer:
       tolerations: []
@@ -1241,22 +1313,6 @@ api:
                 operator: In
                 values:
                 - ram
-    # @schema
-    # type: object
-    # additionalProperties: false
-    # properties:
-    #   tolerations:
-    #     type: array
-    #     items:
-    #       type: object
-    #   nodeSelector:
-    #     type: object
-    #     additionalProperties:
-    #       type: string
-    #   affinity:
-    #     type: object
-    #     additionalProperties: true
-    # @schema
     # -- Scheduling configuration for the Evaluation pods
     eval:
       tolerations: []
@@ -1278,22 +1334,6 @@ api:
                 operator: In
                 values:
                 - ram
-    # @schema
-    # type: object
-    # additionalProperties: false
-    # properties:
-    #   tolerations:
-    #     type: array
-    #     items:
-    #       type: object
-    #   nodeSelector:
-    #     type: object
-    #     additionalProperties:
-    #       type: string
-    #   affinity:
-    #     type: object
-    #     additionalProperties: true
-    # @schema
     # -- Scheduling configuration for the Vectorization Hub pods
     vectorizationHub:
       tolerations: []
@@ -1315,22 +1355,6 @@ api:
                 operator: In
                 values:
                 - ram
-    # @schema
-    # type: object
-    # additionalProperties: false
-    # properties:
-    #   tolerations:
-    #     type: array
-    #     items:
-    #       type: object
-    #   nodeSelector:
-    #     type: object
-    #     additionalProperties:
-    #       type: string
-    #   affinity:
-    #     type: object
-    #     additionalProperties: true
-    # @schema
     # -- Scheduling configuration for the MCP Tool Server pods
     mcpToolServer:
       tolerations: []
@@ -1352,22 +1376,6 @@ api:
                 operator: In
                 values:
                 - ram
-    # @schema
-    # type: object
-    # additionalProperties: false
-    # properties:
-    #   tolerations:
-    #     type: array
-    #     items:
-    #       type: object
-    #   nodeSelector:
-    #     type: object
-    #     additionalProperties:
-    #       type: string
-    #   affinity:
-    #     type: object
-    #     additionalProperties: true
-    # @schema
     # -- Scheduling configuration for the Custom and Git source pods
     source:
       tolerations: []
@@ -1389,22 +1397,6 @@ api:
                 operator: In
                 values:
                 - ram
-    # @schema
-    # type: object
-    # additionalProperties: false
-    # properties:
-    #   tolerations:
-    #     type: array
-    #     items:
-    #       type: object
-    #   nodeSelector:
-    #     type: object
-    #     additionalProperties:
-    #       type: string
-    #   affinity:
-    #     type: object
-    #     additionalProperties: true
-    # @schema
     # -- Scheduling configuration for the embedding model pods
     embeddingModel:
       tolerations: []
@@ -1426,22 +1418,6 @@ api:
                 operator: In
                 values:
                 - ram
-    # @schema
-    # type: object
-    # additionalProperties: false
-    # properties:
-    #   tolerations:
-    #     type: array
-    #     items:
-    #       type: object
-    #   nodeSelector:
-    #     type: object
-    #     additionalProperties:
-    #       type: string
-    #   affinity:
-    #     type: object
-    #     additionalProperties: true
-    # @schema
     # -- Scheduling configuration for the automation pods
     automation:
       tolerations: []
@@ -1552,15 +1528,15 @@ api:
     # -- Resource limits for the container
     limits:
       # -- CPU limit
-      cpu: 4
+      cpu: 2
       # -- Memory limit
-      memory: 10Gi
+      memory: 5Gi
     # -- Resource requests for the container
     requests:
       # -- CPU request
-      cpu: 500m
+      cpu: 250m
       # -- Memory request
-      memory: 4Gi
+      memory: 2Gi
 
   # @schema
   # type: object
@@ -2763,10 +2739,10 @@ db:
     # type: integer
     # required: true
     # minimum: 0
-    # default: 1
+    # default: 2
     # @schema
     # -- Number of replicas to run. Chart is not designed to scale horizontally, use at your own risk
-    replicaCount: 1
+    replicaCount: 2
 
     # @schema
     # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/serviceaccount-schema.json"
@@ -2905,15 +2881,15 @@ db:
       # -- Resource limits for the container
       limits:
         # -- CPU limit
-        cpu: 2
+        cpu: 1
         # -- Memory limit
-        memory: 1Gi
+        memory: 500Mi
       # -- Resource requests for the container
       requests:
         # -- CPU request
-        cpu: 100m
+        cpu: 50m
         # -- Memory request
-        memory: 128Mi
+        memory: 64Mi
 
     # @schema
     # type: object
@@ -3202,10 +3178,10 @@ iam:
     # type: integer
     # required: true
     # minimum: 0
-    # default: 1
+    # default: 2
     # @schema
     # -- Number of replicas to run. Chart is not designed to scale horizontally, use at your own risk
-    replicaCount: 1
+    replicaCount: 2
 
     # @schema
     # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/serviceaccount-schema.json"
@@ -3511,15 +3487,15 @@ iam:
       # -- Resource limits for the OAuth2 Proxy container
       limits:
         # -- CPU limit
-        cpu: 100m
+        cpu: 50m
         # -- Memory limit
-        memory: 64Mi
+        memory: 32Mi
       # -- Resource requests for the OAuth2 Proxy container
       requests:
         # -- CPU request
-        cpu: 50m
+        cpu: 25m
         # -- Memory request
-        memory: 32Mi
+        memory: 16Mi
 
     # @schema
     # type: array
@@ -3599,10 +3575,10 @@ ui:
   # type: integer
   # required: true
   # minimum: 0
-  # default: 1
+  # default: 2
   # @schema
   # -- Number of replicas to run. Chart is not designed to scale horizontally, use at your own risk
-  replicaCount: 1
+  replicaCount: 2
 
   # @schema
   # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/serviceaccount-schema.json"
@@ -3704,15 +3680,15 @@ ui:
     # -- Resource limits for the container
     limits:
       # -- CPU limit
-      cpu: 1
+      cpu: 500m
       # -- Memory limit
-      memory: 512Mi
+      memory: 256Mi
     # -- Resource requests for the container
     requests:
       # -- CPU request
-      cpu: 50m
+      cpu: 25m
       # -- Memory request
-      memory: 256Mi
+      memory: 128Mi
 
   # @schema
   # type: object
