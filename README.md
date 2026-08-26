@@ -337,6 +337,8 @@ Your existing GPG keys must remain in place for the upgraded installation to dec
 
 - NEVER rerun the GPG key deployment scripts against an existing installation.
 
+It is worth noting that we recommend step-through upgrades for SAS Retrieval Agent Manager, applying each version incrementally rather than skipping versions. This ensures that you get each database migration in the intended order.
+
 Please be aware that you must use the same gpg keys and helm values for upgrades as you did for the initial installation. It is also recommended to use the example values file for the version you are upgrading to and copy over any custom values you had in your previous file.
 
 ```bash
