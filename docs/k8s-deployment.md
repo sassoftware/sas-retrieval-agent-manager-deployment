@@ -2,14 +2,31 @@
 
 ## Table of Contents
 
-- [Overview](#overview)
-- [Prerequisites](#prerequisites)
-- [Requirements](#requirements)
-- [Getting Started](#getting-started)
-- [Configuration Setup](#configuration-setup)
-- [Infrastructure Deployment](#infrastructure-deployment)
-- [Application Deployment](#application-deployment)
-- [Troubleshooting](#troubleshooting)
+- [Kubernetes Deployment Guide](#kubernetes-deployment-guide)
+  - [Table of Contents](#table-of-contents)
+  - [Overview](#overview)
+  - [Prerequisites](#prerequisites)
+    - [Infrastructure Prerequisites](#infrastructure-prerequisites)
+    - [Technical Prerequisites](#technical-prerequisites)
+  - [Requirements](#requirements)
+    - [Hardware Requirements](#hardware-requirements)
+      - [Kubernetes Cluster Sizing](#kubernetes-cluster-sizing)
+      - [Postgres Database Sizing](#postgres-database-sizing)
+    - [Infrastructure Requirements](#infrastructure-requirements)
+  - [Getting Started](#getting-started)
+    - [Clone the Viya IAC Project](#clone-the-viya-iac-project)
+  - [Configuration Setup](#configuration-setup)
+  - [Infrastructure Deployment](#infrastructure-deployment)
+    - [Deploy the PostgreSQL Database](#deploy-the-postgresql-database)
+    - [Deploy the Kubernetes Cluster](#deploy-the-kubernetes-cluster)
+      - [Docker (Recommended)](#docker-recommended)
+  - [Application Deployment](#application-deployment)
+  - [Troubleshooting](#troubleshooting)
+    - [Network Configuration](#network-configuration)
+  - [Post-Install: Required PostgreSQL Extensions](#post-install-required-postgresql-extensions)
+    - [Install System Packages](#install-system-packages)
+    - [Enable the Extensions in PostgreSQL](#enable-the-extensions-in-postgresql)
+    - [One-liner for Scripted Deployments](#one-liner-for-scripted-deployments)
 
 ---
 
@@ -110,3 +127,59 @@ Return to the [Application Deployment Guide](../README.md#application-deployment
 Please refer to the [troubleshooting section](https://github.com/sassoftware/viya4-iac-k8s) of the main documentation for common issues and resolutions related to viya4-iac-k8s Kubernetes deployments.
 
 >For additional troubleshooting, refer to the main [troubleshooting section](../README.md#troubleshooting)
+
+## Post-Install: Required PostgreSQL Extensions
+
+After the PostgreSQL server is running, you must install the `pgcrypto` and `pgvector` extensions. These are required (or strongly recommended) by SAS Retrieval Agent Manager — see [Necessary PostgreSQL Extensions](../README.md#necessary-postgresql-extensions).
+
+### Install System Packages
+
+The required packages depend on your PostgreSQL version. The example below uses PostgreSQL 15 on Ubuntu.
+
+```bash
+# Update package index
+sudo apt-get update
+
+# Install pgcrypto (ships with the postgresql-15 package)
+sudo apt-get install -y postgresql-15
+
+# Install pgvector
+sudo apt-get install -y postgresql-15-pgvector
+```
+
+### Enable the Extensions in PostgreSQL
+
+Connect to your PostgreSQL instance as a superuser and run the following SQL commands against the target database (replace `<your_database>` with the actual database name):
+
+```sql
+-- Connect to the target database first
+\c <your_database>
+
+-- Required: encryption support used by SAS Retrieval Agent Manager
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+-- Recommended: vector similarity search for embedding storage
+CREATE EXTENSION IF NOT EXISTS vector;
+```
+
+You can verify the extensions are active with:
+
+```sql
+SELECT name, default_version, installed_version
+FROM pg_available_extensions
+WHERE name IN ('pgcrypto', 'vector');
+```
+
+Both extensions should show a value in `installed_version`.
+
+### One-liner for Scripted Deployments
+
+If you prefer a non-interactive approach (e.g. from a shell script or CI pipeline):
+
+```bash
+PGPASSWORD=<admin_password> psql \
+  -h <db_host> \
+  -U <admin_user> \
+  -d <your_database> \
+  -c "CREATE EXTENSION IF NOT EXISTS pgcrypto; CREATE EXTENSION IF NOT EXISTS vector;"
+```
