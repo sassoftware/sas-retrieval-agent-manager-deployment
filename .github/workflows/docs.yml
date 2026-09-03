@@ -32,7 +32,24 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+
+      - name: Build site
+        run: bundle exec jekyll build
+
   build:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: validate
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -46,20 +63,13 @@ jobs:
 
       - name: Configure GitHub Pages
         id: pages
-        if: ${{ !env.ACT }}
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@v6
 
       - name: Build site for GitHub Pages
-        if: ${{ !env.ACT }}
         run: bundle exec jekyll build --baseurl "${{ steps.pages.outputs.base_path }}"
 
-      - name: Build site locally
-        if: ${{ env.ACT }}
-        run: bundle exec jekyll build
-
       - name: Upload Pages artifact
-        if: ${{ !env.ACT }}
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v4
         with:
           path: _site
 
@@ -76,4 +86,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
