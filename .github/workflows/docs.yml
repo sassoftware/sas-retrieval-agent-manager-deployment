@@ -3,6 +3,7 @@ name: Publish documentation
 on:
   pull_request:
     paths:
+      - "_includes/**"
       - "_plugins/**"
       - "assets/**"
       - "docs/**"
@@ -14,6 +15,7 @@ on:
     branches:
       - main
     paths:
+      - "_includes/**"
       - "_plugins/**"
       - "assets/**"
       - "docs/**"
