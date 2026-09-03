@@ -20,30 +20,22 @@ body {
 }
 
 .site-header {
-  background: var(--sas-blue-deep);
-  border-bottom: 4px solid #39b7e6;
-  color: #ffffff;
-  min-height: 5.25rem;
+  background: #ffffff;
+  border-bottom: 1px solid var(--sas-border);
+  min-height: 5rem;
 }
 
 .site-title,
 .site-title:visited {
-  color: #ffffff;
-  font-size: 1.125rem;
-  font-weight: 700;
-  letter-spacing: 0;
-  line-height: 1.25;
-  padding: 1.25rem 1rem 1rem;
-}
-
-.site-title::before {
-  color: #39b7e6;
-  content: "SAS";
+  background: url("../images/sas-logo-sas-blue.png") center / contain no-repeat;
+  color: transparent;
   display: block;
-  font-size: 0.875rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  margin-bottom: 0.3rem;
+  height: 3rem;
+  margin: 1rem;
+  overflow: hidden;
+  padding: 0;
+  text-indent: 100%;
+  white-space: nowrap;
 }
 
 .site-nav,
@@ -213,11 +205,12 @@ body {
 
 @media (max-width: 50rem) {
   .site-header {
-    min-height: 4rem;
+    min-height: 3.75rem;
   }
 
   .site-title {
-    padding: 0.9rem 1rem 0.75rem;
+    height: 2.25rem;
+    margin: 0.75rem 1rem;
   }
 
   .main-content h1 {

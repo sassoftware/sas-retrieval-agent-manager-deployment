@@ -1,0 +1,20 @@
+# Jekyll build output and caches
+_site/
+.jekyll-cache/
+.jekyll-metadata
+.sass-cache/
+vendor/bundle/
+
+# Logs and backups
+*.log
+*.bak
+
+# Temporary and editor files
+*.tmp
+*.temp
+*~
+.#*
+*.swp
+*.swo
+.DS_Store
+Thumbs.db

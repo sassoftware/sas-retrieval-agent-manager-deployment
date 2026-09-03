@@ -5,6 +5,12 @@ baseurl: "/sas-retrieval-agent-manager-deployment"
 theme: just-the-docs
 destination: _site
 
+sass:
+  silence_deprecations:
+    - import
+    - global-builtin
+    - color-functions
+
 exclude:
   - AGENTS.md
   - CONTRIBUTING.md
