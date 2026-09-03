@@ -1,3 +1,10 @@
+---
+layout: default
+title: AWS storage help
+parent: Deployment
+nav_order: 6
+---
+
 # AWS Storage Help
 
 In order to create the necessary role, trust policy, and EFS required for SAS Retrieval Agent Manager, you can follow these commands.

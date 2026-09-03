@@ -1,3 +1,10 @@
+---
+layout: default
+title: Azure OpenAI
+parent: LLM connections
+nav_order: 1
+---
+
 # Azure OpenAI Connection to SAS Retrieval Agent Manager
 
 ## Introduction

@@ -1,3 +1,10 @@
+---
+layout: default
+title: Traces
+parent: Monitoring
+nav_order: 2
+---
+
 # Traces in SAS Retrieval Agent Manager
 
 The SAS Retrieval Agent Manager system collects and processes distributed traces using [Vector](https://vector.dev/), a high-performance observability data pipeline. Vector receives OpenTelemetry traces from applications and routes them to multiple observability backends for analysis and visualization.

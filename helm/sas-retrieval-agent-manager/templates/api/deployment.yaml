@@ -84,16 +84,6 @@ spec:
                 configMapKeyRef:
                   name: {{ printf "%s-agent-config" (include "api.fullname" .) }}
                   key: agent_runner_repo
-            - name: PLUGIN_RUNNER_TAG
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ printf "%s-plugin-config" (include "api.fullname" .) }}
-                  key: plugin_runner_tag
-            - name: PLUGIN_RUNNER_REPOSITORY
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ printf "%s-plugin-config" (include "api.fullname" .) }}
-                  key: plugin_runner_repo
             - name: MCP_TOOLBOX_REPOSITORY
               valueFrom:
                 configMapKeyRef:
@@ -175,6 +165,22 @@ spec:
               value: '{{ .Values.api.config.hide_llm_secrets }}'
             - name: HIDE_DESTINATION_SECRETS
               value: '{{ .Values.api.config.hide_destination_secrets }}'
+            - name: CHILD_SCHEDULING_AGENT_DEV_SERVER
+              value: '{{ .Values.api.childScheduling.agentDevServer | toJson }}'
+            - name: CHILD_SCHEDULING_AGENT_PROD_SERVER
+              value: '{{ .Values.api.childScheduling.agentProdServer | toJson }}'
+            - name: CHILD_SCHEDULING_EVAL
+              value: '{{ .Values.api.childScheduling.eval | toJson }}'
+            - name: CHILD_SCHEDULING_VECTORIZATION_HUB
+              value: '{{ .Values.api.childScheduling.vectorizationHub | toJson }}'
+            - name: CHILD_SCHEDULING_MCP_TOOL_SERVER
+              value: '{{ .Values.api.childScheduling.mcpToolServer | toJson }}'
+            - name: CHILD_SCHEDULING_AUTOMATION
+              value: '{{ .Values.api.childScheduling.automation | toJson }}'
+            - name: CHILD_SCHEDULING_EMBEDDING_MODEL
+              value: '{{ .Values.api.childScheduling.embeddingModel | toJson }}'
+            - name: CHILD_SCHEDULING_SOURCE
+              value: '{{ .Values.api.childScheduling.source | toJson }}'
             {{- with .Values.api.config.azure_settings.openAI.default_api_version }}
             - name: AZURE_OPENAI_DEFAULT_API_VERSION
               value: '{{ . }}'
@@ -220,8 +226,6 @@ spec:
               subPath: available_hardware
             - name: agent-config-volume
               mountPath: "/mnt/config/agent"
-            - name: plugin-config-volume
-              mountPath: "/mnt/config/plugin"
             - name: embedding-config-volume
               mountPath: "/mnt/config/embedding"
             - name: postgrest-config-volume
@@ -287,9 +291,6 @@ spec:
         - name: agent-config-volume
           configMap:
             name: {{ printf "%s-agent-config" (include "api.fullname" .) }}
-        - name: plugin-config-volume
-          configMap:
-            name: {{ printf "%s-plugin-config" (include "api.fullname" .) }}
         - name: embedding-config-volume
           configMap:
             name: {{ printf "%s-embedding-config" (include "api.fullname" .) }}

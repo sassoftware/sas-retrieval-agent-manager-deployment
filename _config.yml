@@ -1,0 +1,29 @@
+title: SAS Retrieval Agent Manager
+description: Deployment and operations documentation for SAS Retrieval Agent Manager.
+url: "https://sassoftware.github.io"
+baseurl: "/sas-retrieval-agent-manager-deployment"
+theme: just-the-docs
+destination: _site
+
+exclude:
+  - AGENTS.md
+  - CONTRIBUTING.md
+  - ContributorAgreement.txt
+  - LICENSE
+  - SUPPORT.md
+  - examples/
+  - helm/
+  - scripts/
+
+plugins:
+  - jekyll-relative-links
+
+relative_links:
+  enabled: true
+  collections: true
+
+aux_links:
+  "View on GitHub": "https://github.com/sassoftware/sas-retrieval-agent-manager-deployment"
+
+back_to_top: true
+back_to_top_text: "Back to top"

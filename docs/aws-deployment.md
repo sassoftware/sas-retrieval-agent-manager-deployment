@@ -1,3 +1,10 @@
+---
+layout: default
+title: AWS deployment
+parent: Deployment
+nav_order: 2
+---
+
 # AWS Deployment Guide
 
 ## Table of Contents

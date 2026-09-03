@@ -77,6 +77,24 @@ Returns empty dict for components without specific defaults (keycloak, keycloakA
   {{- end -}}
 {{- end -}}
 
+{{- /* When cert-manager is enabled, the openshift-routes controller (github.com/cert-manager/openshift-routes)
+     watches for these annotations and patches spec.tls.certificate/key onto the Route itself, including
+     renewals - no lookup or chart-managed Secret needed for Routes. */ -}}
+{{- if and $ctx.Values.ingress.tls.enabled $ctx.Values.ingress.tls.certManager.enabled -}}
+  {{- $certManager := $ctx.Values.ingress.tls.certManager -}}
+  {{- $_ := set $annotations "cert-manager.io/issuer-name" $certManager.issuerRef.name -}}
+  {{- $_ := set $annotations "cert-manager.io/issuer-kind" ($certManager.issuerRef.kind | default "ClusterIssuer") -}}
+  {{- if $certManager.duration -}}
+    {{- $_ := set $annotations "cert-manager.io/duration" $certManager.duration -}}
+  {{- end -}}
+  {{- if $certManager.renewBefore -}}
+    {{- $_ := set $annotations "cert-manager.io/renew-before" $certManager.renewBefore -}}
+  {{- end -}}
+  {{- if $certManager.dnsNames -}}
+    {{- $_ := set $annotations "cert-manager.io/alt-names" (join "," $certManager.dnsNames) -}}
+  {{- end -}}
+{{- end -}}
+
 {{- /* Get component paths */ -}}
 {{- $componentIngress := index $ctx.Values.ingress $pathsKey -}}
 {{- $paths := $componentIngress.paths -}}
@@ -123,6 +141,10 @@ spec:
   tls:
     termination: {{ $ctx.Values.ingress.tls.termination | default "edge" }}
     insecureEdgeTerminationPolicy: {{ $ctx.Values.ingress.tls.insecureEdgeTerminationPolicy | default "Redirect" }}
+    {{- /* When cert-manager is enabled, leave certificate/key/caCertificate unset here - the
+           openshift-routes controller patches them onto this Route out-of-band using the
+           cert-manager.io/* annotations above, and keeps them current on renewal. */ -}}
+    {{- if not $ctx.Values.ingress.tls.certManager.enabled }}
     {{- if $ctx.Values.ingress.tls.certificate }}
     certificate: |
       {{- $ctx.Values.ingress.tls.certificate | nindent 6 }}
@@ -134,6 +156,7 @@ spec:
     {{- if $ctx.Values.ingress.tls.caCertificate }}
     caCertificate: |
       {{- $ctx.Values.ingress.tls.caCertificate | nindent 6 }}
+    {{- end }}
     {{- end }}
   {{- end }}
   wildcardPolicy: None

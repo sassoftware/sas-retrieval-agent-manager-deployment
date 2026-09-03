@@ -1,3 +1,9 @@
+---
+layout: default
+title: Install Velero
+parent: Backup and restore
+nav_order: 1
+---
 
 # Velero Operator Unified Deployment Instructions
 

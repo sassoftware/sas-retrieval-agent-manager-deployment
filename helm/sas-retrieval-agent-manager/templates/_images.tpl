@@ -114,35 +114,6 @@
   {{- printf "%s/%s:%s" (include "images.eval.repo.base" .) (include "images.eval.repo.path" .) (include "images.eval.tag" .) -}}
 {{- end }}
 
-{{/* ========== sas-retrieval-agent-manager-plugin ========== */}}
-{{- define "images.plugin.repo.base" -}}
-  {{- if and .Values.images.plugin .Values.images.plugin.repo }}
-    {{- .Values.images.repo.base | default .Values.images.plugin.repo.base -}}
-  {{- end }}
-{{- end }}
-
-{{- define "images.plugin.repo.path" -}}
-  {{- if and .Values.images.plugin .Values.images.plugin.repo }}
-    {{- .Values.images.plugin.repo.path -}}
-  {{- end }}
-{{- end }}
-
-{{- define "images.plugin.tag" -}}
-  {{- if .Values.images.plugin }}
-    {{- .Values.images.plugin.tag -}}
-  {{- end }}
-{{- end }}
-
-{{- define "images.plugin.pullPolicy" -}}
-  {{- if .Values.images.plugin }}
-    {{- .Values.images.plugin.pullPolicy | default "IfNotPresent" }}
-  {{- end }}
-{{- end }}
-
-{{- define "images.plugin" -}}
-  {{- printf "%s/%s:%s" (include "images.plugin.repo.base" .) (include "images.plugin.repo.path" .) (include "images.plugin.tag" .) -}}
-{{- end }}
-
 {{/* ========== sas-iot-keycloak-theme ========== */}}
 {{- define "images.theme.repo.base" -}}
   {{- if and .Values.images.theme .Values.images.theme.repo }}

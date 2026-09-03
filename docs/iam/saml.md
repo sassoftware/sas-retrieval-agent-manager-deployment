@@ -1,3 +1,10 @@
+---
+layout: default
+title: SAML
+parent: Identity and access
+nav_order: 4
+---
+
 # Connecting Keycloak to SAML Identity Providers
 
 ## Table of Contents

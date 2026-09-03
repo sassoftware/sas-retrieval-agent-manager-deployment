@@ -1,3 +1,9 @@
+---
+layout: default
+title: Dependencies
+nav_order: 3
+---
+
 # Dependency Installations
 
 ## Required Dependencies

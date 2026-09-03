@@ -1,3 +1,11 @@
+---
+layout: default
+title: Backup and restore
+nav_order: 4
+has_children: true
+permalink: /backup-restore/
+---
+
 # Backup & Restore Guide
 
 This folder provides documentation and instructions for managing backup and restore operations in Kubernetes environments using Velero.

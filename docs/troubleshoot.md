@@ -1,3 +1,9 @@
+---
+layout: default
+title: Troubleshooting
+nav_order: 6
+---
+
 # Troubleshooting
 
 This section provides information on how to troubleshoot common issues that may arise when deploying or using SAS Retrieval Agent Manager.
@@ -37,7 +43,7 @@ kubectl get secret retrieval-agent-manager-gpg-passphrase -n retagentmgr -o json
 
 ```
 
-If these are missing, please create them using the instructions in the [gpg helper script](../scripts/gpg/README.md).
+If these are missing, please create them using the instructions in the [gpg helper script](https://github.com/sassoftware/sas-retrieval-agent-manager-deployment/tree/main/scripts/gpg).
 
 ## Deployment Upgrades
 

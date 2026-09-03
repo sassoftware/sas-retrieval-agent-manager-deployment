@@ -1,3 +1,10 @@
+---
+layout: default
+title: OpenAI
+parent: LLM connections
+nav_order: 4
+---
+
 # OpenAI Connection to SAS Retrieval Agent Manager
 
 ## Introduction

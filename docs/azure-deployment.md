@@ -1,3 +1,10 @@
+---
+layout: default
+title: Azure deployment
+parent: Deployment
+nav_order: 1
+---
+
 # Azure Deployment Guide
 
 ## Table of Contents

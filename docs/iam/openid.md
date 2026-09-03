@@ -1,3 +1,10 @@
+---
+layout: default
+title: OpenID Connect
+parent: Identity and access
+nav_order: 3
+---
+
 # Connecting Keycloak to OpenID Connect Identity Providers
 
 ## Table of Contents

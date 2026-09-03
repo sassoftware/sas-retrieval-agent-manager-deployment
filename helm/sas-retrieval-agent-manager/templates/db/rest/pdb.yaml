@@ -4,7 +4,7 @@ metadata:
   name: {{ include "postgrest.fullname" . }}-pdb
   namespace: {{ .Release.Namespace }}
 spec:
-  minAvailable: 10%
+  maxUnavailable: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: {{ include "postgrest.name" . }}
