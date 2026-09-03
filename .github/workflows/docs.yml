@@ -3,18 +3,24 @@ name: Publish documentation
 on:
   pull_request:
     paths:
+      - "_plugins/**"
+      - "assets/**"
       - "docs/**"
       - "Gemfile"
       - "_config.yml"
       - ".github/workflows/docs.yml"
+      - "helm/sas-retrieval-agent-manager/Chart.yaml"
   push:
     branches:
       - main
     paths:
+      - "_plugins/**"
+      - "assets/**"
       - "docs/**"
       - "Gemfile"
       - "_config.yml"
       - ".github/workflows/docs.yml"
+      - "helm/sas-retrieval-agent-manager/Chart.yaml"
 
 permissions:
   contents: read
