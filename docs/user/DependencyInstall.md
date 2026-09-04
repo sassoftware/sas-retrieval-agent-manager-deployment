@@ -110,6 +110,43 @@ helm install kueue oci://registry.k8s.io/kueue/charts/kueue \
   --create-namespace
 ```
 
+#### Deploy the Kueue queue objects manually
+
+Installing Kueue provides the controller. SAS Retrieval Agent Manager also needs three queue
+objects: a `ResourceFlavor`, a `ClusterQueue`, and a `LocalQueue`.
+
+By default the Helm chart creates them when `integrations.kueue.enabled` is `true`. If you set
+`integrations.kueue.enabled` to `false`, you must create them yourself before SAS Retrieval Agent
+Manager starts vectorization jobs.
+
+> **Important:** Use one method only. If the chart creates the queue objects, do not apply the
+> manifests. If you apply the manifests, keep `integrations.kueue.enabled` set to `false`.
+
+Use the
+[example queue manifests](https://github.com/sassoftware/sas-retrieval-agent-manager-deployment/blob/main/examples/dependencies/required/kueue-queues.yaml).
+They match the chart defaults. Edit the namespace and the quotas to match your cluster, then apply
+the file:
+
+```bash
+kubectl apply -f kueue-queues.yaml
+```
+
+> **Note:** Match the `ClusterQueue` quotas to the capacity of the cluster you built. See
+> [Job scheduling quotas](../sizing.md#job-scheduling-quotas).
+
+Verify that the objects are created:
+
+```bash
+kubectl get resourceflavor retrieval-agent-manager
+kubectl get clusterqueue cluster-queue
+kubectl -n retagentmgr get localqueue genai-queue
+```
+
+> **Note:** On OpenShift, install Kueue with the OpenShift Kueue Operator instead of this Helm
+> chart, and label the namespace. See the
+> [OpenShift deployment guide](../ocp-deployment.md#kueue-deployment). The queue objects above are
+> the same on every platform.
+
 ### Ingress Controllers
 
 SAS Retrieval Agent Manager requires either NGINX or Contour for managing incoming traffic.

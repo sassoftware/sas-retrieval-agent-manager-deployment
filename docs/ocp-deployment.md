@@ -78,6 +78,98 @@ platform: openshift
 
 ```
 
+Setting `platform: openshift` changes three things:
+
+1. It creates a `SecurityContextConstraints` object and a `ClusterRoleBinding` that grants it to the
+   SAS Retrieval Agent Manager ServiceAccounts.
+2. It removes `runAsUser`, `runAsGroup`, and `runAsNonRoot` from the pod and container security
+   contexts, so OpenShift assigns a UID from the namespace range.
+3. It defaults `ingress.classType` to `route`, so the chart creates OpenShift `Route` objects
+   instead of `Ingress` objects.
+
+## Security Context Constraints
+
+> [!IMPORTANT]
+> By default, an OpenShift installation creates two **cluster-scoped** objects: a
+> `SecurityContextConstraints` object and a `ClusterRoleBinding`. Installing the chart therefore
+> requires cluster administrator privileges. If you must keep all role bindings inside your
+> namespace, use the [namespace-scoped alternative](#namespace-scoped-alternative) below.
+
+The chart creates a dedicated SCC named `<release-name>-scc` rather than using the built-in
+`anyuid` or `privileged` SCCs. It grants only what the application needs:
+
+- `SYS_NICE` capability, for process priority
+- `runAsUser: RunAsAny` and `fsGroup: RunAsAny`
+- `MKNOD` dropped, no privileged containers, no host network, IPC, PID, ports, or host paths
+
+The accompanying `ClusterRoleBinding` binds the ServiceAccounts to the ClusterRole that OpenShift
+generates for the SCC (`system:openshift:scc:<release-name>-scc`).
+
+### Namespace-scoped alternative
+
+A `SecurityContextConstraints` object is cluster-scoped and cannot be namespaced. However, the
+**binding** can be. A `RoleBinding` that references a `ClusterRole` grants that role only within its
+own namespace, which avoids the cluster-wide grant.
+
+Use this approach when your OpenShift administrator does not permit `ClusterRoleBinding` objects for
+application workloads.
+
+**Step 1. Set the platform to `kubernetes`.**
+
+This stops the chart from rendering its own SCC and `ClusterRoleBinding`:
+
+```yaml
+platform: kubernetes
+
+ingress:
+  # Required. Keeps OpenShift Routes, which platform "openshift" would otherwise select for you.
+  classType: route
+```
+
+> **Important:** With `platform: kubernetes`, the chart keeps the explicit `runAsUser`,
+> `runAsGroup`, and `runAsNonRoot` values instead of letting OpenShift assign a UID. The SCC below
+> uses `runAsUser: RunAsAny`, which permits them. Do not remove that setting.
+
+**Step 2. Apply the SCC and the RoleBinding.**
+
+Use the
+[example manifests](https://github.com/sassoftware/sas-retrieval-agent-manager-deployment/blob/main/examples/openshift/scc-namespace-scoped.yaml).
+Edit the namespace and release name if you do not use the defaults, then apply the file. A cluster
+administrator must apply it, because the SCC itself is cluster-scoped:
+
+```bash
+oc apply -f scc-namespace-scoped.yaml
+```
+
+The manifests create:
+
+| Object | Scope | Purpose |
+|--------|-------|---------|
+| `SecurityContextConstraints` | Cluster | Identical to the one the chart would create, but with an empty `users` list |
+| `RoleBinding` | Namespace | Grants `system:openshift:scc:retrieval-agent-manager-scc` to the ServiceAccounts in your namespace only |
+
+**Step 3. Verify the binding before you install.**
+
+```bash
+# Confirm the SCC exists
+oc get scc retrieval-agent-manager-scc
+
+# Confirm the RoleBinding is namespaced, not cluster-wide
+oc get rolebinding retrieval-agent-manager-scc-binding -n retagentmgr
+
+# Confirm a ServiceAccount can use the SCC
+oc adm policy who-can use scc retrieval-agent-manager-scc -n retagentmgr
+```
+
+**Step 4. Install the chart.**
+
+The ServiceAccounts must exist for the binding to take effect, but a `RoleBinding` may reference a
+ServiceAccount that does not exist yet. You can apply the manifests before or after the Helm
+install; the subjects resolve once the chart creates the ServiceAccounts.
+
+> **Note:** If you change the Helm release name or any `serviceAccount.name` value, update the
+> subject names in the manifests to match.
+
 ## Database Deployment
 
 SAS Retrieval Agent Manager requires a PostgreSQL 15+ database. On OpenShift, the Crunchy Postgres for Kubernetes operator provides a quick and convenient way to deploy PostgreSQL directly on the cluster. However, running PostgreSQL inside the cluster shares resources with the application workloads and **will result in degraded performance** compared to a dedicated external PostgreSQL installation. A dedicated external PostgreSQL database is the preferred approach for production deployments.
@@ -315,57 +407,18 @@ By default, the SAS Retrieval Agent Manager Helm chart deploys the Kueue queue o
 
 Use only one method to create these objects. If the Helm chart creates them, do not apply these manifests manually. If you apply these manifests manually, keep `integrations.kueue.enabled` set to `false`.
 
-The following manifests declare the same three Kueue objects with the default values from the Helm chart:
+Use the
+[example queue manifests](https://github.com/sassoftware/sas-retrieval-agent-manager-deployment/blob/main/examples/dependencies/required/kueue-queues.yaml).
+They declare the same `ResourceFlavor`, `ClusterQueue`, and `LocalQueue` objects with the default
+values from the Helm chart. Edit the namespace and the quotas to match your cluster, then apply the
+file:
 
 ```bash
-cat <<EOF | oc apply -f -
-# ResourceFlavor defines the type of cluster resources that the queue can use.
-# Keep this name as retrieval-agent-manager unless you also update the ClusterQueue flavor name.
-apiVersion: kueue.x-k8s.io/v1beta2
-kind: ResourceFlavor
-metadata:
-  name: retrieval-agent-manager
----
-# ClusterQueue defines the shared quotas for SAS Retrieval Agent Manager jobs.
-# The namespaceSelector limits this ClusterQueue to the retagentmgr namespace.
-# Change quota values based off of your OpenShift cluster capacity.
-apiVersion: kueue.x-k8s.io/v1beta2
-kind: ClusterQueue
-metadata:
-  name: cluster-queue
-spec:
-  namespaceSelector:
-    matchLabels:
-      kubernetes.io/metadata.name: retagentmgr
-  resourceGroups:
-    - coveredResources:
-        - cpu
-        - memory
-        - pods
-        - nvidia.com/gpu
-      flavors:
-        - name: retrieval-agent-manager
-          resources:
-            - name: cpu
-              nominalQuota: "32"
-            - name: memory
-              nominalQuota: 128Gi
-            - name: pods
-              nominalQuota: "6"
-            - name: nvidia.com/gpu
-              nominalQuota: "0"
----
-# LocalQueue is the queue name that SAS Retrieval Agent Manager jobs use.
-# Keep this object in the retagentmgr namespace.
-apiVersion: kueue.x-k8s.io/v1beta2
-kind: LocalQueue
-metadata:
-  name: genai-queue
-  namespace: retagentmgr
-spec:
-  clusterQueue: cluster-queue
-EOF
+oc apply -f kueue-queues.yaml
 ```
+
+> **Note:** Match the `ClusterQueue` quotas to the capacity of the cluster you built. See
+> [Job scheduling quotas](./sizing.md#job-scheduling-quotas).
 
 Verify that the objects are created:
 
