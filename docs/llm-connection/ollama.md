@@ -5,7 +5,7 @@ parent: LLM connections
 nav_order: 3
 ---
 
-# Ollama Connection to RAM
+# Ollama Connection to SAS Retrieval Agent Manager
 
 ## Introduction
 

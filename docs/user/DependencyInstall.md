@@ -1,10 +1,41 @@
 ---
 layout: default
-title: Dependencies
-nav_order: 3
+title: Install dependencies
+parent: Deployment
+nav_order: 6
 ---
 
-# Dependency Installations
+# Install dependencies
+
+After you have access to the Kubernetes cluster, install these dependencies before you install SAS
+Retrieval Agent Manager.
+
+| Dependency                  | Version             | Upstream documentation |
+|-----------------------------|---------------------|------------------------|
+| cert-manager, trust-manager | 1.18.2, 0.18.0      | [cert-manager](https://cert-manager.io/docs/installation/helm/), [trust-manager](https://cert-manager.io/docs/trust/trust-manager/installation/) |
+| Linkerd                     | 2.17 (edge-24.11.8) | [docs](https://linkerd.io/2/tasks/install-helm/) |
+| NGINX **or** Contour        | 4.12.3 / 1.33.1     | [NGINX](https://kubernetes.github.io/ingress-nginx/deploy/), [Contour](https://projectcontour.io/getting-started/) |
+| Kueue                       | 0.17.2              | [docs](https://kueue.sigs.k8s.io/docs/installation/) |
+
+> **Important:** Install these in order. Certificate management (cert-manager and trust-manager)
+> must be first. The service mesh (Linkerd) must be second, because it depends on the certificates
+> and issuers created in the first step. The ingress controller and Kueue can follow in any order.
+
+> **Note:** On OpenShift, use the built-in OpenShift Router and the OpenShift Kueue Operator instead
+> of an ingress controller Helm chart and the upstream Kueue chart. See the
+> [OpenShift deployment guide](../ocp-deployment.md).
+
+## Optional components
+
+| Component    | Version | Example values file | Instructions | Description |
+|--------------|---------|---------------------|--------------|-------------|
+| **Weaviate** | 17.6.0  | [weaviate.yaml](https://github.com/sassoftware/sas-retrieval-agent-manager-deployment/blob/main/examples/dependencies/optional/weaviate.yaml) | [instructions](#weaviate) | Vector database |
+| **Ollama**   | 1.12.0  | [ollama.yaml](https://github.com/sassoftware/sas-retrieval-agent-manager-deployment/blob/main/examples/dependencies/optional/ollama.yaml) | [instructions](../llm-connection/ollama.md) | LLM deployment platform |
+| **Vector**   | 0.53.0  | [vector.yaml](https://github.com/sassoftware/sas-retrieval-agent-manager-deployment/blob/main/examples/dependencies/optional/monitoring/vector.yaml) | [instructions](../monitoring/README.md) | Storing logs and traces |
+| **Phoenix**  | 4.0.7   | [phoenix.yaml](https://github.com/sassoftware/sas-retrieval-agent-manager-deployment/blob/main/examples/dependencies/optional/monitoring/phoenix.yaml) | [instructions](../monitoring/traces.md) | Visualizing traces |
+
+> **Note:** If you install SAS Retrieval Agent Manager without these optional components, you can
+> always install them later and connect them to your existing deployment.
 
 ## Required Dependencies
 
@@ -66,7 +97,7 @@ helm install linkerd ./helm/linkerd \
 
 SAS Retrieval Agent Manager requires Kueue for workload management of vectorization jobs.
 
-Here is an [Example Kueue Values File](../../examples/dependencies/required/kueue.yaml). You can edit it as you'd like to fit your deployment.
+Here is an [Example Kueue Values File](https://github.com/sassoftware/sas-retrieval-agent-manager-deployment/blob/main/examples/dependencies/required/kueue.yaml). You can edit it as you'd like to fit your deployment.
 
 You can install it onto your cluster with the following commands:
 
@@ -85,7 +116,7 @@ SAS Retrieval Agent Manager requires either NGINX or Contour for managing incomi
 
 #### NGINX
 
-Here is an [Example NGINX Controller Values File](../../examples/dependencies/required/ingress-controllers/nginx.yaml). You can edit it as you'd like to fit your deployment.
+Here is an [Example NGINX Controller Values File](https://github.com/sassoftware/sas-retrieval-agent-manager-deployment/blob/main/examples/dependencies/required/ingress-controllers/nginx.yaml). You can edit it as you'd like to fit your deployment.
 
 You can install it onto your cluster with the following commands:
 
@@ -105,7 +136,7 @@ helm install nginx-ingress-nginx-controller \
 
 #### Contour
 
-Here is an [Example Contour Controller Values File](../../examples/dependencies/required/ingress-controllers/contour.yaml). You can edit it as you'd like to fit your deployment.
+Here is an [Example Contour Controller Values File](https://github.com/sassoftware/sas-retrieval-agent-manager-deployment/blob/main/examples/dependencies/required/ingress-controllers/contour.yaml). You can edit it as you'd like to fit your deployment.
 
 You can install it onto your cluster with the following commands:
 
@@ -130,7 +161,7 @@ helm install contour contour/contour \
 
 SAS has partnered with [Weaviate](https://weaviate.io/) and supports it as a vector database alternative to PGVector storage. This installation is not required but is compatible with SAS Retrieval Agent Manager.
 
-Here is an [Example Weaviate Values File](../../examples/dependencies/optional/weaviate.yaml). You can edit it as you'd like to fit your deployment.
+Here is an [Example Weaviate Values File](https://github.com/sassoftware/sas-retrieval-agent-manager-deployment/blob/main/examples/dependencies/optional/weaviate.yaml). You can edit it as you'd like to fit your deployment.
 
 You can install it onto your cluster with the following commands:
 
@@ -151,7 +182,7 @@ helm install weaviate weaviate/weaviate \
 
 SAS Retrieval Agent Manager uses Vector for collecting, viewing, and managing logs/metrics.
 
-Here is an [Example Vector Values File](../../examples/dependencies/optional/monitoring/vector.yaml). You can edit it as you'd like to fit your deployment.
+Here is an [Example Vector Values File](https://github.com/sassoftware/sas-retrieval-agent-manager-deployment/blob/main/examples/dependencies/optional/monitoring/vector.yaml). You can edit it as you'd like to fit your deployment.
 
 You can install it onto your cluster by reading the [installation instructions found here](../monitoring/logs-and-metrics.md#installation).
 
@@ -159,6 +190,6 @@ You can install it onto your cluster by reading the [installation instructions f
 
 SAS Retrieval Agent Manager supports [Phoenix](https://github.com/Arize-ai/phoenix), an open-source observability platform for LLM applications.
 
-Here is an [Example Phoenix Values File](../../examples/dependencies/optional/monitoring/phoenix.yaml). You can edit it as you'd like to fit your deployment.
+Here is an [Example Phoenix Values File](https://github.com/sassoftware/sas-retrieval-agent-manager-deployment/blob/main/examples/dependencies/optional/monitoring/phoenix.yaml). You can edit it as you'd like to fit your deployment.
 
 You can look at [installation instructions here](../monitoring/traces.md#installation).

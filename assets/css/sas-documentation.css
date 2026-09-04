@@ -6,6 +6,7 @@
   --sas-border: #d5dce5;
   --sas-surface: #f5f7fa;
   --sas-text: #252a30;
+  --sas-nav-link: #dbe3ec;
 }
 
 body {
@@ -43,20 +44,30 @@ body {
   background: var(--sas-blue-deep);
 }
 
-.site-nav .nav-list-link {
-  color: #e8f2fb;
+/* Selectors below match the theme's specificity, which colors nested links dark grey. */
+.site-nav .nav-list .nav-list-item .nav-list-link,
+.site-nav .nav-list .nav-list-item > .nav-list .nav-list-item .nav-list-link {
+  color: var(--sas-nav-link);
   font-size: 0.9rem;
   line-height: 1.35;
   padding: 0.55rem 1rem;
 }
 
-.site-nav .nav-list-link:hover,
-.site-nav .nav-list-link.active {
-  background-color: rgba(255, 255, 255, 0.14);
+.site-nav .nav-list .nav-list-item .nav-list-link:hover,
+.site-nav .nav-list .nav-list-item .nav-list-link.active,
+.site-nav .nav-list .nav-list-item > .nav-list .nav-list-item .nav-list-link:hover,
+.site-nav .nav-list .nav-list-item > .nav-list .nav-list-item .nav-list-link.active {
+  /* The theme paints a light gradient here, which is unreadable behind white text. */
+  background-image: none;
+  background-color: rgba(255, 255, 255, 0.16);
   color: #ffffff;
 }
 
 .site-nav .nav-list .nav-list-item .nav-list-expander {
+  color: var(--sas-nav-link);
+}
+
+.site-nav .nav-list .nav-list-item .nav-list-expander:hover {
   color: #ffffff;
 }
 

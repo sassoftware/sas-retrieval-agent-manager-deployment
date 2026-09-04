@@ -1,11 +1,12 @@
 ---
 layout: default
 title: AWS storage help
-parent: Deployment
-nav_order: 6
+parent: AWS deployment
+grand_parent: Deployment
+nav_order: 2
 ---
 
-# AWS Storage Help
+# AWS storage help
 
 In order to create the necessary role, trust policy, and EFS required for SAS Retrieval Agent Manager, you can follow these commands.
 
@@ -20,7 +21,7 @@ aws efs create-file-system \
     --region <your-region>
 ```
 
-After this, copy [this](../../examples/aws/trust-policy.json) trust-policy into your local directory and apply it to a role with the following command:
+After this, copy [this](https://github.com/sassoftware/sas-retrieval-agent-manager-deployment/blob/main/examples/aws/trust-policy.json) trust-policy into your local directory and apply it to a role with the following command:
 
 ```bash
 # Creates the Role
@@ -77,7 +78,7 @@ helm repo update
 helm install aws-efs-csi-driver aws-efs-csi-driver/aws-efs-csi-driver -n kube-system -f efs-values.yaml
 ```
 
-> [**Note:** you can find an example EFS values file here](../../examples/aws/efs.yaml)
+> [**Note:** you can find an example EFS values file here](https://github.com/sassoftware/sas-retrieval-agent-manager-deployment/blob/main/examples/aws/efs.yaml)
 
 ## EBS Driver Installation (optional)
 
@@ -92,6 +93,6 @@ helm repo update
 helm install aws-ebs-csi-driver aws-ebs-csi-driver/aws-ebs-csi-driver -n kube-system -f ebs-values.yaml
 ```
 
-> [**Note:** you can find an example EBS values file here](../../examples/aws/ebs.yaml)
+> [**Note:** you can find an example EBS values file here](https://github.com/sassoftware/sas-retrieval-agent-manager-deployment/blob/main/examples/aws/ebs.yaml)
 
 [Back to AWS Deployment Guide](../aws-deployment.md#deploy-rds-ssl-certificate)

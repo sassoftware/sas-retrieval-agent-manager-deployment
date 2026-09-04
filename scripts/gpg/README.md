@@ -2,6 +2,10 @@
 
 This document provides instructions for generating GPG keys for use with SAS Retrieval Agent Manager. GPG keys are used for encrypting and decrypting sensitive data in SAS Retrieval Agent Manager. Follow the instructions below to generate GPG keys and deploy them as Kubernetes secrets and configmaps.
 
+> [!CAUTION]
+> Never run these scripts against an existing installation. Regenerating or replacing GPG keys
+> causes permanent, unrecoverable data loss. Read [GPG keys](https://sassoftware.github.io/sas-retrieval-agent-manager-deployment/docs/gpg-keys.html) before you continue.
+
 ## Requirements
 
 - Docker

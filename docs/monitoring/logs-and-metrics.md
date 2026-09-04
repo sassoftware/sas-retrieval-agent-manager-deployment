@@ -5,7 +5,7 @@ parent: Monitoring
 nav_order: 1
 ---
 
-# Logs and Metrics in RAM
+# Logs and Metrics in SAS Retrieval Agent Manager
 
 The SAS Retrieval Agent Manager (RAM) system collects and stores logs and metrics using [Vector](https://vector.dev/), a high-performance observability data pipeline. Vector aggregates telemetry data from Kubernetes clusters and routes it to PostgreSQL via PostgREST for persistent storage and querying.
 
@@ -60,7 +60,7 @@ sinks:
     table: monitoring.logs
 ```
 
-> **Note:** See a full [Vector example values file here](../../examples/dependencies/optional/monitoring/vector.yaml)
+> **Note:** See a full [Vector example values file here](https://github.com/sassoftware/sas-retrieval-agent-manager-deployment/blob/main/examples/dependencies/optional/monitoring/vector.yaml)
 
 #### Log Schema
 
@@ -114,7 +114,7 @@ sinks:
 
 ## Installation
 
-To install Vector, edit the [example Vector values file](../../examples/dependencies/optional/monitoring/vector.yaml) to your desired settings and run the following commands:
+To install Vector, edit the [example Vector values file](https://github.com/sassoftware/sas-retrieval-agent-manager-deployment/blob/main/examples/dependencies/optional/monitoring/vector.yaml) to your desired settings and run the following commands:
 
 ```sh
 helm repo add vector https://helm.vector.dev
