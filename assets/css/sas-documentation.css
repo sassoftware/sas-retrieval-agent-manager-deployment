@@ -103,16 +103,15 @@ body {
   letter-spacing: 0;
 }
 
+/* Heading font sizes are set with !important by the theme, so they are not overridden here. */
 .main-content h1 {
   border-bottom: 1px solid var(--sas-border);
-  font-size: 2rem;
   margin-bottom: 1.75rem;
   padding-bottom: 0.75rem;
 }
 
 .main-content h2 {
   border-bottom: 1px solid var(--sas-border);
-  font-size: 1.45rem;
   margin-top: 2.75rem;
   padding-bottom: 0.35rem;
 }
@@ -164,7 +163,8 @@ body {
   border-radius: 2px;
 }
 
-.main-content pre {
+/* The theme targets pre.highlight inside div.highlighter-rouge, so match that depth. */
+.main-content div.highlighter-rouge pre.highlight {
   border-left: 3px solid var(--sas-blue);
 }
 
@@ -228,9 +228,5 @@ body {
   .site-title {
     height: 2.25rem;
     margin: 0.75rem 1rem;
-  }
-
-  .main-content h1 {
-    font-size: 1.7rem;
   }
 }
