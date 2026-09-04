@@ -8,20 +8,21 @@ permalink: /deployment/
 
 # Deployment
 
-Follow these steps in order. Step 1 provisions infrastructure; steps 2 through 6 install the
-application.
+Follow these steps in order. Steps 1 and 2 cover sizing and infrastructure; steps 3 through 7
+install the application.
 
 Before you start, complete [Get started](./get-started.md) to gather your prerequisites, license,
 and image pull secret.
 
 | Step | Page | Purpose |
 |------|------|---------|
-| 1 | Platform guide — [Azure](./azure-deployment.md), [AWS](./aws-deployment.md), [Kubernetes](./k8s-deployment.md), or [OpenShift](./ocp-deployment.md) | Provision the cluster and database infrastructure |
-| 2 | [Configure the database](./database.md) | Size PostgreSQL, enable extensions, secure the connection |
-| 3 | [Install dependencies](./user/DependencyInstall.md) | cert-manager, trust-manager, Linkerd, ingress controller, Kueue |
-| 4 | [GPG keys](./gpg-keys.md) | Generate and back up the encryption keys |
-| 5 | [Values file generator](./configure-values.md) | Build your `ram-values.yaml` |
-| 6 | [Install and upgrade](./install.md) | Deploy the Helm chart and verify |
+| 1 | [Cluster sizing](./sizing.md) | Choose a Small, Medium, or Large tier and size your nodes |
+| 2 | Platform guide — [Azure](./azure-deployment.md), [AWS](./aws-deployment.md), [Kubernetes](./k8s-deployment.md), or [OpenShift](./ocp-deployment.md) | Provision the cluster and database infrastructure |
+| 3 | [Configure the database](./database.md) | Size PostgreSQL, enable extensions, secure the connection |
+| 4 | [Install dependencies](./user/DependencyInstall.md) | cert-manager, trust-manager, Linkerd, ingress controller, Kueue |
+| 5 | [GPG keys](./gpg-keys.md) | Generate and back up the encryption keys |
+| 6 | [Values file generator](./configure-values.md) | Build your `ram-values.yaml` |
+| 7 | [Install and upgrade](./install.md) | Deploy the Helm chart and verify |
 
 > [!CAUTION]
 > GPG keys are the encryption foundation for all sensitive data. Generate and back them up before

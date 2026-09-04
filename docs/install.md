@@ -2,7 +2,7 @@
 layout: default
 title: Install and upgrade
 parent: Deployment
-nav_order: 8
+nav_order: 9
 ---
 
 # Install and upgrade

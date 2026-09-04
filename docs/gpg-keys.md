@@ -2,7 +2,7 @@
 layout: default
 title: GPG keys
 parent: Deployment
-nav_order: 7
+nav_order: 8
 ---
 
 # GPG keys

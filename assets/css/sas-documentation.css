@@ -139,8 +139,14 @@ body {
   border: 1px solid var(--sas-border);
 }
 
-.main-content thead {
-  background: var(--sas-blue-dark);
+/* The theme sets a white background on th and td directly, so it must be overridden there
+   rather than on thead or tr. */
+.main-content thead th {
+  background-color: var(--sas-blue-dark);
+  color: #ffffff;
+}
+
+.main-content thead th a {
   color: #ffffff;
 }
 
@@ -149,8 +155,8 @@ body {
   border-color: var(--sas-border);
 }
 
-.main-content tbody tr:nth-child(even) {
-  background: var(--sas-surface);
+.main-content tbody tr:nth-child(even) td {
+  background-color: var(--sas-surface);
 }
 
 .main-content pre,

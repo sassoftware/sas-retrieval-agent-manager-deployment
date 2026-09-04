@@ -2,7 +2,7 @@
 layout: default
 title: Kubernetes deployment
 parent: Deployment
-nav_order: 3
+nav_order: 4
 ---
 
 # Kubernetes deployment
@@ -40,13 +40,19 @@ In addition to the [common prerequisites](./get-started.md#prerequisites):
 
 ### Hardware Requirements
 
-#### Kubernetes Cluster Sizing Example (Small Size)
+Cluster sizing is platform-independent. Small, Medium, and Large worker node requirements are the
+same as on AKS and EKS. See [Cluster sizing](./sizing.md).
+
+This example shows a Small cluster with a single, non-production control plane node:
 
 | Node Type                        | Count | CPUs | RAM  | Disk  | Notes                                                                       |
 |----------------------------------|-------|------|------|-------|-----------------------------------------------------------------------------|
 | **Control Plane Node (tainted)** | 1     | 4    | 8GB  | 50GB  |                                                                             |
-| **Worker Nodes**                 | 2     | 8    | 16GB | 200GB |                                                                             |
+| **Worker Nodes**                 | 2     | 8    | 32GB | 200GB | Use 64GB for embedding or vectorization workloads                           |
 | **NFS Server Node**              | 1     | 8    | 16GB | 200GB | Used if your storageClass is `nfs-client`, can also be an extra worker node |
+
+For Medium and Large clusters, keep this control plane and NFS configuration and scale the worker
+nodes to the [tier requirements](./sizing.md#step-2-tier-requirements).
 
 #### Postgres Database Sizing
 
@@ -54,7 +60,7 @@ In addition to the [common prerequisites](./get-started.md#prerequisites):
 
 ### Infrastructure Requirements
 
-- AKS version: 1.35+
+- Kubernetes version: 1.35+
 
 > Note: These should all be deployed automatically via the SAS Viya 4 Infrastructure as Code scripts
 

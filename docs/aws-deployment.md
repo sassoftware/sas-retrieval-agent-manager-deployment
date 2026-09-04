@@ -2,7 +2,7 @@
 layout: default
 title: AWS deployment
 parent: Deployment
-nav_order: 2
+nav_order: 3
 has_children: true
 ---
 
@@ -33,13 +33,20 @@ In addition to the [common prerequisites](./get-started.md#prerequisites):
 
 ### Hardware Requirements
 
-#### EKS Cluster Sizing
+Cluster sizing is platform-independent. Choose a tier and read the resource requirements in
+[Cluster sizing](./sizing.md), then use an AWS instance type that meets them.
+
+Example EKS node group sizes:
 
 | Node Size           | Minimum Nodes | Maximum Nodes | Deployment Size |
 |---------------------|---------------|---------------|-----------------|
 | **r6in.2xlarge**    | 1             | 3             | Small           |
 | **r6in.2xlarge**    | 2             | 6             | Medium          |
 | **r6in.4xlarge**    | 2             | 8             | Large           |
+
+> **Note:** These `r6in` examples are memory-optimized and meet the **recommended** memory
+> requirement, which suits embedding and vectorization workloads. See
+> [Example instance types](./sizing.md#step-3-example-instance-types).
 
 #### PostgreSQL Database Sizing
 

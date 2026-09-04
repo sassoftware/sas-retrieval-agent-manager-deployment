@@ -2,7 +2,7 @@
 layout: default
 title: Configure the database
 parent: Deployment
-nav_order: 5
+nav_order: 6
 ---
 
 # Configure the database
@@ -22,7 +22,8 @@ before you [install the application](./install.md).
 
 ## Sizing
 
-Size the database for your expected usage:
+The database uses the same Small, Medium, and Large tiers as the cluster. Choose your tier from the
+workload criteria in [Cluster sizing](./sizing.md#step-1-choose-a-tier), then size the database:
 
 | Deployment size | Total vCPU (min) | Total RAM (Gb) | Storage (Gb) | Queries per day | Agents/Custom sources/MCP servers |
 |-----------------|------------------|----------------|--------------|-----------------|-----------------------------------|

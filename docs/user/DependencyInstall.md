@@ -2,7 +2,7 @@
 layout: default
 title: Install dependencies
 parent: Deployment
-nav_order: 6
+nav_order: 7
 ---
 
 # Install dependencies

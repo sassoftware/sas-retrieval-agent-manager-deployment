@@ -2,7 +2,7 @@
 layout: default
 title: Azure deployment
 parent: Deployment
-nav_order: 1
+nav_order: 2
 has_children: true
 ---
 
@@ -33,13 +33,20 @@ In addition to the [common prerequisites](./get-started.md#prerequisites):
 
 ### Hardware Requirements
 
-#### AKS Cluster Sizing
+Cluster sizing is platform-independent. Choose a tier and read the resource requirements in
+[Cluster sizing](./sizing.md), then use an Azure instance type that meets them.
+
+Example AKS node pool sizes:
 
 |       Node Size      | Minimum Nodes | Maximum Nodes |   Deployment Size  |
 |----------------------|---------------|---------------|--------------------|
-| **Standard_d8s_v5**  |       1       |       3       |      Small         |
-| **Standard_d8s_v5**  |       2       |       6       |      Medium        |
-| **Standard_d16s_v5** |       2       |       8       |      Large         |
+| **Standard_D8s_v5**  |       1       |       3       |      Small         |
+| **Standard_D8s_v5**  |       2       |       6       |      Medium        |
+| **Standard_D16s_v5** |       2       |       8       |      Large         |
+
+> **Note:** These `D`-series examples meet the **minimum** memory requirement. For embedding or
+> vectorization workloads, use a memory-optimized `E`-series instance instead. See
+> [Example instance types](./sizing.md#step-3-example-instance-types).
 
 #### Postgres Database Sizing
 
