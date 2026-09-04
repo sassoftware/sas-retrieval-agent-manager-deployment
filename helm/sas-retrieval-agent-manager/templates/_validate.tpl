@@ -4,7 +4,7 @@
 
 {{/* ── Simple non-empty checks ── */}}
 {{- if not .Values.users.postgrest.password                  }}{{- $errors = append $errors "users.postgrest.password is empty"                       }}{{- end }}
-{{- if not .Values.users.database.admin.password             }}{{- $errors = append $errors "users.database.admin.password is empty"                  }}{{- end }}
+{{- if and (eq (lower (toString .Values.db.init.config.database.initializeDb)) "true") (not .Values.users.database.admin.password) }}{{- $errors = append $errors "users.database.admin.password is empty"                  }}{{- end }}
 {{- if not .Values.users.monitoring.password                 }}{{- $errors = append $errors "users.monitoring.password is empty"                      }}{{- end }}
 {{- if not .Values.users.embedding.password                  }}{{- $errors = append $errors "users.embedding.password is empty"                       }}{{- end }}
 {{- if not .Values.users.migration.password                  }}{{- $errors = append $errors "users.migration.password is empty"                       }}{{- end }}

@@ -1,3 +1,10 @@
+---
+layout: default
+title: Backup data
+parent: Backup and restore
+nav_order: 2
+---
+
 # Velero Backup Configuration for PVC 'vhub-pv'
 
 To back up a PersistentVolumeClaim (PVC) named `vhub-pv` using Velero:

@@ -69,28 +69,24 @@
                     "client_id": {
                       "default": "",
                       "description": "Azure AD client ID for authentication (leave blank to disable)",
-                      "required": [],
                       "title": "client_id",
                       "type": "string"
                     },
                     "enabled": {
                       "default": false,
                       "description": "Enable Azure AD identity integration (true/false)",
-                      "required": [],
                       "title": "enabled",
                       "type": "boolean"
                     },
                     "scope": {
                       "default": "https://cognitiveservices.azure.com/.default",
                       "description": "OAuth2 scope for Azure Cognitive Services authentication",
-                      "required": [],
                       "title": "scope",
                       "type": "string"
                     },
                     "token_keyword": {
                       "default": "AZURE_IDENTITY",
                       "description": "Keyword used to identify Azure identity tokens in requests",
-                      "required": [],
                       "title": "token_keyword",
                       "type": "string"
                     }
@@ -110,7 +106,6 @@
                     "default_api_version": {
                       "default": "2024-10-21",
                       "description": "Default API version for Azure OpenAI service (format: YYYY-MM-DD)",
-                      "required": [],
                       "title": "default_api_version",
                       "type": "string"
                     }
@@ -132,42 +127,36 @@
             "base_path": {
               "default": "/SASRetrievalAgentManager/api",
               "description": "Base path for API endpoints",
-              "required": [],
               "title": "base_path",
               "type": "string"
             },
             "enable_dev_mode": {
               "default": "False",
               "description": "Enable development mode features",
-              "required": [],
               "title": "enable_dev_mode",
               "type": "string"
             },
             "enable_genai_traces": {
               "default": "False",
               "description": "Whether to send traces to the observability platform via vector",
-              "required": [],
               "title": "enable_genai_traces",
               "type": "string"
             },
             "hide_destination_secrets": {
               "default": "False",
               "description": "Whether to hide the destination secrets in the UI",
-              "required": [],
               "title": "hide_destination_secrets",
               "type": "string"
             },
             "hide_llm_secrets": {
               "default": "False",
               "description": "Whether to hide the LLM api key in the UI",
-              "required": [],
               "title": "hide_llm_secrets",
               "type": "string"
             },
             "license": {
               "default": "",
               "description": "License content (if not using secret)",
-              "required": [],
               "title": "license",
               "type": "string"
             },
@@ -196,14 +185,12 @@
             "num_workers": {
               "default": 4,
               "description": "Number of worker processes",
-              "required": [],
               "title": "num_workers",
               "type": "integer"
             },
             "sslVerify": {
               "default": "True",
               "description": "SSL verification setting",
-              "required": [],
               "title": "sslVerify",
               "type": "string"
             }
@@ -225,7 +212,6 @@
         "latest_version": {
           "default": "v1",
           "description": "Latest API version",
-          "required": [],
           "title": "latest_version",
           "type": "string"
         },
@@ -237,7 +223,6 @@
               "default": 15,
               "description": "Number of consecutive failures required to mark container as not ready",
               "minimum": 1,
-              "required": [],
               "title": "failureThreshold",
               "type": "integer"
             },
@@ -245,7 +230,6 @@
               "default": 30,
               "description": "Initial delay before starting probes",
               "minimum": 0,
-              "required": [],
               "title": "initialDelaySeconds",
               "type": "integer"
             },
@@ -253,7 +237,6 @@
               "default": 10,
               "description": "How often to perform the probe",
               "minimum": 1,
-              "required": [],
               "title": "periodSeconds",
               "type": "integer"
             },
@@ -261,7 +244,6 @@
               "default": 1,
               "description": "Minimum consecutive successes for the probe to be considered successful",
               "minimum": 1,
-              "required": [],
               "title": "successThreshold",
               "type": "integer"
             },
@@ -269,7 +251,6 @@
               "default": 1,
               "description": "Timeout for the probe",
               "minimum": 1,
-              "required": [],
               "title": "timeoutSeconds",
               "type": "integer"
             }
@@ -308,7 +289,6 @@
               "default": 5,
               "description": "Number of consecutive failures required to mark container as not ready",
               "minimum": 1,
-              "required": [],
               "title": "failureThreshold",
               "type": "integer"
             },
@@ -316,7 +296,6 @@
               "default": 30,
               "description": "Initial delay before starting probes",
               "minimum": 0,
-              "required": [],
               "title": "initialDelaySeconds",
               "type": "integer"
             },
@@ -324,7 +303,6 @@
               "default": 10,
               "description": "How often to perform the probe",
               "minimum": 1,
-              "required": [],
               "title": "periodSeconds",
               "type": "integer"
             },
@@ -332,7 +310,6 @@
               "default": 1,
               "description": "Minimum consecutive successes for the probe to be considered successful",
               "minimum": 1,
-              "required": [],
               "title": "successThreshold",
               "type": "integer"
             },
@@ -340,7 +317,6 @@
               "default": 1,
               "description": "Timeout for the probe",
               "minimum": 1,
-              "required": [],
               "title": "timeoutSeconds",
               "type": "integer"
             }
@@ -353,7 +329,6 @@
           "default": 1,
           "description": "Number of replicas to run. Chart is not designed to scale horizontally, use at your own risk",
           "minimum": 0,
-          "required": [],
           "title": "replicaCount",
           "type": "integer"
         },
@@ -371,16 +346,13 @@
           "properties": {
             "internalPort": {
               "default": 8765,
-              "required": [],
               "type": "integer"
             },
             "port": {
               "default": 80,
-              "required": [],
               "type": "integer"
             },
             "type": {
-              "required": [],
               "type": "string"
             }
           },
@@ -418,7 +390,6 @@
             "required": [],
             "type": "object"
           },
-          "required": [],
           "title": "volumeMounts",
           "type": "array"
         },
@@ -428,7 +399,6 @@
             "required": [],
             "type": "object"
           },
-          "required": [],
           "title": "volumes",
           "type": "array"
         }
@@ -461,49 +431,42 @@
                     "adminRole": {
                       "default": "sas_ram_admin_role",
                       "description": "Admin role name for application",
-                      "required": [],
                       "title": "adminRole",
                       "type": "string"
                     },
                     "createDB": {
                       "default": true,
                       "description": "Whether to create application database",
-                      "required": [],
                       "title": "createDB",
                       "type": "boolean"
                     },
                     "createSchema": {
                       "default": true,
                       "description": "Whether to create application schema",
-                      "required": [],
                       "title": "createSchema",
                       "type": "boolean"
                     },
                     "createUser": {
                       "default": true,
                       "description": "Whether to create application user",
-                      "required": [],
                       "title": "createUser",
                       "type": "boolean"
                     },
                     "db": {
                       "default": "SASRetrievalAgentManager",
                       "description": "Application database name",
-                      "required": [],
                       "title": "db",
                       "type": "string"
                     },
                     "schema": {
                       "default": "retagentmgr",
                       "description": "Application schema name",
-                      "required": [],
                       "title": "schema",
                       "type": "string"
                     },
                     "userRole": {
                       "default": "sas_ram_user_role",
                       "description": "User role name for application",
-                      "required": [],
                       "title": "userRole",
                       "type": "string"
                     }
@@ -527,28 +490,24 @@
                     "host": {
                       "default": "",
                       "description": "Database host",
-                      "required": [],
                       "title": "host",
                       "type": "string"
                     },
                     "initializeDb": {
                       "default": "true",
                       "description": "Whether to initialize the database",
-                      "required": [],
                       "title": "initializeDb",
                       "type": "string"
                     },
                     "port": {
                       "default": "5432",
                       "description": "Database port",
-                      "required": [],
                       "title": "port",
                       "type": "string"
                     },
                     "sslmode": {
                       "default": "require",
                       "description": "SSL mode for database connection",
-                      "required": [],
                       "title": "sslmode",
                       "type": "string"
                     }
@@ -569,35 +528,30 @@
                     "createDB": {
                       "default": true,
                       "description": "Whether to create Keycloak database",
-                      "required": [],
                       "title": "createDB",
                       "type": "boolean"
                     },
                     "createSchema": {
                       "default": true,
                       "description": "Whether to create Keycloak schema",
-                      "required": [],
                       "title": "createSchema",
                       "type": "boolean"
                     },
                     "createUser": {
                       "default": true,
                       "description": "Whether to create Keycloak user",
-                      "required": [],
                       "title": "createUser",
                       "type": "boolean"
                     },
                     "db": {
                       "default": "SASRetrievalAgentManagerIAM",
                       "description": "Keycloak database name",
-                      "required": [],
                       "title": "db",
                       "type": "string"
                     },
                     "schema": {
                       "default": "keycloak",
                       "description": "Keycloak schema name",
-                      "required": [],
                       "title": "schema",
                       "type": "string"
                     }
@@ -619,7 +573,6 @@
                     "createUser": {
                       "default": true,
                       "description": "Whether to create migration user",
-                      "required": [],
                       "title": "createUser",
                       "type": "boolean"
                     }
@@ -637,47 +590,40 @@
                     "adminRole": {
                       "default": "sas_ram_admin_role",
                       "description": "Admin role name for application",
-                      "required": [],
                       "title": "adminRole",
                       "type": "string"
                     },
                     "createDB": {
                       "default": true,
                       "description": "Whether to create application database",
-                      "required": [],
                       "title": "createDB",
                       "type": "boolean"
                     },
                     "createSchema": {
                       "default": true,
                       "description": "Whether to create application schema",
-                      "required": [],
                       "title": "createSchema",
                       "type": "boolean"
                     },
                     "createUser": {
                       "default": true,
                       "description": "Whether to create application user",
-                      "required": [],
                       "title": "createUser",
                       "type": "boolean"
                     },
                     "db": {
                       "default": "SASRetrievalAgentManagerMonitoring",
-                      "required": [],
                       "title": "db",
                       "type": "string"
                     },
                     "schema": {
                       "default": "monitoring",
-                      "required": [],
                       "title": "schema",
                       "type": "string"
                     },
                     "userRole": {
                       "default": "sas_ram_user_role",
                       "description": "User role name for application",
-                      "required": [],
                       "title": "userRole",
                       "type": "string"
                     }
@@ -701,14 +647,12 @@
                     "db": {
                       "default": "SASRetrievalAgentManagerMonitoring",
                       "description": "the database for storing logs/metrics",
-                      "required": [],
                       "title": "db",
                       "type": "string"
                     },
                     "schema": {
                       "default": "monitoring",
                       "description": "the schema for storing logs/metrics",
-                      "required": [],
                       "title": "schema",
                       "type": "string"
                     }
@@ -805,7 +749,6 @@
                     "enabled": {
                       "default": false,
                       "description": "Enable hydration for local Weaviate installation",
-                      "required": [],
                       "title": "enabled",
                       "type": "boolean"
                     }
@@ -892,7 +835,6 @@
                     "enabled": {
                       "default": false,
                       "description": "Whether to automatically hydrate embedding model data",
-                      "required": [],
                       "title": "enabled",
                       "type": "boolean"
                     },
@@ -900,10 +842,8 @@
                       "default": [],
                       "description": "Needs to be seperated by platform at some point... not today\nList of model names to hydrate\nExamples:\n  - \"ibm-granite/granite-embedding-30m-english\"\n  - \"prdev/mini-gte\"\n  - \"sentence-transformers/all-MiniLM-L6-v2\"\n  - \"nomic-ai/nomic-embed-text-v2-moe\"\n  - \"ibm-granite/granite-embedding-107m-multilingual\"\n  - \"sentence-transformers/distiluse-base-multilingual-cased-v2\"",
                       "items": {
-                        "required": [],
                         "type": "string"
                       },
-                      "required": [],
                       "title": "models",
                       "type": "array"
                     }
@@ -919,21 +859,18 @@
                     "enabled": {
                       "default": false,
                       "description": "Whether to automatically hydrate LLM data",
-                      "required": [],
                       "title": "enabled",
                       "type": "boolean"
                     },
                     "endpoint": {
                       "default": "",
                       "description": "Endpoint for LLM provider\nExample:",
-                      "required": [],
                       "title": "endpoint",
                       "type": "string"
                     },
                     "key": {
                       "default": "",
                       "description": "B64 Encoded API key for LLM provider",
-                      "required": [],
                       "title": "key",
                       "type": "string"
                     },
@@ -943,11 +880,9 @@
                       "items": {
                         "properties": {
                           "context_limit": {
-                            "required": [],
                             "type": "integer"
                           },
                           "name": {
-                            "required": [],
                             "type": "string"
                           }
                         },
@@ -956,7 +891,6 @@
                         ],
                         "type": "object"
                       },
-                      "required": [],
                       "title": "models",
                       "type": "array"
                     }
@@ -1036,28 +970,24 @@
                 "jwt-role-claim-key": {
                   "default": ".resource_access.\"sas-ram-app\".roles[0]",
                   "description": "JWT role claim key configuration (uses value from keycloak.clientId)",
-                  "required": [],
                   "title": "jwt-role-claim-key",
                   "type": "string"
                 },
                 "log-level": {
                   "default": "info",
                   "description": "Log level for PostgREST (info, warn, etc.)",
-                  "required": [],
                   "title": "log-level",
                   "type": "string"
                 },
                 "openapi-mode": {
                   "default": "follow-privileges",
                   "description": "OpenAPI mode configuration",
-                  "required": [],
                   "title": "openapi-mode",
                   "type": "string"
                 },
                 "openapi-security-active": {
                   "default": true,
                   "description": "Whether OpenAPI security is active",
-                  "required": [],
                   "title": "openapi-security-active",
                   "type": "boolean"
                 }
@@ -1079,7 +1009,6 @@
                   "default": 3,
                   "description": "Number of consecutive failures required to mark container as not ready",
                   "minimum": 1,
-                  "required": [],
                   "title": "failureThreshold",
                   "type": "integer"
                 },
@@ -1087,7 +1016,6 @@
                   "default": 10,
                   "description": "How often to perform the probe",
                   "minimum": 1,
-                  "required": [],
                   "title": "periodSeconds",
                   "type": "integer"
                 },
@@ -1095,7 +1023,6 @@
                   "default": 1,
                   "description": "Minimum consecutive successes for the probe to be considered successful",
                   "minimum": 1,
-                  "required": [],
                   "title": "successThreshold",
                   "type": "integer"
                 },
@@ -1103,7 +1030,6 @@
                   "default": 1,
                   "description": "Timeout for the probe",
                   "minimum": 1,
-                  "required": [],
                   "title": "timeoutSeconds",
                   "type": "integer"
                 }
@@ -1120,7 +1046,6 @@
                   "default": 3,
                   "description": "Number of consecutive failures required to mark container as not ready",
                   "minimum": 1,
-                  "required": [],
                   "title": "failureThreshold",
                   "type": "integer"
                 },
@@ -1128,7 +1053,6 @@
                   "default": 10,
                   "description": "How often to perform the probe",
                   "minimum": 1,
-                  "required": [],
                   "title": "periodSeconds",
                   "type": "integer"
                 },
@@ -1136,7 +1060,6 @@
                   "default": 1,
                   "description": "Minimum consecutive successes for the probe to be considered successful",
                   "minimum": 1,
-                  "required": [],
                   "title": "successThreshold",
                   "type": "integer"
                 },
@@ -1144,7 +1067,6 @@
                   "default": 1,
                   "description": "Timeout for the probe",
                   "minimum": 1,
-                  "required": [],
                   "title": "timeoutSeconds",
                   "type": "integer"
                 }
@@ -1163,7 +1085,6 @@
                     "port": {
                       "default": 3003,
                       "description": "Kubernetes Service port for PostgREST admin interface on the monitoring db",
-                      "required": [],
                       "title": "port",
                       "type": "integer"
                     }
@@ -1180,12 +1101,10 @@
                   "properties": {
                     "internalPort": {
                       "default": 3102,
-                      "required": [],
                       "type": "integer"
                     },
                     "port": {
                       "default": 3002,
-                      "required": [],
                       "type": "integer"
                     }
                   },
@@ -1231,7 +1150,6 @@
                   "default": 3,
                   "description": "Number of consecutive failures required to mark container as not ready",
                   "minimum": 1,
-                  "required": [],
                   "title": "failureThreshold",
                   "type": "integer"
                 },
@@ -1239,7 +1157,6 @@
                   "default": 10,
                   "description": "How often to perform the probe",
                   "minimum": 1,
-                  "required": [],
                   "title": "periodSeconds",
                   "type": "integer"
                 },
@@ -1247,7 +1164,6 @@
                   "default": 1,
                   "description": "Minimum consecutive successes for the probe to be considered successful",
                   "minimum": 1,
-                  "required": [],
                   "title": "successThreshold",
                   "type": "integer"
                 },
@@ -1255,7 +1171,6 @@
                   "default": 1,
                   "description": "Timeout for the probe",
                   "minimum": 1,
-                  "required": [],
                   "title": "timeoutSeconds",
                   "type": "integer"
                 }
@@ -1272,7 +1187,6 @@
                   "default": 3,
                   "description": "Number of consecutive failures required to mark container as not ready",
                   "minimum": 1,
-                  "required": [],
                   "title": "failureThreshold",
                   "type": "integer"
                 },
@@ -1280,7 +1194,6 @@
                   "default": 10,
                   "description": "How often to perform the probe",
                   "minimum": 1,
-                  "required": [],
                   "title": "periodSeconds",
                   "type": "integer"
                 },
@@ -1288,7 +1201,6 @@
                   "default": 1,
                   "description": "Minimum consecutive successes for the probe to be considered successful",
                   "minimum": 1,
-                  "required": [],
                   "title": "successThreshold",
                   "type": "integer"
                 },
@@ -1296,7 +1208,6 @@
                   "default": 1,
                   "description": "Timeout for the probe",
                   "minimum": 1,
-                  "required": [],
                   "title": "timeoutSeconds",
                   "type": "integer"
                 }
@@ -1309,7 +1220,6 @@
               "default": 2,
               "description": "Number of replicas to run. Chart is not designed to scale horizontally, use at your own risk",
               "minimum": 0,
-              "required": [],
               "title": "replicaCount",
               "type": "integer"
             },
@@ -1327,16 +1237,13 @@
               "properties": {
                 "internalPort": {
                   "default": 3100,
-                  "required": [],
                   "type": "integer"
                 },
                 "port": {
                   "default": 3000,
-                  "required": [],
                   "type": "integer"
                 },
                 "type": {
-                  "required": [],
                   "type": "string"
                 }
               },
@@ -1361,7 +1268,6 @@
                 "required": [],
                 "type": "object"
               },
-              "required": [],
               "title": "volumeMounts",
               "type": "array"
             },
@@ -1371,7 +1277,6 @@
                 "required": [],
                 "type": "object"
               },
-              "required": [],
               "title": "volumes",
               "type": "array"
             }
@@ -1432,14 +1337,12 @@
                 "description": "Name of the object",
                 "maxLength": 63,
                 "minLength": 1,
-                "required": [],
                 "type": "string"
               },
               "namespace": {
                 "description": "Namespace for the object",
                 "maxLength": 63,
                 "minLength": 1,
-                "required": [],
                 "type": "string"
               }
             },
@@ -1450,7 +1353,6 @@
           },
           "type": {
             "description": "Type of Secret (e.g., kubernetes.io/tls, kubernetes.io/dockerconfigjson)",
-            "required": [],
             "type": "string"
           }
         },
@@ -1461,7 +1363,6 @@
         ],
         "type": "object"
       },
-      "required": [],
       "title": "extraObjects",
       "type": "array"
     },
@@ -1492,77 +1393,66 @@
                 "adminRole": {
                   "default": "sas-iot-admin",
                   "description": "Admin role name in Keycloak",
-                  "required": [],
                   "title": "adminRole",
                   "type": "string"
                 },
                 "clientId": {
                   "default": "sas-ram-app",
                   "description": "OAuth2 client ID for the application",
-                  "required": [],
                   "title": "clientId",
                   "type": "string"
                 },
                 "clientSecret": {
                   "default": "",
                   "description": "OAuth2 client secret for the application",
-                  "required": [],
                   "title": "clientSecret",
                   "type": "string"
                 },
                 "cookieSecret": {
                   "default": "",
                   "description": "OAuth2 client secret for the application",
-                  "required": [],
                   "title": "cookieSecret",
                   "type": "string"
                 },
                 "proxy": {
                   "default": "edge",
                   "description": "Proxy mode configuration (edge, reencrypt, or passthrough)",
-                  "required": [],
                   "title": "proxy",
                   "type": "string"
                 },
                 "realm": {
                   "default": "sas-iot",
                   "description": "Keycloak realm name for the application",
-                  "required": [],
                   "title": "realm",
                   "type": "string"
                 },
                 "secret_path": {
                   "default": "/mnt/config/keycloak",
                   "description": "Path to Keycloak configuration secret mount",
-                  "required": [],
                   "title": "secret_path",
                   "type": "string"
                 },
                 "serviceaccountsEnabled": {
                   "default": false,
                   "description": "Whether service accounts are enabled in Keycloak",
-                  "required": [],
                   "title": "serviceaccountsEnabled",
                   "type": "boolean"
                 },
                 "strictHostname": {
                   "default": true,
                   "description": "Whether to enforce strict hostname checking",
-                  "required": [],
                   "title": "strictHostname",
                   "type": "boolean"
                 },
                 "theme": {
                   "default": "sasblue",
                   "description": "Keycloak theme to use",
-                  "required": [],
                   "title": "theme",
                   "type": "string"
                 },
                 "userRole": {
                   "default": "sas-iot-user",
                   "description": "User role name in Keycloak",
-                  "required": [],
                   "title": "userRole",
                   "type": "string"
                 }
@@ -1591,7 +1481,6 @@
                   "default": 5,
                   "description": "Number of consecutive failures required to mark container as not ready",
                   "minimum": 1,
-                  "required": [],
                   "title": "failureThreshold",
                   "type": "integer"
                 },
@@ -1599,7 +1488,6 @@
                   "default": 240,
                   "description": "Initial delay before starting probes",
                   "minimum": 0,
-                  "required": [],
                   "title": "initialDelaySeconds",
                   "type": "integer"
                 },
@@ -1607,7 +1495,6 @@
                   "default": 30,
                   "description": "How often to perform the probe",
                   "minimum": 1,
-                  "required": [],
                   "title": "periodSeconds",
                   "type": "integer"
                 }
@@ -1646,7 +1533,6 @@
                   "default": 5,
                   "description": "Number of consecutive failures required to mark container as not ready",
                   "minimum": 1,
-                  "required": [],
                   "title": "failureThreshold",
                   "type": "integer"
                 },
@@ -1654,7 +1540,6 @@
                   "default": 240,
                   "description": "Initial delay before starting probes",
                   "minimum": 0,
-                  "required": [],
                   "title": "initialDelaySeconds",
                   "type": "integer"
                 },
@@ -1662,7 +1547,6 @@
                   "default": 30,
                   "description": "How often to perform the probe",
                   "minimum": 1,
-                  "required": [],
                   "title": "periodSeconds",
                   "type": "integer"
                 }
@@ -1675,7 +1559,6 @@
               "default": 2,
               "description": "Number of replicas to run. Chart is not designed to scale horizontally, use at your own risk",
               "minimum": 0,
-              "required": [],
               "title": "replicaCount",
               "type": "integer"
             },
@@ -1703,7 +1586,6 @@
                   "default": 5,
                   "description": "Number of consecutive failures required to mark container as not ready",
                   "minimum": 1,
-                  "required": [],
                   "title": "failureThreshold",
                   "type": "integer"
                 },
@@ -1711,7 +1593,6 @@
                   "default": 240,
                   "description": "Initial delay before starting probes",
                   "minimum": 0,
-                  "required": [],
                   "title": "initialDelaySeconds",
                   "type": "integer"
                 },
@@ -1719,7 +1600,6 @@
                   "default": 30,
                   "description": "How often to perform the probe",
                   "minimum": 1,
-                  "required": [],
                   "title": "periodSeconds",
                   "type": "integer"
                 }
@@ -1738,7 +1618,6 @@
                 "required": [],
                 "type": "object"
               },
-              "required": [],
               "title": "volumeMounts",
               "type": "array"
             },
@@ -1748,7 +1627,6 @@
                 "required": [],
                 "type": "object"
               },
-              "required": [],
               "title": "volumes",
               "type": "array"
             }
@@ -1782,7 +1660,6 @@
                 "required": [],
                 "type": "object"
               },
-              "required": [],
               "title": "volumeMounts",
               "type": "array"
             },
@@ -1792,7 +1669,6 @@
                 "required": [],
                 "type": "object"
               },
-              "required": [],
               "title": "volumes",
               "type": "array"
             }
@@ -1837,7 +1713,6 @@
           "required": []
         },
         "imagePullSecrets": {
-          "required": [],
           "type": "array"
         },
         "keycloak": {
@@ -1868,7 +1743,8 @@
           "enum": [
             "IfNotPresent",
             "Always",
-            "Never"
+            "Never",
+            null
           ],
           "required": []
         },
@@ -1917,10 +1793,8 @@
             "paths": {
               "description": "API ingress paths configuration",
               "items": {
-                "required": [],
                 "type": "string"
               },
-              "required": [],
               "title": "paths",
               "type": "array"
             }
@@ -1962,14 +1836,12 @@
         "enableRootIngress": {
           "default": true,
           "description": "Whether RAM is hosted on the root ingress or not",
-          "required": [],
           "title": "enableRootIngress",
           "type": "boolean"
         },
         "enabled": {
           "default": true,
           "description": "Enable ingress resources globally",
-          "required": [],
           "title": "enabled",
           "type": "boolean"
         },
@@ -1980,10 +1852,8 @@
             "paths": {
               "description": "Additional annotations for the Keycloak ingress\nannotations:\nKeycloak public paths configuration",
               "items": {
-                "required": [],
                 "type": "string"
               },
-              "required": [],
               "title": "paths",
               "type": "array"
             }
@@ -1999,10 +1869,8 @@
             "paths": {
               "description": "Keycloak admin paths configuration",
               "items": {
-                "required": [],
                 "type": "string"
               },
-              "required": [],
               "title": "paths",
               "type": "array"
             }
@@ -2018,20 +1886,16 @@
             "logoutPaths": {
               "description": "OAuth2 logout paths",
               "items": {
-                "required": [],
                 "type": "string"
               },
-              "required": [],
               "title": "logoutPaths",
               "type": "array"
             },
             "paths": {
               "description": "OAuth2 authentication paths",
               "items": {
-                "required": [],
                 "type": "string"
               },
-              "required": [],
               "title": "paths",
               "type": "array"
             }
@@ -2054,10 +1918,8 @@
             "paths": {
               "description": "PostgREST paths configuration",
               "items": {
-                "required": [],
                 "type": "string"
               },
-              "required": [],
               "title": "paths",
               "type": "array"
             }
@@ -2072,7 +1934,6 @@
             "caCertificate": {
               "default": "",
               "description": "PEM-encoded CA certificate content, paired with `certificate`",
-              "required": [],
               "title": "caCertificate",
               "type": "string"
             },
@@ -2105,7 +1966,6 @@
                 "enabled": {
                   "default": false,
                   "description": "When true, TLS for this chart's ingress resources is managed by cert-manager\ninstead of `certificate`/`key`/`caCertificate`.\nFor OpenShift Routes, requires openshift-routes controller to be installed.",
-                  "required": [],
                   "title": "enabled",
                   "type": "boolean"
                 },
@@ -2116,14 +1976,12 @@
                     "kind": {
                       "default": "ClusterIssuer",
                       "description": "Kind of issuer: Issuer or ClusterIssuer",
-                      "required": [],
                       "title": "kind",
                       "type": "string"
                     },
                     "name": {
                       "default": "",
                       "description": "Name of the Issuer or ClusterIssuer",
-                      "required": [],
                       "title": "name",
                       "type": "string"
                     }
@@ -2156,28 +2014,24 @@
             "certificate": {
               "default": "",
               "description": "PEM-encoded certificate content\nUsed directly by the Route template, and to create `secretName` for nginx/contour,\nwhen `certManager.enabled` is false\nIgnored when `certManager.enabled` is true",
-              "required": [],
               "title": "certificate",
               "type": "string"
             },
             "enabled": {
               "default": true,
               "description": "Enable TLS/SSL termination",
-              "required": [],
               "title": "enabled",
               "type": "boolean"
             },
             "key": {
               "default": "",
               "description": "PEM-encoded private key content, paired with `certificate`",
-              "required": [],
               "title": "key",
               "type": "string"
             },
             "secretName": {
               "default": "",
               "description": "Name of the TLS secret\nFor nginx/contour this is referenced directly (and created by the chart from\n`certificate`/`key`/`caCertificate`, or by cert-manager when `certManager.enabled`)\nNot used for OpenShift Routes, which have no secretName field: the certificate is\neither supplied inline via `certificate`/`key`/`caCertificate`, or (when\n`certManager.enabled`) patched onto the Route directly by the openshift-routes\ncontroller (github.com/cert-manager/openshift-routes) using the annotations below",
-              "required": [],
               "title": "secretName",
               "type": "string"
             }
@@ -2203,10 +2057,8 @@
             "paths": {
               "description": "UI ingress paths configuration",
               "items": {
-                "required": [],
                 "type": "string"
               },
-              "required": [],
               "title": "paths",
               "type": "array"
             }
@@ -2235,7 +2087,6 @@
             "enabled": {
               "default": false,
               "description": "Enable Istio waypoint proxy and namespace enrollment",
-              "required": [],
               "title": "enabled",
               "type": "boolean"
             },
@@ -2246,7 +2097,6 @@
                 "name": {
                   "default": "waypoint",
                   "description": "Name of the Gateway (waypoint) resource",
-                  "required": [],
                   "title": "name",
                   "type": "string"
                 },
@@ -2282,28 +2132,24 @@
                 "cpuQuota": {
                   "default": "32",
                   "description": "Kueue CPU quota",
-                  "required": [],
                   "title": "cpuQuota",
                   "type": "string"
                 },
                 "memoryQuota": {
                   "default": "128Gi",
                   "description": "Kueue memory quota",
-                  "required": [],
                   "title": "memoryQuota",
                   "type": "string"
                 },
                 "nvidiaGpuQuota": {
                   "default": 0,
                   "description": "Kueue gpu quota",
-                  "required": [],
                   "title": "nvidiaGpuQuota",
                   "type": "integer"
                 },
                 "podQuota": {
                   "default": 6,
                   "description": "Kueue pod quota",
-                  "required": [],
                   "title": "podQuota",
                   "type": "integer"
                 }
@@ -2315,7 +2161,6 @@
             "enabled": {
               "default": true,
               "description": "Kueue enablement flag",
-              "required": [],
               "title": "enabled",
               "type": "boolean"
             }
@@ -2330,14 +2175,12 @@
           "properties": {
             "enabled": {
               "default": false,
-              "required": [],
               "title": "enabled",
               "type": "boolean"
             },
             "name": {
               "default": "trusted-certs-bundle",
               "description": "Name of the ConfigMap or Secret containing trusted certificates (if enabled)",
-              "required": [],
               "title": "name",
               "type": "string"
             },
@@ -2346,7 +2189,8 @@
               "description": "Type of Kubernetes resource used to store trusted certificates\nBe aware that when managing these with trust-manager, it requires some explicit configuration to work with the operator.\nRefer to the documentation for more details: https://cert-manager.io/docs/trust/trust-manager/installation/#enable-secret-targets",
               "enum": [
                 "configMap",
-                "secret"
+                "secret",
+                null
               ],
               "required": [],
               "title": "type"
@@ -2363,7 +2207,6 @@
             "enabled": {
               "default": false,
               "description": "Wether or not viya is enabled on the cluster",
-              "required": [],
               "title": "enabled",
               "type": "boolean"
             }
@@ -2386,7 +2229,6 @@
     "name": {
       "default": "retrieval-agent-manager",
       "description": "Override the full name of all resources created by this chart\nThis becomes the prefix for all Kubernetes resource names",
-      "required": [],
       "title": "name",
       "type": "string"
     },
@@ -2415,13 +2257,11 @@
       "properties": {
         "sas.com/deployment": {
           "default": "retrieval-agent-manager",
-          "required": [],
           "title": "sas.com/deployment",
           "type": "string"
         },
         "workload.sas.com/class": {
           "default": "ram",
-          "required": [],
           "title": "workload.sas.com/class",
           "type": "string"
         }
@@ -2446,14 +2286,12 @@
                 "passphrase_path": {
                   "default": "/mnt/config/gpg_passphrase",
                   "description": "Path to GPG passphrase secret mount",
-                  "required": [],
                   "title": "passphrase_path",
                   "type": "string"
                 },
                 "private_key_path": {
                   "default": "/mnt/config/gpg_key",
                   "description": "Path to GPG private key secret mount",
-                  "required": [],
                   "title": "private_key_path",
                   "type": "string"
                 }
@@ -2468,7 +2306,6 @@
             "nameOverride": {
               "default": "",
               "description": "Override the base name used for GPG resource naming.\nMust match --name-override passed to bootstrap-gpg.sh.\nDefault produces: retrieval-agent-manager-gpg-{passphrase,private-key,public-key}",
-              "required": [],
               "title": "nameOverride",
               "type": "string"
             }
@@ -2507,7 +2344,6 @@
             },
             "name": {
               "default": "azurefile-sas",
-              "required": [],
               "type": "string"
             }
           },
@@ -2547,7 +2383,6 @@
             "sslVerify": {
               "default": false,
               "description": "Whether to verify SSL certificates for backend API calls",
-              "required": [],
               "title": "sslVerify",
               "type": "boolean"
             }
@@ -2566,7 +2401,6 @@
               "default": 9,
               "description": "Number of consecutive failures required to mark container as not ready",
               "minimum": 1,
-              "required": [],
               "title": "failureThreshold",
               "type": "integer"
             },
@@ -2574,7 +2408,6 @@
               "default": 15,
               "description": "How often to perform the probe",
               "minimum": 1,
-              "required": [],
               "title": "periodSeconds",
               "type": "integer"
             },
@@ -2582,7 +2415,6 @@
               "default": 1,
               "description": "Minimum consecutive successes for the probe to be considered successful",
               "minimum": 1,
-              "required": [],
               "title": "successThreshold",
               "type": "integer"
             },
@@ -2590,7 +2422,6 @@
               "default": 1,
               "description": "Timeout for the probe",
               "minimum": 1,
-              "required": [],
               "title": "timeoutSeconds",
               "type": "integer"
             }
@@ -2629,7 +2460,6 @@
               "default": 9,
               "description": "Number of consecutive failures required to mark container as not ready",
               "minimum": 1,
-              "required": [],
               "title": "failureThreshold",
               "type": "integer"
             },
@@ -2637,7 +2467,6 @@
               "default": 15,
               "description": "How often to perform the probe",
               "minimum": 1,
-              "required": [],
               "title": "periodSeconds",
               "type": "integer"
             },
@@ -2645,7 +2474,6 @@
               "default": 1,
               "description": "Minimum consecutive successes for the probe to be considered successful",
               "minimum": 1,
-              "required": [],
               "title": "successThreshold",
               "type": "integer"
             },
@@ -2653,7 +2481,6 @@
               "default": 1,
               "description": "Timeout for the probe",
               "minimum": 1,
-              "required": [],
               "title": "timeoutSeconds",
               "type": "integer"
             }
@@ -2666,7 +2493,6 @@
           "default": 2,
           "description": "Number of replicas to run. Chart is not designed to scale horizontally, use at your own risk",
           "minimum": 0,
-          "required": [],
           "title": "replicaCount",
           "type": "integer"
         },
@@ -2684,16 +2510,13 @@
           "properties": {
             "internalPort": {
               "default": 8180,
-              "required": [],
               "type": "integer"
             },
             "port": {
               "default": 8080,
-              "required": [],
               "type": "integer"
             },
             "type": {
-              "required": [],
               "type": "string"
             }
           },
@@ -2718,7 +2541,6 @@
             "required": [],
             "type": "object"
           },
-          "required": [],
           "title": "volumeMounts",
           "type": "array"
         },
@@ -2728,7 +2550,6 @@
             "required": [],
             "type": "object"
           },
-          "required": [],
           "title": "volumes",
           "type": "array"
         }
@@ -2748,12 +2569,10 @@
           "properties": {
             "password": {
               "description": "Application administrator account password",
-              "required": [],
               "type": "string"
             },
             "username": {
               "description": "Application administrator account username",
-              "required": [],
               "type": "string"
             }
           },
@@ -2764,12 +2583,10 @@
           "properties": {
             "password": {
               "description": "Database administrator account password",
-              "required": [],
               "type": "string"
             },
             "username": {
               "description": "Database administrator account username",
-              "required": [],
               "type": "string"
             }
           },
@@ -2780,12 +2597,10 @@
           "properties": {
             "password": {
               "description": "Embedding role password",
-              "required": [],
               "type": "string"
             },
             "username": {
               "description": "Embedding role username",
-              "required": [],
               "type": "string"
             }
           },
@@ -2796,12 +2611,10 @@
           "properties": {
             "password": {
               "description": "Keycloak administrator account password",
-              "required": [],
               "type": "string"
             },
             "username": {
               "description": "Keycloak administrator account username",
-              "required": [],
               "type": "string"
             }
           },
@@ -2812,12 +2625,10 @@
           "properties": {
             "password": {
               "description": "Migration role password",
-              "required": [],
               "type": "string"
             },
             "username": {
               "description": "Migration role username",
-              "required": [],
               "type": "string"
             }
           },
@@ -2828,12 +2639,10 @@
           "properties": {
             "password": {
               "description": "Monitoring role password",
-              "required": [],
               "type": "string"
             },
             "username": {
               "description": "Monitoring role username",
-              "required": [],
               "type": "string"
             }
           },
@@ -2844,12 +2653,10 @@
           "properties": {
             "password": {
               "description": "OTEL role password",
-              "required": [],
               "type": "string"
             },
             "username": {
               "description": "OTEL role username",
-              "required": [],
               "type": "string"
             }
           },
@@ -2860,12 +2667,10 @@
           "properties": {
             "password": {
               "description": "Postgrest role password",
-              "required": [],
               "type": "string"
             },
             "username": {
               "description": "Postgrest role username",
-              "required": [],
               "type": "string"
             }
           },
@@ -2883,12 +2688,10 @@
           "properties": {
             "password": {
               "description": "VectorStore role password",
-              "required": [],
               "type": "string"
             },
             "username": {
               "description": "VectorStore role username",
-              "required": [],
               "type": "string"
             }
           },
@@ -2899,12 +2702,10 @@
           "properties": {
             "password": {
               "description": "Vectorization role password",
-              "required": [],
               "type": "string"
             },
             "username": {
               "description": "Vectorization role username",
-              "required": [],
               "type": "string"
             }
           },
@@ -2939,7 +2740,6 @@
                     ],
                     "required": []
                   },
-                  "required": [],
                   "title": "execution_providers",
                   "type": "array"
                 },
@@ -2969,17 +2769,14 @@
                   "properties": {
                     "default": {
                       "minimum": 1,
-                      "required": [],
                       "type": "integer"
                     },
                     "max": {
                       "minimum": 1,
-                      "required": [],
                       "type": "integer"
                     },
                     "min": {
                       "minimum": 1,
-                      "required": [],
                       "type": "integer"
                     }
                   },
@@ -2993,17 +2790,14 @@
                   "properties": {
                     "default": {
                       "pattern": "^[0-9]+(Gi)$",
-                      "required": [],
                       "type": "string"
                     },
                     "max": {
                       "pattern": "^[0-9]+(Gi)$",
-                      "required": [],
                       "type": "string"
                     },
                     "min": {
                       "pattern": "^[0-9]+(Gi)$",
-                      "required": [],
                       "type": "string"
                     },
                     "model_default": {
@@ -3024,18 +2818,15 @@
                   "description": "CPU requirements for jobs",
                   "properties": {
                     "default": {
-                      "minimum": 0,
-                      "required": [],
+                      "minimum": 0.1,
                       "type": "number"
                     },
                     "max": {
-                      "minimum": 0,
-                      "required": [],
+                      "minimum": 0.1,
                       "type": "number"
                     },
                     "min": {
-                      "minimum": 0,
-                      "required": [],
+                      "minimum": 0.1,
                       "type": "number"
                     }
                   },
@@ -3049,17 +2840,14 @@
                   "properties": {
                     "default": {
                       "pattern": "^[0-9]+(Gi|Mi|Ki)$",
-                      "required": [],
                       "type": "string"
                     },
                     "max": {
                       "pattern": "^[0-9]+(Gi|Mi|Ki)$",
-                      "required": [],
                       "type": "string"
                     },
                     "min": {
                       "pattern": "^[0-9]+(Gi|Mi|Ki)$",
-                      "required": [],
                       "type": "string"
                     }
                   },
@@ -3085,18 +2873,15 @@
                   "description": "CPU requirements for plugins",
                   "properties": {
                     "default": {
-                      "minimum": 0,
-                      "required": [],
+                      "minimum": 0.1,
                       "type": "number"
                     },
                     "max": {
-                      "minimum": 0,
-                      "required": [],
+                      "minimum": 0.1,
                       "type": "number"
                     },
                     "min": {
-                      "minimum": 0,
-                      "required": [],
+                      "minimum": 0.1,
                       "type": "number"
                     }
                   },
@@ -3110,17 +2895,14 @@
                   "properties": {
                     "default": {
                       "pattern": "^[0-9]+(Gi|Mi|Ki)$",
-                      "required": [],
                       "type": "string"
                     },
                     "max": {
                       "pattern": "^[0-9]+(Gi|Mi|Ki)$",
-                      "required": [],
                       "type": "string"
                     },
                     "min": {
                       "pattern": "^[0-9]+(Gi|Mi|Ki)$",
-                      "required": [],
                       "type": "string"
                     }
                   },
@@ -3137,10 +2919,8 @@
                       "items": {
                         "maxLength": 10,
                         "minLength": 3,
-                        "required": [],
                         "type": "string"
                       },
-                      "required": [],
                       "title": "paddle",
                       "type": "array"
                     },
@@ -3149,10 +2929,8 @@
                       "items": {
                         "maxLength": 10,
                         "minLength": 3,
-                        "required": [],
                         "type": "string"
                       },
-                      "required": [],
                       "title": "tesseract",
                       "type": "array"
                     }
@@ -3184,7 +2962,6 @@
             "postgreSQLCertSecret": {
               "default": "",
               "description": "Secret containing the cert used for database connections in vectorization jobs",
-              "required": [],
               "title": "postgreSQLCertSecret",
               "type": "string"
             }

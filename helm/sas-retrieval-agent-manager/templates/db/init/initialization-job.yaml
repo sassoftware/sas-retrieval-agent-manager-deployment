@@ -1,3 +1,4 @@
+{{- if eq (lower (toString .Values.db.init.config.database.initializeDb)) "true" }}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -178,3 +179,4 @@ spec:
             name: {{ include "db-initialization.fullname" . }}-scripts
             defaultMode: 0777
   backoffLimit: 1000
+{{- end }}

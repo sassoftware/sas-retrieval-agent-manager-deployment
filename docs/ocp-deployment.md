@@ -1,3 +1,10 @@
+---
+layout: default
+title: OpenShift deployment
+parent: Deployment
+nav_order: 4
+---
+
 # OpenShift Deployment Guide
 
 ## Table of Contents

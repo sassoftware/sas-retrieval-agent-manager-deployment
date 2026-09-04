@@ -1,3 +1,10 @@
+---
+layout: default
+title: Restore data
+parent: Backup and restore
+nav_order: 3
+---
+
 # Velero Restore to PVC 'vhub-pv'
 
 To restore a backup to a PersistentVolumeClaim (PVC) named `vhub-pv` using Velero:

@@ -5,7 +5,7 @@ metadata:
   labels:
     {{- include "db-initialization.labels" . | nindent 4 }}
 data:
-{{- if  .Values.db.init.config.database.initializeDb }}
+{{- if eq (lower (toString .Values.db.init.config.database.initializeDb)) "true" }}
   initialize_database.sh: |-
 
     #!/bin/bash

@@ -1,3 +1,10 @@
+---
+layout: default
+title: Logs and metrics
+parent: Monitoring
+nav_order: 1
+---
+
 # Logs and Metrics in RAM
 
 The SAS Retrieval Agent Manager (RAM) system collects and stores logs and metrics using [Vector](https://vector.dev/), a high-performance observability data pipeline. Vector aggregates telemetry data from Kubernetes clusters and routes it to PostgreSQL via PostgREST for persistent storage and querying.

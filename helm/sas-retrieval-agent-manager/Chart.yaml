@@ -25,7 +25,7 @@ annotations:
   security.runAsNonRoot: "true"
   support.url: https://support.sas.com
 apiVersion: v2
-appVersion: 1.2.0
+appVersion: 2026.8.0
 description: A comprehensive Helm chart for deploying SAS Retrieval Agent Manager
   (RAM) platform. Provides AI-powered document retrieval, processing, and management
   capabilities with integrated authentication, file management, and vector search
@@ -55,4 +55,4 @@ name: sas-retrieval-agent-manager
 sources:
 - https://github.com/sas-institute-rnd-internal/tmp-viya-iot-ram-helm
 type: application
-version: 2026.5.0
+version: 2026.8.0

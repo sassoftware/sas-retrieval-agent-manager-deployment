@@ -1,3 +1,10 @@
+---
+layout: default
+title: Ollama
+parent: LLM connections
+nav_order: 3
+---
+
 # Ollama Connection to RAM
 
 ## Introduction

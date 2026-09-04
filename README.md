@@ -1,3 +1,10 @@
+---
+layout: home
+title: SAS Retrieval Agent Manager
+nav_order: 1
+permalink: /
+---
+
 # SAS Retrieval Agent Manager
 
 ## Table of Contents
@@ -116,7 +123,7 @@ db:
         initializeDb: "False"
 ```
 
-The manual initialization scripts require a PostgreSQL administrator only while the databases, roles, schemas, and required extensions are being prepared. After they complete, RAM can connect using its application-specific database credentials without needing database-admin credentials. Follow the [Manual Database Initialization](./scripts/db/README.md) guide for the required environment variables and Docker or bare-metal commands.
+The manual initialization scripts require a PostgreSQL administrator only while the databases, roles, schemas, and required extensions are being prepared. After they complete, RAM can connect using its application-specific database credentials without needing database-admin credentials. Follow the [Manual Database Initialization](https://github.com/sassoftware/sas-retrieval-agent-manager-deployment/tree/main/scripts/db) guide for the required environment variables and Docker or bare-metal commands.
 
 Disable the Helm chart's database initialization before deployment so the chart does not attempt to repeat the manual setup.
 
@@ -196,7 +203,7 @@ After creating the secret, you should be able to pull all SAS Retrieval Agent Ma
 
 #### Mirror Registry Download
 
-See [Mirror Container Images](scripts/mirror/README.md) for requirements and usage instructions.
+See [Mirror Container Images](https://github.com/sassoftware/sas-retrieval-agent-manager-deployment/tree/main/scripts/mirror) for requirements and usage instructions.
 
 ### License Renewal Process
 
@@ -291,7 +298,7 @@ GPG keys encrypt all sensitive data stored by SAS Retrieval Agent Manager. Once 
 
 - BACKUP your GPG keys and store them securely before proceeding with the installation.
 
-GPG keys must be deployed as Kubernetes secrets and configmaps before the initial installation of SAS Retrieval Agent Manager. This is required for the encryption and decryption of sensitive data in SAS Retrieval Agent Manager. Use the scripts located [in the scripts/gpg directory](./scripts/gpg/README.md) to deploy the GPG keys as Kubernetes secrets and configmaps.
+GPG keys must be deployed as Kubernetes secrets and configmaps before the initial installation of SAS Retrieval Agent Manager. This is required for the encryption and decryption of sensitive data in SAS Retrieval Agent Manager. Use the scripts located [in the scripts/gpg directory](https://github.com/sassoftware/sas-retrieval-agent-manager-deployment/tree/main/scripts/gpg) to deploy the GPG keys as Kubernetes secrets and configmaps.
 
 #### Configure Values File
 
@@ -355,7 +362,7 @@ You can use a coding assistant to guide an Azure and Azure Kubernetes Service (A
 
 1. Clone this repository.
 2. Open the repository root in your coding assistant.
-3. Confirm that the assistant can read [AGENTS.md](./AGENTS.md).
+3. Confirm that the assistant can read [AGENTS.md](https://github.com/sassoftware/sas-retrieval-agent-manager-deployment/blob/main/AGENTS.md).
 4. Ask the assistant: `Help me deploy SAS Retrieval Agent Manager by following AGENTS.md.`
 5. Answer one question at a time.
 6. Review each proposed command or file change.
@@ -385,7 +392,7 @@ To troubleshoot common issues with deployment, connectivity, and more, visit the
 ## Contributing
 
 We welcome your contributions!
-Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on how to submit contributions to this project.
+Please read [CONTRIBUTING.md](https://github.com/sassoftware/sas-retrieval-agent-manager-deployment/blob/main/CONTRIBUTING.md) for details on how to submit contributions to this project.
 
 ## License
 

@@ -1,3 +1,10 @@
+---
+layout: default
+title: Azure help
+parent: Deployment
+nav_order: 7
+---
+
 # Azure Help
 
 ## Tenant ID and Subscription ID

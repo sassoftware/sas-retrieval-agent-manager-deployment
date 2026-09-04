@@ -1,3 +1,10 @@
+---
+layout: default
+title: Amazon Bedrock
+parent: LLM connections
+nav_order: 2
+---
+
 # Amazon Bedrock Connection to SAS Retrieval Agent Manager
 
 ## Introduction

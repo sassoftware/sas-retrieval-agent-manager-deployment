@@ -1,3 +1,10 @@
+---
+layout: default
+title: Kubernetes deployment
+parent: Deployment
+nav_order: 3
+---
+
 # Kubernetes Deployment Guide
 
 ## Table of Contents

@@ -1,3 +1,10 @@
+---
+layout: default
+title: LDAP
+parent: Identity and access
+nav_order: 2
+---
+
 # Connecting Keycloak to LDAP
 
 ## Table of Contents
