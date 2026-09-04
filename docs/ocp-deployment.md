@@ -337,6 +337,72 @@ oc label namespace retagentmgr kueue.openshift.io/managed=true
 
 > **Note:** Without this label, Kueue will not intercept and manage vectorization jobs in the `retagentmgr` namespace and those jobs will fail to be queued correctly.
 
+### Deploy Kueue Queue Objects Manually
+
+By default, the SAS Retrieval Agent Manager Helm chart deploys the Kueue queue objects when `integrations.kueue.enabled` is `true`. If you set `integrations.kueue.enabled` to `false`, you must create the queue objects manually before SAS Retrieval Agent Manager starts vectorization jobs.
+
+Use only one method to create these objects. If the Helm chart creates them, do not apply these manifests manually. If you apply these manifests manually, keep `integrations.kueue.enabled` set to `false`.
+
+The following manifests declare the same three Kueue objects with the default values from the Helm chart:
+
+```bash
+cat <<EOF | oc apply -f -
+# ResourceFlavor defines the type of cluster resources that the queue can use.
+# Keep this name as retrieval-agent-manager unless you also update the ClusterQueue flavor name.
+apiVersion: kueue.x-k8s.io/v1beta2
+kind: ResourceFlavor
+metadata:
+  name: retrieval-agent-manager
+---
+# ClusterQueue defines the shared quotas for SAS Retrieval Agent Manager jobs.
+# The namespaceSelector limits this ClusterQueue to the retagentmgr namespace.
+# Change quota values based off of your OpenShift cluster capacity.
+apiVersion: kueue.x-k8s.io/v1beta2
+kind: ClusterQueue
+metadata:
+  name: cluster-queue
+spec:
+  namespaceSelector:
+    matchLabels:
+      kubernetes.io/metadata.name: retagentmgr
+  resourceGroups:
+    - coveredResources:
+        - cpu
+        - memory
+        - pods
+        - nvidia.com/gpu
+      flavors:
+        - name: retrieval-agent-manager
+          resources:
+            - name: cpu
+              nominalQuota: "32"
+            - name: memory
+              nominalQuota: 128Gi
+            - name: pods
+              nominalQuota: "6"
+            - name: nvidia.com/gpu
+              nominalQuota: "0"
+---
+# LocalQueue is the queue name that SAS Retrieval Agent Manager jobs use.
+# Keep this object in the retagentmgr namespace.
+apiVersion: kueue.x-k8s.io/v1beta2
+kind: LocalQueue
+metadata:
+  name: genai-queue
+  namespace: retagentmgr
+spec:
+  clusterQueue: cluster-queue
+EOF
+```
+
+Verify that the objects are created:
+
+```bash
+oc get resourceflavor retrieval-agent-manager
+oc get clusterqueue cluster-queue
+oc -n retagentmgr get localqueue genai-queue
+```
+
 ## OpenShift Service Mesh 3 Deployment
 
 Red Hat OpenShift Service Mesh 3 (OSSM3) is an optional integration that enables L7 traffic management for the SAS Retrieval Agent Manager. When enabled, the Helm chart deploys an Istio **ambient-mode waypoint proxy** into the release namespace. The waypoint is an Envoy sidecar-free proxy that processes all HTTP traffic and injects the `X-Forwarded-For` header with the real source pod IP.
