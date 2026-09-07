@@ -396,7 +396,7 @@ Please read [CONTRIBUTING.md](https://github.com/sassoftware/sas-retrieval-agent
 
 ## License
 
-This project is licensed under the [Apache 2.0 License](LICENSE).
+Except for the the contents of the `/assets/images/` folder, this project is licensed under the [Apache 2.0 License](LICENSE). Elements in the `/assets/images/` folder are owned by SAS and are not released under an open source license. SAS and all other SAS Institute Inc. product or service names are registered trademarks or trademarks of SAS Institute Inc. in the USA and other countries. ® indicates USA registration.
 
 As with any container image, direct and indirect dependencies are governed by their own licenses.
 Users of the published container image are responsible for ensuring that their use complies with all applicable licenses.
