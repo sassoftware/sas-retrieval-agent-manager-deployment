@@ -1,2 +1,4 @@
 <link rel="icon" href="{{ '/assets/images/sas-favicon.ico' | relative_url }}" sizes="any">
-<link rel="stylesheet" href="{{ '/assets/css/sas-documentation.css' | relative_url }}">
+{%- assign sas_css = site.static_files | where: "path", "/assets/css/sas-documentation.css" | first -%}
+{%- comment -%} Cache-bust on edit so returning visitors do not keep a stale stylesheet. {%- endcomment -%}
+<link rel="stylesheet" href="{{ '/assets/css/sas-documentation.css' | relative_url }}?v={{ sas_css.modified_time | date: '%s' }}">

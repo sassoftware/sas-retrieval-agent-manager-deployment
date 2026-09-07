@@ -1,12 +1,12 @@
 ---
 layout: default
 title: LLM connections
-nav_order: 2
+nav_order: 5
 has_children: true
 permalink: /llm-connections/
 ---
 
-# LLM Connection Guide
+# LLM connections
 
 This folder provides documentation and instructions for adding various LLMs into SAS Retrieval Agent Manager.
 

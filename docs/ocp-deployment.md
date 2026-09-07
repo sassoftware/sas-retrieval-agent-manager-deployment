@@ -2,28 +2,14 @@
 layout: default
 title: OpenShift deployment
 parent: Deployment
-nav_order: 4
+nav_order: 5
 ---
 
-# OpenShift Deployment Guide
+# OpenShift deployment
+{: .no_toc }
 
-## Table of Contents
-
-- [Overview](#overview)
-- [Prerequisites](#prerequisites)
-- [Requirements](#requirements)
-- [Getting Started](#getting-started)
-- [Configuration Setup](#configuration-setup)
-- [Database Deployment](#database-deployment)
-- [PostgreSQL SSL Certificate](#deploy-postgresql-ssl-certificate)
-- [Kueue Deployment](#kueue-deployment)
-- [OpenShift Service Mesh 3 Deployment](#openshift-service-mesh-3-deployment)
-- [OpenShift Route TLS Configuration](#openshift-route-tls-configuration)
-- [Application Deployment](#application-deployment)
-- [Post-Install: Required PostgreSQL Extensions](#post-install-required-postgresql-extensions)
-  - [Install System Packages](#install-system-packages)
-  - [Enable the Extensions in PostgreSQL](#enable-the-extensions-in-postgresql)
-  - [One-liner for Scripted Deployments](#one-liner-for-scripted-deployments)
+1. TOC
+{:toc}
 
 ---
 
@@ -31,30 +17,38 @@ nav_order: 4
 
 This guide describes deploying SAS Retrieval Agent Manager on an OpenShift cluster.
 
+Complete [Get started](./get-started.md) first. It covers the common prerequisites, tools, and
+license retrieval for every platform.
+
 ## Prerequisites
 
-### Infrastructure Prerequisites
+In addition to the [common prerequisites](./get-started.md#prerequisites):
 
-- **External Database:**
-  - PostgreSQL database server with bidirectional connectivity to both the Kubernetes cluster
-
-### Technical Prerequisites
-
-**Required Access and Tools:**
-
-- Ability to create resources in the OpenShift environment for the SAS Retrieval Agent Manager project
+- Ability to create resources in the OpenShift environment for the SAS Retrieval Agent Manager
+  project
+- A PostgreSQL database server with bidirectional connectivity to the cluster
 
 ## Requirements
 
 ### Hardware Requirements
 
-**Recommended Configuration:**
+Cluster sizing is platform-independent. Small, Medium, and Large worker node requirements are the
+same as on AKS and EKS. See [Cluster sizing](./sizing.md).
+
+This example shows a Small cluster with a highly available control plane:
 
 | Node Type                        | Count | CPUs | RAM  | Disk  | Notes                                                          |
 |----------------------------------|-------|------|------|-------|----------------------------------------------------------------|
 | **Control Plane Node (tainted)** | 3     | 4    | 8GB  | 50GB  |                                                                |
-| **Worker Nodes**                 | 2     | 8    | 16GB | 200GB |                                                                |
+| **Worker Nodes**                 | 2     | 8    | 32GB | 200GB | Use 64GB for embedding or vectorization workloads              |
 | **NFS Server Node**              | 1     | 8    | 16GB | 200GB | Optional if using CSI storage; can also serve as a worker node |
+
+For Medium and Large clusters, keep this control plane and NFS configuration and scale the worker
+nodes to the [tier requirements](./sizing.md#step-2-tier-requirements).
+
+#### Postgres Database Sizing
+
+[Follow the PostgreSQL sizing recommendations here.](./database.md#sizing)
 
 ### Infrastructure Requirements
 
@@ -84,11 +78,103 @@ platform: openshift
 
 ```
 
+Setting `platform: openshift` changes three things:
+
+1. It creates a `SecurityContextConstraints` object and a `ClusterRoleBinding` that grants it to the
+   SAS Retrieval Agent Manager ServiceAccounts.
+2. It removes `runAsUser`, `runAsGroup`, and `runAsNonRoot` from the pod and container security
+   contexts, so OpenShift assigns a UID from the namespace range.
+3. It defaults `ingress.classType` to `route`, so the chart creates OpenShift `Route` objects
+   instead of `Ingress` objects.
+
+## Security Context Constraints
+
+> [!IMPORTANT]
+> By default, an OpenShift installation creates two **cluster-scoped** objects: a
+> `SecurityContextConstraints` object and a `ClusterRoleBinding`. Installing the chart therefore
+> requires cluster administrator privileges. If you must keep all role bindings inside your
+> namespace, use the [namespace-scoped alternative](#namespace-scoped-alternative) below.
+
+The chart creates a dedicated SCC named `<release-name>-scc` rather than using the built-in
+`anyuid` or `privileged` SCCs. It grants only what the application needs:
+
+- `SYS_NICE` capability, for process priority
+- `runAsUser: RunAsAny` and `fsGroup: RunAsAny`
+- `MKNOD` dropped, no privileged containers, no host network, IPC, PID, ports, or host paths
+
+The accompanying `ClusterRoleBinding` binds the ServiceAccounts to the ClusterRole that OpenShift
+generates for the SCC (`system:openshift:scc:<release-name>-scc`).
+
+### Namespace-scoped alternative
+
+A `SecurityContextConstraints` object is cluster-scoped and cannot be namespaced. However, the
+**binding** can be. A `RoleBinding` that references a `ClusterRole` grants that role only within its
+own namespace, which avoids the cluster-wide grant.
+
+Use this approach when your OpenShift administrator does not permit `ClusterRoleBinding` objects for
+application workloads.
+
+**Step 1. Set the platform to `kubernetes`.**
+
+This stops the chart from rendering its own SCC and `ClusterRoleBinding`:
+
+```yaml
+platform: kubernetes
+
+ingress:
+  # Required. Keeps OpenShift Routes, which platform "openshift" would otherwise select for you.
+  classType: route
+```
+
+> **Important:** With `platform: kubernetes`, the chart keeps the explicit `runAsUser`,
+> `runAsGroup`, and `runAsNonRoot` values instead of letting OpenShift assign a UID. The SCC below
+> uses `runAsUser: RunAsAny`, which permits them. Do not remove that setting.
+
+**Step 2. Apply the SCC and the RoleBinding.**
+
+Use the
+[example manifests](https://github.com/sassoftware/sas-retrieval-agent-manager-deployment/blob/main/examples/openshift/scc-namespace-scoped.yaml).
+Edit the namespace and release name if you do not use the defaults, then apply the file. A cluster
+administrator must apply it, because the SCC itself is cluster-scoped:
+
+```bash
+oc apply -f scc-namespace-scoped.yaml
+```
+
+The manifests create:
+
+| Object | Scope | Purpose |
+|--------|-------|---------|
+| `SecurityContextConstraints` | Cluster | Identical to the one the chart would create, but with an empty `users` list |
+| `RoleBinding` | Namespace | Grants `system:openshift:scc:retrieval-agent-manager-scc` to the ServiceAccounts in your namespace only |
+
+**Step 3. Verify the binding before you install.**
+
+```bash
+# Confirm the SCC exists
+oc get scc retrieval-agent-manager-scc
+
+# Confirm the RoleBinding is namespaced, not cluster-wide
+oc get rolebinding retrieval-agent-manager-scc-binding -n retagentmgr
+
+# Confirm a ServiceAccount can use the SCC
+oc adm policy who-can use scc retrieval-agent-manager-scc -n retagentmgr
+```
+
+**Step 4. Install the chart.**
+
+The ServiceAccounts must exist for the binding to take effect, but a `RoleBinding` may reference a
+ServiceAccount that does not exist yet. You can apply the manifests before or after the Helm
+install; the subjects resolve once the chart creates the ServiceAccounts.
+
+> **Note:** If you change the Helm release name or any `serviceAccount.name` value, update the
+> subject names in the manifests to match.
+
 ## Database Deployment
 
 SAS Retrieval Agent Manager requires a PostgreSQL 15+ database. On OpenShift, the Crunchy Postgres for Kubernetes operator provides a quick and convenient way to deploy PostgreSQL directly on the cluster. However, running PostgreSQL inside the cluster shares resources with the application workloads and **will result in degraded performance** compared to a dedicated external PostgreSQL installation. A dedicated external PostgreSQL database is the preferred approach for production deployments.
 
-> **Note:** Follow the [PostgreSQL sizing recommendations in the main README](../README.md#database) to determine your required database size before deploying.
+> **Note:** Follow the [PostgreSQL sizing recommendations](./database.md#sizing) to determine your required database size before deploying.
 
 ### Install the Crunchy Postgres Operator
 
@@ -221,31 +307,9 @@ oc -n postgres-operator get secret sas-ram-db-cluster-cert -o jsonpath='{.data.t
 
 ### Construct the Certificate Bundle
 
-The `cert.pem` secret key must contain a single PEM file that concatenates **four components in the following order**:
-
-1. **Chain certificate** (`trustedcerts.pem`) — use `ca.crt` extracted above
-2. **Intermediate certificate** (`ca.crt`)
-3. **Server certificate** (`tls.crt`)
-4. **Private key** (`tls.key`)
-
-The resulting file structure should look like this:
-
-```text
------BEGIN CERTIFICATE-----
-<ca.crt contents (chain cert)>
------END CERTIFICATE-----
------BEGIN CERTIFICATE-----
-<ca.crt contents (intermediate)>
------END CERTIFICATE-----
------BEGIN CERTIFICATE-----
-<tls.crt contents>
------END CERTIFICATE-----
------BEGIN RSA PRIVATE KEY-----
-<tls.key contents>
------END RSA PRIVATE KEY-----
-```
-
-Build the bundle with the following command:
+Follow [Secure the database connection](./database.md#secure-the-database-connection) to build the
+combined `cert.pem` bundle and create the Kubernetes secret. On OpenShift, use the files extracted
+above:
 
 ```bash
 cat ca.crt ca.crt tls.crt tls.key > combined-cert.pem
@@ -255,7 +319,7 @@ cat ca.crt ca.crt tls.crt tls.key > combined-cert.pem
 
 ### Create the Kubernetes Secret
 
-After constructing the bundle, upload it as a secret with the key of `cert.pem` in the `retagentmgr` namespace:
+On OpenShift, use `oc` to create the project and the secret:
 
 ```bash
 # The correct namespace to store all SAS Retrieval Agent Manager Resources
@@ -343,57 +407,18 @@ By default, the SAS Retrieval Agent Manager Helm chart deploys the Kueue queue o
 
 Use only one method to create these objects. If the Helm chart creates them, do not apply these manifests manually. If you apply these manifests manually, keep `integrations.kueue.enabled` set to `false`.
 
-The following manifests declare the same three Kueue objects with the default values from the Helm chart:
+Use the
+[example queue manifests](https://github.com/sassoftware/sas-retrieval-agent-manager-deployment/blob/main/examples/dependencies/required/kueue-queues.yaml).
+They declare the same `ResourceFlavor`, `ClusterQueue`, and `LocalQueue` objects with the default
+values from the Helm chart. Edit the namespace and the quotas to match your cluster, then apply the
+file:
 
 ```bash
-cat <<EOF | oc apply -f -
-# ResourceFlavor defines the type of cluster resources that the queue can use.
-# Keep this name as retrieval-agent-manager unless you also update the ClusterQueue flavor name.
-apiVersion: kueue.x-k8s.io/v1beta2
-kind: ResourceFlavor
-metadata:
-  name: retrieval-agent-manager
----
-# ClusterQueue defines the shared quotas for SAS Retrieval Agent Manager jobs.
-# The namespaceSelector limits this ClusterQueue to the retagentmgr namespace.
-# Change quota values based off of your OpenShift cluster capacity.
-apiVersion: kueue.x-k8s.io/v1beta2
-kind: ClusterQueue
-metadata:
-  name: cluster-queue
-spec:
-  namespaceSelector:
-    matchLabels:
-      kubernetes.io/metadata.name: retagentmgr
-  resourceGroups:
-    - coveredResources:
-        - cpu
-        - memory
-        - pods
-        - nvidia.com/gpu
-      flavors:
-        - name: retrieval-agent-manager
-          resources:
-            - name: cpu
-              nominalQuota: "32"
-            - name: memory
-              nominalQuota: 128Gi
-            - name: pods
-              nominalQuota: "6"
-            - name: nvidia.com/gpu
-              nominalQuota: "0"
----
-# LocalQueue is the queue name that SAS Retrieval Agent Manager jobs use.
-# Keep this object in the retagentmgr namespace.
-apiVersion: kueue.x-k8s.io/v1beta2
-kind: LocalQueue
-metadata:
-  name: genai-queue
-  namespace: retagentmgr
-spec:
-  clusterQueue: cluster-queue
-EOF
+oc apply -f kueue-queues.yaml
 ```
+
+> **Note:** Match the `ClusterQueue` quotas to the capacity of the cluster you built. See
+> [Job scheduling quotas](./sizing.md#job-scheduling-quotas).
 
 Verify that the objects are created:
 
@@ -749,75 +774,13 @@ For more details, see the [openshift-routes project README](https://github.com/c
 
 ---
 
-## Application Deployment
+## Next steps
 
-Return to the [Application Deployment Guide](../README.md#application-deployment-guide) section of the documentation to continue the deployment.
+1. [Configure the database](./database.md) — install and enable the `pgcrypto` and `vector`
+   extensions.
+2. [GPG keys](./gpg-keys.md) — generate and back up the encryption keys.
+3. [Install and upgrade](./install.md) — deploy the application.
 
-## Post-Install: Required PostgreSQL Extensions
-
-After the PostgreSQL server is running, you must install the `pgcrypto` and `pgvector` extensions. These are required (or strongly recommended) by SAS Retrieval Agent Manager — see [Necessary PostgreSQL Extensions](../README.md#necessary-postgresql-extensions).
-
-### Install System Packages
-
-The required packages depend on your PostgreSQL version. The example below uses PostgreSQL 15 on RHEL 8/9.
-
-```bash
-# Install the PostgreSQL repository (if not already configured)
-sudo dnf install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-x86_64/pgdg-redhat-repo-latest.noarch.rpm
-
-# Disable the built-in PostgreSQL module to avoid conflicts (RHEL 8/9)
-sudo dnf -qy module disable postgresql
-
-# Install pgcrypto (ships with the postgresql-contrib package)
-sudo dnf install -y postgresql15-contrib
-
-# Install pgvector build dependencies
-sudo dnf install -y gcc make git postgresql15-devel
-
-# Clone and build pgvector
-git clone --branch v0.7.4 https://github.com/pgvector/pgvector.git
-cd pgvector
-make
-sudo make install
-cd ..
-rm -rf pgvector
-```
-
-> **Note:** Replace `15` with your actual PostgreSQL major version (e.g. `16`) in the package names and `--branch` tag above. Adjust the `pgdg-redhat-repo` URL for your RHEL version (`EL-8` vs `EL-9`) and architecture. Check the [pgvector releases page](https://github.com/pgvector/pgvector/releases) for the latest stable version.
-
-### Enable the Extensions in PostgreSQL
-
-Connect to your PostgreSQL instance as a superuser and run the following SQL commands against the target database (replace `<your_database>` with the actual database name):
-
-```sql
--- Connect to the target database first
-\c <your_database>
-
--- Required: encryption support used by SAS Retrieval Agent Manager
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
-
--- Recommended: vector similarity search for embedding storage
-CREATE EXTENSION IF NOT EXISTS vector;
-```
-
-You can verify the extensions are active with:
-
-```sql
-SELECT name, default_version, installed_version
-FROM pg_available_extensions
-WHERE name IN ('pgcrypto', 'vector');
-```
-
-Both extensions should show a value in `installed_version`.
-
-### One-liner for Scripted Deployments
-
-If you prefer a non-interactive approach (e.g. from a shell script or CI pipeline):
-
-```bash
-PGPASSWORD=<admin_password> psql \
-  -h <db_host> \
-  -U <admin_user> \
-  -d <your_database> \
-  -c "CREATE EXTENSION IF NOT EXISTS pgcrypto; CREATE EXTENSION IF NOT EXISTS vector;"
-```
+> **Note:** OpenShift installs Kueue and the service mesh through operators, as described above,
+> rather than through the Helm charts listed on the
+> [Install dependencies](./user/DependencyInstall.md) page.

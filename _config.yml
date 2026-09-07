@@ -28,6 +28,13 @@ relative_links:
   enabled: true
   collections: true
 
+# Pages only need to declare a layout when it differs from "default".
+defaults:
+  - scope:
+      path: ""
+    values:
+      layout: default
+
 # Styles GitHub-style alerts (e.g. "> [!CAUTION]") converted by _plugins/github_alerts.rb
 callouts:
   note:

@@ -132,7 +132,7 @@ sinks:
     type: opentelemetry
 ```
 
-> **Note:** See a full [Vector example values file here](../../examples/dependencies/optional/monitoring/vector.yaml) and full [Phoenix example values file here](../../examples/dependencies/optional/monitoring/phoenix.yaml)
+> **Note:** See a full [Vector example values file here](https://github.com/sassoftware/sas-retrieval-agent-manager-deployment/blob/main/examples/dependencies/optional/monitoring/vector.yaml) and full [Phoenix example values file here](https://github.com/sassoftware/sas-retrieval-agent-manager-deployment/blob/main/examples/dependencies/optional/monitoring/phoenix.yaml)
 
 ### OTLP Format Transformation
 
@@ -145,7 +145,7 @@ The `rebuild_otlp_format` transform is critical for ensuring traces conform to t
 
 ## Installation
 
-To install Vector, edit the [example Vector values file](../../examples/dependencies/optional/monitoring/vector.yaml) to your desired settings and run the following commands:
+To install Vector, edit the [example Vector values file](https://github.com/sassoftware/sas-retrieval-agent-manager-deployment/blob/main/examples/dependencies/optional/monitoring/vector.yaml) to your desired settings and run the following commands:
 
 ```sh
 helm install vector vector/vector \
@@ -153,7 +153,7 @@ helm install vector vector/vector \
     --create-namespace --version 0.46.0
 ```
 
-To install Phoenix, edit the [example Phoenix values file](../../examples/dependencies/optional/monitoring/phoenix.yaml) to your desired settings and run the following commands:
+To install Phoenix, edit the [example Phoenix values file](https://github.com/sassoftware/sas-retrieval-agent-manager-deployment/blob/main/examples/dependencies/optional/monitoring/phoenix.yaml) to your desired settings and run the following commands:
 
 ```sh
 helm install phoenix oci://registry-1.docker.io/arizephoenix/phoenix-helm \

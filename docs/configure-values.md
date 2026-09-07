@@ -1,13 +1,29 @@
 ---
 layout: default
-title: Configure values
-parent: Deployment
-nav_order: 5
+title: Values file generator
+nav_order: 9
+permalink: /values-generator/
 ---
 
-# Configure values
+# Values file generator
 
-Create a RAM values file for chart version `{{ site.data.ram_chart.version }}`. The form runs in your browser. It does not send passwords, license content, certificates, or other values to a server.
+Build the Helm values file for SAS Retrieval Agent Manager chart version
+`{{ site.data.ram_chart.version }}`. Fill in the form, then download the generated
+`ram-values.yaml` and pass it to the `--values` flag when you
+[install the application](./install.md):
+
+```bash
+helm install retrieval-agent-manager oci://ghcr.io/sassoftware/sas-retrieval-agent-manager-deployment/sas-retrieval-agent-manager \
+  --values ram-values.yaml \
+  -n retagentmgr
+```
+
+> **Note:** The form runs entirely in your browser. It does not send passwords, license content,
+> certificates, or any other value to a server.
+
+If you prefer to edit the file by hand, start from the
+[example values file](https://github.com/sassoftware/sas-retrieval-agent-manager-deployment/blob/main/examples/ram-values.yaml)
+instead.
 
 <form id="ram-values-form" data-chart-version="{{ site.data.ram_chart.version }}">
   <fieldset>

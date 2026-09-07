@@ -2,61 +2,55 @@
 layout: default
 title: Azure deployment
 parent: Deployment
-nav_order: 1
+nav_order: 2
+has_children: true
 ---
 
-# Azure Deployment Guide
+# Azure deployment
+{: .no_toc }
 
-## Table of Contents
-
-- [Overview](#overview)
-- [Prerequisites](#prerequisites)
-- [Requirements](#requirements)
-- [Getting Started](#getting-started)
-- [Configuration Setup](#configuration-setup)
-- [Infrastructure Deployment](#infrastructure-deployment)
-- [PostgreSQL SSL Certificate](#deploy-postgresql-ssl-certificate)
-- [Application Deployment](#application-deployment)
-- [Troubleshooting](#troubleshooting)
-- [Post-Install: Required PostgreSQL Extensions](#post-install-required-postgresql-extensions)
-  - [Allow-list the Extensions on the Flexible Server](#allow-list-the-extensions-on-the-flexible-server)
-  - [Enable the Extensions in PostgreSQL](#enable-the-extensions-in-postgresql)
-  - [One-liner for Scripted Deployments](#one-liner-for-scripted-deployments)
+1. TOC
+{:toc}
 
 ---
 
 ## Overview
 
-This guide describes deploying an Azure infrastructure on which to deploy SAS Retrieval Agent Manager.
+This guide describes deploying an Azure infrastructure on which to deploy SAS Retrieval Agent
+Manager.
+
+Complete [Get started](./get-started.md) first. It covers the common prerequisites, tools, and
+license retrieval for every platform.
 
 ## Prerequisites
 
-### Infrastructure Prerequisites
-
-- **External Database:**
-  - PostgreSQL database server with bidirectional connectivity to Kubernetes cluster
-
-### Technical Prerequisites
-
-**Required Access and Tools:**
+In addition to the [common prerequisites](./get-started.md#prerequisites):
 
 - Ability to create resources in Azure
+- A PostgreSQL database server with bidirectional connectivity to the Kubernetes cluster
 
 ## Requirements
 
 ### Hardware Requirements
 
-#### AKS Cluster Sizing
+Cluster sizing is platform-independent. Choose a tier and read the resource requirements in
+[Cluster sizing](./sizing.md), then use an Azure instance type that meets them.
+
+Example AKS node pool sizes:
 
 |       Node Size      | Minimum Nodes | Maximum Nodes |   Deployment Size  |
 |----------------------|---------------|---------------|--------------------|
-| **Standard_d8s_v5**  |       1       |       3       |      Small         |
-| **Standard_d8s_v5**  |       2       |       6       |      Medium        |
-| **Standard_d16s_v5** |       2       |       8       |      Large         |
+| **Standard_D8s_v5**  |       1       |       3       |      Small         |
+| **Standard_D8s_v5**  |       2       |       6       |      Medium        |
+| **Standard_D16s_v5** |       2       |       8       |      Large         |
+
+> **Note:** These `D`-series examples meet the **minimum** memory requirement. For embedding or
+> vectorization workloads, use a memory-optimized `E`-series instance instead. See
+> [Example instance types](./sizing.md#step-3-example-instance-types).
 
 #### Postgres Database Sizing
 
-[Follow the PostgreSQL sizing recommendations here.](../README.md#database)
+[Follow the PostgreSQL sizing recommendations here.](./database.md#sizing)
 
 ### Infrastructure Requirements
 
@@ -82,8 +76,8 @@ Before deploying, you'll need to create and edit two configuration files with yo
 
 | File               | Purpose                                        |                                               |
 |--------------------|------------------------------------------------|-----------------------------------------------|
-| `terraform.tfvars` | PostgreSQL name, prefix, and location settings | [Example](../examples/azure/terraform.tfvars) |
-| `azure.env`        | Azure credentials and environment variables    | [Example](../examples/azure/azure.env)        |
+| `terraform.tfvars` | PostgreSQL name, prefix, and location settings | [Example](https://github.com/sassoftware/sas-retrieval-agent-manager-deployment/blob/main/examples/azure/terraform.tfvars) |
+| `azure.env`        | Azure credentials and environment variables    | [Example](https://github.com/sassoftware/sas-retrieval-agent-manager-deployment/blob/main/examples/azure/azure.env)        |
 
 > **Tip:** If you need help obtaining Azure environemnt variables, contact your Azure Cloud Administrator or refer to our [Azure Help Guide](./user/AzureHelp.md)
 
@@ -91,7 +85,7 @@ Before deploying, you'll need to create and edit two configuration files with yo
 
 ### Docker (Recommended)
 
-Use the provided Docker image to deploy the AKS cluster and PostgreSQL database with the [Example Terraform Values File](../examples/azure/terraform.tfvars). This method ensures a consistent environment and simplifies dependency management.
+Use the provided Docker image to deploy the AKS cluster and PostgreSQL database with the [Example Terraform Values File](https://github.com/sassoftware/sas-retrieval-agent-manager-deployment/blob/main/examples/azure/terraform.tfvars). This method ensures a consistent environment and simplifies dependency management.
 
 ```bash
 # Build the Docker image
@@ -110,72 +104,24 @@ docker run --rm --group-add root \
 
 ## Deploy PostgreSQL SSL Certificate
 
-If your Azure Database for PostgreSQL Flexible Server requires SSL, you will need to provide the SSL certificate bundle as a Kubernetes secret in the same namespace as your SAS Retrieval Agent Manager deployment.
-
-#### Download the Root CA Certificates
-
-Download the required root CA certificates from Microsoft:
+If your Azure Database for PostgreSQL Flexible Server requires SSL, you must provide the SSL
+certificate bundle as a Kubernetes secret. Download the required root CA certificates from
+Microsoft:
 
 - [DigiCert Global Root G2 (pem file)](https://cacerts.digicert.com/DigiCertGlobalRootG2.crt.pem)
 - [Microsoft RSA Root Certificate Authority 2017 (crt file)](https://www.microsoft.com/pkiops/certs/Microsoft%20RSA%20Root%20Certificate%20Authority%202017.crt)
 
-If the `.crt` file is in DER format, convert it to PEM first:
-
-```bash
-openssl x509 -inform DER -in "Microsoft RSA Root Certificate Authority 2017.crt" -out msrsa2017.pem -outform PEM
-```
-
 [For more details on Azure PostgreSQL TLS configuration, refer to the Microsoft documentation](https://learn.microsoft.com/en-us/azure/postgresql/flexible-server/how-to-connect-tls-ssl).
 
-#### Construct the Certificate Bundle
+Then follow [Secure the database connection](./database.md#secure-the-database-connection) to
+convert the certificates, build the `cert.pem` bundle, and create the Kubernetes secret.
 
-The `cert.pem` secret key must contain a single PEM file that concatenates **four components in the following order**:
+## Next steps
 
-1. **Chain certificate** (`trustedcerts.pem`)
-2. **Intermediate certificate** (`ca.crt`)
-3. **Server certificate** (`tls.crt`)
-4. **Private key** (`tls.key`)
-
-The resulting file structure should look like this:
-
-```text
------BEGIN CERTIFICATE-----
-<trustedcerts.pem contents>
------END CERTIFICATE-----
------BEGIN CERTIFICATE-----
-<ca.crt contents>
------END CERTIFICATE-----
------BEGIN CERTIFICATE-----
-<tls.crt contents>
------END CERTIFICATE-----
------BEGIN RSA PRIVATE KEY-----
-<tls.key contents>
------END RSA PRIVATE KEY-----
-```
-
-You can build this bundle with the following command:
-
-```bash
-cat trustedcerts.pem ca.crt tls.crt tls.key > combined-cert.pem
-```
-
-#### Create the Kubernetes Secret
-
-After constructing the bundle, upload it as a secret with the key of `cert.pem`. This can be done with the following commands:
-
-```bash
-# The correct namespace to store all SAS Retrieval Agent Manager Resources
-kubectl create ns retagentmgr
-
-# Create a secret with the PostgreSQL SSL bundle
-kubectl create secret generic <your-secret-name> --from-file=cert.pem=combined-cert.pem -n retagentmgr
-```
-
-> **Note:** It is critical to enter the name of the secret in the `postgreSQLCertSecret` key in the ram-values under global.configuration.vhub. For example, with this secret name, it would be: `postgreSQLCertSecret: '<your-secret-name>'`
-
-## Application Deployment
-
-Return to the [Application Deployment Guide](../README.md#application-deployment-guide) section of the documentation to continue the deployment.
+1. [Configure the database](./database.md) — enable the `pgcrypto` and `vector` extensions on the
+   Flexible Server.
+2. [Install dependencies](./user/DependencyInstall.md).
+3. [Install and upgrade](./install.md) — deploy the application.
 
 ## Troubleshooting
 
@@ -227,71 +173,4 @@ kubectl logs -l app=sas-retrieval-agent-manager -n retagentmgr
 helm status sas-retrieval-agent-manager -n retagentmgr
 ```
 
-> For additional troubleshooting, refer to the main [troubleshooting section](../README.md#troubleshooting)
-
-## Post-Install: Required PostgreSQL Extensions
-
-Azure Database for PostgreSQL Flexible Server requires extensions to be explicitly allow-listed at the server level before they can be activated in a database. These are required (or strongly recommended) by SAS Retrieval Agent Manager — see [Necessary PostgreSQL Extensions](../README.md#necessary-postgresql-extensions).
-
-### Allow-list the Extensions on the Flexible Server
-
-Run the following Azure CLI commands to add `pgcrypto` and `vector` to the server's allowed extensions. Replace the placeholder values with your resource group, server name, and subscription as appropriate.
-
-```bash
-# Allow pgcrypto and vector on the Flexible Server
-az postgres flexible-server parameter set \
-  --resource-group <resource_group> \
-  --server-name <server_name> \
-  --name azure.extensions \
-  --value pgcrypto,vector
-```
-
-> **Note:** If the `azure.extensions` parameter already has values, append the new ones as a comma-separated list rather than replacing them. You can check the current value with:
->
-> ```bash
-> az postgres flexible-server parameter show \
->   --resource-group <resource_group> \
->   --server-name <server_name> \
->   --name azure.extensions
-> ```
-
-Alternatively, you can allow-list the extensions in the **Azure Portal** by navigating to your Flexible Server → **Server parameters** → search for `azure.extensions` → add `PGCRYPTO` and `VECTOR` to the value list → **Save**.
-
-### Enable the Extensions in PostgreSQL
-
-Once allow-listed, connect to your PostgreSQL instance as a superuser and activate the extensions in the target database (replace `<your_database>` with the actual database name):
-
-```sql
--- Connect to the target database first
-\c <your_database>
-
--- Required: encryption support used by SAS Retrieval Agent Manager
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
-
--- Recommended: vector similarity search for embedding storage
-CREATE EXTENSION IF NOT EXISTS vector;
-```
-
-You can verify the extensions are active with:
-
-```sql
-SELECT name, default_version, installed_version
-FROM pg_available_extensions
-WHERE name IN ('pgcrypto', 'vector');
-```
-
-Both extensions should show a value in `installed_version`.
-
-### One-liner for Scripted Deployments
-
-If you prefer a non-interactive approach (e.g. from a shell script or CI pipeline):
-
-```bash
-PGPASSWORD=<admin_password> psql \
-  -h <server_name>.postgres.database.azure.com \
-  -U <admin_user> \
-  -d <your_database> \
-  -c "CREATE EXTENSION IF NOT EXISTS pgcrypto; CREATE EXTENSION IF NOT EXISTS vector;"
-```
-
-> **Note:** The allow-list step must be completed before running the above command, otherwise `CREATE EXTENSION` will fail with a permission error.
+> For additional troubleshooting, refer to the main [troubleshooting section](./troubleshoot.md)

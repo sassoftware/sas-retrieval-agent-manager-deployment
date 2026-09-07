@@ -1,0 +1,53 @@
+# Kueue queue objects for SAS Retrieval Agent Manager.
+#
+# The Helm chart creates these three objects when `integrations.kueue.enabled` is true.
+# Apply this file ONLY when you set `integrations.kueue.enabled: false` and want to manage the
+# queue objects yourself. Use one method or the other, never both.
+#
+# Values here match the chart defaults. Replace `retagentmgr` with your namespace and adjust the
+# quotas to your cluster capacity. See docs/sizing.md for guidance on matching quotas to node size.
+---
+# Defines the type of cluster resources the queue can use.
+# Keep this name unless you also update the ClusterQueue flavor name below.
+apiVersion: kueue.x-k8s.io/v1beta2
+kind: ResourceFlavor
+metadata:
+  name: retrieval-agent-manager
+---
+# Defines the shared quotas for SAS Retrieval Agent Manager jobs.
+# The namespaceSelector limits this ClusterQueue to the retagentmgr namespace.
+apiVersion: kueue.x-k8s.io/v1beta2
+kind: ClusterQueue
+metadata:
+  name: cluster-queue
+spec:
+  namespaceSelector:
+    matchLabels:
+      kubernetes.io/metadata.name: retagentmgr
+  resourceGroups:
+    - coveredResources:
+        - cpu
+        - memory
+        - pods
+        - nvidia.com/gpu
+      flavors:
+        - name: retrieval-agent-manager
+          resources:
+            - name: cpu
+              nominalQuota: "32"
+            - name: memory
+              nominalQuota: 128Gi
+            - name: pods
+              nominalQuota: "6"
+            - name: nvidia.com/gpu
+              nominalQuota: "0"
+---
+# The queue name that SAS Retrieval Agent Manager jobs use.
+# Keep this object in the same namespace as the release.
+apiVersion: kueue.x-k8s.io/v1beta2
+kind: LocalQueue
+metadata:
+  name: genai-queue
+  namespace: retagentmgr
+spec:
+  clusterQueue: cluster-queue

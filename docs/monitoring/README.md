@@ -1,12 +1,12 @@
 ---
 layout: default
 title: Monitoring
-nav_order: 5
+nav_order: 6
 has_children: true
 permalink: /monitoring/
 ---
 
-# Monitoring and Logging guide
+# Monitoring
 
 This folder provides documentation and instructions for managing logs, metrics, and traces using [Vector](https://vector.dev/), [Phoenix](https://phoenix.arize.com/), and [Langfuse](https://langfuse.com/).
 

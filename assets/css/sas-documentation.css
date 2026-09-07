@@ -6,6 +6,7 @@
   --sas-border: #d5dce5;
   --sas-surface: #f5f7fa;
   --sas-text: #252a30;
+  --sas-nav-link: #dbe3ec;
 }
 
 body {
@@ -43,20 +44,30 @@ body {
   background: var(--sas-blue-deep);
 }
 
-.site-nav .nav-list-link {
-  color: #e8f2fb;
+/* Selectors below match the theme's specificity, which colors nested links dark grey. */
+.site-nav .nav-list .nav-list-item .nav-list-link,
+.site-nav .nav-list .nav-list-item > .nav-list .nav-list-item .nav-list-link {
+  color: var(--sas-nav-link);
   font-size: 0.9rem;
   line-height: 1.35;
   padding: 0.55rem 1rem;
 }
 
-.site-nav .nav-list-link:hover,
-.site-nav .nav-list-link.active {
-  background-color: rgba(255, 255, 255, 0.14);
+.site-nav .nav-list .nav-list-item .nav-list-link:hover,
+.site-nav .nav-list .nav-list-item .nav-list-link.active,
+.site-nav .nav-list .nav-list-item > .nav-list .nav-list-item .nav-list-link:hover,
+.site-nav .nav-list .nav-list-item > .nav-list .nav-list-item .nav-list-link.active {
+  /* The theme paints a light gradient here, which is unreadable behind white text. */
+  background-image: none;
+  background-color: rgba(255, 255, 255, 0.16);
   color: #ffffff;
 }
 
 .site-nav .nav-list .nav-list-item .nav-list-expander {
+  color: var(--sas-nav-link);
+}
+
+.site-nav .nav-list .nav-list-item .nav-list-expander:hover {
   color: #ffffff;
 }
 
@@ -92,16 +103,15 @@ body {
   letter-spacing: 0;
 }
 
+/* Heading font sizes are set with !important by the theme, so they are not overridden here. */
 .main-content h1 {
   border-bottom: 1px solid var(--sas-border);
-  font-size: 2rem;
   margin-bottom: 1.75rem;
   padding-bottom: 0.75rem;
 }
 
 .main-content h2 {
   border-bottom: 1px solid var(--sas-border);
-  font-size: 1.45rem;
   margin-top: 2.75rem;
   padding-bottom: 0.35rem;
 }
@@ -128,8 +138,14 @@ body {
   border: 1px solid var(--sas-border);
 }
 
-.main-content thead {
-  background: var(--sas-blue-dark);
+/* The theme sets a white background on th and td directly, so it must be overridden there
+   rather than on thead or tr. */
+.main-content thead th {
+  background-color: var(--sas-blue-dark);
+  color: #ffffff;
+}
+
+.main-content thead th a {
   color: #ffffff;
 }
 
@@ -138,8 +154,8 @@ body {
   border-color: var(--sas-border);
 }
 
-.main-content tbody tr:nth-child(even) {
-  background: var(--sas-surface);
+.main-content tbody tr:nth-child(even) td {
+  background-color: var(--sas-surface);
 }
 
 .main-content pre,
@@ -147,7 +163,8 @@ body {
   border-radius: 2px;
 }
 
-.main-content pre {
+/* The theme targets pre.highlight inside div.highlighter-rouge, so match that depth. */
+.main-content div.highlighter-rouge pre.highlight {
   border-left: 3px solid var(--sas-blue);
 }
 
@@ -211,9 +228,5 @@ body {
   .site-title {
     height: 2.25rem;
     margin: 0.75rem 1rem;
-  }
-
-  .main-content h1 {
-    font-size: 1.7rem;
   }
 }

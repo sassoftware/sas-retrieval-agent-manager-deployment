@@ -2,40 +2,15 @@
 layout: default
 title: AWS deployment
 parent: Deployment
-nav_order: 2
+nav_order: 3
+has_children: true
 ---
 
-# AWS Deployment Guide
+# AWS deployment
+{: .no_toc }
 
-## Table of Contents
-
-- [AWS Deployment Guide](#aws-deployment-guide)
-  - [Table of Contents](#table-of-contents)
-  - [Overview](#overview)
-  - [Prerequisites](#prerequisites)
-    - [Infrastructure Prerequisites](#infrastructure-prerequisites)
-    - [Technical Prerequisites](#technical-prerequisites)
-  - [Requirements](#requirements)
-    - [Hardware Requirements](#hardware-requirements)
-      - [EKS Cluster Sizing](#eks-cluster-sizing)
-      - [PostgreSQL Database Sizing](#postgresql-database-sizing)
-    - [Infrastructure Requirements](#infrastructure-requirements)
-  - [Getting Started](#getting-started)
-    - [Clone the Viya IAC Project](#clone-the-viya-iac-project)
-  - [Configuration Setup](#configuration-setup)
-  - [AWS authentication](#aws-authentication)
-  - [Infrastructure Deployment](#infrastructure-deployment)
-    - [Docker (Recommended)](#docker-recommended)
-  - [AWS Resource Setup](#aws-resource-setup)
-    - [Deploy EFS and Dedicated Role](#deploy-efs-and-dedicated-role)
-    - [Deploy EBS (Optional)](#deploy-ebs-optional)
-    - [Deploy RDS SSL Certificate](#deploy-rds-ssl-certificate)
-      - [Construct the Certificate Bundle](#construct-the-certificate-bundle)
-      - [Create the Kubernetes Secret](#create-the-kubernetes-secret)
-  - [Application Deployment](#application-deployment)
-  - [Post-Install: Required PostgreSQL Extensions](#post-install-required-postgresql-extensions)
-    - [Enable the Extensions in PostgreSQL](#enable-the-extensions-in-postgresql)
-    - [One-liner for Scripted Deployments](#one-liner-for-scripted-deployments)
+1. TOC
+{:toc}
 
 ---
 
@@ -43,24 +18,25 @@ nav_order: 2
 
 This guide describes deploying an AWS infrastructure on which to deploy SAS Retrieval Agent Manager.
 
+Complete [Get started](./get-started.md) first. It covers the common prerequisites, tools, and
+license retrieval for every platform.
+
 ## Prerequisites
 
-### Infrastructure Prerequisites
-
-- **External Database:**
-  - PostgreSQL database server with bidirectional connectivity to both the Kubernetes cluster and underlying compute nodes for the cluster
-
-### Technical Prerequisites
-
-**Required Access and Tools:**
+In addition to the [common prerequisites](./get-started.md#prerequisites):
 
 - Ability to create resources in AWS
+- A PostgreSQL database server with bidirectional connectivity to both the Kubernetes cluster and
+  the underlying compute nodes for the cluster
 
 ## Requirements
 
 ### Hardware Requirements
 
-#### EKS Cluster Sizing
+Cluster sizing is platform-independent. Choose a tier and read the resource requirements in
+[Cluster sizing](./sizing.md), then use an AWS instance type that meets them.
+
+Example EKS node group sizes:
 
 | Node Size           | Minimum Nodes | Maximum Nodes | Deployment Size |
 |---------------------|---------------|---------------|-----------------|
@@ -68,9 +44,13 @@ This guide describes deploying an AWS infrastructure on which to deploy SAS Retr
 | **r6in.2xlarge**    | 2             | 6             | Medium          |
 | **r6in.4xlarge**    | 2             | 8             | Large           |
 
+> **Note:** These `r6in` examples are memory-optimized and meet the **recommended** memory
+> requirement, which suits embedding and vectorization workloads. See
+> [Example instance types](./sizing.md#step-3-example-instance-types).
+
 #### PostgreSQL Database Sizing
 
-[Follow the PostgreSQL sizing recommendations here.](../README.md#database)
+[Follow the PostgreSQL sizing recommendations here.](./database.md#sizing)
 
 ### Infrastructure Requirements
 
@@ -96,8 +76,8 @@ Before deploying, you'll need to create and edit two configuration files with yo
 
 | File         | Purpose                                        |                                       |
 |--------------|------------------------------------------------|---------------------------------------|
-| `terraform.tfvars` | PostgreSQL name, prefix, and location settings | [Example](../examples/aws/terraform.tfvars) |
-| `aws.env`    | AWS credentials and environment variables      | [Example](../examples/aws/aws.env)    |
+| `terraform.tfvars` | PostgreSQL name, prefix, and location settings | [Example](https://github.com/sassoftware/sas-retrieval-agent-manager-deployment/blob/main/examples/aws/terraform.tfvars) |
+| `aws.env`    | AWS credentials and environment variables      | [Example](https://github.com/sassoftware/sas-retrieval-agent-manager-deployment/blob/main/examples/aws/aws.env)    |
 
 > **Tip:** If you need help obtaining AWS environemnt variables, contact your AWS Cloud Administrator or refer to our [AWS Help Guide](./user/AWSHelp.md)
 
@@ -135,13 +115,13 @@ aws configure sso
 
 After successfully configurating the AWS SSO, you should be able to start deploying resources necsesary for SAS Retrieval Agent Manager.
 
-An alternative to configuring the SSO would be to have a credentials file in a similar format as the `aws.env` file. This would only be used in the docker deployment of SAS Retrieval Agent Manager. [An example of an aws credentials file can be found here](../examples/aws/aws.env).
+An alternative to configuring the SSO would be to have a credentials file in a similar format as the `aws.env` file. This would only be used in the docker deployment of SAS Retrieval Agent Manager. [An example of an aws credentials file can be found here](https://github.com/sassoftware/sas-retrieval-agent-manager-deployment/blob/main/examples/aws/aws.env).
 
 ## Infrastructure Deployment
 
 ### Docker (Recommended)
 
-Use the provided Docker image to deploy the EKS cluster and PostgreSQL database with the [Example Terraform Values File](../examples/aws/terraform.tfvars). This method ensures a consistent environment and simplifies dependency management.
+Use the provided Docker image to deploy the EKS cluster and PostgreSQL database with the [Example Terraform Values File](https://github.com/sassoftware/sas-retrieval-agent-manager-deployment/blob/main/examples/aws/terraform.tfvars). This method ensures a consistent environment and simplifies dependency management.
 
 ```bash
 # Build the Docker image
@@ -188,103 +168,12 @@ aws rds describe-db-instances --query 'DBInstances[*].[DBInstanceIdentifier,Avai
 
 [After finding the correct region, download the correct bundle here](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.SSL.html).
 
-#### Construct the Certificate Bundle
+Then follow [Secure the database connection](./database.md#secure-the-database-connection) to build
+the `cert.pem` bundle and create the Kubernetes secret.
 
-The `cert.pem` secret key must contain a single PEM file that concatenates **four components in the following order**:
+## Next steps
 
-1. **Chain certificate** (`trustedcerts.pem`)
-2. **Intermediate certificate** (`ca.crt`)
-3. **Server certificate** (`tls.crt`)
-4. **Private key** (`tls.key`)
-
-The resulting file structure should look like this:
-
-```text
------BEGIN CERTIFICATE-----
-<trustedcerts.pem contents>
------END CERTIFICATE-----
------BEGIN CERTIFICATE-----
-<ca.crt contents>
------END CERTIFICATE-----
------BEGIN CERTIFICATE-----
-<tls.crt contents>
------END CERTIFICATE-----
------BEGIN RSA PRIVATE KEY-----
-<tls.key contents>
------END RSA PRIVATE KEY-----
-```
-
-You can build this bundle with the following command:
-
-```bash
-cat trustedcerts.pem ca.crt tls.crt tls.key > combined-cert.pem
-```
-
-#### Create the Kubernetes Secret
-
-After constructing the bundle, upload it as a secret with the key of `cert.pem`. This can be done with the following commands:
-
-```bash
-# The correct namespace to store all SAS Retrieval Agent Manager Resources
-kubectl create ns retagentmgr
-
-# Create a secret with the RDS SSL Bundle you downloaded
-kubectl create secret generic rds-ssl-cert --from-file=cert.pem=combined-cert.pem -n retagentmgr
-```
-
-> **Note:** It is critical to enter the name of the secret in the `postgreSQLCertSecret` key in the ram-values under global.configuration.vhub. For example, with this secret name, it would be: `postgreSQLCertSecret: 'rds-ssl-cert'`
-
-## Application Deployment
-
-Return to the [Application Deployment Guide](../README.md#application-deployment-guide) section of the documentation to continue the deployment.
-
-## Post-Install: Required PostgreSQL Extensions
-
-Amazon RDS for PostgreSQL ships `pgcrypto` and `pgvector` as pre-built extensions — no system package installation is required. You simply need to activate them in your target database. These are required (or strongly recommended) by SAS Retrieval Agent Manager — see [Necessary PostgreSQL Extensions](../README.md#necessary-postgresql-extensions).
-
-> **Note:** `pgvector` is available on RDS PostgreSQL 15.2 and later. Verify your RDS instance meets this requirement before proceeding.
-
-### Enable the Extensions in PostgreSQL
-
-Connect to your RDS instance as the admin user and run the following SQL commands against the target database (replace `<your_database>` with the actual database name):
-
-```sql
--- Connect to the target database first
-\c <your_database>
-
--- Required: encryption support used by SAS Retrieval Agent Manager
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
-
--- Recommended: vector similarity search for embedding storage
-CREATE EXTENSION IF NOT EXISTS vector;
-```
-
-You can verify the extensions are active with:
-
-```sql
-SELECT name, default_version, installed_version
-FROM pg_available_extensions
-WHERE name IN ('pgcrypto', 'vector');
-```
-
-Both extensions should show a value in `installed_version`.
-
-### One-liner for Scripted Deployments
-
-If you prefer a non-interactive approach (e.g. from a shell script or CI pipeline):
-
-```bash
-PGPASSWORD=<admin_password> psql \
-  -h <rds_endpoint> \
-  -U <admin_user> \
-  -d <your_database> \
-  -c "CREATE EXTENSION IF NOT EXISTS pgcrypto; CREATE EXTENSION IF NOT EXISTS vector;"
-```
-
-> **Note:** The RDS endpoint can be found in the AWS Console under **RDS → Databases → <your instance> → Connectivity & security**, or via:
->
-> ```bash
-> aws rds describe-db-instances \
->   --query 'DBInstances[*].[DBInstanceIdentifier,Endpoint.Address]' \
->   --output table
-> ```
+1. [Configure the database](./database.md) — enable the `pgcrypto` and `vector` extensions on your
+   RDS instance.
+2. [Install dependencies](./user/DependencyInstall.md).
+3. [Install and upgrade](./install.md) — deploy the application.

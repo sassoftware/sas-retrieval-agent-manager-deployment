@@ -5,7 +5,7 @@ parent: Identity and access
 nav_order: 1
 ---
 
-# Keycloak User and Group Management
+# Keycloak management
 
 ## Table of Contents
 

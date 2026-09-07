@@ -1,11 +1,12 @@
 ---
 layout: default
 title: AWS help
-parent: Deployment
-nav_order: 5
+parent: AWS deployment
+grand_parent: Deployment
+nav_order: 1
 ---
 
-# AWS Help
+# AWS help
 
 ## Requirements
 

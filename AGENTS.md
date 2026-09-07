@@ -229,7 +229,7 @@ Before install:
 4. Run values validation again.
 5. Show the release name, chart path, namespace, values file, and expected change.
 
-Use the install command from `README.md`.
+Use the install command from `docs/install.md`.
 Get approval immediately before the command.
 
 Use `helm install` for a new installation.
@@ -242,6 +242,6 @@ Report the release version, namespace, ready and unready workloads, access addre
 
 ## Use Docs for Information
 
-* Read `docs/azure-deployment.md` and the applicable `README.md` sections before you give commands.
+* Read `docs/azure-deployment.md`, `docs/get-started.md`, `docs/database.md`, and `docs/install.md` before you give commands.
 * Keep all Azure requirements, including PostgreSQL TLS requirements.
-* Use the dependency versions, values files, and commands in `README.md` and `docs/user/DependencyInstall.md`.
+* Use the dependency versions, values files, and commands in `docs/user/DependencyInstall.md`.

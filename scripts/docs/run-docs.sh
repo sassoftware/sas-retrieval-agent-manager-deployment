@@ -52,4 +52,4 @@ docker run --rm -it \
   -v "${REPOSITORY_PATH}:/site" \
   -w /site \
   "${IMAGE_NAME}" \
-  bash -lc "gem install jekyll -v '~> 4.3' --no-document && gem install just-the-docs -v '~> 0.10.1' --no-document && gem install jekyll-relative-links -v '~> 0.7.0' --no-document && /usr/local/bundle/bin/jekyll serve --host 0.0.0.0 --port 4000 --livereload --livereload-port ${LIVE_RELOAD_PORT} --force_polling --baseurl ''"
+  bash -lc "bundle install --quiet && bundle exec jekyll serve --host 0.0.0.0 --port 4000 --livereload --livereload-port ${LIVE_RELOAD_PORT} --force_polling --baseurl ''"
