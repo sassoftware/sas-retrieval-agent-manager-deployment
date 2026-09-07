@@ -10,12 +10,12 @@ nav_order: 7
 After you have access to the Kubernetes cluster, install these dependencies before you install SAS
 Retrieval Agent Manager.
 
-| Dependency                  | Version             | Upstream documentation |
-|-----------------------------|---------------------|------------------------|
-| cert-manager, trust-manager | 1.18.2, 0.18.0      | [cert-manager](https://cert-manager.io/docs/installation/helm/), [trust-manager](https://cert-manager.io/docs/trust/trust-manager/installation/) |
-| Linkerd **or** Istio        | 2.17 (edge-24.11.8) | [Linkerd](https://linkerd.io/2/tasks/install-helm/), [Istio](https://istio.io/latest/docs/) |
-| NGINX **or** Contour        | 4.12.3 / 1.33.1     | [NGINX](https://kubernetes.github.io/ingress-nginx/deploy/), [Contour](https://projectcontour.io/getting-started/) |
-| Kueue                       | 0.17.2              | [Kueue](https://kueue.sigs.k8s.io/docs/installation/) |
+| Dependency | Version | Upstream documentation |
+| ---------- | ------- | ---------------------- |
+| cert-manager, trust-manager | 1.18.2, 0.18.0 | [cert-manager](https://cert-manager.io/docs/installation/helm/), [trust-manager](https://cert-manager.io/docs/trust/trust-manager/installation/) |
+| Linkerd **or** Istio | 2.17 (edge-24.11.8) / 1.30.4 | [Linkerd](https://linkerd.io/2/tasks/install-helm/), [Istio](https://istio.io/latest/docs/) |
+| NGINX **or** Contour | 4.12.3 / 1.33.1 | [NGINX](https://kubernetes.github.io/ingress-nginx/deploy/), [Contour](https://projectcontour.io/getting-started/) |
+| Kueue | 0.17.2 | [Kueue](https://kueue.sigs.k8s.io/docs/installation/) |
 
 > **Important:** Install these in order. Certificate management (cert-manager and trust-manager)
 > must be first. The service mesh (Linkerd) must be second, because it depends on the certificates
@@ -27,12 +27,12 @@ Retrieval Agent Manager.
 
 ## Optional components
 
-| Component    | Version | Example values file | Instructions | Description |
-|--------------|---------|---------------------|--------------|-------------|
-| **Weaviate** | 17.6.0  | [weaviate.yaml](https://github.com/sassoftware/sas-retrieval-agent-manager-deployment/blob/main/examples/dependencies/optional/weaviate.yaml) | [instructions](#weaviate) | Vector database |
-| **Ollama**   | 1.12.0  | [ollama.yaml](https://github.com/sassoftware/sas-retrieval-agent-manager-deployment/blob/main/examples/dependencies/optional/ollama.yaml) | [instructions](../llm-connection/ollama.md) | LLM deployment platform |
-| **Vector**   | 0.53.0  | [vector.yaml](https://github.com/sassoftware/sas-retrieval-agent-manager-deployment/blob/main/examples/dependencies/optional/monitoring/vector.yaml) | [instructions](../monitoring/README.md) | Storing logs and traces |
-| **Phoenix**  | 4.0.7   | [phoenix.yaml](https://github.com/sassoftware/sas-retrieval-agent-manager-deployment/blob/main/examples/dependencies/optional/monitoring/phoenix.yaml) | [instructions](../monitoring/traces.md) | Visualizing traces |
+| Component | Version | Example values file | Instructions | Description |
+| --------- | ------- | ------------------- | ------------ | ----------- |
+| **Weaviate** | 17.6.0 | [weaviate.yaml](https://github.com/sassoftware/sas-retrieval-agent-manager-deployment/blob/main/examples/dependencies/optional/weaviate.yaml) | [instructions](#weaviate) | Vector database |
+| **Ollama** | 1.12.0 | [ollama.yaml](https://github.com/sassoftware/sas-retrieval-agent-manager-deployment/blob/main/examples/dependencies/optional/ollama.yaml) | [instructions](../llm-connection/ollama.md) | LLM deployment platform |
+| **Vector** | 0.53.0 | [vector.yaml](https://github.com/sassoftware/sas-retrieval-agent-manager-deployment/blob/main/examples/dependencies/optional/monitoring/vector.yaml) | [instructions](../monitoring/README.md) | Storing logs and traces |
+| **Phoenix** | 4.0.7 | [phoenix.yaml](https://github.com/sassoftware/sas-retrieval-agent-manager-deployment/blob/main/examples/dependencies/optional/monitoring/phoenix.yaml) | [instructions](../monitoring/traces.md) | Visualizing traces |
 
 > **Note:** If you install SAS Retrieval Agent Manager without these optional components, you can
 > always install them later and connect them to your existing deployment.
