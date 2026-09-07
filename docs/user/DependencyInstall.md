@@ -13,9 +13,9 @@ Retrieval Agent Manager.
 | Dependency                  | Version             | Upstream documentation |
 |-----------------------------|---------------------|------------------------|
 | cert-manager, trust-manager | 1.18.2, 0.18.0      | [cert-manager](https://cert-manager.io/docs/installation/helm/), [trust-manager](https://cert-manager.io/docs/trust/trust-manager/installation/) |
-| Linkerd                     | 2.17 (edge-24.11.8) | [docs](https://linkerd.io/2/tasks/install-helm/) |
+| Linkerd **or** Istio        | 2.17 (edge-24.11.8) | [Linkerd](https://linkerd.io/2/tasks/install-helm/), [Istio](https://istio.io/latest/docs/) |
 | NGINX **or** Contour        | 4.12.3 / 1.33.1     | [NGINX](https://kubernetes.github.io/ingress-nginx/deploy/), [Contour](https://projectcontour.io/getting-started/) |
-| Kueue                       | 0.17.2              | [docs](https://kueue.sigs.k8s.io/docs/installation/) |
+| Kueue                       | 0.17.2              | [Kueue](https://kueue.sigs.k8s.io/docs/installation/) |
 
 > **Important:** Install these in order. Certificate management (cert-manager and trust-manager)
 > must be first. The service mesh (Linkerd) must be second, because it depends on the certificates
