@@ -13,7 +13,7 @@ nav_order: 6
 
 ---
 
-SAS Retrieval Agent Manager requires a PostgreSQL 15 database for application data, vector
+SAS Retrieval Agent Manager requires a PostgreSQL 16 database for application data, vector
 embeddings, and more. The database can run on any platform as long as the Kubernetes cluster can
 reach it.
 
@@ -81,20 +81,20 @@ is required.
 
 Install the system packages first. The required packages depend on your PostgreSQL version.
 
-**Ubuntu (PostgreSQL 15):**
+**Ubuntu (PostgreSQL 16):**
 
 ```bash
 # Update package index
 sudo apt-get update
 
-# Install pgcrypto (ships with the postgresql-15 package)
-sudo apt-get install -y postgresql-15
+# Install pgcrypto (ships with the postgresql-16 package)
+sudo apt-get install -y postgresql-16
 
 # Install pgvector
-sudo apt-get install -y postgresql-15-pgvector
+sudo apt-get install -y postgresql-16-pgvector
 ```
 
-**RHEL 8/9 (PostgreSQL 15):**
+**RHEL 8/9 (PostgreSQL 16):**
 
 ```bash
 # Install the PostgreSQL repository (if not already configured)
@@ -104,10 +104,10 @@ sudo dnf install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-
 sudo dnf -qy module disable postgresql
 
 # Install pgcrypto (ships with the postgresql-contrib package)
-sudo dnf install -y postgresql15-contrib
+sudo dnf install -y postgresql16-contrib
 
 # Install pgvector build dependencies
-sudo dnf install -y gcc make git postgresql15-devel
+sudo dnf install -y gcc make git postgresql16-devel
 
 # Clone and build pgvector
 git clone --branch v0.7.4 https://github.com/pgvector/pgvector.git
@@ -118,7 +118,7 @@ cd ..
 rm -rf pgvector
 ```
 
-> **Note:** Replace `15` with your actual PostgreSQL major version (for example `16`) in the package
+> **Note:** Replace `16` with your actual PostgreSQL major version (for example `17`) in the package
 > names and `--branch` tag above. Adjust the `pgdg-redhat-repo` URL for your RHEL version (`EL-8` vs
 > `EL-9`) and architecture. Check the
 > [pgvector releases page](https://github.com/pgvector/pgvector/releases) for the latest stable
