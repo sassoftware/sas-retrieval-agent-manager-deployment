@@ -1,6 +1,6 @@
 # sas-retrieval-agent-manager
 
-![Version: 1.2.3-dev.20241225](https://img.shields.io/badge/Version-1.2.3--dev.20241225-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.2.0](https://img.shields.io/badge/AppVersion-1.2.0-informational?style=flat-square)
+![Version: 2026.8.0](https://img.shields.io/badge/Version-2026.8.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 2026.8.0](https://img.shields.io/badge/AppVersion-2026.8.0-informational?style=flat-square)
 
 A comprehensive Helm chart for deploying SAS Retrieval Agent Manager (RAM) platform. Provides AI-powered document retrieval, processing, and management capabilities with integrated authentication, file management, and vector search functionality.
 
@@ -14,7 +14,7 @@ A comprehensive Helm chart for deploying SAS Retrieval Agent Manager (RAM) platf
 
 ## Source Code
 
-* <https://github.com/sas-institute-rnd-internal/tmp-viya-iot-ram-helm>
+* <https://github.com/sassoftware/sas-retrieval-agent-manager-deployment>
 
 ## Requirements
 
