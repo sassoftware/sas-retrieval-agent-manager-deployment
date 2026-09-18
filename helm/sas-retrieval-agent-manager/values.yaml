@@ -427,7 +427,7 @@ images:
     # required: true
     # @schema
     # -- Container image tag for embedding model inference with CPU
-    tag: cpu-1.8
+    tag: cpu-1.8.3
     # @schema
     # required: true
     # enum: ["Always", "IfNotPresent", "Never"]
@@ -462,7 +462,7 @@ images:
     # required: true
     # @schema
     # -- Container image tag for embedding model inference with CPU
-    tag: 1.1.0
+    tag: 1.10.0
     # @schema
     # required: true
     # enum: ["Always", "IfNotPresent", "Never"]
@@ -497,7 +497,7 @@ images:
     # required: true
     # @schema
     # -- Image tag (defaults to chart appVersion)
-    tag: "v13.0.4"
+    tag: "v16.2"
     # @schema
     # required: true
     # enum: ["Always", "IfNotPresent", "Never"]
@@ -539,7 +539,7 @@ images:
     # required: true
     # @schema
     # -- kubectl container image tag
-    tag: "1.31.12"
+    tag: "1.35.0"
   # @schema
   # type: object
   # required: true
@@ -575,7 +575,7 @@ images:
     # required: true
     # @schema
     # -- Keycloak container image tag
-    tag: "26.3.2"
+    tag: "26.7.3"
   # @schema
   # type: object
   # required: true
@@ -611,7 +611,7 @@ images:
     # required: true
     # @schema
     # -- PostgreSQL container image tag
-    tag: "15-alpine"
+    tag: "17-alpine"
   # @schema
   # type: object
   # required: true
@@ -646,7 +646,7 @@ images:
     # required: true
     # @schema
     # -- OAuth2 Proxy container image tag
-    tag: "v7.12.0"
+    tag: "v7.15.4"
 
   # @schema
   # type: array

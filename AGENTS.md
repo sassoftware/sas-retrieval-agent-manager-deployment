@@ -238,6 +238,8 @@ Use `helm upgrade --install` only for an approved upgrade.
 After install, use read-only checks for Helm status, RAM pods, ingress address, and workload scheduling.
 Do not show Secret data.
 
+After install, restart the postgrest and api pods for the `retrieval-agent-manager` deployment.
+
 Report the release version, namespace, ready and unready workloads, access address, and remaining manual steps from `docs/azure-deployment.md`.
 
 ## Use Docs for Information
