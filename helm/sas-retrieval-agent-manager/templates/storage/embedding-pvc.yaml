@@ -15,5 +15,5 @@ spec:
   resources:
     requests:
       storage: {{ .Values.storage.embedding.pvc.size | quote }}
-  storageClassName: {{ default (include "retrieval-agent-manager.defaultStorageClassName" .) .Values.storage.embedding.pvc.storageClassName }}
+  storageClassName: {{ default (include "retrieval-agent-manager.defaultStorageClassName" .) (default .Values.storage.embedding.pvc.storageClassName .Values.storage.customStorageClass.name) }}
 {{- end }}

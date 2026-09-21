@@ -1,3 +1,6 @@
+# vim: set ft=yaml:
+# yaml-language-server: $schema=values.schema.json
+
 # -- Default values for retrieval-agent-manager.
 # -- ====================================================
 # --
@@ -23,9 +26,6 @@
 # -- • securityContext: Pod and container security policies
 # -- • probes: Health checks for container lifecycle management
 # -- • affinity/nodeSelector/tolerations: Advanced pod scheduling
-
-# vim: set ft=yaml:
-# yaml-language-server: $schema=values.schema.json
 
 # @schema
 # type: array
@@ -1247,7 +1247,7 @@ api:
       create: true
       # -- The name of the service account to use. If not set and create is true, a name is generated using the fullname template
       name: ''
-  
+
   # @schema
   # type: object
   # additionalProperties: false
@@ -1697,6 +1697,23 @@ api:
 # type: object
 # required: true
 # @schema
+# -- Helm upgrade validation configuration
+upgradeValidation:
+  # @schema
+  # type: array
+  # required: true
+  # minItems: 1
+  # items:
+  #   type: string
+  # @schema
+  # -- Value paths that cannot change during an upgrade
+  protectedPaths:
+    - db.init.config.application.adminRole
+
+# @schema
+# type: object
+# required: true
+# @schema
 # -- SAS Retrieval Agent Manager Vectorization Hub: Main vectorization service
 vectorizationHub:
   # @schema
@@ -2050,7 +2067,7 @@ vectorizationHub:
         - nld       # Dutch (Nederlands)
         - pol       # Polish
         - por       # Portuguese
-        - ara        # Arabic
+        - ara       # Arabic
         # @schema
         # type: array
         # required: true
@@ -2077,7 +2094,7 @@ vectorizationHub:
         - equ       # Math/Equation Detection
         - ara       # Arabic
         - tur       # Turkish
-
+        - heb       # Hebrew
 # @schema
 # type: object
 # required: true
@@ -3852,17 +3869,17 @@ ui:
 #     properties:
 #       name:
 #         type: string
-#         default: azurefile-sas
+#         default: ""
 #       create:
 #         type: [boolean, null]
 #         default: null
 # @schema
 # -- SAS Retrieval Agent Manager Storage: Storage services
 storage:
-  # -- allows the creation of a custom storage class, used for an azurefile fix.
+  # -- Custom storage class configuration
   customStorageClass:
-    # -- Storage class name for the custom storage class (only used for an azurefile fix)
-    name: azurefile-sas
+    # -- Storage class name for all PVCs. Uses the platform default when empty.
+    name: ""
     # -- Whether to create the custom storage class
     create: null
   # @schema

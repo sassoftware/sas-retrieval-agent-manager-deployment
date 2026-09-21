@@ -14,4 +14,4 @@ spec:
   resources:
     requests:
       storage: {{ .Values.storage.application.pvc.size | quote }}
-  storageClassName: {{ default (include "retrieval-agent-manager.defaultStorageClassName" .) .Values.storage.application.pvc.storageClassName }}
+  storageClassName: {{ default (include "retrieval-agent-manager.defaultStorageClassName" .) (default .Values.storage.application.pvc.storageClassName .Values.storage.customStorageClass.name) }}

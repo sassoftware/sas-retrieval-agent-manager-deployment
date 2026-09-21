@@ -43,19 +43,14 @@ Otherwise, default based on classType:
 
 {{/*
 Get the storage class name based on platform.
-If .Values.storage.storageClassName is set, use it.
-Otherwise, default based on .Values.platform:
+Default based on .Values.platform:
   - azure: "azurefile-sas"
   - aws: "efs-sc"
   - kubernetes, openshift: "nfs-client"
 */}}
 {{- define "retrieval-agent-manager.defaultStorageClassName" -}}
 {{- if eq .Values.platform "azure" -}}
-{{- if .Values.storage.customStorageClass.create -}}
-{{- .Values.storage.customStorageClass.name -}}
-{{- else -}}
 azurefile-sas
-{{- end -}}
 {{- else if eq .Values.platform "aws" -}}
 efs-sc
 {{- else -}}

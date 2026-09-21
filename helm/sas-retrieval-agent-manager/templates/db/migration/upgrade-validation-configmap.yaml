@@ -1,0 +1,55 @@
+{{- if .Release.IsUpgrade }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ printf "%s-upgrade-validation-scripts" (include "retrieval-agent-manager.fullname" .) | trunc 63 | trimSuffix "-" }}
+  labels:
+    {{- include "retrieval-agent-manager.labels" . | nindent 4 }}
+    app.kubernetes.io/component: upgrade-validation
+  annotations:
+    helm.sh/hook: pre-upgrade
+    helm.sh/hook-weight: "-30"
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+data:
+  validate-upgrade.sh: |-
+    #!/bin/sh
+    set -eu
+
+    protected_paths="$(printf '%s' "${PROTECTED_VALUES}" | yq eval -r 'keys | .[]' -)"
+    first_path="$(printf '%s' "${PROTECTED_VALUES}" | yq eval -r 'keys | .[0]' -)"
+    values_file=""
+    for candidate in /current-values/*; do
+      if [ ! -f "${candidate}" ]; then
+        continue
+      fi
+
+      if candidate_value="$(yq eval -r ".${first_path} // \"null\"" "${candidate}" 2>/dev/null)" && [ "${candidate_value}" != "null" ]; then
+        values_file="${candidate}"
+        break
+      fi
+    done
+
+    if [ -z "${values_file}" ]; then
+      echo "The values secret does not contain the deployed values."
+      exit 1
+    fi
+
+    for path in ${protected_paths}; do
+      proposed_value="$(printf '%s' "${PROTECTED_VALUES}" | PROTECTED_PATH="${path}" yq eval -r '.[strenv(PROTECTED_PATH)]' -)"
+      current_value="$(yq eval -r ".${path}" "${values_file}")"
+
+      if [ "${current_value}" = "null" ]; then
+        echo "The deployed values do not contain .${path}."
+        exit 1
+      fi
+
+      if [ "${current_value}" != "${proposed_value}" ]; then
+        echo "The upgrade cannot change .${path}."
+        echo "Deployed value: ${current_value}"
+        echo "Proposed value: ${proposed_value}"
+        exit 1
+      fi
+    done
+
+    echo "The upgrade values are valid."
+{{- end }}

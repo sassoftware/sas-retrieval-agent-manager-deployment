@@ -1,0 +1,82 @@
+{{- if .Release.IsUpgrade }}
+{{- $protectedValues := dict }}
+{{- range $path := .Values.upgradeValidation.protectedPaths }}
+  {{- $value := $.Values }}
+  {{- range $key := splitList "." $path }}
+    {{- if not (and (kindIs "map" $value) (hasKey $value $key)) }}
+      {{- fail (printf "upgradeValidation.protectedPaths contains an invalid path: %s" $path) }}
+    {{- end }}
+    {{- $value = index $value $key }}
+  {{- end }}
+  {{- $_ := set $protectedValues $path $value }}
+{{- end }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ printf "%s-upgrade-validation" (include "retrieval-agent-manager.fullname" .) | trunc 63 | trimSuffix "-" }}
+  labels:
+    {{- include "retrieval-agent-manager.labels" . | nindent 4 }}
+    app.kubernetes.io/component: upgrade-validation
+  annotations:
+    helm.sh/hook: pre-upgrade
+    helm.sh/hook-weight: "-20"
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+    helm.sh/hook-output-log-policy: hook-failed
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 300
+  template:
+    metadata:
+      labels:
+        {{- include "retrieval-agent-manager.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: upgrade-validation
+    spec:
+      automountServiceAccountToken: false
+      {{- with .Values.images.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      restartPolicy: Never
+      securityContext:
+        {{- include "ram.podSecurityContext" (list .Values.db.init.podSecurityContext .Values.platform) | nindent 8 }}
+      containers:
+        - name: upgrade-validation
+          image: "{{ include "images.kubectl" . }}"
+          imagePullPolicy: {{ .Values.images.kubectl.pullPolicy }}
+          command:
+            - /scripts/validate-upgrade.sh
+          env:
+            - name: PROTECTED_VALUES
+              value: {{ $protectedValues | toJson | quote }}
+          securityContext:
+            {{- include "ram.securityContext" (list .Values.db.init.securityContext .Values.platform) | nindent 12 }}
+          resources:
+            {{- toYaml .Values.db.init.resources | nindent 12 }}
+          volumeMounts:
+            - name: current-values
+              mountPath: /current-values
+              readOnly: true
+            - name: scripts
+              mountPath: /scripts
+              readOnly: true
+      volumes:
+        - name: current-values
+          secret:
+            secretName: {{ printf "%s-values" (include "retrieval-agent-manager.fullname" .) }}
+        - name: scripts
+          configMap:
+            name: {{ printf "%s-upgrade-validation-scripts" (include "retrieval-agent-manager.fullname" .) | trunc 63 | trimSuffix "-" }}
+            defaultMode: 0555
+      {{- with .Values.db.init.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.db.init.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.db.init.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
