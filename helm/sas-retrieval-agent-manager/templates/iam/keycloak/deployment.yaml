@@ -150,7 +150,7 @@ spec:
               cp -rf /opt/keycloak/* /keycloak/ &&
               cd /keycloak &&
               ls -laR &&
-              ./bin/kc.sh build --features=token-exchange
+              ./bin/kc.sh build --features=identity-brokering-api:v2,token-exchange,admin-fine-grained-authz:v1
           resources:
             {{- toYaml .Values.iam.keycloak.resources | nindent 12 }}
           securityContext:
@@ -166,6 +166,8 @@ spec:
               mountPath: /opt/keycloak/data/import/realm-export.json
               subPath: realm-export.json
               readOnly: false
+            - name: tmp
+              mountPath: /tmp
       containers:
         - name: keycloak-run
           securityContext:
@@ -176,7 +178,6 @@ spec:
             - start
             - --import-realm
             - --optimized
-            # - --features=token-exchange
             - --verbose
           env:
             - name: KC_NS

@@ -1,3 +1,6 @@
+# vim: set ft=yaml:
+# yaml-language-server: $schema=values.schema.json
+
 # -- Default values for retrieval-agent-manager.
 # -- ====================================================
 # --
@@ -23,9 +26,6 @@
 # -- • securityContext: Pod and container security policies
 # -- • probes: Health checks for container lifecycle management
 # -- • affinity/nodeSelector/tolerations: Advanced pod scheduling
-
-# vim: set ft=yaml:
-# yaml-language-server: $schema=values.schema.json
 
 # @schema
 # type: array
@@ -183,7 +183,7 @@ images:
     # required: true
     # @schema
     # -- Image tag (defaults to chart appVersion)
-    tag: "1.20.15-20260818.1787076669742"
+    tag: "1.21.2-20260903.1788465410165"
   # @schema
   # type: object
   # required: true
@@ -218,7 +218,7 @@ images:
     # required: true
     # @schema
     # -- Container image tag
-    tag: "1.13.16-20260817.1786995762570"
+    tag: "1.14.1-20260902.1788370365424"
   # @schema
   # type: object
   # required: true
@@ -253,7 +253,7 @@ images:
     # required: true
     # @schema
     # -- Container image tag for vectorization hub
-    tag: "1.15.7-20260817.1787003665570"
+    tag: "1.16.5-20260908.1788896792547"
   # @schema
   # type: object
   # required: true
@@ -288,7 +288,7 @@ images:
     # required: true
     # @schema
     # -- Container image tag for agent
-    tag: "1.18.1-20260812.1786551478299"
+    tag: "1.19.2-20260910.1789056308417"
   # @schema
   # type: object
   # required: true
@@ -323,7 +323,7 @@ images:
     # required: true
     # @schema
     # -- Container image tag for evaluation service
-    tag: "1.15.8-20260812.1786551507408"
+    tag: "1.16.2-20260910.1789052612590"
   # @schema
   # type: object
   # required: true
@@ -359,7 +359,7 @@ images:
     # required: true
     # @schema
     # -- Theme container image tag
-    tag: "1.3.10-20260806.1786005822825"
+    tag: "1.3.11-20260902.1788339513249"
   # @schema
   # type: object
   # required: true
@@ -394,7 +394,7 @@ images:
     # required: true
     # @schema
     # -- Goose container image tag
-    tag: "1.15.3-20260812.1786551418645"
+    tag: "1.16.0-20260902.1788369584581"
 
   # ============================================================================
   # 3RD PARTY IMAGES
@@ -1247,7 +1247,7 @@ api:
       create: true
       # -- The name of the service account to use. If not set and create is true, a name is generated using the fullname template
       name: ''
-  
+
   # @schema
   # type: object
   # additionalProperties: false
@@ -1697,6 +1697,23 @@ api:
 # type: object
 # required: true
 # @schema
+# -- Helm upgrade validation configuration
+upgradeValidation:
+  # @schema
+  # type: array
+  # required: true
+  # minItems: 1
+  # items:
+  #   type: string
+  # @schema
+  # -- Value paths that cannot change during an upgrade
+  protectedPaths:
+    - db.init.config.application.adminRole
+
+# @schema
+# type: object
+# required: true
+# @schema
 # -- SAS Retrieval Agent Manager Vectorization Hub: Main vectorization service
 vectorizationHub:
   # @schema
@@ -2050,7 +2067,7 @@ vectorizationHub:
         - nld       # Dutch (Nederlands)
         - pol       # Polish
         - por       # Portuguese
-        - ara        # Arabic
+        - ara       # Arabic
         # @schema
         # type: array
         # required: true
@@ -2077,7 +2094,7 @@ vectorizationHub:
         - equ       # Math/Equation Detection
         - ara       # Arabic
         - tur       # Turkish
-
+        - heb       # Hebrew
 # @schema
 # type: object
 # required: true
@@ -3852,17 +3869,17 @@ ui:
 #     properties:
 #       name:
 #         type: string
-#         default: azurefile-sas
+#         default: ""
 #       create:
 #         type: [boolean, null]
 #         default: null
 # @schema
 # -- SAS Retrieval Agent Manager Storage: Storage services
 storage:
-  # -- allows the creation of a custom storage class, used for an azurefile fix.
+  # -- Custom storage class configuration
   customStorageClass:
-    # -- Storage class name for the custom storage class (only used for an azurefile fix)
-    name: azurefile-sas
+    # -- Storage class name for all PVCs. Uses the platform default when empty.
+    name: ""
     # -- Whether to create the custom storage class
     create: null
   # @schema

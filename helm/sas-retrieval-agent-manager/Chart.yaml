@@ -5,7 +5,7 @@ annotations:
   dependencies.linkerd: deprecated
   dependencies.oauth2-proxy: included
   dependencies.postgresql: required
-  documentation: https://helpcenter.unx.sas.com/doc/en/ragntmgrcdc/v_001/ragntmgrag/titlepage.htm
+  documentation: https://documentation.sas.com/doc/en/ragntmgrcdc/v_001/ragntmgrag/titlepage.htm
   helm.sh/hook-weight: "0"
   images.registry: cr.sas.com
   kubeVersion: '>=1.24.0'
@@ -25,7 +25,7 @@ annotations:
   security.runAsNonRoot: "true"
   support.url: https://support.sas.com
 apiVersion: v2
-appVersion: 2026.8.0
+appVersion: 1.2.0
 description: A comprehensive Helm chart for deploying SAS Retrieval Agent Manager
   (RAM) platform. Provides AI-powered document retrieval, processing, and management
   capabilities with integrated authentication, file management, and vector search
@@ -53,6 +53,6 @@ maintainers:
   url: https://www.sas.com
 name: sas-retrieval-agent-manager
 sources:
-- https://github.com/sas-institute-rnd-internal/tmp-viya-iot-ram-helm
+- https://github.com/sassoftware/sas-retrieval-agent-manager-deployment
 type: application
-version: 2026.8.0
+version: 2026.9.0
