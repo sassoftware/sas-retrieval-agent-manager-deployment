@@ -65,7 +65,7 @@ kubernetes_version         = "1.35"
 # Small Deployment Defaults
 default_nodepool_min_nodes = 1
 default_nodepool_max_nodes = 3
-default_nodepool_vm_type   = "Standard_d16s_v7"
+default_nodepool_vm_type   = "Standard_d16s_v6"
 
 # Medium Deployment Defaults
 # default_nodepool_min_nodes = 2

@@ -40,9 +40,9 @@ Example AKS node pool sizes:
 
 |       Node Size      | Minimum Nodes | Maximum Nodes |   Deployment Size  |
 |----------------------|---------------|---------------|--------------------|
-| **Standard_D8s_v5**  |       1       |       3       |      Small         |
-| **Standard_D8s_v5**  |       2       |       6       |      Medium        |
-| **Standard_D16s_v5** |       2       |       8       |      Large         |
+| **Standard_D8s_v6**  |       1       |       3       |      Small         |
+| **Standard_D8s_v6**  |       2       |       6       |      Medium        |
+| **Standard_D16s_v6** |       2       |       8       |      Large         |
 
 > **Note:** These `D`-series examples meet the **minimum** memory requirement. For embedding or
 > vectorization workloads, use a memory-optimized `E`-series instance instead. See
