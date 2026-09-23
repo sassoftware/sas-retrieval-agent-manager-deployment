@@ -55,7 +55,7 @@ your cluster's scheduling configuration.
 
 ```bash
 helm install retrieval-agent-manager oci://ghcr.io/sassoftware/sas-retrieval-agent-manager-deployment/sas-retrieval-agent-manager \
-  --version 2026.8.0 \
+  --version 2026.9.0 \
   --values <SAS Retrieval Agent Manager Values File> \
   -n retagentmgr \
   --create-namespace \

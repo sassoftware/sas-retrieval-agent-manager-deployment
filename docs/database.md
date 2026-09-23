@@ -17,8 +17,11 @@ SAS Retrieval Agent Manager requires a PostgreSQL 16 database for application da
 embeddings, and more. The database can run on any platform as long as the Kubernetes cluster can
 reach it.
 
-Complete this page after you provision infrastructure with your platform deployment guide and
-before you [install the application](./install.md).
+The [terraform scripts](./azure-deployment.md#infrastructure-deployment) will provision the database instance for you and the [helm installation](./install#install) will initialize the different databases and hydrate them with the necessary data automatically.
+
+This page offers an alternative approach for configuring the database manually, instead of using the provided Terraform scripts.
+
+If you are having the database automatically created by terraform (default behavior), proceed to [install the application](./install.md).
 
 ## Sizing
 

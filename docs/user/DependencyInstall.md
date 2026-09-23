@@ -93,6 +93,8 @@ helm install linkerd ./helm/linkerd \
 
 ```
 
+> **Note:** If you're deploying Linkerd with a single node, make sure to alter the `.Values.controllerReplicas` value in the Helm chart to `1` to avoid scheduling issues.
+
 ### Kueue
 
 SAS Retrieval Agent Manager requires Kueue for workload management of vectorization jobs.
@@ -170,6 +172,8 @@ helm install nginx-ingress-nginx-controller \
     -f ./examples/dependencies/required/ingress-controllers/nginx.yaml \
     --create-namespace
 ```
+
+> **Note:** the IP range listed in the loadBalancerSourceRanges field of the NGINX values file should match the IP range of the clients that will be accessing the application; otherwise, requests may be blocked.
 
 #### Contour
 

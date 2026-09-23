@@ -99,7 +99,8 @@ docker run --rm --group-add root \
     --volume=$(pwd):/workspace \
     viya4-iac-azure \
     apply -auto-approve \
-    -var-file=/workspace/terraform.tfvars
+    -var-file=/workspace/terraform.tfvars \
+    -state=/workspace/terraform.tfstate
 ```
 
 ## Deploy PostgreSQL SSL Certificate
@@ -116,10 +117,42 @@ Microsoft:
 Then follow [Secure the database connection](./database.md#secure-the-database-connection) to
 convert the certificates, build the `cert.pem` bundle, and create the Kubernetes secret.
 
-## Next steps
+## Verify Azure Resources
 
-1. [Configure the database](./database.md) — enable the `pgcrypto` and `vector` extensions on the
-   Flexible Server.
+Run these Azure Command-Line Interface (Azure CLI) commands after the infrastructure deployment.
+
+First, verify the active Azure subscription:
+
+```bash
+az account show \
+    --query "{subscriptionName:name, subscriptionId:id}" \
+    --output table
+```
+
+Confirm that this output shows the subscription that contains the deployment.
+
+List the Azure Kubernetes Service (AKS) clusters in the active subscription:
+
+```bash
+az aks list \
+    --query "[].{name:name, resourceGroup:resourceGroup, provisioningState:provisioningState, location:location}" \
+    --output table
+```
+
+List the Azure Database for PostgreSQL Flexible Servers in the active subscription:
+
+```bash
+az postgres flexible-server list \
+    --query "[].{name:name, resourceGroup:resourceGroup, state:state, version:version, location:location}" \
+    --output table
+```
+
+Use the `Name` and `ResourceGroup` columns for subsequent Azure CLI commands. Verify that the
+expected AKS cluster and PostgreSQL server are in the output. If a resource is not in the output,
+verify the active subscription and the infrastructure deployment result.
+
+## Next steps
+1. [Verify the Azure resources](#verify-azure-resources).
 2. [Install dependencies](./user/DependencyInstall.md).
 3. [Install and upgrade](./install.md) — deploy the application.
 
@@ -148,7 +181,7 @@ az role assignment list --assignee <client-id>
 
 If AKS cluster creation fails, consider:
 
-- Checking Azure region availability for Standard_D16ds_v4 or Standard_D8ds_v4 nodes
+- Checking Azure region availability for Standard_D16s_v6 or Standard_D8s_v6 nodes
 - Verifying sufficient quota in your Azure subscription
 - Ensuring no naming conflicts with existing resources
 - Confirming network configuration allows cluster communication

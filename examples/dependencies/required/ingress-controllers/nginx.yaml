@@ -3,9 +3,9 @@ controller:
     ###### REQUIRED FOR AZURE DEPLOYMENTS ######
     # -- Azure deployment specific annotations for load balancer configuration
     # -- Provides health probe and DNS label configuration for Azure environments
-    # annotations:
-    #   service.beta.kubernetes.io/azure-load-balancer-health-probe-request-path: /healthz
-    #   service.beta.kubernetes.io/azure-dns-label-name: <your-dns-label>
+    annotations:
+      service.beta.kubernetes.io/azure-load-balancer-health-probe-request-path: /healthz
+      service.beta.kubernetes.io/azure-dns-label-name: <your-domain>
 
     # -- Set external traffic policy to Local to preserve client source IPs.
     # This allows accurate logging and IP-based access controls for ingress resources.
@@ -14,7 +14,7 @@ controller:
     
     # -- Restrict load balancer source IP ranges for enhanced security
     # -- Empty array allows all source IPs to access the load balancer
-    loadBalancerSourceRanges: []
+    loadBalancerSourceRanges: [10.0.0.0/8]
     # Reserved documentation address blocks. See RFC5737.
     #  - 10.0.0.0/8       # Required for azure internal services
     #  - 192.0.2.0/24     # TEST-NET-1
