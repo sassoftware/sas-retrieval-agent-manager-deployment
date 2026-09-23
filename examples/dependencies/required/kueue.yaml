@@ -12,19 +12,6 @@ controllerManager:
      # -- Enable Linkerd injection for the kueue controller manager pods.
      linkerd.io/inject: "enabled"
 
-# -- Kueue Visualization Components for dashboard and monitoring
-# -- Provides web-based visualization of queue status and workload management
-kueueViz:
- backend:
-   # -- Backend service for the Kueue visualization dashboard
-   # -- Handles API requests and data processing for the visualization interface
-   image: "registry.k8s.io/kueue/kueueviz-backend:main"
-   
- frontend:
-   # -- Frontend web interface for visualizing queue status and workloads
-   # -- Provides user interface for monitoring Kueue operations
-   image: "registry.k8s.io/kueue/kueueviz-frontend:main"
-
 # -- Naming configuration override for Kubernetes resources
 # -- Overrides the default chart name for resource naming
 # -- All Kubernetes resources under this chart will use 'kueue' as the base name
