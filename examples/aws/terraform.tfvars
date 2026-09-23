@@ -42,7 +42,7 @@ postgres_servers = {
     # instance_type          = "db.m5.2xlarge"
 
     storage_size            = 20                 # Storage in GB
-    server_version          = "15.4"             # PostgreSQL version
+    server_version          = "16"               # PostgreSQL version
 
     # PostgreSQL parameters (equivalent to postgresql_configurations)
     parameter_group_parameters = [

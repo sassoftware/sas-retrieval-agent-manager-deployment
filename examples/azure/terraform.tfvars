@@ -37,7 +37,7 @@ postgres_servers = {
     # Large Deployment DB Size
     # sku_name                     = "GP_Standard_D16ds_v5"
 
-    server_version                 = "15"
+    server_version                 = "16"
 
     # Necessary extensions for RAM to function
     # Extensions:
