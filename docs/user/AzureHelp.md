@@ -51,7 +51,7 @@ Enter a unique name for the Service Principal. The commands get the client ID an
 from the Service Principal creation result. The commands do not use the name of your signed-in
 user.
 
-Linux/macOS (Bash or zsh)
+Linux/macOS (Bash)
 
 ```bash
 az login
