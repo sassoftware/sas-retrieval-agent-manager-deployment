@@ -183,7 +183,7 @@ images:
     # required: true
     # @schema
     # -- Image tag (defaults to chart appVersion)
-    tag: "1.21.2-20260903.1788465410165"
+    tag: "1.21.3-20260922.1790111711534"
   # @schema
   # type: object
   # required: true
@@ -218,7 +218,7 @@ images:
     # required: true
     # @schema
     # -- Container image tag
-    tag: "1.14.1-20260902.1788370365424"
+    tag: "1.14.6-20260923.1790178164009"
   # @schema
   # type: object
   # required: true

@@ -55,4 +55,4 @@ name: sas-retrieval-agent-manager
 sources:
 - https://github.com/sassoftware/sas-retrieval-agent-manager-deployment
 type: application
-version: 2026.9.0
+version: 2026.9.1
