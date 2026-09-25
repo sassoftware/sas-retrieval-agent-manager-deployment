@@ -69,7 +69,7 @@ default_nodepool_min_nodes = 1
 default_nodepool_max_nodes = 5
 
 # AWS EC2 instance type (equivalent to Azure VM type)
-default_nodepool_vm_type      = "r6in.2xlarge"  # Equivalent to Standard_D16ds_v4
+default_nodepool_vm_type      = "r6in.2xlarge"  # Equivalent to Standard_D16s_v6
 node_pools = {}
 
 # VPC Configuration (AWS equivalent of Azure VNet)

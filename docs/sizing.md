@@ -67,9 +67,9 @@ that meets the vCPU and memory requirement for your tier is supported.
 
 | Tier       | Azure                             | AWS                            |
 |------------|-----------------------------------|--------------------------------|
-| **Small**  | `Standard_D8s_v5` (8 vCPU, 32 GiB)  | `r6in.2xlarge` (8 vCPU, 64 GiB)  |
-| **Medium** | `Standard_D8s_v5` (8 vCPU, 32 GiB)  | `r6in.2xlarge` (8 vCPU, 64 GiB)  |
-| **Large**  | `Standard_D16s_v5` (16 vCPU, 64 GiB) | `r6in.4xlarge` (16 vCPU, 128 GiB) |
+| **Small**  | `Standard_D8s_v6` (8 vCPU, 32 GiB)  | `r6in.2xlarge` (8 vCPU, 64 GiB)  |
+| **Medium** | `Standard_D8s_v6` (8 vCPU, 32 GiB)  | `r6in.2xlarge` (8 vCPU, 64 GiB)  |
+| **Large**  | `Standard_D16s_v6` (16 vCPU, 64 GiB) | `r6in.4xlarge` (16 vCPU, 128 GiB) |
 
 The two families differ in memory ratio, which is why the same tier looks different per provider:
 
@@ -83,7 +83,7 @@ To match the recommended figure on Azure, use a memory-optimized `E`-series inst
 where embedding workloads are light, a general purpose `m6i` instance meets the minimum.
 
 > **Note:** The shipped Terraform examples default to the recommended memory figure. The AWS example
-> uses `r6in.2xlarge` and the Azure example uses `Standard_d16s_v7`, both of which provide 64 GiB per
+uses `r6in.2xlarge` and the Azure example uses `Standard_D16s_v6`, both of which provide 64 GiB per
 > node.
 
 ## Pod limits per node

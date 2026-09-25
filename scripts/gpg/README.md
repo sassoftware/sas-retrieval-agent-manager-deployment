@@ -27,10 +27,22 @@ Run the appropriate script for your platform to generate GPG keys. This will cre
 ### Linux/Mac Example
 
 ```sh
-
 ./run-bootstrap-gpg.sh
-
 ```
+
+The script uses `~/.kube/config` by default. The script does not read the standard `KUBECONFIG`
+environment variable. Set `KUBECONFIG_PATH` when your Kubernetes configuration file is in a
+different location.
+
+The Azure infrastructure deployment writes the file to
+`<terraform-workspace>/<prefix>-aks-kubeconfig.conf`. Use the absolute path to that file:
+
+```sh
+KUBECONFIG_PATH=/absolute/path/to/viya4-iac-azure/your-prefix-aks-kubeconfig.conf \
+  ./run-bootstrap-gpg.sh
+```
+
+Replace `your-prefix` with the `prefix` value from your Azure `terraform.tfvars` file.
 
 ### Options
 

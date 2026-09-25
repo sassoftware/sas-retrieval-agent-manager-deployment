@@ -27,7 +27,7 @@ postgres_servers = {
   default = {
     # ****************  REQUIRED VARIABLES  ****************
     administrator_login            = "ram_admin"
-    administrator_password         = "1tsAB3aut1fulDay"
+    administrator_password         = "<change-me>"
     # Small Deployment DB Size
     sku_name                       = "GP_Standard_D4ds_v5"
 
@@ -70,12 +70,12 @@ default_nodepool_vm_type   = "Standard_d16s_v6"
 # Medium Deployment Defaults
 # default_nodepool_min_nodes = 2
 # default_nodepool_max_nodes = 6
-# default_nodepool_vm_type   = "Standard_d8s_v7"
+# default_nodepool_vm_type   = "Standard_d8s_v6"
 
 # Large Deployment Defaults
 # default_nodepool_min_nodes = 2
 # default_nodepool_max_nodes = 8
-# default_nodepool_vm_type   = "Standard_d16s_v7"
+# default_nodepool_vm_type   = "Standard_d16s_v6"
 
 
 aks_network_plugin         = "azure"

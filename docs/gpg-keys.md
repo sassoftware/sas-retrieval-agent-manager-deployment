@@ -39,6 +39,23 @@ Use the scripts in the
 [scripts/gpg directory](https://github.com/sassoftware/sas-retrieval-agent-manager-deployment/tree/main/scripts/gpg)
 to create the keys and apply them to the cluster as secrets and configmaps.
 
+The Linux and macOS script uses `~/.kube/config` by default. The script does not read the standard
+`KUBECONFIG` environment variable. Set `KUBECONFIG_PATH` when your Kubernetes configuration file
+is in a different location.
+
+The Azure infrastructure deployment writes the file to
+`<terraform-workspace>/<prefix>-aks-kubeconfig.conf`. Use the absolute path to that file:
+
+```bash
+# Linux or macOS, from scripts/gpg
+KUBECONFIG_PATH=/absolute/path/to/viya4-iac-azure/your-prefix-aks-kubeconfig.conf \
+	./run-bootstrap-gpg.sh
+```
+
+Replace `your-prefix` with the `prefix` value from your Azure `terraform.tfvars` file.
+
+If your Kubernetes configuration file is at `~/.kube/config`, run the default command:
+
 ```bash
 # Linux or macOS, from scripts/gpg
 ./run-bootstrap-gpg.sh
