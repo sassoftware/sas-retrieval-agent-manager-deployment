@@ -96,6 +96,7 @@ helm upgrade --install retrieval-agent-manager oci://ghcr.io/sassoftware/sas-ret
 
 ## Next steps
 
+- [Connecting RAM to Viya](./connecting-ram-to-viya.md) — connect RAM to Viya SSO and MCP tools servers.
 - [Identity and access](./identity-and-access.md) — connect an identity provider.
 - [LLM connections](./llm-connection/README.md) — connect a model.
 - [Monitoring](./monitoring/README.md) — collect logs, metrics, and traces.
