@@ -193,6 +193,10 @@ kubectl_cmd get namespace "$RAM_NAMESPACE" >/dev/null \
 kubectl_cmd get namespace "$VIYA_NAMESPACE" >/dev/null \
   || die "Viya namespace '$VIYA_NAMESPACE' does not exist."
 if [[ "$WORKFLOW_MODE" != mcp ]]; then
+  kubectl_cmd auth can-i get service --namespace "$VIYA_NAMESPACE" | grep -q '^yes$' \
+    || die "The current Kubernetes identity cannot read services in '$VIYA_NAMESPACE'."
+  kubectl_cmd auth can-i get secret --namespace "$VIYA_NAMESPACE" | grep -q '^yes$' \
+    || die "The current Kubernetes identity cannot read Secrets in '$VIYA_NAMESPACE'."
   kubectl_cmd auth can-i get pods --namespace "$VIYA_NAMESPACE" | grep -q '^yes$' \
     || die "The current Kubernetes identity cannot read pods in '$VIYA_NAMESPACE'."
   kubectl_cmd auth can-i delete pods --namespace "$VIYA_NAMESPACE" | grep -q '^yes$' \
@@ -204,6 +208,7 @@ helm status "$RAM_RELEASE" --namespace "$RAM_NAMESPACE" \
 
 permissions=('get secrets' 'create secrets')
 if [[ "$WORKFLOW_MODE" != mcp ]]; then
+  permissions+=('patch secrets')
   permissions+=(
     'create configmaps'
     'patch configmaps'
@@ -294,6 +299,7 @@ prompt_secret RAM_KC_PASSWORD 'RAM Keycloak administrator password: '
 
 case "$WORKFLOW_MODE" in
   sso)
+    configure_keycloak_saslogon_health_gate
     ensure_saslogon_issuer
     run_sso_setup
     ;;
@@ -302,6 +308,7 @@ case "$WORKFLOW_MODE" in
     run_mcp_setup
     ;;
   full)
+    configure_keycloak_saslogon_health_gate
     ensure_saslogon_issuer
     run_sso_setup
     run_home_directory_setup

@@ -209,9 +209,10 @@ kubernetes_secret_value() {
   local namespace=$1
   local secret=$2
   local key=$3
-  local encoded
+  local encoded jsonpath_key
+  jsonpath_key=${key//./\\.}
   encoded=$(kubectl_cmd get secret "$secret" --namespace "$namespace" \
-    --output "jsonpath={.data.${key}}") \
+    --output "jsonpath={.data.${jsonpath_key}}") \
     || die "Could not read key '$key' from Secret '$namespace/$secret'."
   [[ -n "$encoded" ]] || die "Secret '$namespace/$secret' has no value for '$key'."
   printf '%s' "$encoded" | base64 --decode

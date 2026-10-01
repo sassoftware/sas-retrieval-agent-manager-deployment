@@ -232,6 +232,107 @@ get_keycloak_admin_token() {
   [[ -n "$KC_TOKEN" ]] || die "Keycloak authentication returned an empty access token."
 }
 
+configure_keycloak_saslogon_health_gate() {
+  local deployment_name="${RAM_RELEASE}-keycloak"
+  local ca_secret_name=sas-viya-ca-certificate-secret
+  local ram_ca_secret_name=sas-logon-ca
+  local deployment service_json ca_file init_container ca_volume patch
+  local health_url="https://sas-logon-app.${VIYA_NAMESPACE}.svc.cluster.local:443/SASLogon/health"
+
+  service_json=$(kubectl_cmd get service sas-logon-app --namespace "$VIYA_NAMESPACE" \
+    --output json) \
+    || die "Could not read the sas-logon-app Service in '$VIYA_NAMESPACE'."
+  jq --exit-status \
+    'any(.spec.ports[]?; .port == 443 and ((.protocol // "TCP") == "TCP"))' \
+    <<<"$service_json" >/dev/null \
+    || die "The sas-logon-app Service must expose TCP port 443."
+
+  deployment=$(kubectl_cmd get deployment "$deployment_name" \
+    --namespace "$RAM_NAMESPACE" --output json) \
+    || die "Could not read Keycloak Deployment '$RAM_NAMESPACE/$deployment_name'."
+  ca_file="$TEMPORARY_DIRECTORY/sas-logon-ca.crt"
+  kubernetes_secret_value "$VIYA_NAMESPACE" "$ca_secret_name" ca.crt >"$ca_file"
+  [[ -s "$ca_file" ]] || die "The SAS Viya CA Secret has no ca.crt certificate."
+
+  if [[ "$CHECK_ONLY" == true ]]; then
+    jq --exit-status \
+      --arg health_url "$health_url" \
+      'any(.spec.template.spec.initContainers[]?;
+        .name == "wait-for-sas-logon"
+        and any(.env[]?; .name == "SAS_LOGON_HEALTH_URL" and .value == $health_url))
+       and any(.spec.template.spec.volumes[]?;
+        .name == "sas-logon-ca" and .secret.secretName == "sas-logon-ca")' \
+      <<<"$deployment" >/dev/null \
+      || die "Keycloak does not have the SAS Logon health gate configured."
+    printf 'Verified the Keycloak SAS Logon health gate.\n'
+    return
+  fi
+
+  kubectl_cmd create secret generic "$ram_ca_secret_name" \
+    --namespace "$RAM_NAMESPACE" \
+    --from-file=ca.crt="$ca_file" \
+    --dry-run=client --output yaml \
+    | kubectl_cmd apply --namespace "$RAM_NAMESPACE" --filename - >/dev/null
+
+  command_script=$(printf '%s\n' \
+    'echo "Waiting for SAS Logon at $SAS_LOGON_HEALTH_URL"' \
+    'while true; do' \
+    '  status=$(curl --silent --show-error --output /dev/null --write-out "%{http_code}" --cacert /etc/sas-logon-ca/ca.crt --connect-timeout 3 --max-time 5 "$SAS_LOGON_HEALTH_URL") || status=000' \
+    '  case "$status" in' \
+    '    2[0-9][0-9]|3[0-9][0-9]) echo "SAS Logon responded HTTP $status; starting RAM Keycloak."; break ;;' \
+    '  esac' \
+    '  echo "SAS Logon returned HTTP $status; retrying in 10 seconds."' \
+    '  sleep 10' \
+    'done')
+  init_container=$(jq --null-input \
+    --arg health_url "$health_url" --arg command_script "$command_script" \
+    '{name: "wait-for-sas-logon", image: "curlimages/curl:8.12.1",
+      imagePullPolicy: "IfNotPresent",
+      env: [{name: "SAS_LOGON_HEALTH_URL", value: $health_url}],
+      volumeMounts: [{name: "sas-logon-ca", mountPath: "/etc/sas-logon-ca", readOnly: true}],
+      command: ["/bin/sh", "-ec"], args: [$command_script],
+      resources: {requests: {cpu: "10m", memory: "32Mi"}, limits: {cpu: "100m", memory: "128Mi"}}}')
+  ca_volume=$(jq --null-input \
+    '{name: "sas-logon-ca", secret: {secretName: "sas-logon-ca", items: [{key: "ca.crt", path: "ca.crt"}]}}')
+  patch=$(jq --null-input \
+    --argjson deployment "$deployment" \
+    --argjson init_container "$init_container" \
+    --argjson ca_volume "$ca_volume" \
+    '($deployment.spec.template.spec.initContainers // []) as $containers
+     | ($containers | to_entries | map(select(.value.name == $init_container.name) | .key) | first) as $index
+     | ($deployment.spec.template.spec.volumes // []) as $volumes
+     | ($volumes | to_entries | map(select(.value.name == $ca_volume.name) | .key) | first) as $volume_index
+     | (if $index == null then
+          if ($deployment.spec.template.spec | has("initContainers")) then
+            [{op: "add", path: "/spec/template/spec/initContainers/-", value: $init_container}]
+          else
+            [{op: "add", path: "/spec/template/spec/initContainers", value: [$init_container]}]
+          end
+        else
+          [{op: "replace", path: ("/spec/template/spec/initContainers/" + ($index | tostring)), value: $init_container}]
+        end)
+     + (if ($deployment.spec.template.metadata | has("annotations")) then
+          [{op: "add", path: "/spec/template/metadata/annotations/config.linkerd.io~1skip-outbound-ports", value: "443"}]
+        else
+          [{op: "add", path: "/spec/template/metadata/annotations", value: {"config.linkerd.io/skip-outbound-ports": "443"}}]
+        end)
+     + (if $volume_index == null then
+          if ($deployment.spec.template.spec | has("volumes")) then
+            [{op: "add", path: "/spec/template/spec/volumes/-", value: $ca_volume}]
+          else
+            [{op: "add", path: "/spec/template/spec/volumes", value: [$ca_volume]}]
+          end
+        else
+          [{op: "replace", path: ("/spec/template/spec/volumes/" + ($volume_index | tostring)), value: $ca_volume}]
+        end)')
+
+  kubectl_cmd patch deployment "$deployment_name" --namespace "$RAM_NAMESPACE" \
+    --type=json --patch "$patch" >/dev/null
+  kubectl_cmd rollout status "deployment/$deployment_name" \
+    --namespace "$RAM_NAMESPACE" --timeout=20m
+  printf 'Configured the Keycloak SAS Logon health gate.\n'
+}
+
 prepare_sso_client_secret() {
   VIYA_CLIENT_SECRET_FILE="$TEMPORARY_DIRECTORY/viya-sso-client-secret"
   if kubectl_cmd get secret "$VIYA_SSO_SECRET_NAME" \
@@ -271,21 +372,20 @@ ensure_viya_sso_client() {
     '{
       client_id: $client_id,
       client_secret: $client_secret,
-      authorities: ["SASAdministrators"],
+      authorities: ["ram-admin-group", "ram-user-group"],
       authorized_grant_types: ["authorization_code", "refresh_token"],
       name: "RAM Keycloak",
       scope: ["openid", "uaa.user", "profile", "email"],
       redirect_uri: [$redirect_uri],
       autoapprove: true
     }')
-
   http_request GET "$VIYA_URL/SASLogon/oauth/clients/$encoded_client" "$VIYA_TOKEN" '' ''
   if [[ "$HTTP_STATUS" == 200 ]]; then
     if jq --exit-status \
       --arg client_id "$VIYA_SSO_CLIENT_ID" \
       --arg redirect_uri "$redirect_uri" \
       '(.client_id == $client_id)
-       and ((.authorities // []) == ["SASAdministrators"])
+       and ((.authorities // []) == ["ram-admin-group", "ram-user-group"])
        and ((.authorized_grant_types // []) | sort == ["authorization_code", "refresh_token"])
        and ((.scope // []) | sort == ["email", "openid", "profile", "uaa.user"])
        and ((.redirect_uri // []) == [$redirect_uri])
@@ -323,6 +423,27 @@ ensure_viya_sso_client() {
   http_request POST "$VIYA_URL/SASLogon/oauth/clients" "$VIYA_TOKEN" application/json "$body"
   expect_http "Create Viya OAuth client '$VIYA_SSO_CLIENT_ID'" 200 201
   printf 'Created Viya OAuth client %s.\n' "$VIYA_SSO_CLIENT_ID"
+}
+
+ensure_viya_sso_groups() {
+  local group_id encoded_group body
+  for group_id in ram-admin-group ram-user-group; do
+    encoded_group=$(jq --null-input --raw-output --arg value "$group_id" '$value | @uri')
+    http_request GET "$VIYA_URL/identities/groups/$encoded_group" "$VIYA_TOKEN" '' ''
+    if [[ "$HTTP_STATUS" == 200 ]]; then
+      printf 'Verified Viya group %s.\n' "$group_id"
+      continue
+    fi
+    [[ "$HTTP_STATUS" == 404 ]] \
+      || die "Viya group lookup returned HTTP $HTTP_STATUS: $(sanitized_error)"
+    [[ "$CHECK_ONLY" == false ]] \
+      || die "Viya group '$group_id' does not exist."
+    body=$(jq --null-input --arg id "$group_id" --arg name "$group_id" \
+      '{id: $id, name: $name, type: "group"}')
+    mcp_json_request POST "$VIYA_URL/identities/groups" "$VIYA_TOKEN" "$body"
+    expect_http "Create Viya group '$group_id'" 200 201
+    printf 'Created Viya group %s.\n' "$group_id"
+  done
 }
 
 ensure_viya_user_group_membership() {
@@ -510,7 +631,7 @@ remove_legacy_group_mappers() {
   http_request GET "$base/identity-provider/instances/$IDP_ALIAS/mappers" "$KC_TOKEN" '' ''
   expect_http 'Read Keycloak identity provider mappers' 200
   mappers=$(<"$RESPONSE_FILE")
-  for name in ram-admin-group-mapper ram-user-group-mapper; do
+  for name in ram-admin-mapper ram-user-mapper; do
     mapper_id=$(jq --raw-output --arg name "$name" \
       '.[] | select(.name == $name) | .id' <<<"$mappers")
     [[ -z "$mapper_id" ]] && continue
@@ -524,30 +645,36 @@ remove_legacy_group_mappers() {
 }
 
 ensure_keycloak_mappers() {
-  local base mapper_types admin_config user_config email_config
+  local base mapper_types admin_config user_config email_config claims
   base=$(keycloak_realm_url)
   http_request GET "$base/identity-provider/instances/$IDP_ALIAS/mapper-types" \
     "$KC_TOKEN" '' ''
   expect_http 'Read Keycloak mapper types' 200
   mapper_types=$(<"$RESPONSE_FILE")
   jq --exit-status \
-    'has("oidc-hardcoded-group-idp-mapper") and has("hardcoded-attribute-idp-mapper")' \
+    'has("oidc-advanced-group-idp-mapper") and has("hardcoded-attribute-idp-mapper")' \
     <<<"$mapper_types" >/dev/null \
-    || die "Keycloak does not provide the required hardcoded group and email mappers."
+    || die "Keycloak does not provide the required group and email mappers."
 
   ensure_keycloak_group_exists "$RAM_KC_ADMIN_GROUP"
   ensure_keycloak_group_exists "$RAM_KC_USER_GROUP"
   remove_legacy_group_mappers
 
-  admin_config=$(jq --null-input --arg group "/$RAM_KC_ADMIN_GROUP" \
-    '{syncMode: "INHERIT", group: $group}')
-  ensure_keycloak_mapper ram-admin-mapper \
-    oidc-hardcoded-group-idp-mapper "$admin_config"
+  claims=$(jq --null-input --arg value ram-admin-group \
+    '[{key: "authorities", value: $value}] | tostring')
+  admin_config=$(jq --null-input \
+    --arg group "/$RAM_KC_ADMIN_GROUP" --arg claims "$claims" \
+    '{syncMode: "INHERIT", claims: $claims, group: $group}')
+  ensure_keycloak_mapper ram-admin-group-mapper \
+    oidc-advanced-group-idp-mapper "$admin_config"
 
-  user_config=$(jq --null-input --arg group "/$RAM_KC_USER_GROUP" \
-    '{syncMode: "INHERIT", group: $group}')
-  ensure_keycloak_mapper ram-user-mapper \
-    oidc-hardcoded-group-idp-mapper "$user_config"
+  claims=$(jq --null-input --arg value ram-user-group \
+    '[{key: "authorities", value: $value}] | tostring')
+  user_config=$(jq --null-input \
+    --arg group "/$RAM_KC_USER_GROUP" --arg claims "$claims" \
+    '{syncMode: "INHERIT", claims: $claims, group: $group}')
+  ensure_keycloak_mapper ram-user-group-mapper \
+    oidc-advanced-group-idp-mapper "$user_config"
 
   email_config=$(jq --null-input \
     '{syncMode: "INHERIT", attribute: "emailVerified", "attribute.value": "true"}')
@@ -817,6 +944,7 @@ run_sso_setup() {
   get_viya_token
   get_keycloak_admin_token
   prepare_sso_client_secret
+  ensure_viya_sso_groups
   ensure_viya_sso_client
   ensure_keycloak_identity_provider
   ensure_keycloak_mappers
