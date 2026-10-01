@@ -46,7 +46,7 @@ ensure_viya_mcp_group() {
   http_request GET "$VIYA_URL/identities/groups/$encoded_group" "$VIYA_TOKEN" '' ''
   if [[ "$HTTP_STATUS" == 200 ]]; then
     jq --exit-status --arg id "$VIYA_MCP_CLIENT_ID" \
-      '(.id == $id) and (.type == "group")' "$RESPONSE_FILE" >/dev/null \
+      '.id == $id' "$RESPONSE_FILE" >/dev/null \
       || die "Viya group '$VIYA_MCP_CLIENT_ID' has conflicting configuration."
     printf 'Verified Viya group %s.\n' "$VIYA_MCP_CLIENT_ID"
     return

@@ -325,6 +325,32 @@ ensure_viya_sso_client() {
   printf 'Created Viya OAuth client %s.\n' "$VIYA_SSO_CLIENT_ID"
 }
 
+ensure_viya_user_group_membership() {
+  local membership=$1 user_id group_id encoded_user encoded_group
+  [[ "$membership" == *:* ]] \
+    || die "Each --viya-user-group value must use USER_ID:GROUP_ID."
+  user_id=${membership%%:*}
+  group_id=${membership#*:}
+  [[ -n "$user_id" && -n "$group_id" ]] \
+    || die "Each --viya-user-group value must contain a user ID and group ID."
+  encoded_user=$(jq --null-input --raw-output --arg value "$user_id" '$value | @uri')
+  encoded_group=$(jq --null-input --raw-output --arg value "$group_id" '$value | @uri')
+
+  if [[ "$CHECK_ONLY" == true ]]; then
+    http_request GET "$VIYA_URL/identities/groups/$encoded_group/userMembers/$encoded_user" \
+      "$VIYA_TOKEN" '' ''
+    expect_http "Verify Viya user '$user_id' in group '$group_id'" 200
+    printf 'Verified Viya user %s in group %s.\n' "$user_id" "$group_id"
+    return
+  fi
+
+  http_request PUT \
+    "$VIYA_URL/identities/groups/$encoded_group/userMembers/$encoded_user" \
+    "$VIYA_TOKEN" '' ''
+  expect_http "Add Viya user '$user_id' to group '$group_id'" 200 201 204
+  printf 'Added Viya user %s to group %s.\n' "$user_id" "$group_id"
+}
+
 keycloak_realm_url() {
   printf '%s/SASRetrievalAgentManager/auth/admin/realms/%s' "$RAM_URL" "$RAM_KC_REALM"
 }
@@ -463,9 +489,19 @@ ensure_keycloak_group_exists() {
   expect_http "Find Keycloak group '$group_name'" 200
   groups=$(<"$RESPONSE_FILE")
   group_path="/$group_name"
-  jq --exit-status --arg path "$group_path" \
-    'any(.[]; .path == $path)' <<<"$groups" >/dev/null \
-    || die "Keycloak group '$group_path' must exist before RAM group-mapper setup."
+  if jq --exit-status --arg path "$group_path" \
+    'any(.[]; .path == $path)' <<<"$groups" >/dev/null; then
+    printf 'Verified Keycloak group %s.\n' "$group_path"
+    return
+  fi
+
+  [[ "$CHECK_ONLY" == false ]] \
+    || die "Keycloak group '$group_path' does not exist."
+  local body
+  body=$(jq --null-input --arg name "$group_name" '{name: $name}')
+  http_request POST "$base/groups" "$KC_TOKEN" application/json "$body"
+  expect_http "Create Keycloak group '$group_path'" 201 204
+  printf 'Created Keycloak group %s.\n' "$group_path"
 }
 
 remove_legacy_group_mappers() {
@@ -630,7 +666,7 @@ ensure_token_exchange() {
       http_request PUT \
         "$base/clients/$realm_management_uuid/authz/resource-server/policy/client/$policy_id" \
         "$KC_TOKEN" application/json "$policy_body"
-      expect_http "Update token-exchange policy '$policy_name'" 200 204
+      expect_http "Update token-exchange policy '$policy_name'" 200 201 204
       printf 'Updated Keycloak token-exchange policy %s.\n' "$policy_name"
     fi
   else
@@ -664,7 +700,7 @@ ensure_token_exchange() {
   http_request PUT \
     "$base/clients/$realm_management_uuid/authz/resource-server/permission/scope/$permission_id" \
     "$KC_TOKEN" application/json "$permission_body"
-  expect_http 'Configure the token-exchange permission' 204
+  expect_http 'Configure the token-exchange permission' 201 204
   printf 'Configured the Keycloak token-exchange policy.\n'
 }
 
@@ -716,10 +752,16 @@ PY
       | kubectl_cmd apply --namespace "$RAM_NAMESPACE" --filename - >/dev/null
     kubectl_cmd rollout restart "deployment/$api_deployment" "deployment/$app_deployment" \
       --namespace "$RAM_NAMESPACE" >/dev/null
-    kubectl_cmd rollout status "deployment/$api_deployment" \
-      --namespace "$RAM_NAMESPACE" --timeout=90s
-    kubectl_cmd rollout status "deployment/$app_deployment" \
-      --namespace "$RAM_NAMESPACE" --timeout=90s
+    if ! kubectl_cmd rollout status "deployment/$api_deployment" \
+      --namespace "$RAM_NAMESPACE" --timeout=90s; then
+      report_oauth_proxy_rollout_failure "$api_deployment"
+      die "The RAM API deployment did not complete its rollout."
+    fi
+    if ! kubectl_cmd rollout status "deployment/$app_deployment" \
+      --namespace "$RAM_NAMESPACE" --timeout=90s; then
+      report_oauth_proxy_rollout_failure "$app_deployment"
+      die "The RAM application deployment did not complete its rollout."
+    fi
     printf 'Configured the RAM OAuth proxy login redirect.\n'
   fi
 
@@ -741,6 +783,35 @@ if parse_qs(urlsplit(locations[0]).query).get("kc_idp_hint") != [sys.argv[2]]:
 PY
 }
 
+report_oauth_proxy_rollout_failure() {
+  local deployment=$1 deployment_json selector
+  printf 'Collecting rollout diagnostics for deployment %s.\n' "$deployment" >&2
+  if ! deployment_json=$(kubectl_cmd get deployment "$deployment" \
+    --namespace "$RAM_NAMESPACE" --output json); then
+    printf 'Could not read deployment %s.\n' "$deployment" >&2
+    return
+  fi
+  jq --compact-output '
+    {name: .metadata.name, generation: .metadata.generation,
+     observedGeneration: .status.observedGeneration,
+     replicas: (.status.replicas // 0),
+     updatedReplicas: (.status.updatedReplicas // 0),
+     readyReplicas: (.status.readyReplicas // 0),
+     availableReplicas: (.status.availableReplicas // 0),
+     unavailableReplicas: (.status.unavailableReplicas // 0),
+     conditions: [(.status.conditions // [])[] | {type, status, reason, message}]}
+  ' <<<"$deployment_json" >&2 || true
+  selector=$(jq --raw-output '
+    .spec.selector.matchLabels | to_entries | map("\(.key)=\(.value)") | join(",")
+  ' <<<"$deployment_json" 2>/dev/null || true)
+  [[ -n "$selector" ]] || return
+  kubectl_cmd get events --namespace "$RAM_NAMESPACE" \
+    --field-selector "involvedObject.name=$deployment" --sort-by=.lastTimestamp \
+    --output wide >&2 || true
+  kubectl_cmd get pods --namespace "$RAM_NAMESPACE" \
+    --selector "$selector" --output wide >&2 || true
+}
+
 run_sso_setup() {
   printf 'Authenticating with SAS Viya and RAM Keycloak.\n'
   get_viya_token
@@ -753,5 +824,9 @@ run_sso_setup() {
   configure_broker_client
   ensure_token_exchange
   configure_oauth_proxy_redirect
+  local membership
+  for membership in "${VIYA_GROUP_MEMBERSHIPS[@]}"; do
+    ensure_viya_user_group_membership "$membership"
+  done
   printf 'RAM SSO with SAS Viya is configured.\n'
 }

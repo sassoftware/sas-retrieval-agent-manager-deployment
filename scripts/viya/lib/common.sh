@@ -53,7 +53,7 @@ prompt_secret() {
 
   if [[ -z "$value" ]]; then
     [[ -r /dev/tty ]] \
-      || die "Run this helper from a terminal to enter $variable_name."
+      || die "Run this script from a terminal to enter $variable_name."
     printf '%s' "$prompt" >/dev/tty
     IFS= read -r -s value </dev/tty || die "Could not read $variable_name."
     printf '\n' >/dev/tty
@@ -230,7 +230,7 @@ new_uuid() {
 }
 
 confirm_changes() {
-  [[ -r /dev/tty ]] || die "Run this helper from a terminal to confirm the changes."
+  [[ -r /dev/tty ]] || die "Run this script from a terminal to confirm the changes."
   printf 'Enter CONNECT to continue: ' >/dev/tty
   local answer
   IFS= read -r answer </dev/tty || die "Could not read the confirmation."

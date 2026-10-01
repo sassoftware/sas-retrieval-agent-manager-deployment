@@ -27,24 +27,26 @@ Usage:
     [options]
 
 Required options:
-  --context CONTEXT          Expected current Kubernetes context
   --viya-url URL             External SAS Viya URL
   --ram-url URL              External RAM URL
 
 Required for the full workflow and --mcp-only:
-  --mcp-image IMAGE:TAG      SAS MCP server image with an immutable tag or digest
+  --mcp-image IMAGE:TAG      SAS MCP server image with a tag or digest
 
 Options:
+  --context CONTEXT          Expected Kubernetes context (default: current context)
   --ram-namespace NAME       RAM namespace (default: retagentmgr)
   --viya-namespace NAME      SAS Viya namespace (default: viya)
   --release NAME             RAM Helm release (default: retrieval-agent-manager)
   --ca-file FILE             CA certificate bundle for RAM and SAS Viya HTTPS
+  --viya-user-group USER:GROUP
+                             Add a Viya user to a group after SSO setup
   --sso-only                 Run only the SAS Logon and RAM SSO stages
   --mcp-only                 Run only the MCP stages after verifying SSO
   --check-only               Verify an existing connection without changes
   -h, --help                 Show this help
 
-The helper requests the SAS boot and RAM Keycloak administrator passwords in
+The script requests the SAS boot and RAM Keycloak administrator passwords in
 the terminal. Do not enter either password as a command-line argument.
 EOF
 }
@@ -59,6 +61,7 @@ RAM_RELEASE=retrieval-agent-manager
 CA_CERT=
 CHECK_ONLY=false
 WORKFLOW_MODE=full
+VIYA_GROUP_MEMBERSHIPS=()
 
 while (( $# > 0 )); do
   case "$1" in
@@ -102,6 +105,11 @@ while (( $# > 0 )); do
       CA_CERT=$2
       shift 2
       ;;
+    --viya-user-group)
+      require_value "$1" "${2:-}"
+      VIYA_GROUP_MEMBERSHIPS+=("$2")
+      shift 2
+      ;;
     --sso-only)
       [[ "$WORKFLOW_MODE" == full ]] || die "--sso-only and --mcp-only cannot be used together."
       WORKFLOW_MODE=sso
@@ -126,31 +134,34 @@ while (( $# > 0 )); do
   esac
 done
 
-for variable_name in KUBE_CONTEXT VIYA_URL RAM_URL; do
-  [[ -n "${!variable_name}" ]] || die "$variable_name is required."
-done
+if [[ -z "$KUBE_CONTEXT" ]]; then
+  KUBE_CONTEXT=$(kubectl config current-context 2>/dev/null) \
+    || die "Could not read the current Kubernetes context."
+  [[ -n "$KUBE_CONTEXT" ]] || die "The current Kubernetes context is empty."
+fi
+
+[[ -n "$VIYA_URL" ]] || die "--viya-url is required."
+[[ -n "$RAM_URL" ]] || die "--ram-url is required."
 if [[ "$WORKFLOW_MODE" != sso ]]; then
-  [[ -n "$MCP_IMAGE" ]] || die "MCP_IMAGE is required unless --sso-only is used."
+  [[ -n "$MCP_IMAGE" ]] || die "--mcp-image is required unless --sso-only is used."
 fi
 
 VIYA_URL=$(trim_url "$VIYA_URL")
 RAM_URL=$(trim_url "$RAM_URL")
-validate_https_url VIYA_URL "$VIYA_URL"
-validate_https_url RAM_URL "$RAM_URL"
+validate_https_url --viya-url "$VIYA_URL"
+validate_https_url --ram-url "$RAM_URL"
 [[ "$VIYA_URL" =~ ^https://[^/?#[:space:]]+$ ]] \
-  || die "VIYA_URL must contain only a scheme and host."
+  || die "--viya-url must contain only a scheme and host."
 [[ "$RAM_URL" =~ ^https://[^/?#[:space:]]+$ ]] \
-  || die "RAM_URL must contain only a scheme and host."
+  || die "--ram-url must contain only a scheme and host."
 validate_kubernetes_name RAM_NAMESPACE "$RAM_NAMESPACE"
 validate_kubernetes_name VIYA_NAMESPACE "$VIYA_NAMESPACE"
 validate_kubernetes_name RAM_RELEASE "$RAM_RELEASE"
 [[ "$KUBE_CONTEXT" != *$'\n'* && "$KUBE_CONTEXT" != *$'\r'* ]] \
-  || die "KUBE_CONTEXT cannot contain a newline."
+  || die "--context cannot contain a newline."
 if [[ -n "$MCP_IMAGE" ]]; then
   [[ "$MCP_IMAGE" == *@sha256:* || "$MCP_IMAGE" == *:* ]] \
-    || die "MCP_IMAGE must include a tag or digest."
-  [[ "$MCP_IMAGE" != *:latest ]] \
-    || die "MCP_IMAGE must not use the mutable latest tag."
+    || die "--mcp-image must include a tag or digest."
 fi
 
 VIYA_USER=sasboot
@@ -182,9 +193,9 @@ kubectl_cmd get namespace "$RAM_NAMESPACE" >/dev/null \
 kubectl_cmd get namespace "$VIYA_NAMESPACE" >/dev/null \
   || die "Viya namespace '$VIYA_NAMESPACE' does not exist."
 if [[ "$WORKFLOW_MODE" != mcp ]]; then
-  kubectl_cmd auth can-i get pods --namespace "$VIYA_NAMESPACE" | grep --quiet '^yes$' \
+  kubectl_cmd auth can-i get pods --namespace "$VIYA_NAMESPACE" | grep -q '^yes$' \
     || die "The current Kubernetes identity cannot read pods in '$VIYA_NAMESPACE'."
-  kubectl_cmd auth can-i delete pods --namespace "$VIYA_NAMESPACE" | grep --quiet '^yes$' \
+  kubectl_cmd auth can-i delete pods --namespace "$VIYA_NAMESPACE" | grep -q '^yes$' \
     || die "The current Kubernetes identity cannot restart SAS Logon pods in '$VIYA_NAMESPACE'."
 fi
 helm status "$RAM_RELEASE" --namespace "$RAM_NAMESPACE" \
@@ -256,7 +267,7 @@ fi
 if [[ "$CHECK_ONLY" == false ]]; then
   cat <<'EOF'
 
-The helper will configure these items:
+  The script will configure these items:
 EOF
   case "$WORKFLOW_MODE" in
     sso)

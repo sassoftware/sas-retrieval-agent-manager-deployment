@@ -41,6 +41,10 @@ Before you run the script, confirm these requirements:
 - Exactly one Viya NFS home export ends in `/homes`.
 - The Kubernetes cluster can pull `alpine:3.20` and the selected SAS MCP server image.
 - The computer has Docker and access to the Kubernetes configuration file.
+- The script image includes `kubelogin` for AKS configurations that use the Kubernetes exec
+  credential plugin.
+- If the kubeconfig uses the Azure CLI `kubelogin` mode, the Linux wrapper uses temporary
+  device-code authentication. It does not change the kubeconfig file.
 - Your computer can connect to the external RAM and Viya HTTPS URLs.
 - The RAM Keycloak realm contains the `Admin` and `User` groups.
 - The RAM Keycloak server enables `admin-fine-grained-authz:v1` and `token-exchange`.
@@ -57,10 +61,10 @@ Provide these values when you run the script:
 
 | Input | Example | Description |
 | --- | --- | --- |
-| Kubernetes context | `aks-ram-prod` | The expected current context name. |
+| Kubernetes context | Current context | The current Kubernetes context. Use `--context` to select another context. |
 | Viya URL | `https://viya.example.com` | External SAS Viya URL. |
 | RAM URL | `https://ram.example.com` | External RAM URL. |
-| MCP image | `ghcr.io/sassoftware/sas-mcp-server:1.2.3` | MCP server image with a fixed version tag or digest. |
+| MCP image | `ghcr.io/sassoftware/sas-mcp-server:latest` | MCP server image with a tag or digest. |
 
 The script asks for these passwords in the terminal:
 
@@ -74,6 +78,7 @@ Optional inputs:
 
 | Option | Default | Description |
 | --- | --- | --- |
+| `--context` | Current context | Expected Kubernetes context. |
 | `--ram-namespace` | `retagentmgr` | RAM namespace. |
 | `--viya-namespace` | `viya` | SAS Viya namespace. |
 | `--release` | `retrieval-agent-manager` | RAM Helm release. |
@@ -82,7 +87,7 @@ Optional inputs:
 | `--mcp-only` | Full workflow | Verify existing SSO, then run only the MCP stages. |
 | `--check-only` | Off | Check existing resources without making changes. |
 
-Do not use the `latest` MCP image tag. Use an image tag that your organization has tested.
+Use an MCP image tag or digest that your organization has approved.
 
 ## Use on Linux or macOS
 
