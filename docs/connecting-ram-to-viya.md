@@ -7,8 +7,11 @@ nav_order: 10
 
 # Connecting RAM to Viya
 
-The scripts in `scripts/viya` connect SAS Retrieval Agent Manager (RAM) to SAS Viya. They
-configure RAM and Viya single sign-on (SSO), create the required OAuth clients, and configure the
-Model Context Protocol (MCP) tools servers.
+The `ram-viya-sso` repository is the source of truth for the SAS Retrieval
+Agent Manager (RAM) and SAS Viya single sign-on (SSO) integration. Use its
+`scripts/link_viya_identity.sh` and `scripts/enable_idp_token_exchange.py`
+scripts.
 
-For requirements and commands, read the [Viya scripts README](../scripts/viya/README.md).
+Read `ram-viya-sso/README.md` and `ram-viya-sso/docs/LINK_VIYA.md` for the
+requirements and commands. The old duplicate wrapper is documented in
+[the removed script directory](../scripts/viya/README.md).

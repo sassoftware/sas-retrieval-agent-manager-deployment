@@ -1,288 +1,102 @@
-# Connect RAM to SAS Viya
+We need to link Viya SSO and MCP server to RAM using already existing workflows, automations, and scripts.
 
-Use this script after you install SAS Retrieval Agent Manager (RAM). It connects RAM to a SAS Viya
-deployment. It also creates two Model Context Protocol (MCP) tools servers.
+## Scope
 
-The script uses the current Kubernetes configuration. It does not use an Azure subscription ID,
-resource group, cluster name, or hosting boundary.
+The Docker wrapper connects an existing SAS Viya deployment to an existing
+SAS Retrieval Agent Manager (RAM) cluster. Single sign-on (SSO) lets RAM use
+SASLogon for login. Model Context Protocol (MCP) lets a RAM tool server use
+the signed-in user's Viya token.
 
-## What the script changes
+The wrapper does not install RAM. It does not create Viya home directories.
+It does not add RAM to the Viya application list.
 
-The script performs these actions in order:
+## Before You Run
 
-1. Set SAS Logon `issuer.uri` to the RAM-facing SAS Logon URL.
-2. Restart SAS Logon and verify its token issuer.
-3. Connect RAM sign-in to SAS Viya single sign-on (SSO).
-4. Patch the RAM Keycloak init container to wait for SAS Logon over the Viya CA.
-5. Create or update the Viya OAuth client with the `ram-admin-group` and `ram-user-group` authorities.
-6. Configure the RAM Keycloak identity provider, authority group mappers, and token exchange.
-7. Update the RAM OAuth proxy login redirect and restart the RAM API and app deployments.
-7. Create missing Viya home directories.
-8. Create an OAuth client-credentials MCP tools server.
-9. Create a user-token MCP tools server.
-10. Register RAM in the Viya application menu.
+- Confirm the Kubernetes context and the RAM and Viya namespaces.
+- Confirm that the RAM API and app deployments and the SAS Logon deployment exist.
+- Use a Keycloak build with `token-exchange` and `admin-fine-grained-authz:v1`.
+	Use `identity-brokering-api:v2` if the RAM version needs that endpoint.
+- Use an MCP image that serves HTTP at port `8134` and path `/mcp`.
+	The image must accept `VIYA_ENDPOINT` and `ALLOW_RAW_BEARER`.
+- Install Docker, `kubectl`, and `jq` on the Linux host. For a Kubernetes
+	context that uses Azure CLI login, also install `az` and `kubelogin`.
+- Give the Kubernetes identity permission to read the existing RAM Secrets,
+	change the RAM oauth2-proxy ConfigMap, restart the RAM deployments, and
+	change the SAS Logon configuration and deployment.
 
-The script uses `kubectl`, Helm, HTTPS requests, and a temporary Kubernetes Job. It does not change
-the Azure subscription or create Azure resources.
+Create a private Docker environment file outside this directory. Set these
+values in that file. Use `NAME=value` lines without `export` or shell quotes.
+Do not put the file in version control.
 
-## Requirements
-
-Before you run the script, confirm these requirements:
-
-- RAM is installed in the selected Kubernetes cluster.
-- SAS Viya is available in the selected Kubernetes cluster.
-- The current context targets the intended cluster.
-- The current user can read Secrets and create or update the required resources in the `retagentmgr`
-  namespace.
-- The current user can read pods and persistent volumes in the Viya namespace.
-- The RAM namespace contains the `retrieval-agent-manager-keycloak-client-secret` and
-  `retrieval-agent-manager-keycloak-appadmin-secret` Secrets. The script reads their values but does
-  not print them.
-- The Viya namespace contains the `sas-viya-ca-certificate-secret` Secret with a `ca.crt` value.
-- The `sas-logon-app` Service exposes TCP port 443.
-- The Viya identity service returns a numeric UID and GID for each user.
-- Exactly one Viya NFS home export ends in `/homes`.
-- The Kubernetes cluster can pull `alpine:3.20` and the selected SAS MCP server image.
-- The computer has Docker and access to the Kubernetes configuration file.
-- The script image includes `kubelogin` for AKS configurations that use the Kubernetes exec
-  credential plugin.
-- If the kubeconfig uses the Azure CLI `kubelogin` mode, the Linux wrapper uses temporary
-  device-code authentication. It does not change the kubeconfig file.
-- Your computer can connect to the external RAM and Viya HTTPS URLs.
-- The RAM Keycloak realm contains the `Admin` and `User` groups.
-- The RAM Keycloak server enables `admin-fine-grained-authz:v1` and `token-exchange`.
-- Keycloak 26.7.0 or later is required for Identity Brokering API v2. The RAM API can use the
-  available v1 endpoint on earlier versions.
-
-The home-directory Job runs as user ID 0. It mounts the Viya home export with write access. It
-creates a directory only when that directory does not exist. It keeps existing directories. It skips
-users without an identifier or a numeric UID and GID.
-
-## Inputs
-
-Provide these values when you run the script:
-
-| Input | Example | Description |
-| --- | --- | --- |
-| Kubernetes context | Current context | The current Kubernetes context. Use `--context` to select another context. |
-| Viya URL | `https://viya.example.com` | External SAS Viya URL. |
-| RAM URL | `https://ram.example.com` | External RAM URL. |
-| MCP image | `ghcr.io/sassoftware/sas-mcp-server:latest` | MCP server image with a tag or digest. |
-
-The script asks for these passwords in the terminal:
-
-- SAS boot password for the `sasboot` user.
-- RAM Keycloak administrator password for the `kcAdmin` user.
-
-The script hides password input. Do not enter passwords in the command. Do not set passwords in
-environment variables.
-
-Optional inputs:
-
-| Option | Default | Description |
-| --- | --- | --- |
-| `--context` | Current context | Expected Kubernetes context. |
-| `--ram-namespace` | `retagentmgr` | RAM namespace. |
-| `--viya-namespace` | `viya` | SAS Viya namespace. |
-| `--release` | `retrieval-agent-manager` | RAM Helm release. |
-| `--ca-file` | No custom CA | CA certificate bundle for HTTPS verification. |
-| `--sso-only` | Full workflow | Run only the SAS Logon and RAM SSO stages. |
-| `--mcp-only` | Full workflow | Verify existing SSO, then run only the MCP stages. |
-| `--check-only` | Off | Check existing resources without making changes. |
-
-Use an MCP image tag or digest that your organization has approved.
-
-## Use on Linux or macOS
-
-Open a terminal in the `scripts/viya` directory.
-
-If the Kubernetes configuration file is not `~/.kube/config`, set `KUBECONFIG_PATH` to its absolute
-path:
-
-```bash
-export KUBECONFIG_PATH=/path/to/kubeconfig
-```
-
-To check the existing configuration without changes, run this command with the actual values:
-
-```bash
-./run-connect-ram-to-viya.sh \
-  --check-only \
-  --context <expected-context> \
-  --viya-url https://<viya-host> \
-  --ram-url https://<ram-host> \
-  --mcp-image ghcr.io/sassoftware/sas-mcp-server:<tested-version>
-```
-
-Check-only mode checks the current cluster, URLs, existing SSO and MCP resources, and the Viya home
-export. It does not create missing resources. It does not query the Viya application registry.
-
-Before you run the full script, verify the context and all input values. The script shows the target
-and the planned changes. Enter `CONNECT` in the terminal to approve the run. Then enter both
-passwords at the hidden prompts.
-
-```bash
-./run-connect-ram-to-viya.sh \
-  --context <expected-context> \
-  --viya-url https://<viya-host> \
-  --ram-url https://<ram-host> \
-  --mcp-image ghcr.io/sassoftware/sas-mcp-server:<tested-version>
-```
-
-For a private certificate authority, add `--ca-file` and the local certificate path:
-
-```bash
-./run-connect-ram-to-viya.sh \
-  --context <expected-context> \
-  --viya-url https://<viya-host> \
-  --ram-url https://<ram-host> \
-  --mcp-image ghcr.io/sassoftware/sas-mcp-server:<tested-version> \
-  --ca-file /path/to/ca-bundle.pem
-```
-
-The wrapper mounts the Kubernetes configuration and CA file as read-only files in the container.
-The wrapper builds the local `ram-connect-viya` image when it is not present. To rebuild it after you
-change the script files, set `RAM_CONNECT_VIYA_REBUILD=true` before you run the wrapper.
-
-To configure only SSO, add `--sso-only`. You do not need to provide `--mcp-image`.
-
-```bash
-./run-connect-ram-to-viya.sh \
-  --sso-only \
-  --context <expected-context> \
-  --viya-url https://<viya-host> \
-  --ram-url https://<ram-host>
-```
-
-To configure only MCP, add `--mcp-only`. The script checks the existing SSO configuration first.
-
-```bash
-./run-connect-ram-to-viya.sh \
-  --mcp-only \
-  --context <expected-context> \
-  --viya-url https://<viya-host> \
-  --ram-url https://<ram-host> \
-  --mcp-image ghcr.io/sassoftware/sas-mcp-server:<tested-version>
-```
-
-Do not use `--sso-only` and `--mcp-only` in the same command.
-
-## Use on Windows
-
-Open PowerShell in the `scripts\viya` directory.
-
-If the Kubernetes configuration file is not `%USERPROFILE%\.kube\config`, set its absolute path:
-
-```powershell
-$env:KUBECONFIG_PATH = "C:\path\to\kubeconfig"
-```
-
-To check the existing configuration without changes, run:
-
-```powershell
-.\run-connect-ram-to-viya.ps1 `
-  --check-only `
-  --context <expected-context> `
-  --viya-url https://<viya-host> `
-  --ram-url https://<ram-host> `
-  --mcp-image ghcr.io/sassoftware/sas-mcp-server:<tested-version>
-```
-
-To run the script, remove `--check-only`. Confirm the target and enter `CONNECT` when the script
-asks. Then enter both passwords at the hidden prompts.
-
-```powershell
-.\run-connect-ram-to-viya.ps1 `
-  --context <expected-context> `
-  --viya-url https://<viya-host> `
-  --ram-url https://<ram-host> `
-  --mcp-image ghcr.io/sassoftware/sas-mcp-server:<tested-version>
-```
-
-For a private certificate authority, add `--ca-file` and the local certificate path. The PowerShell
-wrapper mounts the file as read-only.
-
-Set `$env:RAM_CONNECT_VIYA_REBUILD = "true"` to rebuild the local image.
-
-## Resource names
-
-The script creates or checks these items:
-
-| System | Name |
+| Name | Value |
 | --- | --- |
-| Viya OAuth client | `ram-client`, with authority `SASAdministrators` |
-| Viya group and OAuth client | `ram-app` |
-| Keycloak group | `/Admin` |
-| Keycloak group | `/User` |
-| Keycloak authority group mapper | `ram-admin-group-mapper` |
-| Keycloak authority group mapper | `ram-user-group-mapper` |
-| Kubernetes Secret | `retrieval-agent-manager-viya-sso-client-secret` |
-| Kubernetes Secret | `retrieval-agent-manager-viya-mcp-client-secret` |
-| Keycloak identity provider | `viya-oidc` |
-| RAM MCP template and tools server | `sas-mcp-tools` |
-| RAM MCP template and tools server | `user-authenticated sas-mcp-tools` |
-| Viya application registry entry | `RetrievalAgentManager` |
+| `VIYA_URL` | External HTTPS origin for Viya, for example `https://viya.example.com` |
+| `VIYA_USER` | Viya administrator user |
+| `VIYA_PASSWORD` | Viya administrator password |
+| `VIYA_CLIENT_SECRET` | Secret for the Viya SSO OAuth client; do not use the manual script's default |
+| `RAM_URL` | External HTTPS origin for the existing RAM deployment |
+| `RAM_KC_PASSWORD` | RAM Keycloak administrator password |
+| `MCP_IMAGE` | Tagged SAS MCP server image available to the RAM cluster |
 
-The `ram-client` and `ram-app` client secrets are generated by the script and stored in the listed
-Kubernetes Secrets. The script does not display them.
+Optional values are `VIYA_CLIENT_ID`, `RAM_KC_USER`, `RAM_KC_REALM`,
+`RAM_KC_CLIENT_ID`, `IDP_ALIAS`, `RAM_KC_ADMIN_GROUP`, `RAM_KC_USER_GROUP`,
+`VIYA_NAMESPACE`, `RAM_NAMESPACE`, `RAM_RELEASE`, and `SSL_VERIFY`.
+The script reads `RAM_KC_REALM` and `RAM_KC_CLIENT_ID` from the existing
+RAM Secret. If you set either value, it must match the Secret.
+The default namespaces are `viya` and `retagentmgr`. The default RAM Helm
+release is `retrieval-agent-manager`. The default issuer is
+`{VIYA_URL}/SASLogon`. Set `ISSUER_URI` to a different external HTTPS
+`/SASLogon` URL only if RAM can reach it and Viya uses it for its tokens.
 
-Each federated user is placed in a Keycloak group from the Viya `authorities` claim. RAM checks the Viya `ram-admin-group` and `ram-user-group`
-membership for admin-only API access. The script does not assign administrator access to one selected
-user.
+From this directory, run:
 
-The script removes obsolete `ram-admin-group-mapper` and `ram-user-group-mapper` claim-based mappers
-when they exist.
+```bash
+bash run-viya-connection.sh \
+	--context <confirmed-context> \
+	--env-file /private/path/viya.env
+```
 
-The user-token tools server requires a RAM user who has signed in through Viya. Keycloak exchanges the
-user's Keycloak token for a fresh Viya token. The script sets the token-exchange permission and policy
-for `sas-ram-app`.
+For PowerShell 7, run:
 
-## Repeat runs and failures
+```powershell
+./run-viya-connection.ps1 -Context <confirmed-context> -EnvFile C:\private\viya.env
+```
 
-The script keeps matching resources. It stops when a resource has a different configuration. It does
-not delete or replace conflicting resources. Review the reported resource with your administrator
-before you run the script again.
+The PowerShell wrapper uses `-Kubeconfig FILE` for another Kubernetes
+configuration file. It does not require `jq` on the host. Use Linux containers
+in Docker Desktop. Enable host networking in Docker Desktop if required.
 
-If a stage fails, the script stops. It removes temporary home-directory Job resources when its
-process exits. Persistent Viya, Keycloak, Kubernetes, or RAM changes from completed earlier stages
-remain. Review those resources before you retry.
+Use `--kubeconfig FILE` if the selected context is in another Kubernetes
+configuration file. The wrapper builds a local Docker image. The wrapper
+uses the host network and mounts a temporary Kubernetes configuration file
+read-only. For Azure CLI login, it gets a short-lived token on the host.
+It removes the temporary files when Docker exits. Do not share the Docker
+environment file or the Kubernetes configuration file.
 
-Do not remove or change either generated OAuth client Secret after setup. A lost client secret can
-stop the related integration from working.
+## Changes Made
 
-## Verify the connection
+1. Check that the selected cluster has the existing RAM and SAS Logon resources.
+2. Set the SASLogon issuer through the SAS Configuration API if it differs.
+	 Restart SAS Logon and check a new token after a change.
+3. Run the attached `link_viya_identity.sh` without changes. Run
+	`enable_idp_token_exchange.sh`, which uses the same API calls and policy
+	settings as the original Python permission script. Check that
+	Keycloak stored the issuer and client from Viya.
+4. Set `kc_idp_hint` and the Viya JWT issuer in the shared RAM oauth2-proxy
+	 ConfigMap. Restart the RAM API and app deployments if the file changes.
+5. Create or check the `user-authenticated sas-mcp-tools` template and tool
+	 server in RAM. Publish the template and start the server. Stop on a
+	 same-named resource with different settings.
 
-After the script reports success:
+Confirm the MCP deployment is ready in RAM before you use its tools.
 
-1. Confirm that a fresh SAS Logon token has issuer `{RAM_URL}/SASLogon/oauth/token`.
-2. Open RAM and sign in through SAS Viya.
-3. Confirm that a Viya `SASAdministrators` user can use RAM administrator functions.
-4. Confirm that a regular Viya user cannot use RAM administrator functions.
-5. Confirm that RAM appears in the Viya application menu.
-6. In RAM, check that `sas-mcp-tools` is ready.
-7. In RAM, check that `user-authenticated sas-mcp-tools` is ready.
-8. Run an approved Viya tool through each tools server.
+A Helm upgrade can replace a direct ConfigMap change. Check the settings
+after an upgrade. The attached SSO scripts use `curl -k`. The token-exchange
+script does not verify TLS certificates unless `SSL_VERIFY=true` is set.
+Use this workflow only on a trusted network until certificate verification
+is configured for these scripts.
 
-The final tool checks are required. A successful API response does not prove that the MCP workload
-can call Viya or exchange a user token.
-
-## Security notes
-
-- Enter passwords only at the hidden prompts in the local terminal.
-- Do not share terminal recordings or logs that could contain authentication data.
-- The script verifies HTTPS certificates. Do not disable certificate verification.
-- The script stores generated client secrets in Kubernetes Secrets.
-- The home-directory Job needs write access to the Viya NFS home export and runs as user ID 0.
-- The script does not configure oauth2-proxy `extra_jwt_issuers`. Add this separate setting only if a
-  caller must send a raw Viya bearer token directly to the RAM API. The source guide describes this
-  optional path.
-- The MCP templates use `ALLOW_RAW_BEARER=true` to pass bearer tokens to the SAS MCP server. Review
-  this setting against your security policy before you run the script.
-
-## Files
-
-The Linux and macOS wrapper is `run-connect-ram-to-viya.sh`.
-
-The Windows wrapper is `run-connect-ram-to-viya.ps1`.
-
-Both wrappers build and run the local image from `Dockerfile`.
+Before a real user runs Viya compute through RAM, create that user's Viya
+home directory with the correct Viya UID and GID. The home-directory step
+is separate from this wrapper. Use the existing [connection check](tests/connection-test.py)
+from a Viya session after the user's groups and home directory are ready.
