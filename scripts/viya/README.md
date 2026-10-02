@@ -40,7 +40,8 @@ Do not put the file in version control.
 
 Optional values are `VIYA_CLIENT_ID`, `RAM_KC_USER`, `RAM_KC_REALM`,
 `RAM_KC_CLIENT_ID`, `IDP_ALIAS`, `RAM_KC_ADMIN_GROUP`, `RAM_KC_USER_GROUP`,
-`VIYA_NAMESPACE`, `RAM_NAMESPACE`, `RAM_RELEASE`, and `SSL_VERIFY`.
+`VIYA_NAMESPACE`, `RAM_NAMESPACE`, `RAM_RELEASE`, `ISSUER_URI`, and
+`SSL_VERIFY`.
 The script reads `RAM_KC_REALM` and `RAM_KC_CLIENT_ID` from the existing
 RAM Secret. If you set either value, it must match the Secret.
 The default namespaces are `viya` and `retagentmgr`. The default RAM Helm

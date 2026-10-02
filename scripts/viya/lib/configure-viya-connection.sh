@@ -146,6 +146,10 @@ import sys
 
 with open(sys.argv[1], encoding="utf-8") as source:
     items = json.load(source).get("items", [])
+if len(items) > 1:
+  raise SystemExit(
+    f"Expected at most one sas.logon.jwt configuration; found {len(items)}."
+  )
 if not items:
     print("CREATE")
 elif any(item.get("configuration", {}).get("issuer.uri") == sys.argv[2]
@@ -252,16 +256,44 @@ query.append(("kc_idp_hint", os.environ["IDP_ALIAS"]))
 url = urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(query), parts.fragment))
 content = content[:match.start()] + match.group(1) + url + match.group(3) + content[match.end():]
 
-bearer = re.findall(r'(?m)^\s*skip_jwt_bearer_tokens\s*=\s*true\s*$', content)
+bearer = re.findall(
+  r'(?m)^\s*skip_jwt_bearer_tokens\s*=\s*true\s*$',
+  content,
+)
 if len(bearer) != 1:
     raise SystemExit("oauth2-proxy must have skip_jwt_bearer_tokens = true.")
-issuers = re.compile(r'(?m)^(\s*extra_jwt_issuers\s*=\s*)([^\r\n]+)$')
-existing = list(issuers.finditer(content))
-desired = '"' + os.environ["ISSUER_URI"] + '/oauth/token=openid"'
-if len(existing) > 1 or (existing and existing[0].group(2).strip() != desired):
-    raise SystemExit("oauth2-proxy has a different extra_jwt_issuers value.")
-if not existing:
-    content = content.rstrip("\n") + "\nextra_jwt_issuers = " + desired + "\n"
+
+issuer_value = os.environ["ISSUER_URI"] + "/oauth/token=openid"
+issuer_key = issuer_value.rsplit("=", 1)[0]
+issuer_setting = re.compile(
+  r'(?m)^([ \t]*extra_jwt_issuers[ \t]*=[ \t]*")([^\"]*)("[ \t]*)$'
+)
+existing = list(issuer_setting.finditer(content))
+if len(existing) > 1:
+  raise SystemExit("oauth2-proxy has multiple extra_jwt_issuers settings.")
+
+configured_issuers = []
+if existing:
+  configured_issuers = [
+    value.strip()
+    for value in existing[0].group(2).split(",")
+    if value.strip()
+  ]
+
+configured_issuers = [
+  value
+  for value in configured_issuers
+  if value.split("=", 1)[0] != issuer_key
+]
+configured_issuers.append(issuer_value)
+updated_value = ",".join(configured_issuers)
+
+if existing:
+  match = existing[0]
+  replacement = match.group(1) + updated_value + match.group(3)
+  content = content[:match.start()] + replacement + content[match.end():]
+else:
+  content = content.rstrip("\n") + "\nextra_jwt_issuers = \"" + updated_value + "\"\n"
 config_file.write_text(content)
 PY
 
