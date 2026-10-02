@@ -13,7 +13,10 @@ die() {
   exit 1
 }
 
-for name in VIYA_URL RAM_URL KUBE_CONTEXT MCP_IMAGE; do
+RAM_KUBE_CONTEXT=${RAM_KUBE_CONTEXT:-${KUBE_CONTEXT:-}}
+RAM_KUBECONFIG=${RAM_KUBECONFIG:-${KUBECONFIG:-/root/.kube/config}}
+
+for name in VIYA_URL RAM_URL RAM_KUBE_CONTEXT MCP_IMAGE; do
   [[ -n "${!name:-}" ]] || die "Required environment variable unset: $name"
 done
 RAM_NAMESPACE=${RAM_NAMESPACE:-retagentmgr}
@@ -23,7 +26,7 @@ RAM_KC_CLIENT_ID=${RAM_KC_CLIENT_ID:-sas-ram-app}
 IDP_ALIAS=${IDP_ALIAS:-viya-oidc}
 RAM_API_URL="$RAM_URL/SASRetrievalAgentManager/api/v1"
 MCP_NAME='user-authenticated sas-mcp-tools'
-KUBECTL=(kubectl --context "$KUBE_CONTEXT" --namespace "$RAM_NAMESPACE")
+KUBECTL=(kubectl --kubeconfig "$RAM_KUBECONFIG" --context "$RAM_KUBE_CONTEXT" --namespace "$RAM_NAMESPACE")
 
 for executable in base64 curl jq kubectl python3; do
   command -v "$executable" >/dev/null 2>&1 || die "$executable is required."

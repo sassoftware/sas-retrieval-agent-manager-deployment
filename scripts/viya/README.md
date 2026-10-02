@@ -49,7 +49,8 @@ release is `retrieval-agent-manager`. The default issuer is
 `{VIYA_URL}/SASLogon`. Set `ISSUER_URI` to a different external HTTPS
 `/SASLogon` URL only if RAM can reach it and Viya uses it for its tokens.
 
-From this directory, run:
+Use one context and one Kubernetes configuration file when RAM and Viya share
+a cluster. Use `--context` and `--kubeconfig` for that case.
 
 ```bash
 bash run-viya-connection.sh \
@@ -57,22 +58,40 @@ bash run-viya-connection.sh \
 	--env-file /private/path/viya.env
 ```
 
-For PowerShell 7, run:
+Use separate contexts and configuration files when RAM and Viya use different
+clusters:
 
-```powershell
-./run-viya-connection.ps1 -Context <confirmed-context> -EnvFile C:\private\viya.env
+```bash
+bash run-viya-connection.sh \
+	--ram-context <ram-context> \
+	--viya-context <viya-context> \
+	--ram-kubeconfig /private/path/ram-kubeconfig \
+	--viya-kubeconfig /private/path/viya-kubeconfig \
+	--env-file /private/path/viya.env
 ```
 
-The PowerShell wrapper uses `-Kubeconfig FILE` for another Kubernetes
-configuration file. It does not require `jq` on the host. Use Linux containers
-in Docker Desktop. Enable host networking in Docker Desktop if required.
+For PowerShell 7, use `-Context` for a shared cluster or these parameters for
+separate clusters:
 
-Use `--kubeconfig FILE` if the selected context is in another Kubernetes
-configuration file. The wrapper builds a local Docker image. The wrapper
-uses the host network and mounts a temporary Kubernetes configuration file
-read-only. For Azure CLI login, it gets a short-lived token on the host.
-It removes the temporary files when Docker exits. Do not share the Docker
-environment file or the Kubernetes configuration file.
+```powershell
+./run-viya-connection.ps1 -RamContext <ram-context> -ViyaContext <viya-context> `
+	-RamKubeconfig C:\private\ram-kubeconfig `
+	-ViyaKubeconfig C:\private\viya-kubeconfig `
+	-EnvFile C:\private\viya.env
+```
+
+The PowerShell wrapper uses `-Kubeconfig FILE` as the shared configuration
+file. Use `-RamKubeconfig` and `-ViyaKubeconfig` for separate files. It does
+not require `jq` on the host. Use Linux containers in Docker Desktop. Enable
+host networking in Docker Desktop if required.
+
+Use `--kubeconfig FILE` as the shared configuration file. Use
+`--ram-kubeconfig FILE` and `--viya-kubeconfig FILE` for separate files. The
+wrapper builds a local Docker image. The wrapper uses the host network and
+mounts temporary Kubernetes configuration files read-only. For Azure CLI
+login, it gets a short-lived token on the host for each context. It removes
+the temporary files when Docker exits. Do not share the Docker environment
+file or the Kubernetes configuration files.
 
 ## Changes Made
 

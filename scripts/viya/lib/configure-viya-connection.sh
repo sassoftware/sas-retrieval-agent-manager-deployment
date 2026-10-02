@@ -15,7 +15,12 @@ if [[ "${1:-}" == --help || "${1:-}" == -h ]]; then
 fi
 (( $# == 0 )) || die "Unknown option: $1"
 
-for name in KUBE_CONTEXT VIYA_URL VIYA_USER VIYA_PASSWORD VIYA_CLIENT_SECRET \
+RAM_KUBE_CONTEXT=${RAM_KUBE_CONTEXT:-${KUBE_CONTEXT:-}}
+VIYA_KUBE_CONTEXT=${VIYA_KUBE_CONTEXT:-${KUBE_CONTEXT:-}}
+RAM_KUBECONFIG=${RAM_KUBECONFIG:-${KUBECONFIG:-/root/.kube/config}}
+VIYA_KUBECONFIG=${VIYA_KUBECONFIG:-${KUBECONFIG:-/root/.kube/config}}
+
+for name in RAM_KUBE_CONTEXT VIYA_KUBE_CONTEXT VIYA_URL VIYA_USER VIYA_PASSWORD VIYA_CLIENT_SECRET \
   RAM_URL RAM_KC_PASSWORD MCP_IMAGE; do
   [[ -n "${!name:-}" ]] || die "Required environment variable unset: $name"
 done
@@ -43,29 +48,33 @@ for name in RAM_NAMESPACE VIYA_NAMESPACE RAM_RELEASE; do
   [[ "${!name}" =~ ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$ ]] \
     || die "$name is not a valid Kubernetes name."
 done
-[[ "$KUBE_CONTEXT" != *$'\n'* && "$KUBE_CONTEXT" != *$'\r'* ]] \
-  || die 'KUBE_CONTEXT contains a newline.'
+for name in RAM_KUBE_CONTEXT VIYA_KUBE_CONTEXT; do
+  [[ "${!name}" != *$'\n'* && "${!name}" != *$'\r'* ]] \
+    || die "$name contains a newline."
+done
 
 export VIYA_URL RAM_URL ISSUER_URI RAM_NAMESPACE RAM_RELEASE IDP_ALIAS \
-  KUBE_CONTEXT MCP_IMAGE VIYA_NAMESPACE
-KUBECTL=(kubectl --context "$KUBE_CONTEXT")
+  RAM_KUBE_CONTEXT VIYA_KUBE_CONTEXT RAM_KUBECONFIG VIYA_KUBECONFIG \
+  MCP_IMAGE VIYA_NAMESPACE
+RAM_KUBECTL=(kubectl --kubeconfig "$RAM_KUBECONFIG" --context "$RAM_KUBE_CONTEXT")
+VIYA_KUBECTL=(kubectl --kubeconfig "$VIYA_KUBECONFIG" --context "$VIYA_KUBE_CONTEXT")
 
 for executable in base64 curl jq kubectl python3; do
   command -v "$executable" >/dev/null 2>&1 || die "$executable is required."
 done
 
-printf 'Kubernetes context: %s\nRAM namespace: %s\nViya namespace: %s\n' \
-  "$KUBE_CONTEXT" "$RAM_NAMESPACE" "$VIYA_NAMESPACE"
-"${KUBECTL[@]}" --namespace "$RAM_NAMESPACE" get deployment \
+printf 'RAM Kubernetes context: %s\nViya Kubernetes context: %s\nRAM namespace: %s\nViya namespace: %s\n' \
+  "$RAM_KUBE_CONTEXT" "$VIYA_KUBE_CONTEXT" "$RAM_NAMESPACE" "$VIYA_NAMESPACE"
+"${RAM_KUBECTL[@]}" --namespace "$RAM_NAMESPACE" get deployment \
   "${RAM_RELEASE}-api" "${RAM_RELEASE}-app" >/dev/null \
   || die 'The RAM deployments are not available in the selected cluster.'
-"${KUBECTL[@]}" --namespace "$RAM_NAMESPACE" get configmap \
+"${RAM_KUBECTL[@]}" --namespace "$RAM_NAMESPACE" get configmap \
   "${RAM_RELEASE}-oauth2-proxy" >/dev/null \
   || die 'The RAM oauth2-proxy ConfigMap is not available.'
-"${KUBECTL[@]}" --namespace "$RAM_NAMESPACE" get secret \
+"${RAM_KUBECTL[@]}" --namespace "$RAM_NAMESPACE" get secret \
   "${RAM_RELEASE}-keycloak-client-secret" "${RAM_RELEASE}-keycloak-appadmin-secret" \
   >/dev/null || die 'The RAM Keycloak Secrets are not available.'
-client_secret=$("${KUBECTL[@]}" --namespace "$RAM_NAMESPACE" get secret \
+client_secret=$("${RAM_KUBECTL[@]}" --namespace "$RAM_NAMESPACE" get secret \
   "${RAM_RELEASE}-keycloak-client-secret" -o json) \
   || die 'Could not read the RAM Keycloak client Secret.'
 cluster_realm=$(printf '%s' "$client_secret" | jq -er '.data.realm // empty' \
@@ -82,7 +91,7 @@ unset client_secret
   || die 'RAM_KC_CLIENT_ID does not match the selected RAM cluster.'
 export RAM_KC_REALM=$cluster_realm RAM_KC_CLIENT_ID=$cluster_client_id
 export EXCHANGE_CLIENT_ID=$RAM_KC_CLIENT_ID
-"${KUBECTL[@]}" --namespace "$VIYA_NAMESPACE" get deployment sas-logon-app \
+"${VIYA_KUBECTL[@]}" --namespace "$VIYA_NAMESPACE" get deployment sas-logon-app \
   >/dev/null || die 'SAS Logon is not available in the selected cluster.'
 
 umask 077
@@ -109,7 +118,7 @@ viya_token_issuer() {
 }
 
 set_viya_issuer() {
-  "${KUBECTL[@]}" --namespace "$VIYA_NAMESPACE" exec -i \
+  "${VIYA_KUBECTL[@]}" --namespace "$VIYA_NAMESPACE" exec -i \
     deployment/sas-logon-app -c sas-logon-app -- sh -s -- "$ISSUER_URI" <<'REMOTE_SCRIPT'
 set -eu
 issuer_uri=$1
@@ -187,8 +196,8 @@ if [ "$action" != MATCH ]; then
   esac
 fi
 REMOTE_SCRIPT
-  "${KUBECTL[@]}" --namespace "$VIYA_NAMESPACE" rollout restart deployment/sas-logon-app
-  "${KUBECTL[@]}" --namespace "$VIYA_NAMESPACE" rollout status \
+  "${VIYA_KUBECTL[@]}" --namespace "$VIYA_NAMESPACE" rollout restart deployment/sas-logon-app
+  "${VIYA_KUBECTL[@]}" --namespace "$VIYA_NAMESPACE" rollout status \
     deployment/sas-logon-app --timeout=180s
 }
 
@@ -228,7 +237,7 @@ bash "$SCRIPT_DIR/enable_idp_token_exchange.sh"
 
 config_name="${RAM_RELEASE}-oauth2-proxy"
 config_file="$temporary_directory/oauth2-proxy.cfg"
-"${KUBECTL[@]}" --namespace "$RAM_NAMESPACE" get configmap "$config_name" \
+"${RAM_KUBECTL[@]}" --namespace "$RAM_NAMESPACE" get configmap "$config_name" \
   -o jsonpath='{.data.oauth2-proxy\.cfg}' >"$config_file"
 [[ -s "$config_file" ]] || die 'The oauth2-proxy configuration is empty.'
 cp "$config_file" "$temporary_directory/original.cfg"
@@ -298,12 +307,12 @@ config_file.write_text(content)
 PY
 
 if ! cmp -s "$config_file" "$temporary_directory/original.cfg"; then
-  "${KUBECTL[@]}" --namespace "$RAM_NAMESPACE" create configmap "$config_name" \
+  "${RAM_KUBECTL[@]}" --namespace "$RAM_NAMESPACE" create configmap "$config_name" \
     --from-file="oauth2-proxy.cfg=$config_file" --dry-run=client -o yaml \
-    | "${KUBECTL[@]}" --namespace "$RAM_NAMESPACE" apply -f -
+    | "${RAM_KUBECTL[@]}" --namespace "$RAM_NAMESPACE" apply -f -
   for deployment in "${RAM_RELEASE}-api" "${RAM_RELEASE}-app"; do
-    "${KUBECTL[@]}" --namespace "$RAM_NAMESPACE" rollout restart "deployment/$deployment"
-    "${KUBECTL[@]}" --namespace "$RAM_NAMESPACE" rollout status \
+    "${RAM_KUBECTL[@]}" --namespace "$RAM_NAMESPACE" rollout restart "deployment/$deployment"
+    "${RAM_KUBECTL[@]}" --namespace "$RAM_NAMESPACE" rollout status \
       "deployment/$deployment" --timeout=180s
   done
 fi
