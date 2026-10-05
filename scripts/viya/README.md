@@ -1,6 +1,6 @@
 ## Purpose
 
-The Docker wrapper connects an existing SAS Viya deployment to an existing
+This script connects an existing SAS Viya deployment to an existing
 SAS Retrieval Agent Manager (RAM) cluster. Single sign-on (SSO) lets RAM use
 SASLogon for login. Model Context Protocol (MCP) lets a RAM tool server use
 either the signed-in user's Viya token or a Viya OAuth client credential.
