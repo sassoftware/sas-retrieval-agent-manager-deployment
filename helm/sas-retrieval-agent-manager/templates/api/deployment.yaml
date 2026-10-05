@@ -23,6 +23,9 @@ spec:
       {{- end }}
       labels:
         {{- include "api.labels" . | nindent 8 }}
+        {{- if .Values.api.config.azure_settings.azure_identity.enabled }}
+        azure.workload.identity/use: "true"
+        {{- end }}
         {{- with merge (.Values.api.podLabels | default dict) (.Values.podLabels | default dict) }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
