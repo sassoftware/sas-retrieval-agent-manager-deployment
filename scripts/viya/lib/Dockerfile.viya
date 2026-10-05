@@ -31,8 +31,9 @@ RUN apk add --no-cache \
       "${kubelogin_archive}.sha256" kubelogin
 
 WORKDIR /opt/ram-viya
-COPY configure-viya-connection.sh register-viya-mcp.sh link_viya_identity.sh \
-     enable_idp_token_exchange.sh ./
+COPY configure-viya-connection.sh register-viya-mcp.sh register-ram-with-viya.sh \
+     link_viya_identity.sh enable_idp_token_exchange.sh \
+     provision-viya-home-directories.sh create_home_directories_vk.sh ./
 RUN chmod 0755 ./*.sh
 
 ENTRYPOINT ["/bin/bash", "/opt/ram-viya/configure-viya-connection.sh"]

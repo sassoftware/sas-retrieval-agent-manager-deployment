@@ -10,12 +10,12 @@ usage() {
   cat <<'EOF'
 Connect SAS Viya identity and its MCP tools server to an existing RAM cluster.
 
-Usage: run-viya-connection.sh --env-file FILE [--context CONTEXT]
-  [--ram-context CONTEXT] [--viya-context CONTEXT]
-  [--kubeconfig FILE] [--ram-kubeconfig FILE] [--viya-kubeconfig FILE]
+Usage: run-viya-connection.sh --env-file FILE [--kubeconfig FILE]
+  [--ram-kubeconfig FILE] [--viya-kubeconfig FILE]
 
 The environment file must contain VIYA_URL, VIYA_USER, VIYA_PASSWORD,
-VIYA_CLIENT_SECRET, RAM_URL, RAM_KC_PASSWORD, and MCP_IMAGE.
+VIYA_CLIENT_SECRET, RAM_URL, RAM_KC_PASSWORD, and MCP_IMAGE. Set KUBE_CONTEXT
+for one shared cluster, or set both RAM_KUBE_CONTEXT and VIYA_KUBE_CONTEXT.
 EOF
 }
 
@@ -24,21 +24,15 @@ die() {
   exit 1
 }
 
-shared_context=
-ram_context=
-viya_context=
 shared_kubeconfig=$DEFAULT_KUBECONFIG_PATH
 ram_kubeconfig=
 viya_kubeconfig=
 environment_file=
 while (( $# > 0 )); do
   case "$1" in
-    --context|--ram-context|--viya-context|--env-file|--kubeconfig|--ram-kubeconfig|--viya-kubeconfig)
+    --env-file|--kubeconfig|--ram-kubeconfig|--viya-kubeconfig)
       [[ -n "${2:-}" ]] || die "$1 requires a value."
       case "$1" in
-        --context) shared_context=$2 ;;
-        --ram-context) ram_context=$2 ;;
-        --viya-context) viya_context=$2 ;;
         --env-file) environment_file=$2 ;;
         --kubeconfig) shared_kubeconfig=$2 ;;
         --ram-kubeconfig) ram_kubeconfig=$2 ;;
@@ -54,14 +48,36 @@ while (( $# > 0 )); do
   esac
 done
 
-ram_context=${ram_context:-$shared_context}
-viya_context=${viya_context:-$shared_context}
-ram_kubeconfig=${ram_kubeconfig:-$shared_kubeconfig}
-viya_kubeconfig=${viya_kubeconfig:-$shared_kubeconfig}
-[[ -n "$ram_context" ]] || die 'Set --context or --ram-context.'
-[[ -n "$viya_context" ]] || die 'Set --context or --viya-context.'
 [[ -n "$environment_file" && -f "$environment_file" ]] \
   || die '--env-file must name a file.'
+
+read_env_value() {
+  local requested_name=$1 line value= found=0
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    line=${line%$'\r'}
+    [[ "$line" == "$requested_name="* ]] || continue
+    (( found == 0 )) || die "Environment file has more than one $requested_name value."
+    value=${line#*=}
+    found=1
+  done < "$environment_file"
+  printf '%s' "$value"
+}
+
+shared_context=$(read_env_value KUBE_CONTEXT)
+ram_context=$(read_env_value RAM_KUBE_CONTEXT)
+viya_context=$(read_env_value VIYA_KUBE_CONTEXT)
+if [[ -n "$shared_context" ]]; then
+  [[ -z "$ram_context" && -z "$viya_context" ]] \
+    || die 'Set KUBE_CONTEXT or the separate RAM and Viya context values, not both.'
+  ram_context=$shared_context
+  viya_context=$shared_context
+else
+  [[ -n "$ram_context" && -n "$viya_context" ]] \
+    || die 'Set KUBE_CONTEXT or both RAM_KUBE_CONTEXT and VIYA_KUBE_CONTEXT in the environment file.'
+fi
+
+ram_kubeconfig=${ram_kubeconfig:-$shared_kubeconfig}
+viya_kubeconfig=${viya_kubeconfig:-$shared_kubeconfig}
 [[ "$ram_kubeconfig" != *:* && -f "$ram_kubeconfig" \
   && "$viya_kubeconfig" != *:* && -f "$viya_kubeconfig" ]] \
   || die 'Use one existing Kubernetes configuration file for each cluster.'

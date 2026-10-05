@@ -1,12 +1,9 @@
 #Requires -Version 7.0
 [CmdletBinding()]
 param(
-    [string]$Context,
     [Parameter(Mandatory = $true)][string]$EnvFile,
     [string]$Kubeconfig = $(if ($env:KUBECONFIG_PATH) { $env:KUBECONFIG_PATH } else { Join-Path $HOME '.kube/config' }),
     [string]$ImageName = $(if ($env:RAM_VIYA_IMAGE) { $env:RAM_VIYA_IMAGE } else { 'ram-viya-connect:local' }),
-    [string]$RamContext,
-    [string]$ViyaContext,
     [string]$RamKubeconfig,
     [string]$ViyaKubeconfig
 )
@@ -20,10 +17,32 @@ foreach ($commandName in @('docker', 'kubectl')) {
     }
 }
 $environmentPath = (Resolve-Path -LiteralPath $EnvFile).Path
-$resolvedRamContext = if ($RamContext) { $RamContext } else { $Context }
-$resolvedViyaContext = if ($ViyaContext) { $ViyaContext } else { $Context }
-if (-not $resolvedRamContext -or -not $resolvedViyaContext) {
-    throw 'Set Context or set both RamContext and ViyaContext.'
+$contextSettings = @{}
+foreach ($line in Get-Content -LiteralPath $environmentPath) {
+    $separator = $line.IndexOf('=')
+    if ($separator -le 0) { continue }
+    $name = $line.Substring(0, $separator)
+    if ($name -notin @('KUBE_CONTEXT', 'RAM_KUBE_CONTEXT', 'VIYA_KUBE_CONTEXT')) { continue }
+    if ($contextSettings.ContainsKey($name)) { throw "Environment file has more than one $name value." }
+    $contextSettings[$name] = $line.Substring($separator + 1)
+}
+$sharedContext = if ($contextSettings.ContainsKey('KUBE_CONTEXT')) { $contextSettings['KUBE_CONTEXT'] } else { '' }
+$ramContext = if ($contextSettings.ContainsKey('RAM_KUBE_CONTEXT')) { $contextSettings['RAM_KUBE_CONTEXT'] } else { '' }
+$viyaContext = if ($contextSettings.ContainsKey('VIYA_KUBE_CONTEXT')) { $contextSettings['VIYA_KUBE_CONTEXT'] } else { '' }
+if (-not [string]::IsNullOrWhiteSpace($sharedContext)) {
+    if (-not [string]::IsNullOrWhiteSpace($ramContext) -or
+        -not [string]::IsNullOrWhiteSpace($viyaContext)) {
+        throw 'Set KUBE_CONTEXT or the separate RAM and Viya context values, not both.'
+    }
+    $resolvedRamContext = $sharedContext
+    $resolvedViyaContext = $sharedContext
+} else {
+    if ([string]::IsNullOrWhiteSpace($ramContext) -or
+        [string]::IsNullOrWhiteSpace($viyaContext)) {
+        throw 'Set KUBE_CONTEXT or both RAM_KUBE_CONTEXT and VIYA_KUBE_CONTEXT in the environment file.'
+    }
+    $resolvedRamContext = $ramContext
+    $resolvedViyaContext = $viyaContext
 }
 $ramKubeconfigInput = if ($RamKubeconfig) { $RamKubeconfig } else { $Kubeconfig }
 $viyaKubeconfigInput = if ($ViyaKubeconfig) { $ViyaKubeconfig } else { $Kubeconfig }

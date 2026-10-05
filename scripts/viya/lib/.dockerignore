@@ -1,6 +1,9 @@
 *
 !Dockerfile.viya
 !configure-viya-connection.sh
+!register-ram-with-viya.sh
 !register-viya-mcp.sh
 !link_viya_identity.sh
 !enable_idp_token_exchange.sh
+!provision-viya-home-directories.sh
+!create_home_directories_vk.sh

@@ -33,11 +33,17 @@ RAM_NAMESPACE=${RAM_NAMESPACE:-retagentmgr}
 VIYA_NAMESPACE=${VIYA_NAMESPACE:-viya}
 RAM_RELEASE=${RAM_RELEASE:-retrieval-agent-manager}
 IDP_ALIAS=${IDP_ALIAS:-viya-oidc}
+MCP_CLIENT_ID=${MCP_CLIENT_ID:-ram-app}
+MCP_CLIENT_SECRET=${MCP_CLIENT_SECRET:-ram-secret}
 
 for name in VIYA_URL RAM_URL; do
   [[ "${!name}" =~ ^https://[^/?#[:space:]]+$ ]] \
     || die "$name must be an HTTPS URL with only a host."
 done
+[[ "$MCP_CLIENT_ID" =~ ^[A-Za-z0-9._-]+$ ]] \
+  || die 'MCP_CLIENT_ID contains unsupported characters.'
+[[ "$MCP_CLIENT_SECRET" != *$'\n'* && "$MCP_CLIENT_SECRET" != *$'\r'* ]] \
+  || die 'MCP_CLIENT_SECRET contains a newline.'
 [[ "$ISSUER_URI" =~ ^https://[^/?#[:space:]]+/SASLogon$ ]] \
   || die 'ISSUER_URI must end with /SASLogon on an HTTPS host.'
 [[ "$MCP_IMAGE" =~ ^[^[:space:]]+(:[A-Za-z0-9_.-]+|@sha256:[0-9a-f]{64})$ ]] \
@@ -55,7 +61,7 @@ done
 
 export VIYA_URL RAM_URL ISSUER_URI RAM_NAMESPACE RAM_RELEASE IDP_ALIAS \
   RAM_KUBE_CONTEXT VIYA_KUBE_CONTEXT RAM_KUBECONFIG VIYA_KUBECONFIG \
-  MCP_IMAGE VIYA_NAMESPACE
+  MCP_IMAGE VIYA_NAMESPACE MCP_CLIENT_ID MCP_CLIENT_SECRET
 RAM_KUBECTL=(kubectl --kubeconfig "$RAM_KUBECONFIG" --context "$RAM_KUBE_CONTEXT")
 VIYA_KUBECTL=(kubectl --kubeconfig "$VIYA_KUBECONFIG" --context "$VIYA_KUBE_CONTEXT")
 
@@ -97,6 +103,14 @@ export EXCHANGE_CLIENT_ID=$RAM_KC_CLIENT_ID
 umask 077
 temporary_directory=$(mktemp -d)
 trap 'rm -rf "$temporary_directory"' EXIT
+
+printf 'Provisioning Viya home directories...\n'
+KUBECONFIG="$VIYA_KUBECONFIG" \
+KUBE_CONTEXT="$VIYA_KUBE_CONTEXT" \
+PROVISION_NAMESPACE="$VIYA_NAMESPACE" \
+SASBOOT_PASSWORD="$VIYA_PASSWORD" \
+VIYA_USER="$VIYA_USER" \
+bash "$SCRIPT_DIR/provision-viya-home-directories.sh"
 
 viya_token_issuer() {
   local token payload
@@ -199,6 +213,75 @@ REMOTE_SCRIPT
   "${VIYA_KUBECTL[@]}" --namespace "$VIYA_NAMESPACE" rollout restart deployment/sas-logon-app
   "${VIYA_KUBECTL[@]}" --namespace "$VIYA_NAMESPACE" rollout status \
     deployment/sas-logon-app --timeout=180s
+}
+
+configure_mcp_oauth_client() {
+  local access_token http_status group_file client_file secret_file response_file
+  access_token=$(curl -ksSf -X POST "$VIYA_URL/SASLogon/oauth/token" \
+    -u 'sas.cli:' --data-urlencode 'grant_type=password' \
+    --data-urlencode "username=$VIYA_USER" \
+    --data-urlencode "password=$VIYA_PASSWORD" \
+    | jq -er '.access_token // empty') \
+    || die 'Could not get a Viya access token for the MCP OAuth client.'
+
+  group_file="$temporary_directory/mcp-client-group.json"
+  client_file="$temporary_directory/mcp-client.json"
+  secret_file="$temporary_directory/mcp-client-secret"
+  response_file="$temporary_directory/mcp-client-response.json"
+  printf '%s' "$MCP_CLIENT_SECRET" >"$secret_file"
+  jq -n --arg id "$MCP_CLIENT_ID" \
+    --arg name "RAM Application Group ($MCP_CLIENT_ID)" \
+    '{id: $id, name: $name}' >"$group_file"
+  http_status=$(curl -ksS -o "$response_file" -w '%{http_code}' \
+    -X POST "$VIYA_URL/identities/groups" \
+    -H "Authorization: Bearer $access_token" \
+    -H 'Content-Type: application/json' --data-binary "@$group_file") \
+    || die 'Could not create the Viya MCP OAuth group.'
+  case "$http_status" in
+    200|201|409) ;;
+    *) die "Viya MCP OAuth group creation returned HTTP $http_status." ;;
+  esac
+
+  jq -n --arg id "$MCP_CLIENT_ID" \
+    --rawfile secret "$secret_file" \
+    '{client_id: $id, client_secret: $secret, authorities: [$id],
+      authorized_grant_types: ["client_credentials"], uid: "2001", gid: "2001"}' \
+    >"$client_file"
+  http_status=$(curl -ksS -o "$response_file" -w '%{http_code}' \
+    -X POST "$VIYA_URL/SASLogon/oauth/clients" \
+    -H "Authorization: Bearer $access_token" \
+    -H 'Content-Type: application/json' --data-binary "@$client_file") \
+    || die 'Could not create the Viya MCP OAuth client.'
+  case "$http_status" in
+    201)
+      printf 'Created the Viya MCP OAuth client.\n'
+      ;;
+    409)
+      http_status=$(curl -ksS -o "$response_file" -w '%{http_code}' \
+        -X PUT "$VIYA_URL/SASLogon/oauth/clients/$MCP_CLIENT_ID" \
+        -H "Authorization: Bearer $access_token" \
+        -H 'Content-Type: application/json' --data-binary "@$client_file") \
+        || die 'Could not update the Viya MCP OAuth client.'
+      case "$http_status" in
+        200|201|204) ;;
+        *) die "Viya MCP OAuth client update returned HTTP $http_status." ;;
+      esac
+      jq -n --arg id "$MCP_CLIENT_ID" --rawfile secret "$secret_file" \
+        '{clientId: $id, secret: $secret}' >"$temporary_directory/mcp-client-secret.json"
+      http_status=$(curl -ksS -o "$response_file" -w '%{http_code}' \
+        -X PUT "$VIYA_URL/SASLogon/oauth/clients/$MCP_CLIENT_ID/secret" \
+        -H "Authorization: Bearer $access_token" \
+        -H 'Content-Type: application/json' \
+        --data-binary "@$temporary_directory/mcp-client-secret.json") \
+        || die 'Could not update the Viya MCP OAuth client secret.'
+      case "$http_status" in
+        200|201|204) ;;
+        *) die "Viya MCP OAuth client secret update returned HTTP $http_status." ;;
+      esac
+      printf 'Updated the existing Viya MCP OAuth client.\n'
+      ;;
+    *) die "Viya MCP OAuth client creation returned HTTP $http_status." ;;
+  esac
 }
 
 printf 'Checking the SAS Logon issuer...\n'
@@ -317,6 +400,13 @@ if ! cmp -s "$config_file" "$temporary_directory/original.cfg"; then
   done
 fi
 
-printf 'Registering the user-authenticated SAS MCP tools server...\n'
+printf 'Registering RAM in the Viya application registry...\n'
+bash "$SCRIPT_DIR/register-ram-with-viya.sh" \
+  --viya-url "$VIYA_URL" --username "$VIYA_USER"
+
+printf 'Configuring the Viya client for OAuth-authenticated MCP...\n'
+configure_mcp_oauth_client
+
+printf 'Registering the OAuth and user-authenticated SAS MCP tools servers...\n'
 bash "$SCRIPT_DIR/register-viya-mcp.sh"
-printf 'Configured Viya SSO and requested the SAS MCP tools server deployment in RAM.\n'
+printf 'Configured Viya SSO, registered RAM in the Viya application registry, and requested both SAS MCP tools server deployments in RAM.\n'
