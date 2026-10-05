@@ -112,3 +112,7 @@ file or the Kubernetes configuration files.
 	 templates and start both servers.
 
 Confirm the MCP deployment is ready in RAM before you use its tools.
+
+## Testing the Connection
+
+After completing the setup, you can test the connection between SAS Viya and RAM using the provided [connection check script](./tests/connection-test.py) in SAS Studio.
