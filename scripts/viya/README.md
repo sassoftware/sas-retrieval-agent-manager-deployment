@@ -1,5 +1,3 @@
-We need to link Viya SSO and MCP server to RAM using already existing workflows, automations, and scripts.
-
 ## Scope
 
 The Docker wrapper connects an existing SAS Viya deployment to an existing
