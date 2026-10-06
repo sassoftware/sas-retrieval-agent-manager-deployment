@@ -195,7 +195,7 @@ spec:
             - name: scripts
               readOnly: true
               mountPath: /config
-            - name: configuration
+            - name: monitoring-configuration
               readOnly: true
               mountPath: /postgrest-config
             - name: jwks
@@ -216,6 +216,9 @@ spec:
         - name: configuration
           configMap:
             name: {{ include "postgrest.fullname" . }}-configuration
+        - name: monitoring-configuration
+          configMap:
+            name: {{ include "postgrest.fullname" . }}-monitoring-configuration
         - name: scripts
           configMap:
             name: {{ include "postgrest.fullname" . }}-scripts

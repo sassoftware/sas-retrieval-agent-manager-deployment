@@ -70,3 +70,100 @@ data:
       fi
       sleep 300
     done
+  app_role_fix_sql: |-
+    -- ============================================================
+    -- 1. Schema (kept OUT of db-schemas so it's not REST-exposed)
+    -- ============================================================
+    SET search_path TO {{ .Values.db.init.config.application.schema }};
+
+    -- ============================================================
+    -- 2. The pre_request function
+    -- ============================================================
+    create or replace function pre_request()
+    returns void
+    language plpgsql
+    set search_path to {{ .Values.db.init.config.application.schema }}, pg_catalog
+    as $$
+    declare
+      claims json := current_setting('request.jwt.claims', true)::json;
+      roles  text[];
+    begin
+      select array_agg(value #>> '{}')
+      into roles
+      from json_array_elements(
+        coalesce(claims -> 'resource_access' -> '{{ .Values.iam.keycloak.config.clientId }}' -> 'roles', '[]'::json)
+      );
+
+      if current_user <> '{{ .Values.db.init.config.application.adminRole }}'
+        and '{{ .Values.db.init.config.application.adminRole }}' = any(roles)
+      then
+        raise log
+          'pre_request: admin role present in token, upgrading current_user=% to {{ .Values.db.init.config.application.adminRole }} (roles=%)',
+          current_user,
+          roles;
+
+        set local role {{ .Values.db.init.config.application.adminRole }};
+      else
+        raise log
+          'pre_request: no override, current_user=%, roles=%',
+          current_user,
+          roles;
+      end if;
+    end;
+    $$;
+
+    -- ============================================================
+    -- 4. Function execute grants (checked against current_user,
+    --    i.e. whichever role jwt-role-claim-key already switched to)
+    -- ============================================================
+    revoke execute on function pre_request() from public;
+    grant execute on function pre_request() to {{ .Values.db.init.config.application.adminRole }}, {{ .Values.db.init.config.application.userRole }};
+
+  monitoring_role_fix_sql: |-
+    -- ============================================================
+    -- 1. Schema (kept OUT of db-schemas so it's not REST-exposed)
+    -- ============================================================
+    SET search_path TO {{ .Values.db.init.config.monitoring.schema }};
+
+    -- ============================================================
+    -- 2. The pre_request function
+    -- ============================================================
+    create or replace function pre_request()
+    returns void
+    language plpgsql
+    set search_path to {{ .Values.db.init.config.monitoring.schema }}, pg_catalog
+    as $$
+    declare
+      claims json := current_setting('request.jwt.claims', true)::json;
+      roles  text[];
+    begin
+      select array_agg(value #>> '{}')
+      into roles
+      from json_array_elements(
+        coalesce(claims -> 'resource_access' -> '{{ .Values.iam.keycloak.config.clientId }}' -> 'roles', '[]'::json)
+      );
+
+      if current_user <> '{{ .Values.db.init.config.monitoring.adminRole }}'
+        and '{{ .Values.db.init.config.monitoring.adminRole }}' = any(roles)
+      then
+        raise log
+          'pre_request: admin role present in token, upgrading current_user=% to {{ .Values.db.init.config.monitoring.adminRole }} (roles=%)',
+          current_user,
+          roles;
+
+        set local role {{ .Values.db.init.config.monitoring.adminRole }};
+      else
+        raise log
+          'pre_request: no override, current_user=%, roles=%',
+          current_user,
+          roles;
+      end if;
+    end;
+    $$;
+
+    -- ============================================================
+    -- 4. Function execute grants (checked against current_user,
+    --    i.e. whichever role jwt-role-claim-key already switched to)
+    -- ============================================================
+    revoke execute on function pre_request() from public;
+    grant execute on function pre_request() to {{ .Values.db.init.config.monitoring.adminRole }}, {{ .Values.db.init.config.monitoring.userRole }};

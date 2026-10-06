@@ -9,6 +9,33 @@ metadata:
 data:
   postgrest.conf: |-
     db-aggregates-enabled = "true"
+    db-pre-request = "{{ .Values.db.init.config.application.schema }}.pre_request"
+
+    {{- range $k, $v := .Values.db.rest.config }}
+    {{ $k }} = {{ $v | toString | quote }}
+    {{- end }}
+
+    {{- if eq (hasKey .Values.db.rest.config "jwt-secret") false }}
+    jwt-secret = "@/jwks/certs.json"
+    {{- end }}
+
+    {{- if eq (hasKey .Values.db.rest.config "openapi-server-proxy-uri") false }}
+    openapi-server-proxy-uri = "https://{{ .Values.ingress.domain }}{{ first .Values.ingress.postgrest.paths }}"
+    {{- end }}
+    {{- if eq (hasKey .Values.db.rest.config "server-cors-allowed-origins") false }}
+    server-cors-allowed-origins = "https://{{ .Values.ingress.domain }}"
+    {{- end }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ printf "%s-monitoring-configuration" (include "postgrest.fullname" .) }}
+  labels:
+    {{- include "postgrest.labels" . | nindent 4 }}
+data:
+  postgrest.conf: |-
+    db-aggregates-enabled = "true"
+    db-pre-request = "{{ .Values.db.init.config.monitoring.schema }}.pre_request"
 
     {{- range $k, $v := .Values.db.rest.config }}
     {{ $k }} = {{ $v | toString | quote }}

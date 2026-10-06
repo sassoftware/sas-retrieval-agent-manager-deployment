@@ -1,0 +1,197 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "postgrest.fullname" . }}-role-update
+  labels:
+    {{- include "postgrest.labels" . | nindent 4 }}
+    ram-base-job: "true"
+  annotations:
+    argocd.argoproj.io/sync-options: Skip
+    helm.sh/hook-weight: "0"
+    helm.sh/hook: post-install, post-upgrade
+spec:
+  template:
+    metadata:
+      {{- with merge (.Values.db.rest.podAnnotations | default dict) (.Values.podAnnotations | default dict) }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "postgrest.labels" . | nindent 8 }}
+        {{- with merge (.Values.db.rest.podLabels | default dict) (.Values.podLabels | default dict) }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.images.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "postgrest.serviceAccountName" . }}
+      securityContext:
+        {{- include "ram.podSecurityContext" (list .Values.db.rest.podSecurityContext .Values.platform) | nindent 8 }}
+      initContainers:
+        - name: wait-for-db
+          command:
+            - "/bin/sh"
+            - "-c"
+            - "/scripts/wait_for_database.sh"
+          image: "{{- include "images.postgres" . -}}"
+          imagePullPolicy: {{ .Values.images.postgres.pullPolicy }}
+          env:
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  key: user
+                  name: {{ printf "%s-migration-db-credentials" (include "retrieval-agent-manager.fullname" .) }}
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: password
+                  name: {{ printf "%s-migration-db-credentials" (include "retrieval-agent-manager.fullname" .) }}
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  key: host
+                  name: {{ printf "%s-db-connection" (include "retrieval-agent-manager.fullname" .) }}
+            - name: DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  key: port
+                  name: {{ printf "%s-db-connection" (include "retrieval-agent-manager.fullname" .) }}
+            - name: DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  key: db
+                  name: {{ printf "%s-db-application" (include "retrieval-agent-manager.fullname" .) }}
+            - name: DB_SCHEMA
+              valueFrom:
+                configMapKeyRef:
+                  key: schema
+                  name: {{ printf "%s-db-application" (include "retrieval-agent-manager.fullname" .) }}
+          securityContext:
+            {{- include "ram.securityContext" (list .Values.db.rest.securityContext .Values.platform) | nindent 12 }}
+          resources:
+            {{- toYaml .Values.db.rest.resources | nindent 12 }}
+          volumeMounts:
+            - mountPath: "/scripts"
+              name: scripts
+              readOnly: true
+        - name: wait-for-monitoring-db
+          command:
+            - "/bin/sh"
+            - "-c"
+            - "/scripts/wait_for_database.sh"
+          image: "{{- include "images.postgres" . -}}"
+          imagePullPolicy: {{ .Values.images.postgres.pullPolicy }}
+          env:
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  key: user
+                  name: {{ printf "%s-migration-db-credentials" (include "retrieval-agent-manager.fullname" .) }}
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: password
+                  name: {{ printf "%s-migration-db-credentials" (include "retrieval-agent-manager.fullname" .) }}
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  key: host
+                  name: {{ printf "%s-db-connection" (include "retrieval-agent-manager.fullname" .) }}
+            - name: DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  key: port
+                  name: {{ printf "%s-db-connection" (include "retrieval-agent-manager.fullname" .) }}
+            - name: DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  key: db
+                  name: {{ printf "%s-db-monitoring" (include "retrieval-agent-manager.fullname" .) }}
+            - name: DB_SCHEMA
+              valueFrom:
+                configMapKeyRef:
+                  key: schema
+                  name: {{ printf "%s-db-monitoring" (include "retrieval-agent-manager.fullname" .) }}
+          securityContext:
+            {{- include "ram.securityContext" (list .Values.db.rest.securityContext .Values.platform) | nindent 12 }}
+          resources:
+            {{- toYaml .Values.db.rest.resources | nindent 12 }}
+          volumeMounts:
+            - mountPath: "/scripts"
+              name: scripts
+              readOnly: true
+      containers:
+        - name: postgrest-update
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              psql --dbname "$APP_DB_NAME" --set ON_ERROR_STOP=1 --file /scripts/app_role_fix_sql
+              psql --dbname "$MONITORING_DB_NAME" --set ON_ERROR_STOP=1 --file /scripts/monitoring_role_fix_sql
+          image: "{{- include "images.postgres" . -}}"
+          imagePullPolicy: {{ .Values.images.postgres.pullPolicy }}
+          env:
+            - name: PGUSER
+              valueFrom:
+                secretKeyRef:
+                  key: user
+                  name: {{ printf "%s-migration-db-credentials" (include "retrieval-agent-manager.fullname" .) }}
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: password
+                  name: {{ printf "%s-migration-db-credentials" (include "retrieval-agent-manager.fullname" .) }}
+            - name: PGHOST
+              valueFrom:
+                configMapKeyRef:
+                  key: host
+                  name: {{ printf "%s-db-connection" (include "retrieval-agent-manager.fullname" .) }}
+            - name: PGPORT
+              valueFrom:
+                configMapKeyRef:
+                  key: port
+                  name: {{ printf "%s-db-connection" (include "retrieval-agent-manager.fullname" .) }}
+            - name: PGSSLMODE
+              valueFrom:
+                configMapKeyRef:
+                  key: sslmode
+                  name: {{ printf "%s-db-connection" (include "retrieval-agent-manager.fullname" .) }}
+            - name: APP_DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  key: db
+                  name: {{ printf "%s-db-application" (include "retrieval-agent-manager.fullname" .) }}
+            - name: MONITORING_DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  key: db
+                  name: {{ printf "%s-db-monitoring" (include "retrieval-agent-manager.fullname" .) }}
+          securityContext:
+            {{- include "ram.securityContext" (list .Values.db.rest.securityContext .Values.platform) | nindent 12 }}
+          resources:
+            {{- toYaml .Values.db.rest.resources | nindent 12 }}
+          volumeMounts:
+            - mountPath: /scripts
+              name: scripts
+              readOnly: true
+      restartPolicy: OnFailure
+      {{- with .Values.db.rest.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.db.rest.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.db.rest.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+        - name: scripts
+          configMap:
+            name: {{ include "postgrest.fullname" . }}-scripts
+            defaultMode: 0555
+  backoffLimit: 10
