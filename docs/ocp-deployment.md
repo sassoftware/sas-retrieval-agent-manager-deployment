@@ -102,8 +102,21 @@ The chart creates a dedicated SCC named `<release-name>-scc` rather than using t
 - `runAsUser: RunAsAny` and `fsGroup: RunAsAny`
 - `MKNOD` dropped, no privileged containers, no host network, IPC, PID, ports, or host paths
 
-The accompanying `ClusterRoleBinding` binds the ServiceAccounts to the ClusterRole that OpenShift
-generates for the SCC (`system:openshift:scc:<release-name>-scc`).
+The chart also creates the ClusterRole `system:openshift:scc:<release-name>-scc`, which grants
+`use` on that SCC, and a `ClusterRoleBinding` that binds the ServiceAccounts to it.
+
+The SCC is granted to every ServiceAccount the chart runs pods under, regardless of whether the
+chart creates those ServiceAccounts or you pre-provision them. You therefore do not need a
+separate SCC step when using [pre-provisioned RBAC](./preprovisioned-rbac.md), as long as the
+`serviceAccount.name` values match the ServiceAccounts you created.
+
+> [!NOTE]
+> OpenShift does **not** generate a `system:openshift:scc:<name>` ClusterRole for custom SCCs.
+> Those ClusterRoles ship as static manifests for the built-in SCCs only (`anyuid`,
+> `restricted-v2`, and so on). Any binding you write for a custom SCC must reference a Role or
+> ClusterRole that you create yourself. A binding to a non-existent role is accepted by the API
+> server but grants nothing, and pods then fail admission with
+> `provider "<scc-name>": Forbidden: not usable by user or serviceaccount`.
 
 ### Namespace-scoped alternative
 
@@ -146,7 +159,8 @@ The manifests create:
 | Object | Scope | Purpose |
 |--------|-------|---------|
 | `SecurityContextConstraints` | Cluster | Identical to the one the chart would create, but with an empty `users` list |
-| `RoleBinding` | Namespace | Grants `system:openshift:scc:retrieval-agent-manager-scc` to the ServiceAccounts in your namespace only |
+| `Role` | Namespace | Grants `use` on `retrieval-agent-manager-scc` |
+| `RoleBinding` | Namespace | Binds that Role to the ServiceAccounts in your namespace only |
 
 **Step 3. Verify the binding before you install.**
 
@@ -154,12 +168,21 @@ The manifests create:
 # Confirm the SCC exists
 oc get scc retrieval-agent-manager-scc
 
-# Confirm the RoleBinding is namespaced, not cluster-wide
+# Confirm the Role and RoleBinding are namespaced, not cluster-wide
+oc get role retrieval-agent-manager-scc-use -n retagentmgr
 oc get rolebinding retrieval-agent-manager-scc-binding -n retagentmgr
 
-# Confirm a ServiceAccount can use the SCC
-oc adm policy who-can use scc retrieval-agent-manager-scc -n retagentmgr
+# Confirm a ServiceAccount can actually use the SCC. This must print "yes".
+# Repeat for each ServiceAccount listed in the RoleBinding.
+oc auth can-i use scc/retrieval-agent-manager-scc \
+  --as=system:serviceaccount:retagentmgr:retrieval-agent-manager-keycloak-realm-update \
+  -n retagentmgr
 ```
+
+> [!WARNING]
+> Do not rely on `oc adm policy who-can use scc <name>` alone. It reports RBAC subjects but does
+> not tell you whether the referenced role exists, so a binding to a missing ClusterRole can still
+> look correct. Use `oc auth can-i ... --as=system:serviceaccount:...` instead.
 
 **Step 4. Install the chart.**
 
@@ -169,6 +192,12 @@ install; the subjects resolve once the chart creates the ServiceAccounts.
 
 > **Note:** If you change the Helm release name or any `serviceAccount.name` value, update the
 > subject names in the manifests to match.
+
+> [!IMPORTANT]
+> Setting any `serviceAccount.create: false` means the chart does not create that ServiceAccount,
+> and for the API and database initialization components it also removes their Role and
+> RoleBinding. You must then provision those objects yourself. See
+> [Pre-provisioned RBAC](./preprovisioned-rbac.md) for the full inventory and an example manifest.
 
 ## Database Deployment
 

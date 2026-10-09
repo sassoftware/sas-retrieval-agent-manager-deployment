@@ -1,0 +1,261 @@
+# Pre-provisioned RBAC for SAS Retrieval Agent Manager.
+#
+# Apply this when your platform policy does not allow the Helm release to create
+# ServiceAccounts, Roles, or RoleBindings, and a separate team provisions them instead.
+# Every object below is namespace-scoped, so a namespace administrator can apply the whole file.
+#
+# See docs/preprovisioned-rbac.md for the full procedure, including the matching values.yaml
+# settings and the OpenShift SecurityContextConstraints grant, which is NOT in this file
+# because a SecurityContextConstraints object is cluster-scoped.
+#
+# ---------------------------------------------------------------------------------------------
+# BEFORE YOU APPLY
+# ---------------------------------------------------------------------------------------------
+# Replace, throughout this file:
+#   retagentmgr            -> your namespace
+#   retrieval-agent-manager -> your `name` value, or "<release>-sas-retrieval-agent-manager"
+#                              when `name` is unset
+#
+# Then set the matching names in your values file, with create: false. The names MUST match
+# exactly; the chart does not verify that a referenced ServiceAccount exists.
+#
+#   api.serviceAccount.name:          retrieval-agent-manager-api
+#   api.spawn.serviceAccount.name:    retrieval-agent-manager-api-spawn
+#   ui.serviceAccount.name:           retrieval-agent-manager-app
+#   iam.keycloak.serviceAccount.name: retrieval-agent-manager-keycloak
+#   db.rest.serviceAccount.name:      retrieval-agent-manager-postgrest
+#   db.init.serviceAccount.name:      retrieval-agent-manager-db-init
+#   db.migration.serviceAccount.name: retrieval-agent-manager-db-migration
+#
+# ---------------------------------------------------------------------------------------------
+# NOT IN THIS FILE
+# ---------------------------------------------------------------------------------------------
+# * <name>-db-migration-cleanup-sa, and its Role and RoleBinding. The chart creates these as
+#   Helm pre-upgrade hook objects and deletes them again when the hook succeeds. They are not
+#   gated on any serviceAccount.create value, so Helm always manages them. Do not pre-create
+#   them: Helm would refuse to adopt objects it does not own.
+# * The OpenShift SCC grant. It is cluster-scoped. See docs/ocp-deployment.md.
+#
+# ---------------------------------------------------------------------------------------------
+# REGENERATING THIS FILE FOR YOUR OWN VALUES
+# ---------------------------------------------------------------------------------------------
+# This file is a reference rendering. To produce the exact objects for your release, render the
+# chart with ServiceAccount creation forced on and keep only the RBAC kinds:
+#
+#   helm template <release> <chart> -f values.yaml --namespace <namespace> \
+#     --set api.serviceAccount.create=true \
+#     --set api.spawn.serviceAccount.create=true \
+#     --set ui.serviceAccount.create=true \
+#     --set iam.keycloak.serviceAccount.create=true \
+#     --set db.rest.serviceAccount.create=true \
+#     --set db.init.serviceAccount.create=true \
+#     --set db.migration.serviceAccount.create=true \
+#   | yq 'select(.kind == "ServiceAccount" or .kind == "Role" or .kind == "RoleBinding")
+#         | select(.metadata.annotations["helm.sh/hook"] == null)'
+#
+# The `helm.sh/hook` filter drops the cleanup objects described above.
+
+# =============================================================================================
+# ServiceAccounts
+# =============================================================================================
+---
+# Runs the API deployment. Also the identity the API authenticates as when it creates the
+# agent, evaluation, vectorization, and embedding workloads at run time.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: retrieval-agent-manager-api
+  namespace: retagentmgr
+automountServiceAccountToken: true
+---
+# Assigned to the pods the API spawns at run time. No pod in the Helm release uses it, so it
+# is easy to miss, but the spawned workloads fail to schedule without it.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: retrieval-agent-manager-api-spawn
+  namespace: retagentmgr
+automountServiceAccountToken: true
+---
+# Runs the UI deployment.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: retrieval-agent-manager-app
+  namespace: retagentmgr
+automountServiceAccountToken: true
+---
+# Runs the Keycloak deployment.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: retrieval-agent-manager-keycloak
+  namespace: retagentmgr
+automountServiceAccountToken: true
+---
+# Runs the post-install and post-upgrade Keycloak realm update job.
+# Derived from iam.keycloak.serviceAccount.name with a "-realm-update" suffix; it has no
+# values.yaml setting of its own.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: retrieval-agent-manager-keycloak-realm-update
+  namespace: retagentmgr
+automountServiceAccountToken: true
+---
+# Runs the PostgREST deployment and the PostgREST role update job.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: retrieval-agent-manager-postgrest
+  namespace: retagentmgr
+automountServiceAccountToken: true
+---
+# Runs the database initialization job. Only used when
+# db.init.config.database.initializeDb is "true", but harmless to create either way.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: retrieval-agent-manager-db-init
+  namespace: retagentmgr
+automountServiceAccountToken: true
+---
+# Runs the database migration job and the LLM and embedding model hydration jobs.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: retrieval-agent-manager-db-migration
+  namespace: retagentmgr
+automountServiceAccountToken: true
+
+# =============================================================================================
+# Roles
+# =============================================================================================
+---
+# The API manages the workloads it spawns: agent servers, evaluation runs, vectorization jobs,
+# embedding model servers, and MCP tool servers, plus their configmaps, services, and HPAs.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: retrieval-agent-manager-api
+  namespace: retagentmgr
+rules:
+  - apiGroups: ["batch"]
+    resources: ["cronjobs", "jobs", "jobs/status"]
+    verbs: ["create", "get", "list", "watch", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["pods/log"]
+    verbs: ["get"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["create", "delete", "list", "patch"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: ["retrieval-agent-manager-keycloak-certs"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["configmaps", "services"]
+    verbs: ["create", "get", "list", "watch", "delete", "patch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "deployments/status"]
+    verbs: ["create", "get", "list", "watch", "delete", "patch"]
+  - apiGroups: ["autoscaling"]
+    resources: ["horizontalpodautoscalers", "horizontalpodautoscalers/status"]
+    verbs: ["create", "get", "list", "watch", "delete", "patch"]
+---
+# Database initialization writes the generated credentials back into the admin secret.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: retrieval-agent-manager-db-init
+  namespace: retagentmgr
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: ["retrieval-agent-manager-admin-db-credentials"]
+    verbs: ["get", "patch"]
+---
+# PostgREST reads the Keycloak signing certificate to validate JWTs.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: retrieval-agent-manager-postgrest
+  namespace: retagentmgr
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: ["retrieval-agent-manager-keycloak-certs"]
+    verbs: ["get", "list"]
+---
+# Intentionally empty. The realm update job talks to the Keycloak admin API over HTTP and needs
+# no Kubernetes API access. The Role and RoleBinding exist so that the chart's RBAC shape stays
+# uniform across components. Keep them: a RoleBinding with no Role to reference would fail.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: retrieval-agent-manager-keycloak-realm-update
+  namespace: retagentmgr
+rules: []
+
+# =============================================================================================
+# RoleBindings
+# =============================================================================================
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: retrieval-agent-manager-api
+  namespace: retagentmgr
+subjects:
+  - kind: ServiceAccount
+    name: retrieval-agent-manager-api
+    namespace: retagentmgr
+roleRef:
+  kind: Role
+  name: retrieval-agent-manager-api
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: retrieval-agent-manager-db-init
+  namespace: retagentmgr
+subjects:
+  - kind: ServiceAccount
+    name: retrieval-agent-manager-db-init
+    namespace: retagentmgr
+roleRef:
+  kind: Role
+  name: retrieval-agent-manager-db-init
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: retrieval-agent-manager-postgrest
+  namespace: retagentmgr
+subjects:
+  - kind: ServiceAccount
+    name: retrieval-agent-manager-postgrest
+    namespace: retagentmgr
+roleRef:
+  kind: Role
+  name: retrieval-agent-manager-postgrest
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: retrieval-agent-manager-keycloak-realm-update
+  namespace: retagentmgr
+subjects:
+  - kind: ServiceAccount
+    name: retrieval-agent-manager-keycloak-realm-update
+    namespace: retagentmgr
+roleRef:
+  kind: Role
+  name: retrieval-agent-manager-keycloak-realm-update
+  apiGroup: rbac.authorization.k8s.io
