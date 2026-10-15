@@ -183,7 +183,7 @@ images:
     # required: true
     # @schema
     # -- Image tag (defaults to chart appVersion)
-    tag: "1.21.2-20260903.1788465410165"
+    tag: "1.22.14-20261008.1791469156044"
   # @schema
   # type: object
   # required: true
@@ -218,7 +218,7 @@ images:
     # required: true
     # @schema
     # -- Container image tag
-    tag: "1.14.1-20260902.1788370365424"
+    tag: "1.15.13-20261009.1791561788268"
   # @schema
   # type: object
   # required: true
@@ -253,7 +253,7 @@ images:
     # required: true
     # @schema
     # -- Container image tag for vectorization hub
-    tag: "1.16.5-20260908.1788896792547"
+    tag: "1.17.9-20261008.1791469424760"
   # @schema
   # type: object
   # required: true
@@ -288,7 +288,7 @@ images:
     # required: true
     # @schema
     # -- Container image tag for agent
-    tag: "1.19.2-20260910.1789056308417"
+    tag: "1.20.8-20261007.1791402863800"
   # @schema
   # type: object
   # required: true
@@ -323,7 +323,7 @@ images:
     # required: true
     # @schema
     # -- Container image tag for evaluation service
-    tag: "1.16.2-20260910.1789052612590"
+    tag: "1.17.6-20261009.1791559703775"
   # @schema
   # type: object
   # required: true
@@ -359,7 +359,7 @@ images:
     # required: true
     # @schema
     # -- Theme container image tag
-    tag: "1.3.11-20260902.1788339513249"
+    tag: "1.4.1-20261007.1791369309274"
   # @schema
   # type: object
   # required: true
@@ -394,7 +394,7 @@ images:
     # required: true
     # @schema
     # -- Goose container image tag
-    tag: "1.16.0-20260902.1788369584581"
+    tag: "1.17.6-20261007.1791404081426"
 
   # ============================================================================
   # 3RD PARTY IMAGES
