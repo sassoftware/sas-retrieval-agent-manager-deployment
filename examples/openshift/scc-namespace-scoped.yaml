@@ -1,14 +1,35 @@
-# SecurityContextConstraints and namespace-scoped RoleBinding for SAS Retrieval Agent Manager.
+# SecurityContextConstraints, ClusterRole and namespace-scoped RoleBinding for
+# SAS Retrieval Agent Manager.
 #
-# Use these manifests only when you cannot let the Helm chart create a ClusterRoleBinding.
-# Set `platform: kubernetes` and `ingress.classType: route` in your values file so the chart
-# does not render its own SCC and ClusterRoleBinding. See docs/ocp-deployment.md.
+# Use these manifests when your OpenShift administrator does not permit application installers to
+# create ClusterRoleBindings. A cluster administrator applies this file once, because the
+# SecurityContextConstraints and the ClusterRole are both cluster-scoped. The RoleBinding at the
+# end grants the SCC only inside the named namespace.
 #
-# Replace `retagentmgr` with your namespace and `retrieval-agent-manager` with your Helm
-# release name if you use different values.
+# In your values file:
 #
-# A SecurityContextConstraints object is cluster-scoped, so a cluster administrator must apply
-# this file once. The RoleBinding below grants the SCC only inside the named namespace.
+#   platform: openshift
+#
+#   security:
+#     scc:
+#       create: false        # this file creates the SCC and ClusterRole instead
+#       binding: namespace   # the release creates a RoleBinding, not a ClusterRoleBinding
+#
+# Keep `platform: openshift`. It is what makes the chart drop runAsUser, runAsGroup and
+# runAsNonRoot from the pod and container security contexts, so OpenShift assigns a UID from the
+# namespace range. `security.scc.*` is what controls the cluster-scoped objects, so you no longer
+# have to misreport the platform in order to suppress them.
+#
+# If you would rather let the chart create the SCC and the ClusterRoleBinding itself, do not apply
+# this file at all -- that is the default on OpenShift, and it needs cluster administrator
+# privileges.
+#
+# You can also apply the RoleBinding below by hand instead of letting the chart create it. Set
+# `security.scc.binding: none` in that case, so the release creates no binding at all.
+#
+# Replace `retagentmgr` with your namespace and `retrieval-agent-manager` with your Helm release
+# name if you use different values. If you change the SCC name here, set `security.scc.name` to
+# match.
 ---
 apiVersion: security.openshift.io/v1
 kind: SecurityContextConstraints
@@ -53,9 +74,47 @@ volumes:
   - projected
   - secret
 ---
+# OpenShift does NOT generate this ClusterRole for you.
+#
+# It ships `system:openshift:scc:<name>` ClusterRoles as static manifests for its BUILT-IN SCCs
+# only -- anyuid, restricted-v2 and so on. Nothing creates one for a custom SCC;
+# `oc adm policy add-scc-to-user` makes it on the fly, which is why the grant appears to work when
+# you use that command and not when you write the RBAC yourself.
+#
+# Verified on OpenShift 4.22: applying a custom SCC and then looking for the matching ClusterRole
+# returns NotFound.
+#
+# The binding below is accepted by the API server whether or not this role exists, and silently
+# grants nothing if it does not. Every pod in the release then fails admission with:
+#
+#   provider "retrieval-agent-manager-scc": Forbidden: not usable by user or serviceaccount
+#
+# Note that `oc adm policy who-can use scc retrieval-agent-manager-scc -n retagentmgr` does NOT
+# catch this. It reports the binding, not whether the role the binding names exists. Check
+# directly instead:
+#
+#   oc get clusterrole system:openshift:scc:retrieval-agent-manager-scc
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: system:openshift:scc:retrieval-agent-manager-scc
+rules:
+  - apiGroups:
+      - security.openshift.io
+    resources:
+      - securitycontextconstraints
+    resourceNames:
+      - retrieval-agent-manager-scc
+    verbs:
+      - use
+---
 # Grants the SCC above to the SAS Retrieval Agent Manager ServiceAccounts in this namespace only.
-# OpenShift generates the ClusterRole `system:openshift:scc:<scc-name>` automatically when the
-# SCC is created. A RoleBinding that references a ClusterRole grants it only in its own namespace.
+# A RoleBinding that references a ClusterRole grants that role only within its own namespace.
+#
+# Apply this document only if you set `security.scc.binding: none`. With
+# `security.scc.binding: namespace` the chart creates an equivalent RoleBinding itself and keeps
+# the subject list in step with the ServiceAccounts it actually runs pods under, which is the
+# safer option because that list changes between chart versions.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
@@ -76,20 +135,22 @@ subjects:
     name: retrieval-agent-manager-app
     namespace: retagentmgr
   - kind: ServiceAccount
+    name: retrieval-agent-manager-db-init
+    namespace: retagentmgr
+  - kind: ServiceAccount
+    name: retrieval-agent-manager-db-migration
+    namespace: retagentmgr
+  - kind: ServiceAccount
     name: retrieval-agent-manager-keycloak
     namespace: retagentmgr
   - kind: ServiceAccount
     name: retrieval-agent-manager-keycloak-realm-update
     namespace: retagentmgr
   - kind: ServiceAccount
-    name: retrieval-agent-manager-keycloak-job
-    namespace: retagentmgr
-  - kind: ServiceAccount
     name: retrieval-agent-manager-postgrest
     namespace: retagentmgr
+  # Runs only during `helm upgrade`, as the pre-upgrade cleanup hook. Omitting it does not break
+  # the first install, only every upgrade after it.
   - kind: ServiceAccount
-    name: retrieval-agent-manager-db-init
-    namespace: retagentmgr
-  - kind: ServiceAccount
-    name: retrieval-agent-manager-db-migration
+    name: retrieval-agent-manager-upgrade-cleanup
     namespace: retagentmgr
