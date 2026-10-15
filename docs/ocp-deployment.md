@@ -78,22 +78,48 @@ platform: openshift
 
 ```
 
-Setting `platform: openshift` changes three things:
+Setting `platform: openshift` changes four things:
 
-1. It creates a `SecurityContextConstraints` object and a `ClusterRoleBinding` that grants it to the
-   SAS Retrieval Agent Manager ServiceAccounts.
+1. It creates a `SecurityContextConstraints` object, a `ClusterRole`, and a `ClusterRoleBinding`
+   that grants the SCC to the SAS Retrieval Agent Manager ServiceAccounts.
 2. It removes `runAsUser`, `runAsGroup`, and `runAsNonRoot` from the pod and container security
    contexts, so OpenShift assigns a UID from the namespace range.
 3. It defaults `ingress.classType` to `route`, so the chart creates OpenShift `Route` objects
    instead of `Ingress` objects.
+4. It defaults the storage class name to `nfs-client` and does not create a `StorageClass`. If your
+   cluster names its storage differently, set `storage.customStorageClass.name` and the
+   `storageClassName` on each PVC. See [Storage](#storage) below.
+
+### Cluster-scoped objects
+
+Several objects the chart creates are cluster-scoped, which means installing with the defaults
+requires cluster administrator privileges. Each one can be turned off and supplied by an
+administrator instead, so that the release itself creates nothing outside its own namespace:
+
+| Object | Created when | Turn it off with |
+|--------|--------------|------------------|
+| `SecurityContextConstraints`, `ClusterRole` | `platform: openshift` | `security.scc.create: false` |
+| `ClusterRoleBinding` | `platform: openshift` | `security.scc.binding: namespace` (or `none`) |
+| `ResourceFlavor`, `ClusterQueue` | `integrations.kueue.enabled: true` | `integrations.kueue.createClusterObjects: false` |
+| `StorageClass` | `storage.customStorageClass.create: true` | `storage.customStorageClass.create: false` (the default on OpenShift) |
+| Istio `Gateway` (waypoint) | `integrations.istio.enabled: true` | `integrations.istio.enabled: false` |
+
+To confirm a given values file creates nothing cluster-scoped, render it and look for objects with
+no namespace:
+
+```bash
+helm template retrieval-agent-manager <chart> -n retagentmgr -f values.yaml \
+  | grep -E '^kind:' | sort | uniq -c
+```
 
 ## Security Context Constraints
 
 > [!IMPORTANT]
-> By default, an OpenShift installation creates two **cluster-scoped** objects: a
-> `SecurityContextConstraints` object and a `ClusterRoleBinding`. Installing the chart therefore
-> requires cluster administrator privileges. If you must keep all role bindings inside your
-> namespace, use the [namespace-scoped alternative](#namespace-scoped-alternative) below.
+> By default, an OpenShift installation creates three **cluster-scoped** objects: a
+> `SecurityContextConstraints` object, a `ClusterRole`, and a `ClusterRoleBinding`. Installing the
+> chart therefore requires cluster administrator privileges. If you must keep all role bindings
+> inside your namespace, use the [namespace-scoped alternative](#namespace-scoped-alternative)
+> below.
 
 The chart creates a dedicated SCC named `<release-name>-scc` rather than using the built-in
 `anyuid` or `privileged` SCCs. It grants only what the application needs:
@@ -102,8 +128,19 @@ The chart creates a dedicated SCC named `<release-name>-scc` rather than using t
 - `runAsUser: RunAsAny` and `fsGroup: RunAsAny`
 - `MKNOD` dropped, no privileged containers, no host network, IPC, PID, ports, or host paths
 
-The accompanying `ClusterRoleBinding` binds the ServiceAccounts to the ClusterRole that OpenShift
-generates for the SCC (`system:openshift:scc:<release-name>-scc`).
+> [!IMPORTANT]
+> OpenShift does **not** generate a `system:openshift:scc:<name>` ClusterRole for custom SCCs. It
+> ships those ClusterRoles as static manifests for its built-in SCCs only;
+> `oc adm policy add-scc-to-user` creates them on the fly for everything else. The chart therefore
+> creates the ClusterRole itself, alongside the SCC.
+>
+> This matters if you write the RBAC by hand. A `RoleBinding` or `ClusterRoleBinding` that
+> references a ClusterRole which does not exist is accepted by the API server and silently grants
+> nothing. Pods then fail admission with:
+>
+> ```text
+> provider "retrieval-agent-manager-scc": Forbidden: not usable by user or serviceaccount
+> ```
 
 ### Namespace-scoped alternative
 
@@ -114,28 +151,37 @@ own namespace, which avoids the cluster-wide grant.
 Use this approach when your OpenShift administrator does not permit `ClusterRoleBinding` objects for
 application workloads.
 
-**Step 1. Set the platform to `kubernetes`.**
-
-This stops the chart from rendering its own SCC and `ClusterRoleBinding`:
+**Step 1. Keep `platform: openshift`, and move the cluster-scoped objects out of the release.**
 
 ```yaml
-platform: kubernetes
+platform: openshift
 
-ingress:
-  # Required. Keeps OpenShift Routes, which platform "openshift" would otherwise select for you.
-  classType: route
+security:
+  scc:
+    # An administrator applies the SCC and its ClusterRole; see step 2.
+    create: false
+    # The release still grants itself the SCC, with a RoleBinding in its own namespace.
+    binding: namespace
 ```
 
-> **Important:** With `platform: kubernetes`, the chart keeps the explicit `runAsUser`,
-> `runAsGroup`, and `runAsNonRoot` values instead of letting OpenShift assign a UID. The SCC below
-> uses `runAsUser: RunAsAny`, which permits them. Do not remove that setting.
+> [!IMPORTANT]
+> Keep `platform: openshift`. Earlier versions of this guide told you to set
+> `platform: kubernetes` to suppress the SCC, but `platform` also controls the security contexts:
+> on `kubernetes` the chart keeps the explicit `runAsUser`, `runAsGroup`, and `runAsNonRoot`
+> values instead of letting OpenShift assign a UID from the namespace range. `security.scc.*`
+> separates the two concerns, so you no longer have to misreport the platform.
 
-**Step 2. Apply the SCC and the RoleBinding.**
+If you prefer to create the `RoleBinding` yourself, set `security.scc.binding: none` and apply the
+third document in the example file. Letting the chart create it is safer: the chart keeps the
+subject list in step with the ServiceAccounts it actually runs pods under, and that list changes
+between chart versions.
+
+**Step 2. Apply the SCC, the ClusterRole, and (optionally) the RoleBinding.**
 
 Use the
 [example manifests](https://github.com/sassoftware/sas-retrieval-agent-manager-deployment/blob/main/examples/openshift/scc-namespace-scoped.yaml).
 Edit the namespace and release name if you do not use the defaults, then apply the file. A cluster
-administrator must apply it, because the SCC itself is cluster-scoped:
+administrator must apply it, because the SCC and the ClusterRole are both cluster-scoped:
 
 ```bash
 oc apply -f scc-namespace-scoped.yaml
@@ -146,20 +192,27 @@ The manifests create:
 | Object | Scope | Purpose |
 |--------|-------|---------|
 | `SecurityContextConstraints` | Cluster | Identical to the one the chart would create, but with an empty `users` list |
-| `RoleBinding` | Namespace | Grants `system:openshift:scc:retrieval-agent-manager-scc` to the ServiceAccounts in your namespace only |
+| `ClusterRole` | Cluster | `system:openshift:scc:retrieval-agent-manager-scc`. OpenShift does not create this for custom SCCs; without it the binding grants nothing |
+| `RoleBinding` | Namespace | Grants the ClusterRole above to the ServiceAccounts in your namespace only. Apply this document only when `security.scc.binding: none` |
 
-**Step 3. Verify the binding before you install.**
+**Step 3. Verify the grant before you install.**
 
 ```bash
 # Confirm the SCC exists
 oc get scc retrieval-agent-manager-scc
 
+# Confirm the ClusterRole the binding references exists.
+# This is the check that catches the most common mistake: a binding that resolves to nothing.
+oc get clusterrole system:openshift:scc:retrieval-agent-manager-scc
+
 # Confirm the RoleBinding is namespaced, not cluster-wide
 oc get rolebinding retrieval-agent-manager-scc-binding -n retagentmgr
-
-# Confirm a ServiceAccount can use the SCC
-oc adm policy who-can use scc retrieval-agent-manager-scc -n retagentmgr
 ```
+
+> [!NOTE]
+> `oc adm policy who-can use scc retrieval-agent-manager-scc -n retagentmgr` does **not** detect a
+> missing ClusterRole. It reports the binding, not whether the role that the binding names exists.
+> Use the `oc get clusterrole` check above instead.
 
 **Step 4. Install the chart.**
 
@@ -168,7 +221,45 @@ ServiceAccount that does not exist yet. You can apply the manifests before or af
 install; the subjects resolve once the chart creates the ServiceAccounts.
 
 > **Note:** If you change the Helm release name or any `serviceAccount.name` value, update the
-> subject names in the manifests to match.
+> subject names in the manifests to match. If you change the SCC name, set `security.scc.name` so
+> the chart's binding points at it.
+
+## Storage
+
+The chart does not create a `StorageClass` on OpenShift. It defaults the name to `nfs-client`,
+which is unlikely to match your cluster. Check what is available and set the name explicitly:
+
+```bash
+oc get storageclass
+```
+
+```yaml
+storage:
+  customStorageClass:
+    create: false
+    name: <your-storage-class>
+  embedding:
+    pvc:
+      # Must support ReadWriteMany: the API and the vectorization workloads mount it together.
+      storageClassName: <your-rwx-storage-class>
+      accessModes:
+        - ReadWriteMany
+      size: 40Gi
+  application:
+    pvc:
+      storageClassName: <your-storage-class>
+      accessModes:
+        - ReadWriteOnce
+      size: 20Gi
+```
+
+If the embedding PVC stays `Pending` after installation, the storage class either does not exist or
+does not support `ReadWriteMany`:
+
+```bash
+oc get pvc -n retagentmgr
+oc describe pvc embedding-pv -n retagentmgr
+```
 
 ## Database Deployment
 
@@ -329,7 +420,14 @@ oc new-project retagentmgr
 oc create secret generic postgres-ssl-cert --from-file=cert.pem=combined-cert.pem -n retagentmgr
 ```
 
-> **Note:** It is critical to enter the name of the secret in the `postgreSQLCertSecret` key in the ram-values under global.configuration.vhub. For example, with this secret name, it would be: `postgreSQLCertSecret: 'postgres-ssl-cert'`
+> **Note:** It is critical to enter the name of the secret in the `postgreSQLCertSecret` key in the
+> values file, under `vectorizationHub.config`. For example:
+>
+> ```yaml
+> vectorizationHub:
+>   config:
+>     postgreSQLCertSecret: 'postgres-ssl-cert'
+> ```
 
 ## Kueue Deployment
 
@@ -342,21 +440,45 @@ On OpenShift, Kueue is installed via the **OpenShift Kueue Operator** rather tha
 3. Search for **"Kueue"** and select the **OpenShift Kueue Operator**.
 4. Click **Install** and accept the defaults.
 
-Alternatively, install via CLI:
+Alternatively, install via CLI. Confirm the package name and the channels your catalog offers
+first, because both are version-specific:
+
+```bash
+oc get packagemanifest -n openshift-marketplace kueue-operator \
+  -o jsonpath='{.status.defaultChannel}{"\n"}{range .status.channels[*]}{.name}{"\n"}{end}'
+```
+
+On OpenShift 4.22 this reports `stable-v1.4` as the default, alongside `stable-v1.3`. Substitute
+the channel you intend to use:
 
 ```bash
 cat <<EOF | oc apply -f -
 apiVersion: operators.coreos.com/v1alpha1
 kind: Subscription
 metadata:
-  name: openshift-kueue-operator
+  name: kueue-operator
   namespace: openshift-operators
 spec:
-  channel: stable
-  name: openshift-kueue-operator
+  channel: stable-v1.4
+  name: kueue-operator
   source: redhat-operators
   sourceNamespace: openshift-marketplace
 EOF
+```
+
+> [!IMPORTANT]
+> Install into `openshift-operators`. That namespace ships an `AllNamespaces` OperatorGroup, which
+> is what this operator requires. Installing it into a dedicated namespace with an `OwnNamespace`
+> OperatorGroup fails, and the CSV reports:
+>
+> ```text
+> OwnNamespace InstallModeType not supported, cannot configure to watch own namespace
+> ```
+
+Wait for the operator to report `Succeeded` before continuing:
+
+```bash
+oc get csv -n openshift-operators -l operators.coreos.com/kueue-operator.openshift-operators
 ```
 
 ### Create the Kueue Instance
@@ -401,24 +523,76 @@ oc label namespace retagentmgr kueue.openshift.io/managed=true
 
 > **Note:** Without this label, Kueue will not intercept and manage vectorization jobs in the `retagentmgr` namespace and those jobs will fail to be queued correctly.
 
+### Confirm the Kueue API version
+
+The chart renders the queue objects as `kueue.x-k8s.io/v1beta2` by default. Upstream Kueue served
+`v1beta1` until 0.15, and the OpenShift Kueue Operator lags upstream, so check what your cluster
+actually serves:
+
+```bash
+oc api-resources --api-group=kueue.x-k8s.io
+```
+
+If it reports `v1beta1`, set the API version in your values file. Rendering the wrong one fails
+with `no matches for kind "ClusterQueue"`:
+
+```yaml
+integrations:
+  kueue:
+    apiVersion: kueue.x-k8s.io/v1beta1
+```
+
 ### Deploy Kueue Queue Objects Manually
 
-By default, the SAS Retrieval Agent Manager Helm chart deploys the Kueue queue objects when `integrations.kueue.enabled` is `true`. If you set `integrations.kueue.enabled` to `false`, you must create the queue objects manually before SAS Retrieval Agent Manager starts vectorization jobs.
+Three objects are involved, and only one of them is namespaced:
 
-Use only one method to create these objects. If the Helm chart creates them, do not apply these manifests manually. If you apply these manifests manually, keep `integrations.kueue.enabled` set to `false`.
+| Object | Scope |
+|--------|-------|
+| `ResourceFlavor` | Cluster |
+| `ClusterQueue` | Cluster |
+| `LocalQueue` | Namespace |
 
-Use the
-[example queue manifests](https://github.com/sassoftware/sas-retrieval-agent-manager-deployment/blob/main/examples/dependencies/required/kueue-queues.yaml).
-They declare the same `ResourceFlavor`, `ClusterQueue`, and `LocalQueue` objects with the default
-values from the Helm chart. Edit the namespace and the quotas to match your cluster, then apply the
-file:
+Choose the mode that matches what your cluster permits. Never let the chart and the manifests
+create the same object: the names collide, and Helm refuses to adopt objects it does not own.
+
+**The chart manages everything (default).** Requires cluster administrator privileges.
+
+```yaml
+integrations:
+  kueue:
+    enabled: true
+```
+
+**An administrator owns the cluster-scoped objects.** Use this when application installers may not
+create cluster-scoped objects. The release still creates the namespaced `LocalQueue`, which is what
+binds its namespace to the quota.
+
+```yaml
+integrations:
+  kueue:
+    enabled: true
+    createClusterObjects: false
+```
+
+Apply only the `ResourceFlavor` and `ClusterQueue` documents from the
+[example queue manifests](https://github.com/sassoftware/sas-retrieval-agent-manager-deployment/blob/main/examples/dependencies/required/kueue-queues.yaml),
+and delete the `LocalQueue` document before applying.
+
+**You manage everything.** Set `integrations.kueue.enabled: false` and apply the whole example file.
 
 ```bash
 oc apply -f kueue-queues.yaml
 ```
 
-> **Note:** Match the `ClusterQueue` quotas to the capacity of the cluster you built. See
+> [!NOTE]
+> Match the `ClusterQueue` quotas to the capacity of the cluster you built. See
 > [Job scheduling quotas](./sizing.md#job-scheduling-quotas).
+
+> [!IMPORTANT]
+> The `ClusterQueue` must select the namespace you install into. A selector that does not match is
+> not reported as an error: the `LocalQueue` simply never admits anything, and the vectorization
+> and evaluation jobs sit `Pending` with no event explaining why. If you create the `ClusterQueue`
+> yourself, confirm its `spec.namespaceSelector` matches `retagentmgr`.
 
 Verify that the objects are created:
 
@@ -426,6 +600,12 @@ Verify that the objects are created:
 oc get resourceflavor retrieval-agent-manager
 oc get clusterqueue cluster-queue
 oc -n retagentmgr get localqueue genai-queue
+```
+
+The `LocalQueue` should report the `ClusterQueue` as active:
+
+```bash
+oc -n retagentmgr get localqueue genai-queue -o jsonpath='{.status.conditions}'
 ```
 
 ## OpenShift Service Mesh 3 Deployment

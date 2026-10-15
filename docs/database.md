@@ -235,8 +235,13 @@ kubectl create secret generic <your-secret-name> --from-file=cert.pem=combined-c
 ```
 
 > **Note:** It is critical to enter the name of the secret in the `postgreSQLCertSecret` key in the
-> values file under `global.configuration.vhub`. For example, with this secret name, it would be:
-> `postgreSQLCertSecret: '<your-secret-name>'`
+> values file, under `vectorizationHub.config`. For example:
+>
+> ```yaml
+> vectorizationHub:
+>   config:
+>     postgreSQLCertSecret: '<your-secret-name>'
+> ```
 
 ## Database initialization
 

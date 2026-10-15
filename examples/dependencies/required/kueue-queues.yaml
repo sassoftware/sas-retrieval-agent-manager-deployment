@@ -1,11 +1,56 @@
 # Kueue queue objects for SAS Retrieval Agent Manager.
 #
-# The Helm chart creates these three objects when `integrations.kueue.enabled` is true.
-# Apply this file ONLY when you set `integrations.kueue.enabled: false` and want to manage the
-# queue objects yourself. Use one method or the other, never both.
+# Two of these objects are cluster-scoped and one is not, which is what decides how much of this
+# file you need:
+#
+#   ResourceFlavor  cluster-scoped
+#   ClusterQueue    cluster-scoped
+#   LocalQueue      namespaced
+#
+# Pick the mode that matches what your cluster lets the Helm release create. Never let the chart
+# and this file create the same object: the names collide and Helm refuses to adopt objects it
+# does not own.
+#
+# 1. Chart manages everything (default)
+#
+#      integrations:
+#        kueue:
+#          enabled: true
+#
+#    Do not apply this file at all.
+#
+# 2. You manage everything
+#
+#      integrations:
+#        kueue:
+#          enabled: false
+#
+#    Apply this whole file.
+#
+# 3. An administrator owns the cluster-scoped objects, the release owns the rest
+#
+#      integrations:
+#        kueue:
+#          enabled: true
+#          createClusterObjects: false
+#
+#    Apply only the ResourceFlavor and ClusterQueue below, and DELETE the LocalQueue at the end of
+#    this file -- the chart creates that one, in its own namespace. Use this on clusters where
+#    application installers may not create cluster-scoped objects, which is the common restriction
+#    on shared OpenShift clusters. See docs/ocp-deployment.md.
 #
 # Values here match the chart defaults. Replace `retagentmgr` with your namespace and adjust the
 # quotas to your cluster capacity. See docs/sizing.md for guidance on matching quotas to node size.
+# If you override `integrations.kueue.resourceFlavorName`, `.clusterQueueName` or `.localQueueName`
+# in your values file, keep the names below in step with it.
+#
+# API VERSION: upstream Kueue served v1beta1 until 0.15 and v1beta2 from 0.15 onwards, and the
+# OpenShift Kueue Operator lags upstream. Check what your cluster serves before applying:
+#
+#   kubectl api-resources --api-group=kueue.x-k8s.io
+#
+# If it reports v1beta1, change `apiVersion` in every object below. In modes 1 and 3 also set
+# `integrations.kueue.apiVersion: kueue.x-k8s.io/v1beta1`, so the objects the chart renders match.
 ---
 # Defines the type of cluster resources the queue can use.
 # Keep this name unless you also update the ClusterQueue flavor name below.
@@ -15,7 +60,10 @@ metadata:
   name: retrieval-agent-manager
 ---
 # Defines the shared quotas for SAS Retrieval Agent Manager jobs.
-# The namespaceSelector limits this ClusterQueue to the retagentmgr namespace.
+# The namespaceSelector limits this ClusterQueue to the retagentmgr namespace. It must match the
+# namespace the chart is installed into: a selector that does not match is not reported as an
+# error, the LocalQueue simply never admits anything and the spawned vectorization and evaluation
+# workloads sit Pending with no event explaining why.
 apiVersion: kueue.x-k8s.io/v1beta2
 kind: ClusterQueue
 metadata:
