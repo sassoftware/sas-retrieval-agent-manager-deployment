@@ -1,6 +1,6 @@
 # sas-retrieval-agent-manager
 
-![Version: 2026.8.0](https://img.shields.io/badge/Version-2026.8.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 2026.8.0](https://img.shields.io/badge/AppVersion-2026.8.0-informational?style=flat-square)
+![Version: 2026.9.0](https://img.shields.io/badge/Version-2026.9.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.2.0](https://img.shields.io/badge/AppVersion-1.2.0-informational?style=flat-square)
 
 A comprehensive Helm chart for deploying SAS Retrieval Agent Manager (RAM) platform. Provides AI-powered document retrieval, processing, and management capabilities with integrated authentication, file management, and vector search functionality.
 
@@ -391,83 +391,83 @@ Kubernetes: `>=1.24.0-0`
 | iam.oauthProxy.serviceAccount.name | string | `"oauth2-proxy"` | The name of the service account to use for OAuth2 Proxy |
 | iam.oauthProxy.volumeMounts | list | `[]` | Additional volumeMounts on the OAuth2 Proxy Deployment definition |
 | iam.oauthProxy.volumes | list | `[]` | Additional volumes on the OAuth2 Proxy Deployment definition |
-| images.agent | object | `{"pullPolicy":"IfNotPresent","repo":{"base":"cr.sas.com","path":"viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-agent"},"tag":"1.18.1-20260812.1786551478299"}` | Container image configuration for RAM agents |
+| images.agent | object | `{"pullPolicy":"IfNotPresent","repo":{"base":"cr.sas.com","path":"viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-agent"},"tag":"1.20.8-20261007.1791402863800"}` | Container image configuration for RAM agents |
 | images.agent.pullPolicy | string | `"IfNotPresent"` | Image pull policy for agent container |
 | images.agent.repo.base | string | `"cr.sas.com"` | Container registry base URL for agent |
 | images.agent.repo.path | string | `"viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-agent"` | Container image path/name for agent |
-| images.agent.tag | string | `"1.18.1-20260812.1786551478299"` | Container image tag for agent |
-| images.api | object | `{"pullPolicy":"IfNotPresent","repo":{"base":"cr.sas.com","path":"viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager"},"tag":"1.20.15-20260818.1787076669742"}` | Container image configuration for the RAM API |
+| images.agent.tag | string | `"1.20.8-20261007.1791402863800"` | Container image tag for agent |
+| images.api | object | `{"pullPolicy":"IfNotPresent","repo":{"base":"cr.sas.com","path":"viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager"},"tag":"1.22.14-20261008.1791469156044"}` | Container image configuration for the RAM API |
 | images.api.pullPolicy | string | `"IfNotPresent"` | Image pull policy for API container |
 | images.api.repo.base | string | `"cr.sas.com"` | SAS container registry |
 | images.api.repo.path | string | `"viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager"` | SAS API image |
-| images.api.tag | string | `"1.20.15-20260818.1787076669742"` | Image tag (defaults to chart appVersion) |
-| images.embedding | object | `{"pullPolicy":"IfNotPresent","repo":{"base":"ghcr.io","path":"huggingface/text-embeddings-inference"},"tag":"cpu-1.8"}` | Container image configuration for embedding model inference |
+| images.api.tag | string | `"1.22.14-20261008.1791469156044"` | Image tag (defaults to chart appVersion) |
+| images.embedding | object | `{"pullPolicy":"IfNotPresent","repo":{"base":"ghcr.io","path":"huggingface/text-embeddings-inference"},"tag":"cpu-1.8.3"}` | Container image configuration for embedding model inference |
 | images.embedding.pullPolicy | string | `"IfNotPresent"` | Image pull policy |
 | images.embedding.repo.base | string | `"ghcr.io"` | Container registry base URL for embedding model inference |
 | images.embedding.repo.path | string | `"huggingface/text-embeddings-inference"` | Container image path/name for embedding model inference |
-| images.embedding.tag | string | `"cpu-1.8"` | Container image tag for embedding model inference with CPU |
-| images.eval | object | `{"pullPolicy":"IfNotPresent","repo":{"base":"cr.sas.com","path":"viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-evaluation"},"tag":"1.15.8-20260812.1786551507408"}` | Container image configuration for evaluations |
+| images.embedding.tag | string | `"cpu-1.8.3"` | Container image tag for embedding model inference with CPU |
+| images.eval | object | `{"pullPolicy":"IfNotPresent","repo":{"base":"cr.sas.com","path":"viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-evaluation"},"tag":"1.17.6-20261009.1791559703775"}` | Container image configuration for evaluations |
 | images.eval.pullPolicy | string | `"IfNotPresent"` | Image pull policy for eval container |
 | images.eval.repo.base | string | `"cr.sas.com"` | Container registry base URL for evaluation service |
 | images.eval.repo.path | string | `"viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-evaluation"` | Container image path/name for evaluation service |
-| images.eval.tag | string | `"1.15.8-20260812.1786551507408"` | Container image tag for evaluation service |
-| images.goose | object | `{"pullPolicy":"IfNotPresent","repo":{"base":"cr.sas.com","path":"viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-db-migration"},"tag":"1.15.3-20260812.1786551418645"}` | Goose migration tool container image configuration |
+| images.eval.tag | string | `"1.17.6-20261009.1791559703775"` | Container image tag for evaluation service |
+| images.goose | object | `{"pullPolicy":"IfNotPresent","repo":{"base":"cr.sas.com","path":"viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-db-migration"},"tag":"1.17.6-20261007.1791404081426"}` | Goose migration tool container image configuration |
 | images.goose.pullPolicy | string | `"IfNotPresent"` | Image pull policy for Goose container |
 | images.goose.repo.base | string | `"cr.sas.com"` | Container registry base URL for Goose |
 | images.goose.repo.path | string | `"viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-db-migration"` | Container image path/name for Goose |
-| images.goose.tag | string | `"1.15.3-20260812.1786551418645"` | Goose container image tag |
+| images.goose.tag | string | `"1.17.6-20261007.1791404081426"` | Goose container image tag |
 | images.imagePullSecrets | list | `[]` | Applied to all sub-charts that reference private registries |
-| images.keycloak | object | `{"pullPolicy":"IfNotPresent","repo":{"base":"quay.io","path":"keycloak/keycloak"},"tag":"26.3.2"}` | Container image configuration for Keycloak |
+| images.keycloak | object | `{"pullPolicy":"IfNotPresent","repo":{"base":"quay.io","path":"keycloak/keycloak"},"tag":"26.7.3"}` | Container image configuration for Keycloak |
 | images.keycloak.pullPolicy | string | `"IfNotPresent"` | Image pull policy for Keycloak container |
 | images.keycloak.repo | object | `{"base":"quay.io","path":"keycloak/keycloak"}` | Container image configuration for Keycloak |
 | images.keycloak.repo.base | string | `"quay.io"` | Container registry base URL for Keycloak |
 | images.keycloak.repo.path | string | `"keycloak/keycloak"` | Container image path/name for Keycloak |
-| images.keycloak.tag | string | `"26.3.2"` | Keycloak container image tag |
-| images.kubectl | object | `{"pullPolicy":"IfNotPresent","repo":{"base":"docker.io","path":"alpine/k8s"},"tag":"1.31.12"}` | kubectl container image configuration (used for Kubernetes operations) |
+| images.keycloak.tag | string | `"26.7.3"` | Keycloak container image tag |
+| images.kubectl | object | `{"pullPolicy":"IfNotPresent","repo":{"base":"docker.io","path":"alpine/k8s"},"tag":"1.35.0"}` | kubectl container image configuration (used for Kubernetes operations) |
 | images.kubectl.pullPolicy | string | `"IfNotPresent"` | Image pull policy for kubectl container |
 | images.kubectl.repo | object | `{"base":"docker.io","path":"alpine/k8s"}` | Container image configuration for kubectl |
 | images.kubectl.repo.base | string | `"docker.io"` | Container registry base URL for kubectl image |
 | images.kubectl.repo.path | string | `"alpine/k8s"` | Container image path/name for kubectl |
-| images.kubectl.tag | string | `"1.31.12"` | kubectl container image tag |
-| images.mcpToolbox | object | `{"pullPolicy":"IfNotPresent","repo":{"base":"us-central1-docker.pkg.dev","path":"database-toolbox/toolbox/toolbox"},"tag":"1.1.0"}` | Container image configuration for PSQL Toolbox MCP Server |
+| images.kubectl.tag | string | `"1.35.0"` | kubectl container image tag |
+| images.mcpToolbox | object | `{"pullPolicy":"IfNotPresent","repo":{"base":"us-central1-docker.pkg.dev","path":"database-toolbox/toolbox/toolbox"},"tag":"1.10.0"}` | Container image configuration for PSQL Toolbox MCP Server |
 | images.mcpToolbox.pullPolicy | string | `"IfNotPresent"` | Image pull policy |
 | images.mcpToolbox.repo.base | string | `"us-central1-docker.pkg.dev"` | Container registry base URL for embedding model inference |
 | images.mcpToolbox.repo.path | string | `"database-toolbox/toolbox/toolbox"` | Container image path/name for embedding model inference |
-| images.mcpToolbox.tag | string | `"1.1.0"` | Container image tag for embedding model inference with CPU |
-| images.oauthProxy | object | `{"pullPolicy":"IfNotPresent","repo":{"base":"quay.io","path":"oauth2-proxy/oauth2-proxy"},"tag":"v7.12.0"}` | Container image configuration for OAuth2 Proxy |
+| images.mcpToolbox.tag | string | `"1.10.0"` | Container image tag for embedding model inference with CPU |
+| images.oauthProxy | object | `{"pullPolicy":"IfNotPresent","repo":{"base":"quay.io","path":"oauth2-proxy/oauth2-proxy"},"tag":"v7.15.4"}` | Container image configuration for OAuth2 Proxy |
 | images.oauthProxy.pullPolicy | string | `"IfNotPresent"` | Image pull policy for OAuth2 Proxy container |
 | images.oauthProxy.repo.base | string | `"quay.io"` | Container registry base URL for OAuth2 Proxy |
 | images.oauthProxy.repo.path | string | `"oauth2-proxy/oauth2-proxy"` | Container image path/name for OAuth2 Proxy |
-| images.oauthProxy.tag | string | `"v7.12.0"` | OAuth2 Proxy container image tag |
-| images.postgres | object | `{"pullPolicy":"IfNotPresent","repo":{"base":"docker.io","path":"postgres"},"tag":"15-alpine"}` | PostgreSQL database container image configuration |
+| images.oauthProxy.tag | string | `"v7.15.4"` | OAuth2 Proxy container image tag |
+| images.postgres | object | `{"pullPolicy":"IfNotPresent","repo":{"base":"docker.io","path":"postgres"},"tag":"17-alpine"}` | PostgreSQL database container image configuration |
 | images.postgres.pullPolicy | string | `"IfNotPresent"` | Image pull policy for PostgreSQL container |
 | images.postgres.repo | object | `{"base":"docker.io","path":"postgres"}` | Container image configuration for Postgres |
 | images.postgres.repo.base | string | `"docker.io"` | Container registry base URL for PostgreSQL |
 | images.postgres.repo.path | string | `"postgres"` | Container image path/name for PostgreSQL |
-| images.postgres.tag | string | `"15-alpine"` | PostgreSQL container image tag |
-| images.postgrest | object | `{"pullPolicy":"IfNotPresent","repo":{"base":"docker.io","path":"postgrest/postgrest"},"tag":"v13.0.4"}` | PostgREST main container image configuration |
+| images.postgres.tag | string | `"17-alpine"` | PostgreSQL container image tag |
+| images.postgrest | object | `{"pullPolicy":"IfNotPresent","repo":{"base":"docker.io","path":"postgrest/postgrest"},"tag":"v16.2"}` | PostgREST main container image configuration |
 | images.postgrest.pullPolicy | string | `"IfNotPresent"` | Image pull policy |
 | images.postgrest.repo.base | string | `"docker.io"` | PostgREST registry |
 | images.postgrest.repo.path | string | `"postgrest/postgrest"` | Official PostgREST image |
-| images.postgrest.tag | string | `"v13.0.4"` | Image tag (defaults to chart appVersion) |
+| images.postgrest.tag | string | `"v16.2"` | Image tag (defaults to chart appVersion) |
 | images.repo | object | `{"base":null}` | Image repository details (useful for private registries) |
 | images.repo.base | string | `nil` | Base container registry URL (used when mirrorring images) |
-| images.theme | object | `{"pullPolicy":"IfNotPresent","repo":{"base":"cr.sas.com","path":"viya-4-x64_oci_linux_2-docker/sas-iot-keycloak-theme"},"tag":"1.3.10-20260806.1786005822825"}` | Custom theme container image configuration |
+| images.theme | object | `{"pullPolicy":"IfNotPresent","repo":{"base":"cr.sas.com","path":"viya-4-x64_oci_linux_2-docker/sas-iot-keycloak-theme"},"tag":"1.4.1-20261007.1791369309274"}` | Custom theme container image configuration |
 | images.theme.pullPolicy | string | `"IfNotPresent"` | Image pull policy for theme container |
 | images.theme.repo | object | `{"base":"cr.sas.com","path":"viya-4-x64_oci_linux_2-docker/sas-iot-keycloak-theme"}` | Container image configuration for the SAS Keycloak theme |
 | images.theme.repo.base | string | `"cr.sas.com"` | Container registry base URL for theme |
 | images.theme.repo.path | string | `"viya-4-x64_oci_linux_2-docker/sas-iot-keycloak-theme"` | Container image path/name for theme |
-| images.theme.tag | string | `"1.3.10-20260806.1786005822825"` | Theme container image tag |
-| images.ui | object | `{"pullPolicy":"IfNotPresent","repo":{"base":"cr.sas.com","path":"viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-app"},"tag":"1.13.16-20260817.1786995762570"}` | Container image configuration for UI |
+| images.theme.tag | string | `"1.4.1-20261007.1791369309274"` | Theme container image tag |
+| images.ui | object | `{"pullPolicy":"IfNotPresent","repo":{"base":"cr.sas.com","path":"viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-app"},"tag":"1.15.13-20261009.1791561788268"}` | Container image configuration for UI |
 | images.ui.pullPolicy | string | `"IfNotPresent"` | Image pull policy for UI container |
 | images.ui.repo.base | string | `"cr.sas.com"` | Container registry base URL |
 | images.ui.repo.path | string | `"viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-app"` | Container image path/name |
-| images.ui.tag | string | `"1.13.16-20260817.1786995762570"` | Container image tag |
-| images.vectorizationHub | object | `{"pullPolicy":"IfNotPresent","repo":{"base":"cr.sas.com","path":"viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-vectorization-hub"},"tag":"1.15.7-20260817.1787003665570"}` | Container image configuration for vectorization hub |
+| images.ui.tag | string | `"1.15.13-20261009.1791561788268"` | Container image tag |
+| images.vectorizationHub | object | `{"pullPolicy":"IfNotPresent","repo":{"base":"cr.sas.com","path":"viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-vectorization-hub"},"tag":"1.17.9-20261008.1791469424760"}` | Container image configuration for vectorization hub |
 | images.vectorizationHub.pullPolicy | string | `"IfNotPresent"` | Image pull policy for vectorization hub container |
 | images.vectorizationHub.repo.base | string | `"cr.sas.com"` | Container registry base URL for vectorization hub |
 | images.vectorizationHub.repo.path | string | `"viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-vectorization-hub"` | Container image path/name for vectorization hub |
-| images.vectorizationHub.tag | string | `"1.15.7-20260817.1787003665570"` | Container image tag for vectorization hub |
+| images.vectorizationHub.tag | string | `"1.17.9-20261008.1791469424760"` | Container image tag for vectorization hub |
 | ingress | object | `{"annotations":{},"api":{"annotations":{},"paths":["/SASRetrievalAgentManager/api"]},"className":null,"classType":null,"domain":null,"enableRootIngress":true,"enabled":true,"keycloak":{"paths":["/SASRetrievalAgentManager/auth","/SASRetrievalAgentManager/auth/realms","/SASRetrievalAgentManager/auth/resources"]},"keycloakAdmin":{"paths":["/SASRetrievalAgentManager/auth/admin"]},"oauthProxy":{"logoutPaths":["/SASRetrievalAgentManager/logout"],"paths":["/SASRetrievalAgentManager/oauth2"]},"postgrest":{"annotations":{},"paths":["/SASRetrievalAgentManager/postgrest","/SASRetrievalAgentManager/postgrest/monitoring"]},"tls":{"caCertificate":"","certManager":{"dnsNames":[],"duration":null,"enabled":false,"issuerRef":{"kind":"ClusterIssuer","name":""},"renewBefore":null},"certificate":"","enabled":true,"key":"","secretName":""},"ui":{"annotations":{},"paths":["/SASRetrievalAgentManager"]}}` | Ingress configuration for all services |
 | ingress.annotations | object | `{}` | Add annotations here to override defaults or add new ones |
 | ingress.api | object | `{"annotations":{},"paths":["/SASRetrievalAgentManager/api"]}` | Default annotations defined in templates/ingress/_nginx.tpl (nginx.default.annotations.api) |
@@ -530,7 +530,7 @@ Kubernetes: `>=1.24.0-0`
 | security.gpg.config.passphrase_path | string | `"/mnt/config/gpg_passphrase"` | Path to GPG passphrase secret mount |
 | security.gpg.config.private_key_path | string | `"/mnt/config/gpg_key"` | Path to GPG private key secret mount |
 | security.gpg.nameOverride | string | `""` | Default produces: retrieval-agent-manager-gpg-{passphrase,private-key,public-key} |
-| storage | object | `{"application":{"pvc":{"accessModes":["ReadWriteOnce"],"existingClaim":"","name":"vhub-pv","size":"20Gi","storageClassName":null}},"customStorageClass":{"create":null,"name":"azurefile-sas"},"embedding":{"pvc":{"accessModes":["ReadWriteMany"],"existingClaim":"","name":"embedding-pv","size":"40Gi","storageClassName":null}}}` | SAS Retrieval Agent Manager Storage: Storage services |
+| storage | object | `{"application":{"pvc":{"accessModes":["ReadWriteOnce"],"existingClaim":"","name":"vhub-pv","size":"20Gi","storageClassName":null}},"customStorageClass":{"create":null,"name":""},"embedding":{"pvc":{"accessModes":["ReadWriteMany"],"existingClaim":"","name":"embedding-pv","size":"40Gi","storageClassName":null}}}` | SAS Retrieval Agent Manager Storage: Storage services |
 | storage.application | object | `{"pvc":{"accessModes":["ReadWriteOnce"],"existingClaim":"","name":"vhub-pv","size":"20Gi","storageClassName":null}}` | Application data storage configuration |
 | storage.application.pvc | object | `{"accessModes":["ReadWriteOnce"],"existingClaim":"","name":"vhub-pv","size":"20Gi","storageClassName":null}` | Persistent Volume Claim configuration (only used when type is 'pvc') |
 | storage.application.pvc.accessModes | list | `["ReadWriteOnce"]` | Access modes for the root directory PVC |
@@ -538,9 +538,9 @@ Kubernetes: `>=1.24.0-0`
 | storage.application.pvc.name | string | `"vhub-pv"` | Name for the PVC |
 | storage.application.pvc.size | string | `"20Gi"` | Size for the root directory PVC |
 | storage.application.pvc.storageClassName | string | `nil` | Storage class name for the root directory PVC |
-| storage.customStorageClass | object | `{"create":null,"name":"azurefile-sas"}` | allows the creation of a custom storage class, used for an azurefile fix. |
+| storage.customStorageClass | object | `{"create":null,"name":""}` | Custom storage class configuration |
 | storage.customStorageClass.create | string | `nil` | Whether to create the custom storage class |
-| storage.customStorageClass.name | string | `"azurefile-sas"` | Storage class name for the custom storage class (only used for an azurefile fix) |
+| storage.customStorageClass.name | string | `""` | Storage class name for all PVCs. Uses the platform default when empty. |
 | storage.embedding | object | `{"pvc":{"accessModes":["ReadWriteMany"],"existingClaim":"","name":"embedding-pv","size":"40Gi","storageClassName":null}}` | Embedding storage configuration |
 | storage.embedding.pvc | object | `{"accessModes":["ReadWriteMany"],"existingClaim":"","name":"embedding-pv","size":"40Gi","storageClassName":null}` | Persistent Volume Claim configuration for embedding models |
 | storage.embedding.pvc.accessModes | list | `["ReadWriteMany"]` | Access modes for the embedding PVC |
@@ -604,10 +604,12 @@ Kubernetes: `>=1.24.0-0`
 | ui.tolerations | list | `[]` | Tolerations for pod assignment |
 | ui.volumeMounts | list | `[]` | Additional volumeMounts on the output Deployment definition |
 | ui.volumes | list | `[]` | Additional volumes on the output Deployment definition |
+| upgradeValidation | object | `{"protectedPaths":["db.init.config.application.adminRole"]}` | Helm upgrade validation configuration |
+| upgradeValidation.protectedPaths | list | `["db.init.config.application.adminRole"]` | Value paths that cannot change during an upgrade |
 | users | object | `{"application":{"admin":{"password":"","username":"AppAdmin"}},"database":{"admin":{"password":"","username":"azure_pg_admin"}},"embedding":{"password":"","username":"sas_ram_embedding_user"},"keycloak":{"admin":{"password":"","username":"kcAdmin"},"user":{"password":"","username":"sas_keycloak_user"}},"migration":{"password":"","username":"sas_ram_migration"},"monitoring":{"password":"","username":"sas_mon_pgrest_user"},"otel":{"password":"","username":"sas_ram_otel_user"},"postgrest":{"password":"","username":"sas_ram_pgrest_user"},"vectorStore":{"password":"","username":"sas_vector_store_user"},"vectorizationJob":{"password":"","username":"sas_ram_vectorization_user"}}` | User account configuration for all services |
-| vectorizationHub | object | `{"config":{"availableHardware":{"execution_providers":["cpu","openvino"],"hide_destination_secrets":"False","hide_llm_secrets":"False","job_req_cpu":{"default":2,"max":6,"min":1},"job_req_mem":{"default":"8Gi","max":"48Gi","min":"8Gi","model_default":{"all-MiniLM-L6-v2":"16Gi","distiluse-base-multilingual-cased-v2":"16Gi","granite-embedding-278m-multilingual":"16Gi","nomic-embed-text-v2-moe":"16Gi"}},"mcp_req_cpu":{"default":0.5,"max":6,"min":0.1},"mcp_req_mem":{"default":"512Mi","max":"4Gi","min":"512Mi"},"openvino_device_type":["CPU_FP32"],"plugin_req_cpu":{"default":0.5,"max":6,"min":0.1},"plugin_req_mem":{"default":"1Gi","max":"16Gi","min":"1Gi"},"supported_ocr_languages":{"paddle":["eng","chi_tra","dan","deu","spa","fra","ita","nld","pol","por","ara"],"tesseract":["eng","chi_tra","jpn","dan","deu","spa","fra","ita","nld","pol","por","chi_sim","osd","equ","ara","tur"]}},"postgreSQLCertSecret":""}}` | SAS Retrieval Agent Manager Vectorization Hub: Main vectorization service |
-| vectorizationHub.config | object | `{"availableHardware":{"execution_providers":["cpu","openvino"],"hide_destination_secrets":"False","hide_llm_secrets":"False","job_req_cpu":{"default":2,"max":6,"min":1},"job_req_mem":{"default":"8Gi","max":"48Gi","min":"8Gi","model_default":{"all-MiniLM-L6-v2":"16Gi","distiluse-base-multilingual-cased-v2":"16Gi","granite-embedding-278m-multilingual":"16Gi","nomic-embed-text-v2-moe":"16Gi"}},"mcp_req_cpu":{"default":0.5,"max":6,"min":0.1},"mcp_req_mem":{"default":"512Mi","max":"4Gi","min":"512Mi"},"openvino_device_type":["CPU_FP32"],"plugin_req_cpu":{"default":0.5,"max":6,"min":0.1},"plugin_req_mem":{"default":"1Gi","max":"16Gi","min":"1Gi"},"supported_ocr_languages":{"paddle":["eng","chi_tra","dan","deu","spa","fra","ita","nld","pol","por","ara"],"tesseract":["eng","chi_tra","jpn","dan","deu","spa","fra","ita","nld","pol","por","chi_sim","osd","equ","ara","tur"]}},"postgreSQLCertSecret":""}` | Vectorization Hub configuration settings |
-| vectorizationHub.config.availableHardware | object | `{"execution_providers":["cpu","openvino"],"hide_destination_secrets":"False","hide_llm_secrets":"False","job_req_cpu":{"default":2,"max":6,"min":1},"job_req_mem":{"default":"8Gi","max":"48Gi","min":"8Gi","model_default":{"all-MiniLM-L6-v2":"16Gi","distiluse-base-multilingual-cased-v2":"16Gi","granite-embedding-278m-multilingual":"16Gi","nomic-embed-text-v2-moe":"16Gi"}},"mcp_req_cpu":{"default":0.5,"max":6,"min":0.1},"mcp_req_mem":{"default":"512Mi","max":"4Gi","min":"512Mi"},"openvino_device_type":["CPU_FP32"],"plugin_req_cpu":{"default":0.5,"max":6,"min":0.1},"plugin_req_mem":{"default":"1Gi","max":"16Gi","min":"1Gi"},"supported_ocr_languages":{"paddle":["eng","chi_tra","dan","deu","spa","fra","ita","nld","pol","por","ara"],"tesseract":["eng","chi_tra","jpn","dan","deu","spa","fra","ita","nld","pol","por","chi_sim","osd","equ","ara","tur"]}}` | Available hardware configuration for processing |
+| vectorizationHub | object | `{"config":{"availableHardware":{"execution_providers":["cpu","openvino"],"hide_destination_secrets":"False","hide_llm_secrets":"False","job_req_cpu":{"default":2,"max":6,"min":1},"job_req_mem":{"default":"8Gi","max":"48Gi","min":"8Gi","model_default":{"all-MiniLM-L6-v2":"16Gi","distiluse-base-multilingual-cased-v2":"16Gi","granite-embedding-278m-multilingual":"16Gi","nomic-embed-text-v2-moe":"16Gi"}},"mcp_req_cpu":{"default":0.5,"max":6,"min":0.1},"mcp_req_mem":{"default":"512Mi","max":"4Gi","min":"512Mi"},"openvino_device_type":["CPU_FP32"],"plugin_req_cpu":{"default":0.5,"max":6,"min":0.1},"plugin_req_mem":{"default":"1Gi","max":"16Gi","min":"1Gi"},"supported_ocr_languages":{"paddle":["eng","chi_tra","dan","deu","spa","fra","ita","nld","pol","por","ara"],"tesseract":["eng","chi_tra","jpn","dan","deu","spa","fra","ita","nld","pol","por","chi_sim","osd","equ","ara","tur","heb"]}},"postgreSQLCertSecret":""}}` | SAS Retrieval Agent Manager Vectorization Hub: Main vectorization service |
+| vectorizationHub.config | object | `{"availableHardware":{"execution_providers":["cpu","openvino"],"hide_destination_secrets":"False","hide_llm_secrets":"False","job_req_cpu":{"default":2,"max":6,"min":1},"job_req_mem":{"default":"8Gi","max":"48Gi","min":"8Gi","model_default":{"all-MiniLM-L6-v2":"16Gi","distiluse-base-multilingual-cased-v2":"16Gi","granite-embedding-278m-multilingual":"16Gi","nomic-embed-text-v2-moe":"16Gi"}},"mcp_req_cpu":{"default":0.5,"max":6,"min":0.1},"mcp_req_mem":{"default":"512Mi","max":"4Gi","min":"512Mi"},"openvino_device_type":["CPU_FP32"],"plugin_req_cpu":{"default":0.5,"max":6,"min":0.1},"plugin_req_mem":{"default":"1Gi","max":"16Gi","min":"1Gi"},"supported_ocr_languages":{"paddle":["eng","chi_tra","dan","deu","spa","fra","ita","nld","pol","por","ara"],"tesseract":["eng","chi_tra","jpn","dan","deu","spa","fra","ita","nld","pol","por","chi_sim","osd","equ","ara","tur","heb"]}},"postgreSQLCertSecret":""}` | Vectorization Hub configuration settings |
+| vectorizationHub.config.availableHardware | object | `{"execution_providers":["cpu","openvino"],"hide_destination_secrets":"False","hide_llm_secrets":"False","job_req_cpu":{"default":2,"max":6,"min":1},"job_req_mem":{"default":"8Gi","max":"48Gi","min":"8Gi","model_default":{"all-MiniLM-L6-v2":"16Gi","distiluse-base-multilingual-cased-v2":"16Gi","granite-embedding-278m-multilingual":"16Gi","nomic-embed-text-v2-moe":"16Gi"}},"mcp_req_cpu":{"default":0.5,"max":6,"min":0.1},"mcp_req_mem":{"default":"512Mi","max":"4Gi","min":"512Mi"},"openvino_device_type":["CPU_FP32"],"plugin_req_cpu":{"default":0.5,"max":6,"min":0.1},"plugin_req_mem":{"default":"1Gi","max":"16Gi","min":"1Gi"},"supported_ocr_languages":{"paddle":["eng","chi_tra","dan","deu","spa","fra","ita","nld","pol","por","ara"],"tesseract":["eng","chi_tra","jpn","dan","deu","spa","fra","ita","nld","pol","por","chi_sim","osd","equ","ara","tur","heb"]}}` | Available hardware configuration for processing |
 | vectorizationHub.config.availableHardware.execution_providers | list | `["cpu","openvino"]` | Execution providers for ML/AI processing |
 | vectorizationHub.config.availableHardware.hide_destination_secrets | string | `"False"` | Whether to hide the destination secrets in the UI |
 | vectorizationHub.config.availableHardware.hide_llm_secrets | string | `"False"` | Whether to hide the LLM api key in the UI |
@@ -637,9 +639,9 @@ Kubernetes: `>=1.24.0-0`
 | vectorizationHub.config.availableHardware.plugin_req_mem.default | string | `"1Gi"` | Default memory allocation for plugins |
 | vectorizationHub.config.availableHardware.plugin_req_mem.max | string | `"16Gi"` | Maximum memory allocation for plugins |
 | vectorizationHub.config.availableHardware.plugin_req_mem.min | string | `"1Gi"` | Minimum memory allocation for plugins |
-| vectorizationHub.config.availableHardware.supported_ocr_languages | object | `{"paddle":["eng","chi_tra","dan","deu","spa","fra","ita","nld","pol","por","ara"],"tesseract":["eng","chi_tra","jpn","dan","deu","spa","fra","ita","nld","pol","por","chi_sim","osd","equ","ara","tur"]}` | Supported OCR languages by engine |
+| vectorizationHub.config.availableHardware.supported_ocr_languages | object | `{"paddle":["eng","chi_tra","dan","deu","spa","fra","ita","nld","pol","por","ara"],"tesseract":["eng","chi_tra","jpn","dan","deu","spa","fra","ita","nld","pol","por","chi_sim","osd","equ","ara","tur","heb"]}` | Supported OCR languages by engine |
 | vectorizationHub.config.availableHardware.supported_ocr_languages.paddle | list | `["eng","chi_tra","dan","deu","spa","fra","ita","nld","pol","por","ara"]` | Languages supported by PaddleOCR |
-| vectorizationHub.config.availableHardware.supported_ocr_languages.tesseract | list | `["eng","chi_tra","jpn","dan","deu","spa","fra","ita","nld","pol","por","chi_sim","osd","equ","ara","tur"]` | Languages supported by Tesseract |
+| vectorizationHub.config.availableHardware.supported_ocr_languages.tesseract | list | `["eng","chi_tra","jpn","dan","deu","spa","fra","ita","nld","pol","por","chi_sim","osd","equ","ara","tur","heb"]` | Languages supported by Tesseract |
 | vectorizationHub.config.postgreSQLCertSecret | string | `""` | Secret containing the cert used for database connections in vectorization jobs |
 
 ----------------------------------------------
