@@ -2,9 +2,9 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ printf "%s-upgrade-validation-scripts" (include "retrieval-agent-manager.fullname" .) | trunc 63 | trimSuffix "-" }}
+  name: {{ printf "%s-validation-scripts" (include "upgrade.fullname" .) | trunc 63 | trimSuffix "-" }}
   labels:
-    {{- include "retrieval-agent-manager.labels" . | nindent 4 }}
+    {{- include "upgrade.labels" . | nindent 4 }}
     app.kubernetes.io/component: upgrade-validation
   annotations:
     helm.sh/hook: pre-upgrade

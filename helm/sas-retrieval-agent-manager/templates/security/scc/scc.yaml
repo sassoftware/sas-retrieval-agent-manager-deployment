@@ -1,12 +1,19 @@
 {{/*
 SecurityContextConstraints for OpenShift platform.
 This SCC allows the deployment to run with the required security settings.
+
+CLUSTER-SCOPED: creating this requires cluster-admin. On clusters where application installers may
+not create cluster-scoped objects, set `security.scc.create: false` and have an administrator apply
+examples/openshift/scc-namespace-scoped.yaml instead, then set `security.scc.binding: namespace`
+so the release still grants itself the SCC from inside its own namespace.
+
+See "ram.sccCreate" in _lib/_helpers.tpl for how the default is derived from `platform`.
 */}}
-{{- if eq .Values.platform "openshift" -}}
+{{- if include "ram.sccCreate" . -}}
 apiVersion: security.openshift.io/v1
 kind: SecurityContextConstraints
 metadata:
-  name: {{ include "retrieval-agent-manager.fullname" . }}-scc
+  name: {{ include "ram.sccName" . }}
   labels:
     {{- include "retrieval-agent-manager.labels" . | nindent 4 }}
   annotations:
@@ -37,36 +44,12 @@ seccompProfiles:
   - runtime/default
 supplementalGroups:
   type: RunAsAny
+# Every ServiceAccount this chart runs pods under. Not gated on `serviceAccount.create`: pods run
+# under these names whether the chart creates the ServiceAccounts or an administrator pre-creates
+# them, and either way they need this SCC. See "ram.sccServiceAccountNames" in _lib/_helpers.tpl.
 users:
-  # API ServiceAccount
-  {{- if .Values.api.serviceAccount.create }}
-  - system:serviceaccount:{{ .Release.Namespace }}:{{ include "api.serviceAccountName" . }}
-  {{- end }}
-  # API Spawn ServiceAccount
-  {{- if .Values.api.spawn.serviceAccount.create }}
-  - system:serviceaccount:{{ .Release.Namespace }}:{{ include "api.spawn.serviceAccountName" . }}
-  {{- end }}
-  # UI ServiceAccount
-  {{- if .Values.ui.serviceAccount.create }}
-  - system:serviceaccount:{{ .Release.Namespace }}:{{ include "ui.serviceAccountName" . }}
-  {{- end }}
-  # Keycloak ServiceAccount
-  {{- if .Values.iam.keycloak.serviceAccount.create }}
-  - system:serviceaccount:{{ .Release.Namespace }}:{{ include "keycloak.serviceAccountName" . }}
-  - system:serviceaccount:{{ .Release.Namespace }}:{{ include "keycloak.serviceAccountName" . }}-realm-update
-  - system:serviceaccount:{{ .Release.Namespace }}:{{ include "keycloak.serviceAccountName" . }}-job
-  {{- end }}
-  # PostgREST ServiceAccount
-  {{- if .Values.db.rest.serviceAccount.create }}
-  - system:serviceaccount:{{ .Release.Namespace }}:{{ include "postgrest.serviceAccountName" . }}
-  {{- end }}
-  # DB Init ServiceAccount
-  {{- if .Values.db.init.serviceAccount.create }}
-  - system:serviceaccount:{{ .Release.Namespace }}:{{ include "db-initialization.serviceAccountName" . }}
-  {{- end }}
-  # DB Migration ServiceAccount
-  {{- if .Values.db.migration.serviceAccount.create }}
-  - system:serviceaccount:{{ .Release.Namespace }}:{{ include "db-migration.serviceAccountName" . }}
+  {{- range include "ram.sccServiceAccountNames" . | splitList "\n" }}
+  - system:serviceaccount:{{ $.Release.Namespace }}:{{ . }}
   {{- end }}
 volumes:
   - configMap

@@ -1,10 +1,16 @@
+{{/*
+LocalQueue -- namespaced, so it is safe to create even where cluster-scoped objects are forbidden.
+Gated on `integrations.kueue.enabled` alone: when the cluster-scoped half is supplied by an
+administrator, this is the one object the release still needs to bind its namespace to it.
+*/}}
 {{- if .Values.integrations.kueue.enabled }}
-apiVersion: kueue.x-k8s.io/v1beta2
+apiVersion: {{ include "ram.kueue.apiVersion" . }}
 kind: LocalQueue
-metadata: 
-  name: genai-queue
+metadata:
+  name: {{ include "ram.kueue.localQueueName" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "retrieval-agent-manager.labels" . | nindent 4 }}
 spec:
-  clusterQueue: cluster-queue
+  clusterQueue: {{ include "ram.kueue.clusterQueueName" . }}
 {{- end }}

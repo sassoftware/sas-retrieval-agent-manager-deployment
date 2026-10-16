@@ -1,31 +1,31 @@
 # vim: set ft=yaml:
 # yaml-language-server: $schema=values.schema.json
 
-# -- Default values for retrieval-agent-manager.
-# -- ====================================================
-# --
-# -- This file contains all default values from sub-charts for comparison with values.yaml
-# -- Generated from documented sub-chart default values following helm-docs format
-# --
-# -- ARCHITECTURE OVERVIEW:
-# -- ======================
-# -- • Keycloak: Identity and Access Management server with OAuth2/OIDC support
-# -- • GPG: Cryptographic key management for secure data encryption/decryption
-# -- • Cert-Manager: Automatic TLS certificate management (development feature)
-# -- • PostgREST: REST API interface for PostgreSQL database operations
-# -- • SAS-Retrieval-Agent-Manager-API: Main backend service with AI/ML capabilities
-# -- • SAS-Retrieval-Agent-Manager-App: Frontend web application interface
-# -- • SAS-Retrieval-Agent-Manager-DB-Init: Database initialization and schema setup
-# -- • SAS-Retrieval-Agent-Manager-DB-Migration: Database schema migration with Goose
-# --
-# -- DEPLOYMENT CONCEPTS:
-# -- ====================
-# -- • imagePullSecrets: Private container registry access credentials
-# -- • ingress: External HTTP/HTTPS access with OAuth2 proxy integration
-# -- • resources: CPU/memory allocation and horizontal pod autoscaling
-# -- • securityContext: Pod and container security policies
-# -- • probes: Health checks for container lifecycle management
-# -- • affinity/nodeSelector/tolerations: Advanced pod scheduling
+# Default values for retrieval-agent-manager.
+# ====================================================
+#
+# This file contains all default values from sub-charts for comparison with values.yaml
+# Generated from documented sub-chart default values following helm-docs format
+#
+# ARCHITECTURE OVERVIEW:
+# ======================
+# • Keycloak: Identity and Access Management server with OAuth2/OIDC support
+# • GPG: Cryptographic key management for secure data encryption/decryption
+# • Cert-Manager: Automatic TLS certificate management (development feature)
+# • PostgREST: REST API interface for PostgreSQL database operations
+# • SAS-Retrieval-Agent-Manager-API: Main backend service with AI/ML capabilities
+# • SAS-Retrieval-Agent-Manager-App: Frontend web application interface
+# • SAS-Retrieval-Agent-Manager-DB-Init: Database initialization and schema setup
+# • SAS-Retrieval-Agent-Manager-DB-Migration: Database schema migration with Goose
+#
+# DEPLOYMENT CONCEPTS:
+# ====================
+# • imagePullSecrets: Private container registry access credentials
+# • ingress: External HTTP/HTTPS access with OAuth2 proxy integration
+# • resources: CPU/memory allocation and horizontal pod autoscaling
+# • securityContext: Pod and container security policies
+# • probes: Health checks for container lifecycle management
+# • affinity/nodeSelector/tolerations: Advanced pod scheduling
 
 # @schema
 # type: array
@@ -64,7 +64,7 @@
 #       description: Type of Secret (e.g., kubernetes.io/tls, kubernetes.io/dockerconfigjson)
 # @schema
 # -- Extra Kubernetes objects to deploy alongside the main chart
-# -- Allows deployment of additional secrets, configmaps, or custom resources
+# Allows deployment of additional secrets, configmaps, or custom resources
 extraObjects: []
 
 # @schema
@@ -72,7 +72,7 @@ extraObjects: []
 # required: false
 # @schema
 # -- Override the full name of all resources created by this chart
-# -- This becomes the prefix for all Kubernetes resource names
+# This becomes the prefix for all Kubernetes resource names
 name: "retrieval-agent-manager"
 
 # @schema
@@ -659,7 +659,7 @@ images:
   # default: []
   # @schema
   # -- Global image pull secrets for accessing private container registries
-  # -- Applied to all sub-charts that reference private registries
+  # Applied to all sub-charts that reference private registries
   imagePullSecrets: []
   #   - name: cr-sas-secret
 
@@ -686,7 +686,7 @@ ingress:
   # type: [string,null]
   # @schema
   # -- Default domain/host for ingress resources
-  # -- If not set, each chart uses its own host configuration
+  # If not set, each chart uses its own host configuration
   domain: null
   # @schema
   # type: [string,null]
@@ -699,7 +699,7 @@ ingress:
   # required: false
   # @schema
   # -- Ingress controller class name
-  # -- If not set, defaults are used based on classType
+  # If not set, defaults are used based on classType
   className: null
   # @schema
   # type: object
@@ -716,20 +716,20 @@ ingress:
     # type: string
     # @schema
     # -- Name of the TLS secret
-    # -- For nginx/contour this is referenced directly (and created by the chart from
-    # -- `certificate`/`key`/`caCertificate`, or by cert-manager when `certManager.enabled`)
-    # -- Not used for OpenShift Routes, which have no secretName field: the certificate is
-    # -- either supplied inline via `certificate`/`key`/`caCertificate`, or (when
-    # -- `certManager.enabled`) patched onto the Route directly by the openshift-routes
-    # -- controller (github.com/cert-manager/openshift-routes) using the annotations below
+    # For nginx/contour this is referenced directly (and created by the chart from
+    # `certificate`/`key`/`caCertificate`, or by cert-manager when `certManager.enabled`)
+    # Not used for OpenShift Routes, which have no secretName field: the certificate is
+    # either supplied inline via `certificate`/`key`/`caCertificate`, or (when
+    # `certManager.enabled`) patched onto the Route directly by the openshift-routes
+    # controller (github.com/cert-manager/openshift-routes) using the annotations below
     secretName: ""
     # @schema
     # type: string
     # @schema
     # -- PEM-encoded certificate content
-    # -- Used directly by the Route template, and to create `secretName` for nginx/contour,
-    # -- when `certManager.enabled` is false
-    # -- Ignored when `certManager.enabled` is true
+    # Used directly by the Route template, and to create `secretName` for nginx/contour,
+    # when `certManager.enabled` is false
+    # Ignored when `certManager.enabled` is true
     certificate: ""
     # @schema
     # type: string
@@ -742,37 +742,55 @@ ingress:
     # -- PEM-encoded CA certificate content, paired with `certificate`
     caCertificate: ""
     # @schema
+    # enum: ["", "edge", "passthrough", "reencrypt"]
+    # required: false
+    # @schema
+    # -- OpenShift Route TLS termination. Ignored for nginx/contour.
+    # Empty uses "edge", where the router terminates TLS and talks plain HTTP to the service.
+    # "reencrypt" re-encrypts to the service and needs `destinationCACertificate`, which this
+    # chart does not render; "passthrough" hands the connection to the pod untouched and is
+    # incompatible with the path-based routing the chart emits.
+    termination: ""
+    # @schema
+    # enum: ["", "Allow", "Disable", "Redirect"]
+    # required: false
+    # @schema
+    # -- What an OpenShift Route does with plain HTTP requests. Ignored for nginx/contour.
+    # Empty uses "Redirect". Must be "None" or absent for passthrough routes, which this
+    # chart cannot express -- another reason passthrough is unsupported here.
+    insecureEdgeTerminationPolicy: ""
+    # @schema
     # type: object
     # required: true
     # @schema
     # -- Manage the TLS certificate through cert-manager instead of supplying it directly
-    # -- For nginx/contour, the chart creates a cert-manager `Certificate` issuing into
-    # -- `secretName`. For OpenShift Routes, the chart instead adds cert-manager.io/*
-    # -- annotations and relies on the openshift-routes controller
-    # -- (github.com/cert-manager/openshift-routes) being installed to patch the Route.
-    # -- IMPORTANT: For OpenShift Routes, you MUST have cert-manager/openshift-routes
-    # -- installed in your cluster. It is NOT included with the standard cert-manager
-    # -- or Red Hat's cert-manager Operator. Install it with:
-    # -- `helm install openshift-routes -n cert-manager oci://ghcr.io/cert-manager/charts/openshift-routes`
-    # -- Routes without the openshift-routes controller will have annotations but no
-    # -- certificate will be populated into spec.tls.
+    # For nginx/contour, the chart creates a cert-manager `Certificate` issuing into
+    # `secretName`. For OpenShift Routes, the chart instead adds cert-manager.io/*
+    # annotations and relies on the openshift-routes controller
+    # (github.com/cert-manager/openshift-routes) being installed to patch the Route.
+    # IMPORTANT: For OpenShift Routes, you MUST have cert-manager/openshift-routes
+    # installed in your cluster. It is NOT included with the standard cert-manager
+    # or Red Hat's cert-manager Operator. Install it with:
+    # `helm install openshift-routes -n cert-manager oci://ghcr.io/cert-manager/charts/openshift-routes`
+    # Routes without the openshift-routes controller will have annotations but no
+    # certificate will be populated into spec.tls.
     certManager:
       # @schema
       # type: boolean
       # required: true
       # @schema
       # -- When true, TLS for this chart's ingress resources is managed by cert-manager
-      # -- instead of `certificate`/`key`/`caCertificate`.
-      # -- For OpenShift Routes, requires openshift-routes controller to be installed.
+      # instead of `certificate`/`key`/`caCertificate`.
+      # For OpenShift Routes, requires openshift-routes controller to be installed.
       enabled: false
       # @schema
       # type: object
       # required: true
       # @schema
       # -- Reference to the cert-manager Issuer/ClusterIssuer that signs the certificate.
-      # -- For nginx/contour, a Certificate object is created to request certs from this Issuer.
-      # -- For OpenShift Routes, these values are passed as annotations to the openshift-routes
-      # -- controller (requires openshift-routes to be installed separately).
+      # For nginx/contour, a Certificate object is created to request certs from this Issuer.
+      # For OpenShift Routes, these values are passed as annotations to the openshift-routes
+      # controller (requires openshift-routes to be installed separately).
       issuerRef:
         # @schema
         # type: string
@@ -790,19 +808,19 @@ ingress:
       # type: [array,null]
       # @schema
       # -- Additional DNS names for the certificate
-      # -- `ingress.domain` is always included
+      # `ingress.domain` is always included
       dnsNames: []
       # @schema
       # type: [string,null]
       # @schema
       # -- Certificate validity duration (e.g. 2160h)
-      # -- If not set, cert-manager's default is used
+      # If not set, cert-manager's default is used
       duration: null
       # @schema
       # type: [string,null]
       # @schema
       # -- How long before expiry to renew (e.g. 360h)
-      # -- If not set, cert-manager's default is used
+      # If not set, cert-manager's default is used
       renewBefore: null
 
   # @schema
@@ -810,8 +828,8 @@ ingress:
   # additionalProperties: true
   # @schema
   # -- Annotations applied to all ingress resources
-  # -- Default nginx annotations are defined in templates/ingress/_nginx.tpl
-  # -- Add annotations here to override defaults or add new ones
+  # Default nginx annotations are defined in templates/ingress/_nginx.tpl
+  # Add annotations here to override defaults or add new ones
   annotations: {}
     # Example overrides:
     # nginx.ingress.kubernetes.io/proxy-buffer-size: 32k
@@ -821,7 +839,7 @@ ingress:
   # type: object
   # @schema
   # -- API ingress configuration
-  # -- Default annotations defined in templates/ingress/_nginx.tpl (nginx.default.annotations.api)
+  # Default annotations defined in templates/ingress/_nginx.tpl (nginx.default.annotations.api)
   api:
     # @schema
     # type: object
@@ -842,7 +860,7 @@ ingress:
   # type: object
   # @schema
   # -- UI ingress configuration
-  # -- Default annotations defined in templates/ingress/_nginx.tpl (nginx.default.annotations.ui)
+  # Default annotations defined in templates/ingress/_nginx.tpl (nginx.default.annotations.ui)
   ui:
     # @schema
     # type: object
@@ -917,7 +935,7 @@ ingress:
   # type: object
   # @schema
   # -- PostgREST ingress configuration
-  # -- Default annotations defined in templates/ingress/_nginx.tpl (nginx.default.annotations.postgrest)
+  # Default annotations defined in templates/ingress/_nginx.tpl (nginx.default.annotations.postgrest)
   postgrest:
     # @schema
     # type: object
@@ -2274,7 +2292,7 @@ db:
       # required: true
       # @schema
       # -- Database migration configuration
-      # -- Controls database schema migration operations using Goose migration tool
+      # Controls database schema migration operations using Goose migration tool
       migration:
         # @schema
         # type: boolean
@@ -2286,7 +2304,7 @@ db:
       # type: object
       # @schema
       # -- PostgREST API configuration
-      # -- Controls REST API generation from PostgreSQL database
+      # Controls REST API generation from PostgreSQL database
       postgrest:
         # @schema
         # type: string
@@ -2354,7 +2372,7 @@ db:
       #       - null
       # @schema
       # -- Vector store configuration
-      # -- Controls vector database setup for AI/ML embeddings and similarity search
+      # Controls vector database setup for AI/ML embeddings and similarity search
       vectorStore:
         # @schema
         # type: boolean
@@ -2553,7 +2571,7 @@ db:
         # default: ""
         # @schema
         # -- Endpoint for LLM provider
-        # -- Example:
+        # Example:
         endpoint: ""
         # @schema
         # type: string
@@ -2576,7 +2594,7 @@ db:
         # default: []
         # @schema
         # -- List of models to hydrate
-        # -- Examples:
+        # Examples:
         #     - name: "gpt-4.1"
         #       context_limit: 1047576
         #     - name: "gpt-4.1-mini"
@@ -2606,7 +2624,7 @@ db:
         # default: []
         # @schema
         # -- List of model names to hydrate
-        # -- Examples:
+        # Examples:
         #   - "ibm-granite/granite-embedding-30m-english"
         #   - "prdev/mini-gte"
         #   - "sentence-transformers/all-MiniLM-L6-v2"
@@ -3117,6 +3135,144 @@ db:
               values:
               - ram
 
+  # @schema
+  # type: object
+  # @schema
+  # -- Settings for the Helm pre-upgrade hook jobs: upgrade validation and job cleanup.
+  # These run before the rest of the release is upgraded, which constrains how they can be
+  # secured on OpenShift. See the podSecurityContext note below.
+  upgrade:
+    # @schema
+    # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/serviceaccount-schema.json"
+    # @schema
+    # -- Service account configuration for the pre-upgrade cleanup job.
+    # The upgrade validation job needs no Kubernetes API access and deliberately runs under
+    # the namespace `default` account, so it is unaffected by these settings.
+    serviceAccount:
+      # -- Specifies whether a service account should be created
+      create: true
+      # -- Automatically mount a ServiceAccount's API credentials
+      automount: true
+      # -- Annotations to add to the service account
+      annotations: {}
+      # -- The name of the service account to use. If not set and create is true, a name is generated using the fullname template
+      name: ""
+
+    # @schema
+    # type: object
+    # additionalProperties: true
+    # @schema
+    # -- Annotations to add to the pods
+    podAnnotations: {}
+
+    # @schema
+    # type: object
+    # additionalProperties: true
+    # @schema
+    # -- Labels to add to the pods
+    podLabels: {}
+
+    # @schema
+    # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/podsecuritycontext-schema.json"
+    # @schema
+    # -- The security context for the pods.
+    # On `platform: openshift` the chart drops `runAsUser`, `runAsGroup`, `runAsNonRoot` AND
+    # `fsGroup` from these two jobs, letting the cluster assign them instead. Unlike the rest of
+    # the chart these are Helm pre-upgrade hooks, and the chart's SecurityContextConstraints is
+    # an ordinary resource rather than a hook, so while the hooks run the cluster still has the
+    # previous release's copy of it. They must therefore be admissible under the SCC the
+    # namespace already grants, normally `restricted-v2`, which rejects a hardcoded fsGroup.
+    # Neither job mounts a volume that needs an fsGroup chown, so nothing is lost.
+    podSecurityContext:
+      # -- Group ID to run the entrypoint of the container process. Ignored on OpenShift.
+      runAsGroup: 10001
+      # -- Indicates that the container must be run as a non-root user. Ignored on OpenShift.
+      runAsNonRoot: true
+      # -- User ID to run the entrypoint of the container process. Ignored on OpenShift.
+      runAsUser: 10001
+      # -- Seccomp profile for the pod
+      seccompProfile:
+        type: RuntimeDefault
+      # -- Group ID for file system ownership. Ignored on OpenShift.
+      fsGroup: 10001
+
+    # @schema
+    # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/securitycontext-schema.json"
+    # @schema
+    # -- The security context for the application container.
+    # `readOnlyRootFilesystem` applies to the cleanup job, which runs kubectl; the chart mounts
+    # an emptyDir at /tmp and sets HOME there so the kubectl discovery cache has somewhere to
+    # write.
+    securityContext:
+      # -- Seccomp profile for the container
+      seccompProfile:
+        type: RuntimeDefault
+      # -- Whether a process can gain more privileges than its parent process
+      allowPrivilegeEscalation: false
+      # -- Linux capabilities to add/drop for the container
+      capabilities:
+        add: []
+        drop:
+          - ALL
+      # -- Whether the container has a read-only root filesystem
+      readOnlyRootFilesystem: true
+      # -- Whether the container must be run as a non-root user. Ignored on OpenShift.
+      runAsNonRoot: true
+      # -- User ID to run the entrypoint of the container process. Ignored on OpenShift.
+      runAsUser: 10001
+
+    # @schema
+    # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/resources-schema.json"
+    # @schema
+    # -- The resources to allocate for the database migration container
+    resources:
+      # -- Resource limits for the container
+      limits:
+        # -- CPU limit
+        cpu: 200m
+        # -- Memory limit
+        memory: 256Mi
+      # -- Resource requests for the container
+      requests:
+        # -- CPU request
+        cpu: 100m
+        # -- Memory request
+        memory: 128Mi
+
+    # @schema
+    # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/nodeselector-schema.json"
+    # @schema
+    # -- Node labels for pod assignment
+    nodeSelector: {}
+
+    # @schema
+    # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/tolerations-schema.json"
+    # @schema
+    # -- Tolerations for pod assignment
+    tolerations: []
+
+    # @schema
+    # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/affinity-schema.json"
+    # @schema
+    # -- Map of node/pod affinities
+    affinity:
+      nodeAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 1
+          preference:
+            matchExpressions:
+            - key: sas.com/deployment
+              operator: In
+              values:
+              - retrieval-agent-manager
+        - weight: 2
+          preference:
+            matchExpressions:
+            - key: workload.sas.com/class
+              operator: In
+              values:
+              - ram
+
 # @schema
 # type: object
 # required: true
@@ -3545,13 +3701,50 @@ security:
   # @schema
   # type: object
   # @schema
+  # -- OpenShift SecurityContextConstraints. Ignored on every other platform.
+  scc:
+    # @schema
+    # type: [boolean, "null"]
+    # required: false
+    # @schema
+    # -- Create the SecurityContextConstraints and its backing ClusterRole.
+    # Both are CLUSTER-SCOPED, so this requires cluster administrator privileges.
+    # null (default) follows `platform`: true on openshift, false elsewhere.
+    # Set to false when an administrator applies them out of band, and pair it with
+    # `binding: namespace` so the release still grants itself the SCC from inside its
+    # own namespace. See examples/openshift/scc-namespace-scoped.yaml.
+    create: null
+    # @schema
+    # enum: ["", "cluster", "namespace", "none"]
+    # required: false
+    # @schema
+    # -- How the SCC is granted to this release's ServiceAccounts.
+    # cluster   - ClusterRoleBinding. Cluster-scoped, needs cluster administrator rights.
+    # namespace - RoleBinding in the release namespace. Keeps the grant local; use when
+    #             the cluster forbids ClusterRoleBindings for application workloads.
+    # none      - The chart grants nothing; an administrator binds the SCC out of band.
+    # Empty (default) follows `platform`: cluster on openshift, none elsewhere.
+    # Empty rather than null because helm-schema drops null from a generated enum,
+    # which would make the default fail validation against this chart's own schema.
+    binding: ""
+    # @schema
+    # type: string
+    # required: false
+    # @schema
+    # -- Name of the SecurityContextConstraints to create and/or grant.
+    # Empty uses "<fullname>-scc". Override to point the binding at an SCC that an
+    # administrator applied under a different name.
+    name: ""
+  # @schema
+  # type: object
+  # @schema
   gpg:
     # @schema
     # type: string
     # @schema
     # -- Override the base name used for GPG resource naming.
-    # -- Must match --name-override passed to bootstrap-gpg.sh.
-    # -- Default produces: retrieval-agent-manager-gpg-{passphrase,private-key,public-key}
+    # Must match --name-override passed to bootstrap-gpg.sh.
+    # Default produces: retrieval-agent-manager-gpg-{passphrase,private-key,public-key}
     nameOverride: ""
     # @schema
     # type: object
@@ -3991,8 +4184,51 @@ integrations:
     # type: boolean
     # required: false
     # @schema
-    # -- Kueue enablement flag
+    # -- Kueue enablement flag.
+    # When false, no Kueue objects are created at all and the API server's spawned
+    # workloads are admitted by whatever default the cluster provides.
     enabled: true
+    # @schema
+    # type: [boolean, "null"]
+    # required: false
+    # @schema
+    # -- Create the CLUSTER-SCOPED Kueue objects (ResourceFlavor, ClusterQueue).
+    # null (default) follows `enabled`.
+    # Set to false on clusters where application installers may not create cluster-scoped
+    # objects: an administrator applies them out of band (see
+    # examples/openshift/kueue-queues.yaml) and this release creates only the namespaced
+    # LocalQueue that binds its namespace to them.
+    createClusterObjects: null
+    # @schema
+    # type: string
+    # required: false
+    # @schema
+    # -- API version for the Kueue objects.
+    # Upstream Kueue served v1beta1 until 0.15 and v1beta2 from 0.15; the OpenShift Kueue
+    # Operator lags upstream. Check with: kubectl api-resources --api-group=kueue.x-k8s.io
+    apiVersion: "kueue.x-k8s.io/v1beta2"
+    # @schema
+    # type: string
+    # required: false
+    # @schema
+    # -- Name of the ResourceFlavor (cluster-scoped). Empty uses "retrieval-agent-manager".
+    resourceFlavorName: ""
+    # @schema
+    # type: string
+    # required: false
+    # @schema
+    # -- Name of the ClusterQueue (cluster-scoped) the LocalQueue draws from.
+    # Empty uses "cluster-queue". An externally created ClusterQueue must select this
+    # release's namespace, or nothing will ever be admitted.
+    clusterQueueName: ""
+    # @schema
+    # type: string
+    # required: false
+    # @schema
+    # -- Name of the LocalQueue (namespaced). Empty uses "genai-queue".
+    # WARNING: the API image labels the workloads it spawns with this name. Changing it
+    # without a matching change in the image leaves those workloads permanently Pending.
+    localQueueName: ""
     # @schema
     # type: object
     # required: false
