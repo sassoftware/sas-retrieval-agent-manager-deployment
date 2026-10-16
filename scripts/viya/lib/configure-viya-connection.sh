@@ -11,9 +11,16 @@ die() {
 
 if [[ "${1:-}" == --help || "${1:-}" == -h ]]; then
   printf 'Connect SAS Viya identity and its MCP tools server to an existing RAM cluster.\n'
+  printf 'Set SKIP_HOME_DIRECTORIES=true to skip Viya home directory creation.\n'
   exit 0
 fi
 (( $# == 0 )) || die "Unknown option: $1"
+
+skip_home_directories=${SKIP_HOME_DIRECTORIES-false}
+case "$skip_home_directories" in
+  true|false) ;;
+  *) die 'SKIP_HOME_DIRECTORIES must be true or false.' ;;
+esac
 
 RAM_KUBE_CONTEXT=${RAM_KUBE_CONTEXT:-${KUBE_CONTEXT:-}}
 VIYA_KUBE_CONTEXT=${VIYA_KUBE_CONTEXT:-${KUBE_CONTEXT:-}}
@@ -104,13 +111,17 @@ umask 077
 temporary_directory=$(mktemp -d)
 trap 'rm -rf "$temporary_directory"' EXIT
 
-printf 'Provisioning Viya home directories...\n'
-KUBECONFIG="$VIYA_KUBECONFIG" \
-KUBE_CONTEXT="$VIYA_KUBE_CONTEXT" \
-PROVISION_NAMESPACE="$VIYA_NAMESPACE" \
-SASBOOT_PASSWORD="$VIYA_PASSWORD" \
-VIYA_USER="$VIYA_USER" \
-bash "$SCRIPT_DIR/provision-viya-home-directories.sh"
+if [[ "$skip_home_directories" == true ]]; then
+  printf 'Skipping Viya home directory creation.\n'
+else
+  printf 'Provisioning Viya home directories...\n'
+  KUBECONFIG="$VIYA_KUBECONFIG" \
+  KUBE_CONTEXT="$VIYA_KUBE_CONTEXT" \
+  PROVISION_NAMESPACE="$VIYA_NAMESPACE" \
+  SASBOOT_PASSWORD="$VIYA_PASSWORD" \
+  VIYA_USER="$VIYA_USER" \
+  bash "$SCRIPT_DIR/provision-viya-home-directories.sh"
+fi
 
 viya_token_issuer() {
   local token payload

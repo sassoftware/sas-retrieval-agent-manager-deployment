@@ -16,6 +16,7 @@ Usage: run-viya-connection.sh --env-file FILE [--kubeconfig FILE]
 The environment file must contain VIYA_URL, VIYA_USER, VIYA_PASSWORD,
 VIYA_CLIENT_SECRET, RAM_URL, RAM_KC_PASSWORD, and MCP_IMAGE. Set KUBE_CONTEXT
 for one shared cluster, or set both RAM_KUBE_CONTEXT and VIYA_KUBE_CONTEXT.
+Set SKIP_HOME_DIRECTORIES=true in the environment file to skip Viya home directory creation.
 EOF
 }
 

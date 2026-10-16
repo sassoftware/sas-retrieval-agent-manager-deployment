@@ -5,6 +5,11 @@ SAS Retrieval Agent Manager (RAM) cluster. Single sign-on (SSO) lets RAM use
 SASLogon for login. Model Context Protocol (MCP) lets a RAM tool server use
 either the signed-in user's Viya token or a Viya OAuth client credential.
 
+Set `SKIP_HOME_DIRECTORIES=true` in the environment file to skip Viya home
+directory creation. All other connection steps still run. If the setting is
+absent or `false`, the script creates missing home directories. Only `true` and
+`false` are valid.
+
 ## Before You Run
 
 - Confirm the Kubernetes context and the RAM and Viya namespaces.
