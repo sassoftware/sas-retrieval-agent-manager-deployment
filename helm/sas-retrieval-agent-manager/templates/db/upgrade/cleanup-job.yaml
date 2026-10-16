@@ -1,0 +1,90 @@
+{{- if .Release.IsUpgrade -}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "upgrade.fullname" . }}-cleanup
+  labels:
+    {{- include "upgrade.labels" . | nindent 4 }}
+    app.kubernetes.io/component: upgrade-cleanup
+  annotations:
+    helm.sh/hook: pre-upgrade
+    # Runs after its ServiceAccount, Role, and RoleBinding, which are weighted -10.
+    helm.sh/hook-weight: "-5"
+    helm.sh/hook-delete-policy: before-hook-creation
+spec:
+  ttlSecondsAfterFinished: 300  # Auto-cleanup after 5 minutes
+  backoffLimit: 3
+  template:
+    metadata:
+      {{- with merge (.Values.db.upgrade.podAnnotations | default dict) (.Values.podAnnotations | default dict) }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "upgrade.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: upgrade-cleanup
+        job-type: cleanup
+        {{- with merge (.Values.db.upgrade.podLabels | default dict) (.Values.podLabels | default dict) }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ include "upgrade.cleanupServiceAccountName" . }}
+      {{- with .Values.images.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      restartPolicy: Never
+      # A pre-upgrade hook cannot rely on this chart's SCC: the SCC and its ClusterRoleBinding
+      # are ordinary resources, so while this hook runs the cluster still has the previous
+      # release's copy of them. Use the hook-safe context, which also drops `fsGroup` on
+      # OpenShift so the pod is admissible under `restricted-v2`. This pod mounts no volumes,
+      # so nothing needs an fsGroup chown. See "ram.hookPodSecurityContext".
+      securityContext:
+        {{- include "ram.hookPodSecurityContext" (list .Values.db.upgrade.podSecurityContext .Values.platform) | nindent 8 }}
+      containers:
+        - name: cleanup
+          image: "{{ include "images.kubectl" . }}"
+          imagePullPolicy: {{ .Values.images.kubectl.pullPolicy }}
+          securityContext:
+            {{- include "ram.securityContext" (list .Values.db.upgrade.securityContext .Values.platform) | nindent 12 }}
+          resources:
+            {{- toYaml .Values.db.upgrade.resources | nindent 12 }}
+          env:
+            # `db.upgrade.securityContext` sets readOnlyRootFilesystem, and this is the only
+            # pod in the chart that actually runs kubectl. kubectl writes a discovery cache
+            # under $HOME/.kube/cache, so point HOME at the writable emptyDir below.
+            - name: HOME
+              value: /tmp
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -eu
+
+              echo "Cleanup job chart version: {{ .Chart.Version }}"
+              echo "Namespace: {{ .Release.Namespace }}"
+
+              kubectl delete jobs -n {{ .Release.Namespace }} -l ram-base-job==true
+
+              echo "Cleanup of jobs with ram-base-job=true label complete"
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        # emptyDir is created world-writable, so the arbitrary UID OpenShift assigns can use
+        # it even though the hook-safe pod security context omits fsGroup.
+        - name: tmp
+          emptyDir: {}
+      {{- with .Values.db.upgrade.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.db.upgrade.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.db.upgrade.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

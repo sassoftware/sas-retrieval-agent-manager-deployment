@@ -1,8 +1,15 @@
-{{- if .Values.integrations.kueue.enabled }}
-apiVersion: kueue.x-k8s.io/v1beta2
+{{/*
+ClusterQueue -- CLUSTER-SCOPED. Gated on "ram.kueue.createClusterObjects" so a release on a
+cluster that forbids cluster-scoped objects can leave this to an administrator.
+
+The namespaceSelector pins the queue to this release's namespace. An externally created
+ClusterQueue must carry the same selector, or the LocalQueue below will never admit anything.
+*/}}
+{{- if include "ram.kueue.createClusterObjects" . }}
+apiVersion: {{ include "ram.kueue.apiVersion" . }}
 kind: ClusterQueue
 metadata:
-  name: "cluster-queue"
+  name: {{ include "ram.kueue.clusterQueueName" . | quote }}
   labels:
     {{- include "retrieval-agent-manager.labels" . | nindent 4 }}
 spec:
@@ -12,7 +19,7 @@ spec:
   resourceGroups:
   - coveredResources: ["cpu", "memory", "pods", "nvidia.com/gpu"]
     flavors:
-    - name: "retrieval-agent-manager"
+    - name: {{ include "ram.kueue.resourceFlavorName" . | quote }}
       resources:
       - name: "cpu"
         nominalQuota: {{ .Values.integrations.kueue.config.cpuQuota | default "32" }}
