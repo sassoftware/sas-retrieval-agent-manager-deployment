@@ -1,0 +1,39 @@
+FROM alpine:3.21
+
+ARG TARGETARCH
+ARG KUBECTL_VERSION=v1.35.0
+ARG KUBELOGIN_VERSION=v0.2.20
+
+WORKDIR /tmp
+RUN apk add --no-cache \
+      bash \
+      ca-certificates \
+      coreutils \
+      curl \
+      jq \
+      python3 \
+      unzip \
+  && case "${TARGETARCH:-amd64}" in \
+       amd64|arm64) tool_arch="${TARGETARCH:-amd64}" ;; \
+       *) printf 'Unsupported architecture: %s\n' "${TARGETARCH}" >&2; exit 1 ;; \
+     esac \
+  && curl -fsSLO "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/${tool_arch}/kubectl" \
+  && curl -fsSLO "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/${tool_arch}/kubectl.sha256" \
+  && printf '%s  %s\n' "$(cat kubectl.sha256)" kubectl | sha256sum -c - \
+  && install -m 0755 kubectl /usr/local/bin/kubectl \
+  && kubelogin_archive="kubelogin-linux-${tool_arch}.zip" \
+  && curl -fsSLO "https://github.com/Azure/kubelogin/releases/download/${KUBELOGIN_VERSION}/${kubelogin_archive}" \
+  && curl -fsSLO "https://github.com/Azure/kubelogin/releases/download/${KUBELOGIN_VERSION}/${kubelogin_archive}.sha256" \
+  && sha256sum -c "${kubelogin_archive}.sha256" \
+  && unzip -q "${kubelogin_archive}" -d kubelogin \
+  && install -m 0755 "kubelogin/bin/linux_${tool_arch}/kubelogin" /usr/local/bin/kubelogin \
+  && rm -rf kubectl kubectl.sha256 "${kubelogin_archive}" \
+      "${kubelogin_archive}.sha256" kubelogin
+
+WORKDIR /opt/ram-viya
+COPY configure-viya-connection.sh register-viya-mcp.sh register-ram-with-viya.sh \
+     link_viya_identity.sh enable_idp_token_exchange.sh \
+     provision-viya-home-directories.sh create_home_directories_vk.sh ./
+RUN chmod 0755 ./*.sh
+
+ENTRYPOINT ["/bin/bash", "/opt/ram-viya/configure-viya-connection.sh"]
