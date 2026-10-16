@@ -132,10 +132,13 @@ spec:
                 configMapKeyRef:
                   key: userRole
                   name: {{ printf "%s-app-roles" (include "retrieval-agent-manager.fullname" .) }}
+            
+            {{- if .Values.ingress.tls.secretName }}
             - name: KC_HTTPS_CERTIFICATE_FILE
               value: "/tls/tls.crt"
             - name: KC_HTTPS_CERTIFICATE_KEY_FILE
               value: "/tls/tls.key"
+            {{- end }}
             - name: KC_HTTP_MANAGEMENT_RELATIVE_PATH
               value: "/"
             - name: KC_HTTP_MANAGEMENT_HEALTH_ENABLED
@@ -286,10 +289,12 @@ spec:
                 configMapKeyRef:
                   key: userRole
                   name: {{ printf "%s-app-roles" (include "retrieval-agent-manager.fullname" .) }}
+            {{- if .Values.ingress.tls.secretName }}
             - name: KC_HTTPS_CERTIFICATE_FILE
               value: "/tls/tls.crt"
             - name: KC_HTTPS_CERTIFICATE_KEY_FILE
               value: "/tls/tls.key"
+            {{- end }}
             - name: POD_IP
               valueFrom:
                 fieldRef:

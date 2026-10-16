@@ -1244,8 +1244,10 @@ api:
     automount: true
     # -- Specifies whether a service account should be created
     create: true
-    # -- The name of the service account to use. If not set and create is true, a name is generated using the fullname template
-    name: ''
+    # -- The name of the service account to use. Set explicitly so the name stays stable for
+    # anything that references it out of band, such as the OpenShift SCC RoleBinding.
+    # With `create: false` this must name a ServiceAccount that already exists.
+    name: retrieval-agent-manager-api
 
   # @schema
   # type: object
@@ -1263,8 +1265,8 @@ api:
       automount: true
       # -- Specifies whether a service account should be created
       create: true
-      # -- The name of the service account to use. If not set and create is true, a name is generated using the fullname template
-      name: ''
+      # -- The name of the service account to use.
+      name: retrieval-agent-manager-api-spawn
 
   # @schema
   # type: object
@@ -2434,8 +2436,8 @@ db:
       automount: true
       # -- Annotations to add to the service account
       annotations: {}
-      # -- The name of the service account to use. If not set and create is true, a name is generated using the fullname template
-      name: ""
+      # -- The name of the service account to use.
+      name: "retrieval-agent-manager-db-init"
 
     # @schema
     # type: object
@@ -2644,8 +2646,8 @@ db:
       automount: true
       # -- Annotations to add to the service account
       annotations: {}
-      # -- The name of the service account to use. If not set and create is true, a name is generated using the fullname template
-      name: ""
+      # -- The name of the service account to use.
+      name: "retrieval-agent-manager-db-migration"
 
     # @schema
     # type: object
@@ -2790,8 +2792,8 @@ db:
       automount: true
       # -- Specifies whether a service account should be created
       create: true
-      # -- The name of the service account to use. If not set and create is true, a name is generated using the fullname template
-      name: ''
+      # -- The name of the service account to use.
+      name: retrieval-agent-manager-postgrest
 
     # @schema
     # type: object
@@ -3155,8 +3157,8 @@ db:
       automount: true
       # -- Annotations to add to the service account
       annotations: {}
-      # -- The name of the service account to use. If not set and create is true, a name is generated using the fullname template
-      name: ""
+      # -- The name of the service account to use.
+      name: "retrieval-agent-manager-upgrade-cleanup"
 
     # @schema
     # type: object
@@ -3360,6 +3362,8 @@ iam:
     # $ref: "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/serviceaccount-schema.json"
     # @schema
     # -- Service account configuration for Keycloak
+    # The realm-update job runs under "<this name>-realm-update", which is derived from this
+    # value rather than configured separately.
     serviceAccount:
       # -- Specifies whether a service account should be created
       create: true
@@ -3367,8 +3371,8 @@ iam:
       automount: true
       # -- Annotations to add to the service account
       annotations: {}
-      # -- The name of the service account to use. If not set and create is true, a name is generated using the fullname template
-      name: ""
+      # -- The name of the service account to use.
+      name: "retrieval-agent-manager-keycloak"
 
     # @schema
     # type: object
@@ -3801,8 +3805,10 @@ ui:
     automount: true
     # -- Specifies whether a service account should be created
     create: true
-    # -- The name of the service account to use. If not set and create is true, a name is generated using the fullname template
-    name: ''
+    # -- The name of the service account to use. Set explicitly so the name stays stable for
+    # anything that references it out of band, such as the OpenShift SCC RoleBinding.
+    # With `create: false` this must name a ServiceAccount that already exists.
+    name: retrieval-agent-manager-app
 
   # @schema
   # type: object

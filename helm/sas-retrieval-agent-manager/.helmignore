@@ -25,3 +25,7 @@ tests/
 .debug
 context.md
 AGENTS.md
+# Build-time inputs only. bundle-values-schema.py folds these into
+# values.schema.json, so the packaged chart already carries their content and
+# shipping them again would just invite drift between the two.
+schemas/

@@ -1,17 +1,1625 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "additionalProperties": false,
+  "definitions": {
+    "affinity": {
+      "description": "Affinity and anti-affinity rules for pod scheduling",
+      "properties": {
+        "nodeAffinity": {
+          "description": "Node affinity scheduling rules",
+          "properties": {
+            "preferredDuringSchedulingIgnoredDuringExecution": {
+              "description": "Soft node affinity preferences",
+              "items": {
+                "properties": {
+                  "preference": {
+                    "description": "Node selector term preference",
+                    "properties": {
+                      "matchExpressions": {
+                        "description": "List of node selector requirements by node labels",
+                        "items": {
+                          "properties": {
+                            "key": {
+                              "description": "The label key",
+                              "type": "string"
+                            },
+                            "operator": {
+                              "description": "Operator for the key-value relationship",
+                              "enum": [
+                                "In",
+                                "NotIn",
+                                "Exists",
+                                "DoesNotExist",
+                                "Gt",
+                                "Lt"
+                              ],
+                              "type": "string"
+                            },
+                            "values": {
+                              "description": "Values for the label key",
+                              "items": {
+                                "type": "string"
+                              },
+                              "type": [
+                                "array",
+                                "null"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "key",
+                            "operator"
+                          ],
+                          "type": "object"
+                        },
+                        "type": [
+                          "array",
+                          "null"
+                        ]
+                      },
+                      "matchFields": {
+                        "description": "List of node selector requirements by node fields",
+                        "items": {
+                          "properties": {
+                            "key": {
+                              "description": "The field key",
+                              "type": "string"
+                            },
+                            "operator": {
+                              "description": "Operator for the key-value relationship",
+                              "enum": [
+                                "In",
+                                "NotIn",
+                                "Exists",
+                                "DoesNotExist",
+                                "Gt",
+                                "Lt"
+                              ],
+                              "type": "string"
+                            },
+                            "values": {
+                              "description": "Values for the field key",
+                              "items": {
+                                "type": "string"
+                              },
+                              "type": [
+                                "array",
+                                "null"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "key",
+                            "operator"
+                          ],
+                          "type": "object"
+                        },
+                        "type": [
+                          "array",
+                          "null"
+                        ]
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "weight": {
+                    "description": "Weight associated with matching the preference (1-100)",
+                    "maximum": 100,
+                    "minimum": 1,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "weight",
+                  "preference"
+                ],
+                "type": "object"
+              },
+              "type": [
+                "array",
+                "null"
+              ]
+            },
+            "requiredDuringSchedulingIgnoredDuringExecution": {
+              "description": "Hard node affinity requirements that must be met",
+              "properties": {
+                "nodeSelectorTerms": {
+                  "description": "List of node selector terms (ORed together)",
+                  "items": {
+                    "properties": {
+                      "matchExpressions": {
+                        "description": "List of node selector requirements by node labels",
+                        "items": {
+                          "properties": {
+                            "key": {
+                              "description": "The label key",
+                              "type": "string"
+                            },
+                            "operator": {
+                              "description": "Operator for the key-value relationship",
+                              "enum": [
+                                "In",
+                                "NotIn",
+                                "Exists",
+                                "DoesNotExist",
+                                "Gt",
+                                "Lt"
+                              ],
+                              "type": "string"
+                            },
+                            "values": {
+                              "description": "Values for the label key (used with In/NotIn operators)",
+                              "items": {
+                                "type": "string"
+                              },
+                              "type": [
+                                "array",
+                                "null"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "key",
+                            "operator"
+                          ],
+                          "type": "object"
+                        },
+                        "type": [
+                          "array",
+                          "null"
+                        ]
+                      },
+                      "matchFields": {
+                        "description": "List of node selector requirements by node fields",
+                        "items": {
+                          "properties": {
+                            "key": {
+                              "description": "The field key",
+                              "type": "string"
+                            },
+                            "operator": {
+                              "description": "Operator for the key-value relationship",
+                              "enum": [
+                                "In",
+                                "NotIn",
+                                "Exists",
+                                "DoesNotExist",
+                                "Gt",
+                                "Lt"
+                              ],
+                              "type": "string"
+                            },
+                            "values": {
+                              "description": "Values for the field key",
+                              "items": {
+                                "type": "string"
+                              },
+                              "type": [
+                                "array",
+                                "null"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "key",
+                            "operator"
+                          ],
+                          "type": "object"
+                        },
+                        "type": [
+                          "array",
+                          "null"
+                        ]
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                }
+              },
+              "required": [
+                "nodeSelectorTerms"
+              ],
+              "type": [
+                "object",
+                "null"
+              ]
+            }
+          },
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "podAffinity": {
+          "description": "Pod affinity scheduling rules (schedule pods near other pods)",
+          "properties": {
+            "preferredDuringSchedulingIgnoredDuringExecution": {
+              "description": "Soft pod affinity preferences",
+              "items": {
+                "properties": {
+                  "podAffinityTerm": {
+                    "properties": {
+                      "labelSelector": {
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      },
+                      "namespaces": {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": [
+                          "array",
+                          "null"
+                        ]
+                      },
+                      "topologyKey": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "topologyKey"
+                    ],
+                    "type": "object"
+                  },
+                  "weight": {
+                    "maximum": 100,
+                    "minimum": 1,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "weight",
+                  "podAffinityTerm"
+                ],
+                "type": "object"
+              },
+              "type": [
+                "array",
+                "null"
+              ]
+            },
+            "requiredDuringSchedulingIgnoredDuringExecution": {
+              "description": "Hard pod affinity requirements",
+              "items": {
+                "properties": {
+                  "labelSelector": {
+                    "properties": {
+                      "matchExpressions": {
+                        "items": {
+                          "properties": {
+                            "key": {
+                              "type": "string"
+                            },
+                            "operator": {
+                              "enum": [
+                                "In",
+                                "NotIn",
+                                "Exists",
+                                "DoesNotExist"
+                              ],
+                              "type": "string"
+                            },
+                            "values": {
+                              "items": {
+                                "type": "string"
+                              },
+                              "type": [
+                                "array",
+                                "null"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "key",
+                            "operator"
+                          ],
+                          "type": "object"
+                        },
+                        "type": [
+                          "array",
+                          "null"
+                        ]
+                      },
+                      "matchLabels": {
+                        "additionalProperties": {
+                          "type": "string"
+                        },
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      }
+                    },
+                    "type": [
+                      "object",
+                      "null"
+                    ]
+                  },
+                  "namespaceSelector": {
+                    "description": "Selector for namespaces",
+                    "type": [
+                      "object",
+                      "null"
+                    ]
+                  },
+                  "namespaces": {
+                    "description": "Namespaces to match pods from",
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": [
+                      "array",
+                      "null"
+                    ]
+                  },
+                  "topologyKey": {
+                    "description": "Label key of the node topology domain",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "topologyKey"
+                ],
+                "type": "object"
+              },
+              "type": [
+                "array",
+                "null"
+              ]
+            }
+          },
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "podAntiAffinity": {
+          "description": "Pod anti-affinity scheduling rules (avoid scheduling pods near other pods)",
+          "properties": {
+            "preferredDuringSchedulingIgnoredDuringExecution": {
+              "description": "Soft pod anti-affinity preferences",
+              "items": {
+                "properties": {
+                  "podAffinityTerm": {
+                    "properties": {
+                      "labelSelector": {
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      },
+                      "namespaces": {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": [
+                          "array",
+                          "null"
+                        ]
+                      },
+                      "topologyKey": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "topologyKey"
+                    ],
+                    "type": "object"
+                  },
+                  "weight": {
+                    "maximum": 100,
+                    "minimum": 1,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "weight",
+                  "podAffinityTerm"
+                ],
+                "type": "object"
+              },
+              "type": [
+                "array",
+                "null"
+              ]
+            },
+            "requiredDuringSchedulingIgnoredDuringExecution": {
+              "description": "Hard pod anti-affinity requirements",
+              "items": {
+                "properties": {
+                  "labelSelector": {
+                    "properties": {
+                      "matchExpressions": {
+                        "items": {
+                          "properties": {
+                            "key": {
+                              "type": "string"
+                            },
+                            "operator": {
+                              "enum": [
+                                "In",
+                                "NotIn",
+                                "Exists",
+                                "DoesNotExist"
+                              ],
+                              "type": "string"
+                            },
+                            "values": {
+                              "items": {
+                                "type": "string"
+                              },
+                              "type": [
+                                "array",
+                                "null"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "key",
+                            "operator"
+                          ],
+                          "type": "object"
+                        },
+                        "type": [
+                          "array",
+                          "null"
+                        ]
+                      },
+                      "matchLabels": {
+                        "additionalProperties": {
+                          "type": "string"
+                        },
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      }
+                    },
+                    "type": [
+                      "object",
+                      "null"
+                    ]
+                  },
+                  "namespaceSelector": {
+                    "type": [
+                      "object",
+                      "null"
+                    ]
+                  },
+                  "namespaces": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": [
+                      "array",
+                      "null"
+                    ]
+                  },
+                  "topologyKey": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "topologyKey"
+                ],
+                "type": "object"
+              },
+              "type": [
+                "array",
+                "null"
+              ]
+            }
+          },
+          "type": [
+            "object",
+            "null"
+          ]
+        }
+      },
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "autoscaling": {
+      "description": "Horizontal Pod Autoscaler configuration",
+      "properties": {
+        "enabled": {
+          "description": "Enable horizontal pod autoscaling",
+          "type": "boolean"
+        },
+        "maxReplicas": {
+          "description": "Maximum number of replicas",
+          "type": "integer"
+        },
+        "minReplicas": {
+          "description": "Minimum number of replicas",
+          "type": "integer"
+        },
+        "targetCPUUtilizationPercentage": {
+          "description": "Target CPU utilization percentage",
+          "type": "integer"
+        },
+        "targetMemoryUtilizationPercentage": {
+          "description": "Target memory utilization percentage",
+          "type": "integer"
+        }
+      },
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "childscheduling": {
+      "additionalProperties": false,
+      "description": "Scheduling configuration for API-managed child workloads",
+      "properties": {
+        "affinity": {
+          "$ref": "#/definitions/affinity"
+        },
+        "nodeSelector": {
+          "$ref": "#/definitions/nodeselector"
+        },
+        "tolerations": {
+          "$ref": "#/definitions/tolerations"
+        }
+      },
+      "type": "object"
+    },
+    "image": {
+      "additionalProperties": false,
+      "properties": {
+        "pullPolicy": {
+          "description": "Image pull policy",
+          "enum": [
+            "IfNotPresent",
+            "Always",
+            "Never",
+            null
+          ],
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "repo": {
+          "additionalProperties": false,
+          "properties": {
+            "base": {
+              "description": "Container registry base URL",
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "path": {
+              "description": "Container image path/name",
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "tag": {
+          "description": "Container image tag",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "type": "object"
+    },
+    "nodeselector": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "Node labels for pod assignment. Pods will only be scheduled on nodes with matching labels",
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "podsecuritycontext": {
+      "additionalProperties": false,
+      "properties": {
+        "appArmorProfile": {
+          "description": "appArmorProfile is the AppArmor options to use by the containers in this pod.",
+          "properties": {
+            "localhostProfile": {
+              "type": "string"
+            },
+            "type": {
+              "enum": [
+                "Localhost",
+                "RuntimeDefault",
+                "Unconfined"
+              ],
+              "type": "string"
+            }
+          },
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "fsGroup": {
+          "default": 10001,
+          "description": "A special supplemental group that applies to all containers in a pod. Some volume types allow the Kubelet to change the ownership of that volume to be owned by the pod: 1. The owning GID will be the FSGroup 2. The setgid bit is set (new files created in the volume will be owned by FSGroup) 3. The permission bits are OR'd with rw-rw----. If unset, the Kubelet will not modify the ownership and permissions of any volume.",
+          "format": "int64",
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "fsGroupChangePolicy": {
+          "default": "Always",
+          "description": "fsGroupChangePolicy defines behavior of changing ownership and permission of the volume before being exposed inside Pod. This field will only apply to volume types which support fsGroup based ownership(and permissions). It will have no effect on ephemeral volume types such as: secret, configmaps and emptydir.",
+          "enum": [
+            "OnRootMismatch",
+            "Always"
+          ],
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "runAsGroup": {
+          "default": 10001,
+          "description": "The GID to run the entrypoint of the container process. Uses runtime default if unset. May also be set in SecurityContext. If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence for that container.",
+          "format": "int64",
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "runAsNonRoot": {
+          "default": true,
+          "description": "Indicates that the container must run as a non-root user. If true, the Kubelet will validate the image at runtime to ensure that it does not run as UID 0 (root) and fail to start the container if it does. If unset or false, no such validation will be performed. May also be set in SecurityContext. If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "runAsUser": {
+          "default": 10001,
+          "description": "The UID to run the entrypoint of the container process. Defaults to user specified in image metadata if unspecified. May also be set in SecurityContext. If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence for that container.",
+          "format": "int64",
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "seLinuxOptions": {
+          "description": "The SELinux context to be applied to all containers. If unspecified, the container runtime will allocate a random SELinux context for each container. May also be set in SecurityContext. If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence for that container.",
+          "properties": {
+            "level": {
+              "description": "Level is SELinux level label that applies to the container",
+              "type": "string"
+            },
+            "role": {
+              "description": "Role is a SELinux role label that applies to the container",
+              "type": "string"
+            },
+            "type": {
+              "description": "Type is a SELinux type label that applies to the container",
+              "type": "string"
+            },
+            "user": {
+              "description": "User is a SELinux user label that applies to the container",
+              "type": "string"
+            }
+          },
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "seccompProfile": {
+          "description": "The seccomp options to use by the containers in this pod.",
+          "properties": {
+            "localhostProfile": {
+              "description": "localhostProfile indicates a profile defined in a file on the node should be used. The profile must be preconfigured on the node to work.",
+              "type": "string"
+            },
+            "type": {
+              "description": "type indicates which kind of seccomp profile will be applied. Valid options are: Localhost, RuntimeDefault, Unconfined",
+              "enum": [
+                "Localhost",
+                "RuntimeDefault",
+                "Unconfined"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "supplementalGroups": {
+          "description": "A list of groups applied to the first process run in each container, in addition to the container's primary GID and fsGroup (if specified). If the SupplementalGroupsPolicy feature is enabled, the supplementalGroupsPolicy field determines whether these are in addition to or instead of any group memberships defined in the container image. If unspecified, no additional groups are added, though group memberships defined in the container image may still be used, depending on the supplementalGroupsPolicy field.",
+          "items": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "supplementalGroupsPolicy": {
+          "default": "Merge",
+          "description": "Defines how supplemental groups of the first container processes are calculated. Valid values are 'Merge' and 'Strict'. If not specified, 'Merge' is used. (Alpha) Using the field requires the SupplementalGroupsPolicy feature gate to be enabled and the container runtime must implement support for this feature.",
+          "enum": [
+            "Merge",
+            "Strict"
+          ],
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sysctls": {
+          "description": "Sysctls hold a list of namespaced sysctls used for the pod. Pods with unsupported sysctls (by the container runtime) might fail to launch.",
+          "items": {
+            "properties": {
+              "name": {
+                "description": "Name of a property to set",
+                "type": "string"
+              },
+              "value": {
+                "description": "Value of a property to set",
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "value"
+            ],
+            "type": "object"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "windowsOptions": {
+          "description": "The Windows specific settings applied to all containers. If unspecified, the options within a container's SecurityContext will be used.",
+          "properties": {
+            "gmsaCredentialSpec": {
+              "description": "GMSACredentialSpec is where the GMSA admission webhook inlines the contents of the GMSA credential spec named by the GMSACredentialSpecName field",
+              "type": "string"
+            },
+            "gmsaCredentialSpecName": {
+              "description": "GMSACredentialSpecName is the name of the GMSA credential spec to use",
+              "type": "string"
+            },
+            "hostProcess": {
+              "description": "HostProcess determines if a container should be run as a 'Host Process' container",
+              "type": "boolean"
+            },
+            "runAsUserName": {
+              "description": "The UserName in Windows to run the entrypoint of the container process",
+              "type": "string"
+            }
+          },
+          "type": [
+            "object",
+            "null"
+          ]
+        }
+      },
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "resources": {
+      "additionalProperties": false,
+      "properties": {
+        "claims": {
+          "description": "Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container.",
+          "items": {
+            "properties": {
+              "name": {
+                "description": "Name must match the name of one entry in pod.spec.resourceClaims",
+                "type": "string"
+              },
+              "request": {
+                "description": "Request is the name chosen for a request in the referenced claim",
+                "type": "string"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "type": "object"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "limits": {
+          "additionalProperties": {
+            "oneOf": [
+              {
+                "pattern": "^[0-9]+(\\.[0-9]+)?(m|Ki|Mi|Gi|Ti|Pi|Ei)?$",
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "description": "Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
+          "properties": {
+            "cpu": {
+              "description": "CPU limit (e.g., '100m', '1', '2')",
+              "oneOf": [
+                {
+                  "pattern": "^[0-9]+(\\.[0-9]+)?m?$",
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "ephemeral-storage": {
+              "description": "Ephemeral storage limit",
+              "oneOf": [
+                {
+                  "pattern": "^[0-9]+(\\.[0-9]+)?(Ki|Mi|Gi|Ti|Pi|Ei)$",
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "memory": {
+              "description": "Memory limit (e.g., '128Mi', '1Gi')",
+              "oneOf": [
+                {
+                  "pattern": "^[0-9]+(\\.[0-9]+)?(Ki|Mi|Gi|Ti|Pi|Ei)$",
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            }
+          },
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "requests": {
+          "additionalProperties": {
+            "oneOf": [
+              {
+                "pattern": "^[0-9]+(\\.[0-9]+)?(m|Ki|Mi|Gi|Ti|Pi|Ei)?$",
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "description": "Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
+          "properties": {
+            "cpu": {
+              "description": "CPU request (e.g., '100m', '1', '2')",
+              "oneOf": [
+                {
+                  "pattern": "^[0-9]+(\\.[0-9]+)?m?$",
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "ephemeral-storage": {
+              "description": "Ephemeral storage request",
+              "oneOf": [
+                {
+                  "pattern": "^[0-9]+(\\.[0-9]+)?(Ki|Mi|Gi|Ti|Pi|Ei)$",
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "memory": {
+              "description": "Memory request (e.g., '128Mi', '1Gi')",
+              "oneOf": [
+                {
+                  "pattern": "^[0-9]+(\\.[0-9]+)?(Ki|Mi|Gi|Ti|Pi|Ei)$",
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            }
+          },
+          "type": [
+            "object",
+            "null"
+          ]
+        }
+      },
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "securitycontext": {
+      "additionalProperties": false,
+      "properties": {
+        "allowPrivilegeEscalation": {
+          "default": false,
+          "description": "AllowPrivilegeEscalation controls whether a process can gain more privileges than its parent process. This bool directly controls if the no_new_privs flag will be set on the container process. AllowPrivilegeEscalation is true always when the container is run as Privileged or has CAP_SYS_ADMIN",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "appArmorProfile": {
+          "description": "appArmorProfile is the AppArmor options to use by this container. If set, this profile overrides the pod's appArmorProfile.",
+          "properties": {
+            "localhostProfile": {
+              "description": "localhostProfile indicates a profile loaded on the node that should be used. The profile must be preconfigured on the node to work.",
+              "type": "string"
+            },
+            "type": {
+              "description": "type indicates which kind of AppArmor profile will be applied. Valid options are: Localhost, RuntimeDefault, Unconfined",
+              "enum": [
+                "Localhost",
+                "RuntimeDefault",
+                "Unconfined"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "capabilities": {
+          "description": "The capabilities to add/drop when running containers. Defaults to the default set of capabilities granted by the container runtime.",
+          "properties": {
+            "add": {
+              "default": [],
+              "description": "Added capabilities",
+              "items": {
+                "type": "string"
+              },
+              "type": [
+                "array",
+                "null"
+              ]
+            },
+            "drop": {
+              "default": [
+                "ALL"
+              ],
+              "description": "Removed capabilities",
+              "items": {
+                "type": "string"
+              },
+              "type": [
+                "array",
+                "null"
+              ]
+            }
+          },
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "privileged": {
+          "default": false,
+          "description": "Run container in privileged mode. Processes in privileged containers are essentially equivalent to root on the host. Defaults to false.",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "procMount": {
+          "description": "procMount denotes the type of proc mount to use for the containers. The default is DefaultProcMount which uses the container runtime defaults for readonly paths and masked paths. This requires the ProcMountType feature flag to be enabled.",
+          "enum": [
+            "Default",
+            "Unmasked",
+            null
+          ],
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "readOnlyRootFilesystem": {
+          "default": true,
+          "description": "Whether this container has a read-only root filesystem. Default is false.",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "runAsGroup": {
+          "default": 10001,
+          "description": "The GID to run the entrypoint of the container process. Uses runtime default if unset. May also be set in PodSecurityContext. If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.",
+          "format": "int64",
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "runAsNonRoot": {
+          "default": true,
+          "description": "Indicates that the container must run as a non-root user. If true, the Kubelet will validate the image at runtime to ensure that it does not run as UID 0 (root) and fail to start the container if it does. If unset or false, no such validation will be performed. May also be set in PodSecurityContext. If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "runAsUser": {
+          "default": 10001,
+          "description": "The UID to run the entrypoint of the container process. Defaults to user specified in image metadata if unspecified. May also be set in PodSecurityContext. If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.",
+          "format": "int64",
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "seLinuxOptions": {
+          "description": "The SELinux context to be applied to the container. If unspecified, the container runtime will allocate a random SELinux context for each container. May also be set in PodSecurityContext. If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.",
+          "properties": {
+            "level": {
+              "description": "Level is SELinux level label that applies to the container",
+              "type": "string"
+            },
+            "role": {
+              "description": "Role is a SELinux role label that applies to the container",
+              "type": "string"
+            },
+            "type": {
+              "description": "Type is a SELinux type label that applies to the container",
+              "type": "string"
+            },
+            "user": {
+              "description": "User is a SELinux user label that applies to the container",
+              "type": "string"
+            }
+          },
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "seccompProfile": {
+          "description": "The seccomp options to use by this container. If seccomp options are provided at both the pod \u0026 container level, the container options override the pod options.",
+          "properties": {
+            "localhostProfile": {
+              "description": "localhostProfile indicates a profile defined in a file on the node should be used. The profile must be preconfigured on the node to work.",
+              "type": "string"
+            },
+            "type": {
+              "description": "type indicates which kind of seccomp profile will be applied. Valid options are: Localhost, RuntimeDefault, Unconfined",
+              "enum": [
+                "Localhost",
+                "RuntimeDefault",
+                "Unconfined"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "windowsOptions": {
+          "description": "The Windows specific settings applied to all containers. If unspecified, the options from the PodSecurityContext will be used.",
+          "properties": {
+            "gmsaCredentialSpec": {
+              "description": "GMSACredentialSpec is where the GMSA admission webhook inlines the contents of the GMSA credential spec named by the GMSACredentialSpecName field",
+              "type": "string"
+            },
+            "gmsaCredentialSpecName": {
+              "description": "GMSACredentialSpecName is the name of the GMSA credential spec to use",
+              "type": "string"
+            },
+            "hostProcess": {
+              "description": "HostProcess determines if a container should be run as a 'Host Process' container",
+              "type": "boolean"
+            },
+            "runAsUserName": {
+              "description": "The UserName in Windows to run the entrypoint of the container process",
+              "type": "string"
+            }
+          },
+          "type": [
+            "object",
+            "null"
+          ]
+        }
+      },
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "service": {
+      "description": "Kubernetes Service configuration",
+      "properties": {
+        "allocateLoadBalancerNodePorts": {
+          "description": "Whether to automatically allocate NodePorts for LoadBalancer type services",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "annotations": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Annotations to add to the service",
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "clusterIP": {
+          "description": "ClusterIP to be assigned to the service (use 'None' for headless service)",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "clusterIPs": {
+          "description": "List of IP addresses assigned to this service (for dual-stack)",
+          "items": {
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "externalIPs": {
+          "description": "List of external IPs for which nodes will accept traffic",
+          "items": {
+            "format": "ipv4",
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "externalName": {
+          "description": "External reference that discovery mechanisms will return as an alias (only for type ExternalName)",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "externalTrafficPolicy": {
+          "description": "Denotes if this Service desires to route external traffic to node-local or cluster-wide endpoints",
+          "enum": [
+            "Cluster",
+            "Local"
+          ],
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "internalTrafficPolicy": {
+          "description": "Specifies if the cluster internal traffic should be routed to all endpoints or node-local endpoints only",
+          "enum": [
+            "Cluster",
+            "Local"
+          ],
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "ipFamilies": {
+          "description": "List of IP families (e.g. IPv4, IPv6) assigned to this service",
+          "items": {
+            "enum": [
+              "IPv4",
+              "IPv6"
+            ],
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "ipFamilyPolicy": {
+          "description": "Represents the dual-stack-ness requested or required by this Service",
+          "enum": [
+            "SingleStack",
+            "PreferDualStack",
+            "RequireDualStack"
+          ],
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "labels": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Labels to add to the service",
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "loadBalancerClass": {
+          "description": "Class of the load balancer implementation",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "loadBalancerIP": {
+          "description": "IP address of the load balancer (deprecated in favor of loadBalancerClass)",
+          "format": "ipv4",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "loadBalancerSourceRanges": {
+          "description": "Restrict traffic through load balancer to specified client IPs",
+          "items": {
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "nodePort": {
+          "description": "NodePort to expose on each node (only used when type is NodePort or LoadBalancer)",
+          "maximum": 32767,
+          "minimum": 30000,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "port": {
+          "default": 80,
+          "description": "Service port number",
+          "maximum": 65535,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "ports": {
+          "description": "Additional ports to expose on the service",
+          "items": {
+            "properties": {
+              "appProtocol": {
+                "description": "Application protocol for this port",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "name": {
+                "description": "Name of this port",
+                "type": "string"
+              },
+              "nodePort": {
+                "description": "NodePort for this port",
+                "maximum": 32767,
+                "minimum": 30000,
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "port": {
+                "description": "Service port number",
+                "maximum": 65535,
+                "minimum": 1,
+                "type": "integer"
+              },
+              "protocol": {
+                "default": "TCP",
+                "description": "Protocol for this port",
+                "enum": [
+                  "TCP",
+                  "UDP",
+                  "SCTP"
+                ],
+                "type": "string"
+              },
+              "targetPort": {
+                "description": "Target port on the pod",
+                "oneOf": [
+                  {
+                    "maximum": 65535,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "port"
+            ],
+            "type": "object"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "protocol": {
+          "default": "TCP",
+          "description": "Protocol for the service port",
+          "enum": [
+            "TCP",
+            "UDP",
+            "SCTP"
+          ],
+          "type": "string"
+        },
+        "publishNotReadyAddresses": {
+          "description": "Whether to publish addresses of not ready pods",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "sessionAffinity": {
+          "default": "None",
+          "description": "Session affinity configuration",
+          "enum": [
+            "None",
+            "ClientIP"
+          ],
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sessionAffinityConfig": {
+          "description": "Session affinity configuration options",
+          "properties": {
+            "clientIP": {
+              "properties": {
+                "timeoutSeconds": {
+                  "description": "Timeout in seconds for ClientIP session affinity",
+                  "maximum": 86400,
+                  "minimum": 1,
+                  "type": "integer"
+                }
+              },
+              "type": "object"
+            }
+          },
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "targetPort": {
+          "description": "Target port on the pod (can be port number or named port)",
+          "oneOf": [
+            {
+              "maximum": 65535,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "type": {
+          "default": "ClusterIP",
+          "description": "Service type determines how the service is exposed",
+          "enum": [
+            "ClusterIP",
+            "NodePort",
+            "LoadBalancer",
+            "ExternalName"
+          ],
+          "type": "string"
+        }
+      },
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "serviceaccount": {
+      "additionalProperties": false,
+      "properties": {
+        "annotations": {
+          "additionalProperties": true,
+          "default": {},
+          "description": "Annotations to add to the service account",
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "automount": {
+          "default": true,
+          "description": "Automatically mount a ServiceAccount's API credentials",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "create": {
+          "default": true,
+          "description": "Specifies whether a service account should be created",
+          "type": "boolean"
+        },
+        "name": {
+          "default": "",
+          "description": "The name of the service account to use. If not set and create is true, a name is generated using the fullname template",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "type": "object"
+    },
+    "storage": {
+      "description": "Persistent Volume Claim configuration",
+      "properties": {
+        "accessModes": {
+          "description": "Access modes for the PVC",
+          "items": {
+            "enum": [
+              "ReadWriteOnce",
+              "ReadOnlyMany",
+              "ReadWriteMany",
+              "ReadWriteOncePod"
+            ],
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "createStorageClass": {
+          "description": "Whether to create the storage class if it doesn't exist. If null, defaults based on platform (azure: true, others: false)",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "existingClaim": {
+          "description": "Existing claim name for the PVC (if not creating a new one). Leave empty to create a new PVC",
+          "type": "string"
+        },
+        "name": {
+          "description": "Name for the PVC",
+          "maxLength": 63,
+          "minLength": 1,
+          "type": "string"
+        },
+        "size": {
+          "description": "Size for the PVC (e.g., 10Gi, 100Gi)",
+          "pattern": "^[0-9]+(Ki|Mi|Gi|Ti|Pi|Ei)?$",
+          "type": "string"
+        },
+        "storageClassName": {
+          "description": "Storage class name for the PVC. If null, defaults based on platform (azure: azurefile-sas, aws: efs-sc, kubernetes/openshift: nfs-client)",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "name",
+        "accessModes",
+        "size"
+      ],
+      "type": "object"
+    },
+    "tolerations": {
+      "description": "Tolerations allow pods to schedule onto nodes with matching taints",
+      "items": {
+        "properties": {
+          "effect": {
+            "description": "The taint effect to match",
+            "enum": [
+              "NoSchedule",
+              "PreferNoSchedule",
+              "NoExecute",
+              ""
+            ],
+            "type": "string"
+          },
+          "key": {
+            "description": "The taint key that the toleration applies to",
+            "type": "string"
+          },
+          "operator": {
+            "default": "Equal",
+            "description": "Operator represents a key's relationship to the value",
+            "enum": [
+              "Exists",
+              "Equal"
+            ],
+            "type": "string"
+          },
+          "tolerationSeconds": {
+            "description": "How long to tolerate the taint (only for NoExecute effect)",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "value": {
+            "description": "The taint value the toleration matches to (used when operator is Equal)",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    }
+  },
   "properties": {
     "api": {
       "additionalProperties": false,
       "description": "SAS Retrieval Agent Manager API: Main backend service",
       "properties": {
         "affinity": {
-          "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/affinity-schema.json",
+          "$ref": "#/definitions/affinity",
           "required": []
         },
         "autoscaling": {
-          "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/autoscaling-schema.json",
+          "$ref": "#/definitions/autoscaling",
           "required": []
         },
         "childScheduling": {
@@ -19,35 +1627,35 @@
           "description": "Configuration for scheduling child entities spawned by the API.",
           "properties": {
             "agentDevServer": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/childscheduling-schema.json",
+              "$ref": "#/definitions/childscheduling",
               "required": []
             },
             "agentProdServer": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/childscheduling-schema.json",
+              "$ref": "#/definitions/childscheduling",
               "required": []
             },
             "automation": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/childscheduling-schema.json",
+              "$ref": "#/definitions/childscheduling",
               "required": []
             },
             "embeddingModel": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/childscheduling-schema.json",
+              "$ref": "#/definitions/childscheduling",
               "required": []
             },
             "eval": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/childscheduling-schema.json",
+              "$ref": "#/definitions/childscheduling",
               "required": []
             },
             "mcpToolServer": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/childscheduling-schema.json",
+              "$ref": "#/definitions/childscheduling",
               "required": []
             },
             "source": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/childscheduling-schema.json",
+              "$ref": "#/definitions/childscheduling",
               "required": []
             },
             "vectorizationHub": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/childscheduling-schema.json",
+              "$ref": "#/definitions/childscheduling",
               "required": []
             }
           },
@@ -260,7 +1868,7 @@
           "type": "object"
         },
         "nodeSelector": {
-          "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/nodeselector-schema.json",
+          "$ref": "#/definitions/nodeselector",
           "required": []
         },
         "podAnnotations": {
@@ -278,7 +1886,7 @@
           "type": "object"
         },
         "podSecurityContext": {
-          "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/podsecuritycontext-schema.json",
+          "$ref": "#/definitions/podsecuritycontext",
           "required": []
         },
         "readinessProbe": {
@@ -333,11 +1941,11 @@
           "type": "integer"
         },
         "resources": {
-          "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/resources-schema.json",
+          "$ref": "#/definitions/resources",
           "required": []
         },
         "securityContext": {
-          "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/securitycontext-schema.json",
+          "$ref": "#/definitions/securitycontext",
           "required": []
         },
         "service": {
@@ -364,7 +1972,7 @@
           "type": "object"
         },
         "serviceAccount": {
-          "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/serviceaccount-schema.json",
+          "$ref": "#/definitions/serviceaccount",
           "required": []
         },
         "spawn": {
@@ -372,7 +1980,7 @@
           "description": "Settings for the services being spawned by the API. These include the embedding model service and the vector store service.",
           "properties": {
             "serviceAccount": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/serviceaccount-schema.json",
+              "$ref": "#/definitions/serviceaccount",
               "required": []
             }
           },
@@ -381,7 +1989,7 @@
           "type": "object"
         },
         "tolerations": {
-          "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/tolerations-schema.json",
+          "$ref": "#/definitions/tolerations",
           "required": []
         },
         "volumeMounts": {
@@ -418,7 +2026,7 @@
           "additionalProperties": false,
           "properties": {
             "affinity": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/affinity-schema.json",
+              "$ref": "#/definitions/affinity",
               "required": []
             },
             "config": {
@@ -774,7 +2382,7 @@
               "type": "object"
             },
             "nodeSelector": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/nodeselector-schema.json",
+              "$ref": "#/definitions/nodeselector",
               "required": []
             },
             "podAnnotations": {
@@ -792,23 +2400,23 @@
               "type": "object"
             },
             "podSecurityContext": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/podsecuritycontext-schema.json",
+              "$ref": "#/definitions/podsecuritycontext",
               "required": []
             },
             "resources": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/resources-schema.json",
+              "$ref": "#/definitions/resources",
               "required": []
             },
             "securityContext": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/securitycontext-schema.json",
+              "$ref": "#/definitions/securitycontext",
               "required": []
             },
             "serviceAccount": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/serviceaccount-schema.json",
+              "$ref": "#/definitions/serviceaccount",
               "required": []
             },
             "tolerations": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/tolerations-schema.json",
+              "$ref": "#/definitions/tolerations",
               "required": []
             }
           },
@@ -822,7 +2430,7 @@
           "additionalProperties": false,
           "properties": {
             "affinity": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/affinity-schema.json",
+              "$ref": "#/definitions/affinity",
               "required": []
             },
             "config": {
@@ -905,7 +2513,7 @@
               "type": "object"
             },
             "nodeSelector": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/nodeselector-schema.json",
+              "$ref": "#/definitions/nodeselector",
               "required": []
             },
             "podAnnotations": {
@@ -923,23 +2531,23 @@
               "type": "object"
             },
             "podSecurityContext": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/podsecuritycontext-schema.json",
+              "$ref": "#/definitions/podsecuritycontext",
               "required": []
             },
             "resources": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/resources-schema.json",
+              "$ref": "#/definitions/resources",
               "required": []
             },
             "securityContext": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/securitycontext-schema.json",
+              "$ref": "#/definitions/securitycontext",
               "required": []
             },
             "serviceAccount": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/serviceaccount-schema.json",
+              "$ref": "#/definitions/serviceaccount",
               "required": []
             },
             "tolerations": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/tolerations-schema.json",
+              "$ref": "#/definitions/tolerations",
               "required": []
             }
           },
@@ -953,15 +2561,15 @@
           "additionalProperties": false,
           "properties": {
             "adminService": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/service-schema.json",
+              "$ref": "#/definitions/service",
               "required": []
             },
             "affinity": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/affinity-schema.json",
+              "$ref": "#/definitions/affinity",
               "required": []
             },
             "autoscaling": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/autoscaling-schema.json",
+              "$ref": "#/definitions/autoscaling",
               "required": []
             },
             "config": {
@@ -1121,7 +2729,7 @@
               "type": "object"
             },
             "nodeSelector": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/nodeselector-schema.json",
+              "$ref": "#/definitions/nodeselector",
               "required": []
             },
             "podAnnotations": {
@@ -1139,7 +2747,7 @@
               "type": "object"
             },
             "podSecurityContext": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/podsecuritycontext-schema.json",
+              "$ref": "#/definitions/podsecuritycontext",
               "required": []
             },
             "readinessProbe": {
@@ -1224,11 +2832,11 @@
               "type": "integer"
             },
             "resources": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/resources-schema.json",
+              "$ref": "#/definitions/resources",
               "required": []
             },
             "securityContext": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/securitycontext-schema.json",
+              "$ref": "#/definitions/securitycontext",
               "required": []
             },
             "service": {
@@ -1255,11 +2863,11 @@
               "type": "object"
             },
             "serviceAccount": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/serviceaccount-schema.json",
+              "$ref": "#/definitions/serviceaccount",
               "required": []
             },
             "tolerations": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/tolerations-schema.json",
+              "$ref": "#/definitions/tolerations",
               "required": []
             },
             "volumeMounts": {
@@ -1293,11 +2901,11 @@
           "description": "Settings for the Helm pre-upgrade hook jobs: upgrade validation and job cleanup.\nThese run before the rest of the release is upgraded, which constrains how they can be\nsecured on OpenShift. See the podSecurityContext note below.",
           "properties": {
             "affinity": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/affinity-schema.json",
+              "$ref": "#/definitions/affinity",
               "required": []
             },
             "nodeSelector": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/nodeselector-schema.json",
+              "$ref": "#/definitions/nodeselector",
               "required": []
             },
             "podAnnotations": {
@@ -1315,23 +2923,23 @@
               "type": "object"
             },
             "podSecurityContext": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/podsecuritycontext-schema.json",
+              "$ref": "#/definitions/podsecuritycontext",
               "required": []
             },
             "resources": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/resources-schema.json",
+              "$ref": "#/definitions/resources",
               "required": []
             },
             "securityContext": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/securitycontext-schema.json",
+              "$ref": "#/definitions/securitycontext",
               "required": []
             },
             "serviceAccount": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/serviceaccount-schema.json",
+              "$ref": "#/definitions/serviceaccount",
               "required": []
             },
             "tolerations": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/tolerations-schema.json",
+              "$ref": "#/definitions/tolerations",
               "required": []
             }
           },
@@ -1431,11 +3039,11 @@
           "additionalProperties": false,
           "properties": {
             "affinity": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/affinity-schema.json",
+              "$ref": "#/definitions/affinity",
               "required": []
             },
             "autoscaling": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/autoscaling-schema.json",
+              "$ref": "#/definitions/autoscaling",
               "required": []
             },
             "config": {
@@ -1555,7 +3163,7 @@
               "type": "object"
             },
             "nodeSelector": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/nodeselector-schema.json",
+              "$ref": "#/definitions/nodeselector",
               "required": []
             },
             "podAnnotations": {
@@ -1573,7 +3181,7 @@
               "type": "object"
             },
             "podSecurityContext": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/podsecuritycontext-schema.json",
+              "$ref": "#/definitions/podsecuritycontext",
               "required": []
             },
             "readinessProbe": {
@@ -1614,19 +3222,19 @@
               "type": "integer"
             },
             "resources": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/resources-schema.json",
+              "$ref": "#/definitions/resources",
               "required": []
             },
             "securityContext": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/securitycontext-schema.json",
+              "$ref": "#/definitions/securitycontext",
               "required": []
             },
             "service": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/service-schema.json",
+              "$ref": "#/definitions/service",
               "required": []
             },
             "serviceAccount": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/serviceaccount-schema.json",
+              "$ref": "#/definitions/serviceaccount",
               "required": []
             },
             "startupProbe": {
@@ -1660,7 +3268,7 @@
               "type": "object"
             },
             "tolerations": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/tolerations-schema.json",
+              "$ref": "#/definitions/tolerations",
               "required": []
             },
             "volumeMounts": {
@@ -1694,15 +3302,15 @@
           "description": "OAuth2 Proxy configuration for authentication",
           "properties": {
             "resources": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/resources-schema.json",
+              "$ref": "#/definitions/resources",
               "required": []
             },
             "securityContext": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/securitycontext-schema.json",
+              "$ref": "#/definitions/securitycontext",
               "required": []
             },
             "serviceAccount": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/serviceaccount-schema.json",
+              "$ref": "#/definitions/serviceaccount",
               "required": []
             },
             "volumeMounts": {
@@ -1740,54 +3348,54 @@
       "description": "============================================================================\nREQUIRED IMAGES FOR SAS Retrieval Agent Manager\n============================================================================",
       "properties": {
         "agent": {
-          "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/image-schema.json",
+          "$ref": "#/definitions/image",
           "required": []
         },
         "api": {
-          "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/image-schema.json",
+          "$ref": "#/definitions/image",
           "required": []
         },
         "embedding": {
-          "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/image-schema.json",
+          "$ref": "#/definitions/image",
           "required": []
         },
         "eval": {
-          "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/image-schema.json",
+          "$ref": "#/definitions/image",
           "required": []
         },
         "goose": {
-          "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/image-schema.json",
+          "$ref": "#/definitions/image",
           "required": []
         },
         "gpg": {
-          "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/image-schema.json",
+          "$ref": "#/definitions/image",
           "required": []
         },
         "imagePullSecrets": {
           "type": "array"
         },
         "keycloak": {
-          "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/image-schema.json",
+          "$ref": "#/definitions/image",
           "required": []
         },
         "kubectl": {
-          "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/image-schema.json",
+          "$ref": "#/definitions/image",
           "required": []
         },
         "mcpToolbox": {
-          "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/image-schema.json",
+          "$ref": "#/definitions/image",
           "required": []
         },
         "oauthProxy": {
-          "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/image-schema.json",
+          "$ref": "#/definitions/image",
           "required": []
         },
         "postgres": {
-          "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/image-schema.json",
+          "$ref": "#/definitions/image",
           "required": []
         },
         "postgrest": {
-          "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/image-schema.json",
+          "$ref": "#/definitions/image",
           "required": []
         },
         "pullPolicy": {
@@ -1803,15 +3411,15 @@
           "required": []
         },
         "theme": {
-          "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/image-schema.json",
+          "$ref": "#/definitions/image",
           "required": []
         },
         "ui": {
-          "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/image-schema.json",
+          "$ref": "#/definitions/image",
           "required": []
         },
         "vectorizationHub": {
-          "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/image-schema.json",
+          "$ref": "#/definitions/image",
           "required": []
         }
       },
@@ -2472,7 +4080,7 @@
         "application": {
           "properties": {
             "pvc": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/storage-schema.json",
+              "$ref": "#/definitions/storage",
               "required": []
             }
           },
@@ -2499,7 +4107,7 @@
         "embedding": {
           "properties": {
             "pvc": {
-              "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/storage-schema.json",
+              "$ref": "#/definitions/storage",
               "required": []
             }
           },
@@ -2516,11 +4124,11 @@
       "description": "SAS Retrieval Agent Manager UI: Main frontend service",
       "properties": {
         "affinity": {
-          "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/affinity-schema.json",
+          "$ref": "#/definitions/affinity",
           "required": []
         },
         "autoscaling": {
-          "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/autoscaling-schema.json",
+          "$ref": "#/definitions/autoscaling",
           "required": []
         },
         "config": {
@@ -2577,7 +4185,7 @@
           "type": "object"
         },
         "nodeSelector": {
-          "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/nodeselector-schema.json",
+          "$ref": "#/definitions/nodeselector",
           "required": []
         },
         "podAnnotations": {
@@ -2595,7 +4203,7 @@
           "type": "object"
         },
         "podSecurityContext": {
-          "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/podsecuritycontext-schema.json",
+          "$ref": "#/definitions/podsecuritycontext",
           "required": []
         },
         "readinessProbe": {
@@ -2643,11 +4251,11 @@
           "type": "integer"
         },
         "resources": {
-          "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/resources-schema.json",
+          "$ref": "#/definitions/resources",
           "required": []
         },
         "securityContext": {
-          "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/securitycontext-schema.json",
+          "$ref": "#/definitions/securitycontext",
           "required": []
         },
         "service": {
@@ -2674,11 +4282,11 @@
           "type": "object"
         },
         "serviceAccount": {
-          "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/serviceaccount-schema.json",
+          "$ref": "#/definitions/serviceaccount",
           "required": []
         },
         "tolerations": {
-          "$ref": "https://raw.githubusercontent.com/sassoftware/sas-retrieval-agent-manager-deployment/refs/heads/schemas/schemas/tolerations-schema.json",
+          "$ref": "#/definitions/tolerations",
           "required": []
         },
         "volumeMounts": {
