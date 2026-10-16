@@ -2,9 +2,9 @@
 # SAS Retrieval Agent Manager.
 #
 # Use these manifests when your OpenShift administrator does not permit application installers to
-# create ClusterRoleBindings. A cluster administrator applies this file once, because the
-# SecurityContextConstraints and the ClusterRole are both cluster-scoped. The RoleBinding at the
-# end grants the SCC only inside the named namespace.
+# create cluster-scoped objects. A cluster administrator applies this file once: the SCC and the
+# ClusterRole are both cluster-scoped, and the RoleBinding at the end grants the SCC only inside
+# the named namespace.
 #
 # In your values file:
 #
@@ -12,8 +12,37 @@
 #
 #   security:
 #     scc:
-#       create: false        # this file creates the SCC and ClusterRole instead
-#       binding: namespace   # the release creates a RoleBinding, not a ClusterRoleBinding
+#       create: false   # this file creates the SCC and the ClusterRole
+#       binding: none   # this file creates the RoleBinding too; the chart creates nothing
+#
+# Pair this file with `binding: none`, NOT `binding: namespace`.
+#
+# `binding: namespace` asks the CHART to create the RoleBinding. That cannot work for the very
+# installer this file exists to serve. Kubernetes RBAC refuses to let any identity grant
+# permissions it does not itself hold, so a restricted installer gets:
+#
+#   rolebindings.rbac.authorization.k8s.io "retrieval-agent-manager-scc-binding" is forbidden:
+#   user "..." is attempting to grant RBAC permissions not currently held:
+#   {APIGroups:["security.openshift.io"], Resources:["securitycontextconstraints"],
+#    ResourceNames:["retrieval-agent-manager-scc"], Verbs:["use"]}
+#
+# An administrator can lift that by granting the installer either `use` on the SCC or `bind` on
+# the ClusterRole below -- but both are themselves cluster-scoped grants, so the administrator is
+# involved either way. Applying the RoleBinding here is the shorter path.
+#
+# Do NOT apply this file while `binding: namespace` is set. Both would create a RoleBinding named
+# `retrieval-agent-manager-scc-binding`, and Helm refuses to adopt an object it did not create, so
+# the next `helm upgrade` fails with:
+#
+#   Error: UPGRADE FAILED: Unable to continue with update: RoleBinding
+#   "retrieval-agent-manager-scc-binding" in namespace "retagentmgr" exists and cannot be imported
+#   into the current release: invalid ownership metadata; label validation error: missing key
+#   "app.kubernetes.io/managed-by"
+#
+# To recover from that, drop the hand-applied object and let the chart own it, or keep this file
+# and switch to `binding: none`:
+#
+#   oc delete rolebinding retrieval-agent-manager-scc-binding -n retagentmgr
 #
 # Keep `platform: openshift`. It is what makes the chart drop runAsUser, runAsGroup and
 # runAsNonRoot from the pod and container security contexts, so OpenShift assigns a UID from the
@@ -24,12 +53,12 @@
 # this file at all -- that is the default on OpenShift, and it needs cluster administrator
 # privileges.
 #
-# You can also apply the RoleBinding below by hand instead of letting the chart create it. Set
-# `security.scc.binding: none` in that case, so the release creates no binding at all.
-#
 # Replace `retagentmgr` with your namespace and `retrieval-agent-manager` with your Helm release
 # name if you use different values. If you change the SCC name here, set `security.scc.name` to
 # match.
+#
+# NOTE: the subject list at the end must track the ServiceAccounts the release actually runs pods
+# under, and that list can change between chart versions. Re-check it when you upgrade.
 ---
 apiVersion: security.openshift.io/v1
 kind: SecurityContextConstraints
@@ -111,10 +140,8 @@ rules:
 # Grants the SCC above to the SAS Retrieval Agent Manager ServiceAccounts in this namespace only.
 # A RoleBinding that references a ClusterRole grants that role only within its own namespace.
 #
-# Apply this document only if you set `security.scc.binding: none`. With
-# `security.scc.binding: namespace` the chart creates an equivalent RoleBinding itself and keeps
-# the subject list in step with the ServiceAccounts it actually runs pods under, which is the
-# safer option because that list changes between chart versions.
+# Requires `security.scc.binding: none`, so that the chart does not also create this object.
+# See the note at the top of this file.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:

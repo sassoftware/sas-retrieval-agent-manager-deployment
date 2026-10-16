@@ -158,10 +158,10 @@ platform: openshift
 
 security:
   scc:
-    # An administrator applies the SCC and its ClusterRole; see step 2.
+    # An administrator applies the SCC, its ClusterRole, and the RoleBinding; see step 2.
     create: false
-    # The release still grants itself the SCC, with a RoleBinding in its own namespace.
-    binding: namespace
+    # The chart creates no binding at all. See the note below on why `namespace` is wrong here.
+    binding: none
 ```
 
 > [!IMPORTANT]
@@ -171,12 +171,26 @@ security:
 > values instead of letting OpenShift assign a UID from the namespace range. `security.scc.*`
 > separates the two concerns, so you no longer have to misreport the platform.
 
-If you prefer to create the `RoleBinding` yourself, set `security.scc.binding: none` and apply the
-third document in the example file. Letting the chart create it is safer: the chart keeps the
-subject list in step with the ServiceAccounts it actually runs pods under, and that list changes
-between chart versions.
+> [!WARNING]
+> Use `binding: none` here, not `binding: namespace`. `namespace` asks the chart to create the
+> RoleBinding, which the restricted installer this section exists for cannot do: Kubernetes RBAC
+> refuses to let any identity grant permissions it does not itself hold, so the install fails with
+>
+> ```text
+> rolebindings.rbac.authorization.k8s.io "retrieval-agent-manager-scc-binding" is forbidden:
+> user "..." is attempting to grant RBAC permissions not currently held:
+> {APIGroups:["security.openshift.io"], Resources:["securitycontextconstraints"],
+>  ResourceNames:["retrieval-agent-manager-scc"], Verbs:["use"]}
+> ```
+>
+> An administrator can lift that by granting the installer either `use` on the SCC or `bind` on
+> the ClusterRole, but both are cluster-scoped grants, so an administrator is involved either way.
+> Applying the RoleBinding in step 2 is the shorter path.
+>
+> `binding: namespace` is still the right choice when the installer already holds one of those
+> grants, or when only the SCC itself is applied out of band.
 
-**Step 2. Apply the SCC, the ClusterRole, and (optionally) the RoleBinding.**
+**Step 2. Apply the SCC, the ClusterRole, and the RoleBinding.**
 
 Use the
 [example manifests](https://github.com/sassoftware/sas-retrieval-agent-manager-deployment/blob/main/examples/openshift/scc-namespace-scoped.yaml).
@@ -193,7 +207,26 @@ The manifests create:
 |--------|-------|---------|
 | `SecurityContextConstraints` | Cluster | Identical to the one the chart would create, but with an empty `users` list |
 | `ClusterRole` | Cluster | `system:openshift:scc:retrieval-agent-manager-scc`. OpenShift does not create this for custom SCCs; without it the binding grants nothing |
-| `RoleBinding` | Namespace | Grants the ClusterRole above to the ServiceAccounts in your namespace only. Apply this document only when `security.scc.binding: none` |
+| `RoleBinding` | Namespace | Grants the ClusterRole above to the ServiceAccounts in your namespace only |
+
+> [!WARNING]
+> Do not apply this file while `binding: namespace` is set. Both it and the chart create a
+> RoleBinding named `retrieval-agent-manager-scc-binding`, and Helm refuses to adopt an object it
+> did not create, so the next `helm upgrade` fails with:
+>
+> ```text
+> Error: UPGRADE FAILED: Unable to continue with update: RoleBinding
+> "retrieval-agent-manager-scc-binding" in namespace "retagentmgr" exists and cannot be imported
+> into the current release: invalid ownership metadata; label validation error: missing key
+> "app.kubernetes.io/managed-by"
+> ```
+>
+> To recover, either delete the hand-applied object and let the chart own it, or keep this file
+> and switch to `binding: none`:
+>
+> ```bash
+> oc delete rolebinding retrieval-agent-manager-scc-binding -n retagentmgr
+> ```
 
 **Step 3. Verify the grant before you install.**
 
