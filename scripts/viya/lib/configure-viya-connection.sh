@@ -143,19 +143,21 @@ viya_token_issuer() {
 }
 
 set_viya_issuer() {
-  "${VIYA_KUBECTL[@]}" --namespace "$VIYA_NAMESPACE" exec -i \
-    deployment/sas-logon-app -c sas-logon-app -- sh -s -- "$ISSUER_URI" <<'REMOTE_SCRIPT'
+  local access_token
+  access_token=$(curl -ksSf -X POST "$VIYA_URL/SASLogon/oauth/token" \
+    -u 'sas.cli:' --data-urlencode 'grant_type=password' \
+    --data-urlencode "username=$VIYA_USER" \
+    --data-urlencode "password=$VIYA_PASSWORD" \
+    | jq -er '.access_token // empty') \
+    || die 'Could not get a Viya administrator access token for the issuer update.'
+
+  {
+    printf '%s\n' "$access_token"
+    cat <<'REMOTE_SCRIPT'
 set -eu
 issuer_uri=$1
-password=$(/opt/sas/viya/home/bin/sas-bootstrap-config kv read --global 'sas.logon/initial/password')
-[ -n "$password" ] || { printf 'SAS boot password is not available.\n' >&2; exit 1; }
 temporary_directory=$(mktemp -d)
-trap 'rm -rf "$temporary_directory"; unset password token' EXIT
-token=$(curl -ksSf -X POST https://localhost:8080/SASLogon/oauth/token \
-  -u 'sas.cli:' --data-urlencode 'grant_type=password' \
-  --data-urlencode 'username=sasboot' --data-urlencode "password=$password" \
-  | python3 -c 'import json,sys; print(json.load(sys.stdin)["access_token"])')
-unset password
+trap 'rm -rf "$temporary_directory"; unset token' EXIT
 curl -ksSf 'https://sas-configuration/configuration/definitions?limit=1000' \
   -H "Authorization: Bearer $token" -H 'Accept: application/json' \
   >"$temporary_directory/definitions.json"
@@ -221,6 +223,10 @@ if [ "$action" != MATCH ]; then
   esac
 fi
 REMOTE_SCRIPT
+  } | "${VIYA_KUBECTL[@]}" --namespace "$VIYA_NAMESPACE" exec -i \
+    deployment/sas-logon-app -c sas-logon-app -- \
+    sh -c 'IFS= read -r token; export token; exec sh -s -- "$@"' \
+    sh "$ISSUER_URI"
   "${VIYA_KUBECTL[@]}" --namespace "$VIYA_NAMESPACE" rollout restart deployment/sas-logon-app
   "${VIYA_KUBECTL[@]}" --namespace "$VIYA_NAMESPACE" rollout status \
     deployment/sas-logon-app --timeout=180s

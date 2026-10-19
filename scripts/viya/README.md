@@ -43,6 +43,10 @@ Do not put the file in version control.
 | `RAM_KC_PASSWORD` | RAM Keycloak administrator password |
 | `MCP_IMAGE` | Tagged SAS MCP server image available to the RAM cluster |
 
+The issuer update uses `VIYA_USER` and `VIYA_PASSWORD`. This account must have
+permission to change the SAS Logon configuration. The script does not read the
+initial `sasboot` password.
+
 Set `KUBE_CONTEXT` if RAM and Viya share a cluster. If they are on separate clusters, comment out `KUBE_CONTEXT` and set both `RAM_KUBE_CONTEXT` and `VIYA_KUBE_CONTEXT`. Do not
 set both forms. The wrapper reads the context values from the environment file.
 
