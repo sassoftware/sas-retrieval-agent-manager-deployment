@@ -6,7 +6,7 @@ RUN apk add --no-cache \
     gnupg-keyboxd \
     curl
 
-ARG KUBECTL_VERSION=v1.29.3
+ARG KUBECTL_VERSION=v1.35.0
 RUN curl -fsSL "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl" \
       -o /usr/local/bin/kubectl \
  && chmod +x /usr/local/bin/kubectl
