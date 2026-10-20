@@ -3271,6 +3271,12 @@
               "$ref": "#/definitions/tolerations",
               "required": []
             },
+            "useHttpProbes": {
+              "default": false,
+              "description": "Use HTTP for Keycloak health probes and the management interface on port 9000. The default probes use HTTPS.",
+              "title": "useHttpProbes",
+              "type": "boolean"
+            },
             "volumeMounts": {
               "description": "Additional volumeMounts on the output Deployment definition",
               "items": {

@@ -240,6 +240,10 @@ spec:
               value: 'true'
             - name: KC_HTTP_MANAGEMENT_RELATIVE_PATH
               value: "/"
+            {{- if .Values.iam.keycloak.useHttpProbes }}
+            - name: KC_HTTP_MANAGEMENT_SCHEME
+              value: "http"
+            {{- end }}
             - name: KC_THEME_NAME
               value: {{ .Values.iam.keycloak.config.theme }}
             - name: KC_REALM_CLIENT_SERVICEACCOUNTSENABLED

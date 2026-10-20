@@ -93,13 +93,13 @@ Usage: {{ include "testValuesPath" (list .Values.keycloak "x" "y" "z") }}
 
 {{/*
 Default startup probe configuration for Keycloak
-Note: Keycloak 17+ management interface uses HTTPS on port 9000
+Use HTTPS unless useHttpProbes is true.
 */}}
 {{- define "keycloak.defaultStartupProbe" -}}
 httpGet:
   path: /health/started
   port: 9000
-  scheme: HTTPS
+  scheme: {{ ternary "HTTP" "HTTPS" .Values.iam.keycloak.useHttpProbes }}
 {{- end }}
 
 {{/*
@@ -109,7 +109,7 @@ Default liveness probe configuration for Keycloak
 httpGet:
   path: /health/live
   port: 9000
-  scheme: HTTPS
+  scheme: {{ ternary "HTTP" "HTTPS" .Values.iam.keycloak.useHttpProbes }}
 {{- end }}
 
 {{/*
@@ -119,7 +119,7 @@ Default readiness probe configuration for Keycloak
 httpGet:
   path: /health/ready
   port: 9000
-  scheme: HTTPS
+  scheme: {{ ternary "HTTP" "HTTPS" .Values.iam.keycloak.useHttpProbes }}
 {{- end }}
 
 {{/*

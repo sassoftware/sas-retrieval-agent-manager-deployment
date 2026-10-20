@@ -3460,6 +3460,13 @@ iam:
         memory: 256Mi
 
     # @schema
+    # type: boolean
+    # default: false
+    # @schema
+    # -- Use HTTP for Keycloak health probes and the management interface on port 9000. The default probes use HTTPS.
+    useHttpProbes: false
+
+    # @schema
     # type: object
     # @schema
     # -- Liveness probe configuration for Keycloak
