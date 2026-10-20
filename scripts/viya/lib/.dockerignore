@@ -5,5 +5,7 @@
 !register-viya-mcp.sh
 !link_viya_identity.sh
 !enable_idp_token_exchange.sh
+!rename_viya_group.sh
+!add_viya_group_member.sh
 !provision-viya-home-directories.sh
 !create_home_directories_vk.sh

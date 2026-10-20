@@ -1,5 +1,16 @@
 #!/usr/bin/env python3
-# This is used in Viya to make sure that you have the necessary connection to RAM.
+# Check a SAS Viya connection to SAS Retrieval Agent Manager (RAM).
+# Send a query with the Viya user token.
+#
+# Requires: requests and a SAS Studio session with SAS_SERVICES_TOKEN.
+#
+# Usage:
+#   Set VIYA_URL, RAM_URL, and RAM_AGENT_ID below.
+#   Run this script in SAS Studio after the connection setup.
+#
+# Optional override:
+#   Set RAM_QUERY_CONTENT to the query text.
+
 import os
 from urllib.parse import parse_qs, urlparse
 
@@ -16,7 +27,14 @@ def get_viya_token(session_token):
     params = {"client_id": "sas.cli", "response_type": "token", "scope": "openid"}
     headers = {"Authorization": "Bearer " + session_token}
 
-    resp = requests.get(url, params=params, headers=headers, allow_redirects=False, verify=False, timeout=30)
+    resp = requests.get(
+        url,
+        params=params,
+        headers=headers,
+        allow_redirects=False,
+        verify=False,
+        timeout=30,
+    )
     location = resp.headers.get("Location", "")
     fragment = urlparse(location).fragment or urlparse(location).query
     return parse_qs(fragment)["access_token"][0]

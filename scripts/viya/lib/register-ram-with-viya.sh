@@ -1,4 +1,16 @@
 #!/usr/bin/env bash
+# Register SAS Retrieval Agent Manager (RAM) in the SAS Viya application registry.
+# Create the registry entry and navigation link.
+#
+# Requires: curl, jq, sed, and a Viya administrator account.
+#
+# Usage:
+#   bash register-ram-with-viya.sh --viya-url https://viya.example.com --username admin
+#   bash register-ram-with-viya.sh --help
+#
+# Optional overrides:
+#   REGISTRY_NAME=RetrievalAgentManager   APP_ID=RetrievalAgentManager
+#   DISPLAY_NAME="Retrieval Agent Manager"
 
 set -euo pipefail
 
@@ -21,7 +33,7 @@ RESOURCE_PREFIX="${RESOURCE_PREFIX:-sasretrievalagentmanager}"
 DRY_RUN=false
 DELETE_ID="${DELETE_ID:-}"
 
-usage() {
+function usage() {
   cat <<'EOF'
 Register SAS Retrieval Agent Manager in a SAS Viya application registry.
 
@@ -67,18 +79,18 @@ Examples:
 EOF
 }
 
-die() {
+function die() {
   printf 'Error: %s\n' "$*" >&2
   exit 1
 }
 
-require_value() {
+function require_value() {
   local option="$1"
   local value="${2:-}"
   [[ -n "${value}" ]] || die "${option} requires a value."
 }
 
-xml_escape() {
+function xml_escape() {
   printf '%s' "$1" | sed \
     -e 's/&/\&amp;/g' \
     -e 's/</\&lt;/g' \
@@ -87,7 +99,7 @@ xml_escape() {
     -e "s/'/\\\&apos;/g"
 }
 
-request() {
+function request() {
   local response
   response="$(curl --silent --show-error "${CURL_TLS_ARGS[@]}" "$@" --write-out $'\n%{http_code}')"
   HTTP_STATUS="${response##*$'\n'}"
@@ -174,7 +186,7 @@ while [[ $# -gt 0 ]]; do
       DRY_RUN=true
       shift
       ;;
-    -h|--help)
+    -h | --help)
       usage
       exit 0
       ;;
@@ -270,7 +282,8 @@ ram_uri_xml="$(xml_escape "${RAM_URI}")"
 parent_id_xml="$(xml_escape "${PARENT_ID}")"
 resource_prefix_xml="$(xml_escape "${RESOURCE_PREFIX}")"
 
-integration_xml="$(cat <<EOF
+integration_xml="$(
+  cat <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <appRegistryEntries>
   <appRegistryBranch name="${parent_id_xml}"
@@ -290,7 +303,8 @@ integration_xml="$(cat <<EOF
 EOF
 )"
 
-properties_contents="$(cat <<EOF
+properties_contents="$(
+  cat <<EOF
 label.txt=${DISPLAY_NAME}
 branch.label.txt=${PARENT_LABEL}
 EOF

@@ -1,4 +1,17 @@
 #Requires -Version 7.0
+# Connect SAS Viya to SAS Retrieval Agent Manager (RAM).
+# Build the Docker image. Run the connection steps in the container.
+#
+# Requires: PowerShell 7, Docker, kubectl, and both Kubernetes contexts.
+#
+# Usage:
+#   ./run-viya-connection.ps1 -EnvFile C:\private\viya.env
+#   ./run-viya-connection.ps1 -EnvFile C:\private\viya.env -Kubeconfig C:\private\config
+#
+# Optional overrides:
+#   RAM_VIYA_IMAGE=ram-viya-connect:local
+#   KUBECONFIG_PATH selects the shared Kubernetes configuration file.
+
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)][string]$EnvFile,

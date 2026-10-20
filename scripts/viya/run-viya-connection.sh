@@ -1,4 +1,16 @@
 #!/usr/bin/env bash
+# Connect SAS Viya to SAS Retrieval Agent Manager (RAM).
+# Build the Docker image. Run the connection steps in the container.
+#
+# Requires: Docker, kubectl, jq, and access to both Kubernetes contexts.
+#
+# Usage:
+#   bash run-viya-connection.sh --env-file /private/path/viya.env
+#   bash run-viya-connection.sh --help
+#
+# Optional overrides:
+#   RAM_VIYA_IMAGE=ram-viya-connect:local
+#   KUBECONFIG_PATH=$HOME/.kube/config
 
 set -euo pipefail
 
@@ -6,7 +18,7 @@ SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 IMAGE_NAME=${RAM_VIYA_IMAGE:-ram-viya-connect:local}
 DEFAULT_KUBECONFIG_PATH=${KUBECONFIG_PATH:-${KUBECONFIG:-${HOME}/.kube/config}}
 
-usage() {
+function usage() {
   cat <<'EOF'
 Connect SAS Viya identity and its MCP tools server to an existing RAM cluster.
 
@@ -14,13 +26,18 @@ Usage: run-viya-connection.sh --env-file FILE [--kubeconfig FILE]
   [--ram-kubeconfig FILE] [--viya-kubeconfig FILE]
 
 The environment file must contain VIYA_URL, VIYA_USER, VIYA_PASSWORD,
-VIYA_CLIENT_SECRET, RAM_URL, RAM_KC_PASSWORD, and MCP_IMAGE. Set KUBE_CONTEXT
+VIYA_CLIENT_SECRET, RAM_URL, and RAM_KC_PASSWORD. Set MCP_IMAGE unless
+SKIP_MCP_SERVERS=true. Set KUBE_CONTEXT
 for one shared cluster, or set both RAM_KUBE_CONTEXT and VIYA_KUBE_CONTEXT.
 Set SKIP_HOME_DIRECTORIES=true in the environment file to skip Viya home directory creation.
+Set SKIP_MCP_SERVERS=true to skip MCP OAuth client, template, and server setup.
+Set SKIP_RAM_APP_REGISTRATION=true to skip the Viya application registry step.
+Set SKIP_VIYA_GROUP_MEMBERS=true to skip Viya group membership changes.
+Each skip setting defaults to false. Use only true or false.
 EOF
 }
 
-die() {
+function die() {
   printf 'Error: %s\n' "$*" >&2
   exit 1
 }
@@ -29,9 +46,9 @@ shared_kubeconfig=$DEFAULT_KUBECONFIG_PATH
 ram_kubeconfig=
 viya_kubeconfig=
 environment_file=
-while (( $# > 0 )); do
+while (($# > 0)); do
   case "$1" in
-    --env-file|--kubeconfig|--ram-kubeconfig|--viya-kubeconfig)
+    --env-file | --kubeconfig | --ram-kubeconfig | --viya-kubeconfig)
       [[ -n "${2:-}" ]] || die "$1 requires a value."
       case "$1" in
         --env-file) environment_file=$2 ;;
@@ -41,7 +58,7 @@ while (( $# > 0 )); do
       esac
       shift 2
       ;;
-    --help|-h)
+    --help | -h)
       usage
       exit 0
       ;;
@@ -49,18 +66,18 @@ while (( $# > 0 )); do
   esac
 done
 
-[[ -n "$environment_file" && -f "$environment_file" ]] \
-  || die '--env-file must name a file.'
+[[ -n "$environment_file" && -f "$environment_file" ]] ||
+  die '--env-file must name a file.'
 
-read_env_value() {
+function read_env_value() {
   local requested_name=$1 line value= found=0
   while IFS= read -r line || [[ -n "$line" ]]; do
     line=${line%$'\r'}
     [[ "$line" == "$requested_name="* ]] || continue
-    (( found == 0 )) || die "Environment file has more than one $requested_name value."
+    ((found == 0)) || die "Environment file has more than one $requested_name value."
     value=${line#*=}
     found=1
-  done < "$environment_file"
+  done <"$environment_file"
   printf '%s' "$value"
 }
 
@@ -68,20 +85,20 @@ shared_context=$(read_env_value KUBE_CONTEXT)
 ram_context=$(read_env_value RAM_KUBE_CONTEXT)
 viya_context=$(read_env_value VIYA_KUBE_CONTEXT)
 if [[ -n "$shared_context" ]]; then
-  [[ -z "$ram_context" && -z "$viya_context" ]] \
-    || die 'Set KUBE_CONTEXT or the separate RAM and Viya context values, not both.'
+  [[ -z "$ram_context" && -z "$viya_context" ]] ||
+    die 'Set KUBE_CONTEXT or the separate RAM and Viya context values, not both.'
   ram_context=$shared_context
   viya_context=$shared_context
 else
-  [[ -n "$ram_context" && -n "$viya_context" ]] \
-    || die 'Set KUBE_CONTEXT or both RAM_KUBE_CONTEXT and VIYA_KUBE_CONTEXT in the environment file.'
+  [[ -n "$ram_context" && -n "$viya_context" ]] ||
+    die 'Set KUBE_CONTEXT or both RAM_KUBE_CONTEXT and VIYA_KUBE_CONTEXT in the environment file.'
 fi
 
 ram_kubeconfig=${ram_kubeconfig:-$shared_kubeconfig}
 viya_kubeconfig=${viya_kubeconfig:-$shared_kubeconfig}
-[[ "$ram_kubeconfig" != *:* && -f "$ram_kubeconfig" \
-  && "$viya_kubeconfig" != *:* && -f "$viya_kubeconfig" ]] \
-  || die 'Use one existing Kubernetes configuration file for each cluster.'
+[[ "$ram_kubeconfig" != *:* && -f "$ram_kubeconfig" &&
+  "$viya_kubeconfig" != *:* && -f "$viya_kubeconfig" ]] ||
+  die 'Use one existing Kubernetes configuration file for each cluster.'
 
 for executable in docker jq kubectl; do
   command -v "$executable" >/dev/null 2>&1 || die "$executable is required."
@@ -97,7 +114,7 @@ raw_viya_config="$temporary_directory/raw-viya-config.json"
 runtime_ram_config="$temporary_directory/ram-config.json"
 runtime_viya_config="$temporary_directory/viya-config.json"
 
-prepare_runtime_config() {
+function prepare_runtime_config() {
   local source_config="$1"
   local context="$2"
   local raw_config="$3"
@@ -106,8 +123,8 @@ prepare_runtime_config() {
   local login_mode
 
   kubectl --kubeconfig "$source_config" --context "$context" \
-    config view --raw --flatten --minify --output json >"$raw_config" \
-    || die "Could not read Kubernetes context $context."
+    config view --raw --flatten --minify --output json >"$raw_config" ||
+    die "Could not read Kubernetes context $context."
   jq -e --arg context "$context" '.contexts[0].name == $context' \
     "$raw_config" >/dev/null || die "Kubernetes context $context was not found."
 
@@ -121,8 +138,8 @@ prepare_runtime_config() {
     command -v az >/dev/null 2>&1 || die 'Azure CLI is required for this context.'
     command -v kubelogin >/dev/null 2>&1 || die 'kubelogin is required for this context.'
     mapfile -t login_args < <(jq -r '.users[0].user.exec.args[]' "$raw_config")
-    kubelogin "${login_args[@]}" | jq -er '.status.token' >"$runtime_token" \
-      || die 'Could not get the Kubernetes access token.'
+    kubelogin "${login_args[@]}" | jq -er '.status.token' >"$runtime_token" ||
+      die 'Could not get the Kubernetes access token.'
     jq --rawfile token "$runtime_token" '
       (.users[0].user) |= (del(.exec, ."auth-provider")
         + {token: ($token | gsub("[\\r\\n]"; ""))})

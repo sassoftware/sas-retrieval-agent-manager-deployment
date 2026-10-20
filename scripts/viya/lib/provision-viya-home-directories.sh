@@ -1,4 +1,16 @@
 #!/usr/bin/env bash
+# Create missing SAS Viya home directories through a Kubernetes Job.
+# Read the home directory export from the Viya cluster.
+# Remove the temporary Job, Secret, and ConfigMap when the script stops.
+#
+# Requires: kubectl, jq, and access to the Viya Kubernetes context.
+#
+# Usage:
+#   bash provision-viya-home-directories.sh
+#
+# Required environment: KUBECONFIG, VIYA_URL, SASBOOT_PASSWORD.
+# Optional overrides:
+#   PROVISION_NAMESPACE=viya   VIYA_NAMESPACE=viya   VIYA_USER=sasboot
 
 set -euo pipefail
 
@@ -18,11 +30,11 @@ if [[ -n "${KUBE_CONTEXT:-}" ]]; then
   kubectl_args+=(--context "$KUBE_CONTEXT")
 fi
 
-kubectl_cmd() {
+function kubectl_cmd() {
   kubectl "${kubectl_args[@]}" "$@"
 }
 
-cleanup() {
+function cleanup() {
   kubectl_cmd delete job "$job_name" --namespace "$namespace" --ignore-not-found >/dev/null 2>&1 || true
   kubectl_cmd delete secret "$secret_name" --namespace "$namespace" --ignore-not-found >/dev/null 2>&1 || true
   kubectl_cmd delete configmap "$configmap_name" --namespace "$namespace" --ignore-not-found >/dev/null 2>&1 || true
@@ -54,8 +66,8 @@ else
   ')
   printf 'Discovered the Viya home export from a persistent volume.\n'
 fi
-nfs_server=$(jq -r '.server' <<< "$nfs_json")
-nfs_path=$(jq -r '.path' <<< "$nfs_json")
+nfs_server=$(jq -r '.server' <<<"$nfs_json")
+nfs_path=$(jq -r '.path' <<<"$nfs_json")
 
 if [[ -z "$nfs_server" || "$nfs_server" == null || "$nfs_path" != /*/homes ]]; then
   printf 'The discovered NFS home export is invalid.\n' >&2

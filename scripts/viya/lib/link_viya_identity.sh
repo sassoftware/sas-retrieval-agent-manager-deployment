@@ -1,4 +1,18 @@
 #!/usr/bin/env bash
+# Connect SAS Viya identity to SAS Retrieval Agent Manager (RAM) Keycloak.
+# Create the Viya groups, OAuth client, identity provider, and group mappings.
+#
+# Requires: curl, jq, and Viya and Keycloak administrator accounts.
+#
+# Usage:
+#   bash link_viya_identity.sh
+#
+# Required environment:
+#   VIYA_URL, VIYA_USER, VIYA_PASSWORD, RAM_URL, RAM_KC_PASSWORD.
+# Optional overrides:
+#   VIYA_CLIENT_ID=ram-client   RAM_KC_CLIENT_ID=sas-ram-app
+#   RAM_KC_REALM=sas-iot        IDP_ALIAS=viya-oidc
+# Set VIYA_CLIENT_SECRET to a unique value before use.
 
 set -e -o pipefail
 
@@ -133,7 +147,6 @@ function create_viya_oauth_client() {
   echo "  Client '${VIYA_CLIENT_ID}' registered."
 }
 
-
 function create_keycloak_idp() {
   local kc_token="${1}"
   local base="${RAM_URL}/SASRetrievalAgentManager/auth/admin/realms/${RAM_KC_REALM}"
@@ -199,7 +212,6 @@ function create_keycloak_idp() {
     echo "  IDP '${IDP_ALIAS}' created."
   fi
 }
-
 
 function create_idp_mappers() {
   local kc_token="${1}"
@@ -280,7 +292,6 @@ function create_idp_mappers() {
   done
 }
 
-
 function delete_email_verified_scope_mapper() {
   local kc_token="${1}"
   local base="${RAM_URL}/SASRetrievalAgentManager/auth/admin/realms/${RAM_KC_REALM}"
@@ -311,7 +322,6 @@ function delete_email_verified_scope_mapper() {
     -H "Authorization: Bearer ${kc_token}" &>/dev/null
   echo "  Deleted 'email verified' mapper from 'email' client scope."
 }
-
 
 function configure_kc_client_for_brokering() {
   local kc_token="${1}"
@@ -347,7 +357,6 @@ function configure_kc_client_for_brokering() {
   fi
   echo "  Client '${RAM_KC_CLIENT_ID}' configured for Identity Brokering API v2."
 }
-
 
 function create_hardcoded_email_verified_mapper() {
   local kc_token="${1}"

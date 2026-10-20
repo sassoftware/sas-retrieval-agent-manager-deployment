@@ -1,8 +1,21 @@
 #!/usr/bin/env bash
+# Enable token exchange for the SAS Retrieval Agent Manager (RAM) client.
+# Use the Keycloak identity provider permissions.
+#
+# Requires: curl, jq, and a Keycloak administrator account.
+#
+# Usage:
+#   bash enable_idp_token_exchange.sh
+#   bash enable_idp_token_exchange.sh --help
+#
+# Required environment: RAM_URL, RAM_KC_PASSWORD.
+# Optional overrides:
+#   RAM_KC_USER=kcAdmin   RAM_KC_REALM=sas-iot
+#   IDP_ALIAS=viya-oidc   EXCHANGE_CLIENT_ID=sas-ram-app
 
 set -euo pipefail
 
-die() {
+function die() {
   printf 'Error: %s\n' "$*" >&2
   exit 1
 }
@@ -12,7 +25,7 @@ if [[ "${1:-}" == --help || "${1:-}" == -h ]]; then
   printf 'Required environment: RAM_URL, RAM_KC_PASSWORD.\n'
   exit 0
 fi
-(( $# == 0 )) || die "Unknown option: $1"
+(($# == 0)) || die "Unknown option: $1"
 for name in RAM_URL RAM_KC_PASSWORD; do
   [[ -n "${!name:-}" ]] || die "$name environment variable is not set"
 done
@@ -29,7 +42,7 @@ KEYCLOAK_API_BASE=${KEYCLOAK_API_BASE:-$RAM_URL/SASRetrievalAgentManager/auth}
 realm_base="${KEYCLOAK_API_BASE%/}/admin/realms/$RAM_KC_REALM"
 tls_args=()
 case "${SSL_VERIFY:-false}" in
-  0|[Ff][Aa][Ll][Ss][Ee]|[Nn][Oo]|[Oo][Ff][Ff]) tls_args=(--insecure) ;;
+  0 | [Ff][Aa][Ll][Ss][Ee] | [Nn][Oo] | [Oo][Ff][Ff]) tls_args=(--insecure) ;;
 esac
 umask 077
 temporary_directory=$(mktemp -d)
@@ -37,7 +50,7 @@ trap 'rm -rf "$temporary_directory"' EXIT
 response_file="$temporary_directory/response.json"
 body_file="$temporary_directory/body.json"
 
-request() {
+function request() {
   local method=$1 url=$2 http_status
   shift 2
   http_status=$(curl --silent --show-error "${tls_args[@]}" --max-time 30 \
@@ -50,11 +63,11 @@ request() {
 request POST "$RAM_URL/SASRetrievalAgentManager/auth/realms/master/protocol/openid-connect/token" \
   --data-urlencode 'grant_type=password' --data-urlencode 'client_id=admin-cli' \
   --data-urlencode "username=$RAM_KC_USER" --data-urlencode "password=$RAM_KC_PASSWORD"
-kc_token=$(jq -er '.access_token // empty' "$response_file") \
-  || die 'Keycloak admin token response did not contain access_token'
+kc_token=$(jq -er '.access_token // empty' "$response_file") ||
+  die 'Keycloak admin token response did not contain access_token'
 headers=(-H "Authorization: Bearer $kc_token" -H 'Content-Type: application/json')
 
-find_client_uuid() {
+function find_client_uuid() {
   local client_id=$1
   request GET "$realm_base/clients" "${headers[@]}" --get --data-urlencode "clientId=$client_id"
   jq -er --arg client_id "$client_id" \
@@ -67,8 +80,8 @@ exchange_client_uuid=$(find_client_uuid "$EXCHANGE_CLIENT_ID")
 printf '%s' '{"enabled":true}' >"$body_file"
 request PUT "$realm_base/identity-provider/instances/$IDP_ALIAS/management/permissions" \
   "${headers[@]}" --data-binary "@$body_file"
-permission_id=$(jq -er '.scopePermissions["token-exchange"] // empty' "$response_file") \
-  || die "IDP has no token-exchange permission. Confirm admin-fine-grained-authz:v1 and token-exchange server features."
+permission_id=$(jq -er '.scopePermissions["token-exchange"] // empty' "$response_file") ||
+  die "IDP has no token-exchange permission. Confirm admin-fine-grained-authz:v1 and token-exchange server features."
 
 policy_name="$EXCHANGE_CLIENT_ID-token-exchange-policy"
 policy_base="$realm_base/clients/$realm_mgmt_uuid/authz/resource-server/policy"

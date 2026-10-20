@@ -1,10 +1,25 @@
 #!/usr/bin/env bash
+# Connect SAS Viya identity and tools to SAS Retrieval Agent Manager (RAM).
+# Check the clusters before the connection steps.
+#
+# Requires: base64, curl, jq, kubectl, python3, and both Kubernetes contexts.
+#
+# Usage:
+#   bash configure-viya-connection.sh
+#   bash configure-viya-connection.sh --help
+#
+# Use run-viya-connection.sh or run-viya-connection.ps1 on the host.
+# Optional overrides:
+#   SKIP_HOME_DIRECTORIES=false
+#   SKIP_MCP_SERVERS=false
+#   SKIP_RAM_APP_REGISTRATION=false
+#   SKIP_VIYA_GROUP_MEMBERS=false
 
 set -euo pipefail
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
-die() {
+function die() {
   printf 'Error: %s\n' "$*" >&2
   exit 1
 }
@@ -12,15 +27,24 @@ die() {
 if [[ "${1:-}" == --help || "${1:-}" == -h ]]; then
   printf 'Connect SAS Viya identity and its MCP tools server to an existing RAM cluster.\n'
   printf 'Set SKIP_HOME_DIRECTORIES=true to skip Viya home directory creation.\n'
+  printf 'Set SKIP_MCP_SERVERS=true to skip MCP OAuth client, template, and server setup.\n'
+  printf 'Set SKIP_RAM_APP_REGISTRATION=true to skip the Viya application registry step.\n'
+  printf 'Set SKIP_VIYA_GROUP_MEMBERS=true to skip Viya group membership changes.\n'
   exit 0
 fi
-(( $# == 0 )) || die "Unknown option: $1"
+(($# == 0)) || die "Unknown option: $1"
 
-skip_home_directories=${SKIP_HOME_DIRECTORIES-false}
-case "$skip_home_directories" in
-  true|false) ;;
-  *) die 'SKIP_HOME_DIRECTORIES must be true or false.' ;;
-esac
+SKIP_HOME_DIRECTORIES=${SKIP_HOME_DIRECTORIES-false}
+SKIP_MCP_SERVERS=${SKIP_MCP_SERVERS-false}
+SKIP_RAM_APP_REGISTRATION=${SKIP_RAM_APP_REGISTRATION-false}
+SKIP_VIYA_GROUP_MEMBERS=${SKIP_VIYA_GROUP_MEMBERS-false}
+for name in SKIP_HOME_DIRECTORIES SKIP_MCP_SERVERS SKIP_RAM_APP_REGISTRATION \
+  SKIP_VIYA_GROUP_MEMBERS; do
+  case "${!name}" in
+    true | false) ;;
+    *) die "$name must be true or false." ;;
+  esac
+done
 
 RAM_KUBE_CONTEXT=${RAM_KUBE_CONTEXT:-${KUBE_CONTEXT:-}}
 VIYA_KUBE_CONTEXT=${VIYA_KUBE_CONTEXT:-${KUBE_CONTEXT:-}}
@@ -28,7 +52,7 @@ RAM_KUBECONFIG=${RAM_KUBECONFIG:-${KUBECONFIG:-/root/.kube/config}}
 VIYA_KUBECONFIG=${VIYA_KUBECONFIG:-${KUBECONFIG:-/root/.kube/config}}
 
 for name in RAM_KUBE_CONTEXT VIYA_KUBE_CONTEXT VIYA_URL VIYA_USER VIYA_PASSWORD VIYA_CLIENT_SECRET \
-  RAM_URL RAM_KC_PASSWORD MCP_IMAGE; do
+  RAM_URL RAM_KC_PASSWORD; do
   [[ -n "${!name:-}" ]] || die "Required environment variable unset: $name"
 done
 
@@ -44,26 +68,29 @@ MCP_CLIENT_ID=${MCP_CLIENT_ID:-ram-app}
 MCP_CLIENT_SECRET=${MCP_CLIENT_SECRET:-ram-secret}
 
 for name in VIYA_URL RAM_URL; do
-  [[ "${!name}" =~ ^https://[^/?#[:space:]]+$ ]] \
-    || die "$name must be an HTTPS URL with only a host."
+  [[ "${!name}" =~ ^https://[^/?#[:space:]]+$ ]] ||
+    die "$name must be an HTTPS URL with only a host."
 done
-[[ "$MCP_CLIENT_ID" =~ ^[A-Za-z0-9._-]+$ ]] \
-  || die 'MCP_CLIENT_ID contains unsupported characters.'
-[[ "$MCP_CLIENT_SECRET" != *$'\n'* && "$MCP_CLIENT_SECRET" != *$'\r'* ]] \
-  || die 'MCP_CLIENT_SECRET contains a newline.'
-[[ "$ISSUER_URI" =~ ^https://[^/?#[:space:]]+/SASLogon$ ]] \
-  || die 'ISSUER_URI must end with /SASLogon on an HTTPS host.'
-[[ "$MCP_IMAGE" =~ ^[^[:space:]]+(:[A-Za-z0-9_.-]+|@sha256:[0-9a-f]{64})$ ]] \
-  || die 'MCP_IMAGE must have a tag or sha256 digest.'
-[[ "$IDP_ALIAS" =~ ^[A-Za-z0-9._-]+$ ]] \
-  || die 'IDP_ALIAS contains unsupported characters.'
+if [[ "$SKIP_MCP_SERVERS" == false ]]; then
+  [[ -n "${MCP_IMAGE:-}" ]] || die 'Required environment variable unset: MCP_IMAGE'
+  [[ "$MCP_CLIENT_ID" =~ ^[A-Za-z0-9._-]+$ ]] ||
+    die 'MCP_CLIENT_ID contains unsupported characters.'
+  [[ "$MCP_CLIENT_SECRET" != *$'\n'* && "$MCP_CLIENT_SECRET" != *$'\r'* ]] ||
+    die 'MCP_CLIENT_SECRET contains a newline.'
+  [[ "$MCP_IMAGE" =~ ^[^[:space:]]+(:[A-Za-z0-9_.-]+|@sha256:[0-9a-f]{64})$ ]] ||
+    die 'MCP_IMAGE must have a tag or sha256 digest.'
+fi
+[[ "$ISSUER_URI" =~ ^https://[^/?#[:space:]]+/SASLogon$ ]] ||
+  die 'ISSUER_URI must end with /SASLogon on an HTTPS host.'
+[[ "$IDP_ALIAS" =~ ^[A-Za-z0-9._-]+$ ]] ||
+  die 'IDP_ALIAS contains unsupported characters.'
 for name in RAM_NAMESPACE VIYA_NAMESPACE RAM_RELEASE; do
-  [[ "${!name}" =~ ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$ ]] \
-    || die "$name is not a valid Kubernetes name."
+  [[ "${!name}" =~ ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$ ]] ||
+    die "$name is not a valid Kubernetes name."
 done
 for name in RAM_KUBE_CONTEXT VIYA_KUBE_CONTEXT; do
-  [[ "${!name}" != *$'\n'* && "${!name}" != *$'\r'* ]] \
-    || die "$name contains a newline."
+  [[ "${!name}" != *$'\n'* && "${!name}" != *$'\r'* ]] ||
+    die "$name contains a newline."
 done
 
 export VIYA_URL RAM_URL ISSUER_URI RAM_NAMESPACE RAM_RELEASE IDP_ALIAS \
@@ -79,29 +106,32 @@ done
 printf 'RAM Kubernetes context: %s\nViya Kubernetes context: %s\nRAM namespace: %s\nViya namespace: %s\n' \
   "$RAM_KUBE_CONTEXT" "$VIYA_KUBE_CONTEXT" "$RAM_NAMESPACE" "$VIYA_NAMESPACE"
 "${RAM_KUBECTL[@]}" --namespace "$RAM_NAMESPACE" get deployment \
-  "${RAM_RELEASE}-api" "${RAM_RELEASE}-app" >/dev/null \
-  || die 'The RAM deployments are not available in the selected cluster.'
+  "${RAM_RELEASE}-api" "${RAM_RELEASE}-app" >/dev/null ||
+  die 'The RAM deployments are not available in the selected cluster.'
 "${RAM_KUBECTL[@]}" --namespace "$RAM_NAMESPACE" get configmap \
-  "${RAM_RELEASE}-oauth2-proxy" >/dev/null \
-  || die 'The RAM oauth2-proxy ConfigMap is not available.'
-"${RAM_KUBECTL[@]}" --namespace "$RAM_NAMESPACE" get secret \
-  "${RAM_RELEASE}-keycloak-client-secret" "${RAM_RELEASE}-keycloak-appadmin-secret" \
+  "${RAM_RELEASE}-oauth2-proxy" >/dev/null ||
+  die 'The RAM oauth2-proxy ConfigMap is not available.'
+required_secrets=("${RAM_RELEASE}-keycloak-client-secret")
+if [[ "$SKIP_MCP_SERVERS" == false ]]; then
+  required_secrets+=("${RAM_RELEASE}-keycloak-appadmin-secret")
+fi
+"${RAM_KUBECTL[@]}" --namespace "$RAM_NAMESPACE" get secret "${required_secrets[@]}" \
   >/dev/null || die 'The RAM Keycloak Secrets are not available.'
 client_secret=$("${RAM_KUBECTL[@]}" --namespace "$RAM_NAMESPACE" get secret \
-  "${RAM_RELEASE}-keycloak-client-secret" -o json) \
-  || die 'Could not read the RAM Keycloak client Secret.'
-cluster_realm=$(printf '%s' "$client_secret" | jq -er '.data.realm // empty' \
-  | base64 --decode) || die 'The RAM Keycloak client Secret has no realm.'
-cluster_client_id=$(printf '%s' "$client_secret" \
-  | jq -er '.data["sv-client-id"] // empty' | base64 --decode) \
-  || die 'The RAM Keycloak client Secret has no client ID.'
+  "${RAM_RELEASE}-keycloak-client-secret" -o json) ||
+  die 'Could not read the RAM Keycloak client Secret.'
+cluster_realm=$(printf '%s' "$client_secret" | jq -er '.data.realm // empty' |
+  base64 --decode) || die 'The RAM Keycloak client Secret has no realm.'
+cluster_client_id=$(printf '%s' "$client_secret" |
+  jq -er '.data["sv-client-id"] // empty' | base64 --decode) ||
+  die 'The RAM Keycloak client Secret has no client ID.'
 unset client_secret
-[[ -n "$cluster_realm" && -n "$cluster_client_id" ]] \
-  || die 'The RAM Keycloak client Secret has empty identity values.'
-[[ -z "${RAM_KC_REALM:-}" || "$RAM_KC_REALM" == "$cluster_realm" ]] \
-  || die 'RAM_KC_REALM does not match the selected RAM cluster.'
-[[ -z "${RAM_KC_CLIENT_ID:-}" || "$RAM_KC_CLIENT_ID" == "$cluster_client_id" ]] \
-  || die 'RAM_KC_CLIENT_ID does not match the selected RAM cluster.'
+[[ -n "$cluster_realm" && -n "$cluster_client_id" ]] ||
+  die 'The RAM Keycloak client Secret has empty identity values.'
+[[ -z "${RAM_KC_REALM:-}" || "$RAM_KC_REALM" == "$cluster_realm" ]] ||
+  die 'RAM_KC_REALM does not match the selected RAM cluster.'
+[[ -z "${RAM_KC_CLIENT_ID:-}" || "$RAM_KC_CLIENT_ID" == "$cluster_client_id" ]] ||
+  die 'RAM_KC_CLIENT_ID does not match the selected RAM cluster.'
 export RAM_KC_REALM=$cluster_realm RAM_KC_CLIENT_ID=$cluster_client_id
 export EXCHANGE_CLIENT_ID=$RAM_KC_CLIENT_ID
 "${VIYA_KUBECTL[@]}" --namespace "$VIYA_NAMESPACE" get deployment sas-logon-app \
@@ -111,45 +141,45 @@ umask 077
 temporary_directory=$(mktemp -d)
 trap 'rm -rf "$temporary_directory"' EXIT
 
-if [[ "$skip_home_directories" == true ]]; then
+if [[ "$SKIP_HOME_DIRECTORIES" == true ]]; then
   printf 'Skipping Viya home directory creation.\n'
 else
   printf 'Provisioning Viya home directories...\n'
   KUBECONFIG="$VIYA_KUBECONFIG" \
-  KUBE_CONTEXT="$VIYA_KUBE_CONTEXT" \
-  PROVISION_NAMESPACE="$VIYA_NAMESPACE" \
-  SASBOOT_PASSWORD="$VIYA_PASSWORD" \
-  VIYA_USER="$VIYA_USER" \
-  bash "$SCRIPT_DIR/provision-viya-home-directories.sh"
+    KUBE_CONTEXT="$VIYA_KUBE_CONTEXT" \
+    PROVISION_NAMESPACE="$VIYA_NAMESPACE" \
+    SASBOOT_PASSWORD="$VIYA_PASSWORD" \
+    VIYA_USER="$VIYA_USER" \
+    bash "$SCRIPT_DIR/provision-viya-home-directories.sh"
 fi
 
-viya_token_issuer() {
+function viya_token_issuer() {
   local token payload
   token=$(curl -ksSf -X POST "$VIYA_URL/SASLogon/oauth/token" -u 'sas.cli:' \
     --data-urlencode 'grant_type=password' \
     --data-urlencode "username=$VIYA_USER" \
-    --data-urlencode "password=$VIYA_PASSWORD" | jq -er '.access_token // empty') \
-    || die 'Could not get a Viya access token.'
+    --data-urlencode "password=$VIYA_PASSWORD" | jq -er '.access_token // empty') ||
+    die 'Could not get a Viya access token.'
   payload=${token#*.}
   payload=${payload%%.*}
-  [[ -n "$payload" && "$payload" != "$token" ]] \
-    || die 'The Viya access token is not a JSON Web Token.'
+  [[ -n "$payload" && "$payload" != "$token" ]] ||
+    die 'The Viya access token is not a JSON Web Token.'
   payload=$(printf '%s' "$payload" | tr '_-' '/+')
-  while (( ${#payload} % 4 )); do
+  while ((${#payload} % 4)); do
     payload+='='
   done
-  printf '%s' "$payload" | base64 --decode 2>/dev/null | jq -er '.iss // empty' \
-    || die 'Could not read the Viya access token issuer.'
+  printf '%s' "$payload" | base64 --decode 2>/dev/null | jq -er '.iss // empty' ||
+    die 'Could not read the Viya access token issuer.'
 }
 
-set_viya_issuer() {
+function set_viya_issuer() {
   local access_token
   access_token=$(curl -ksSf -X POST "$VIYA_URL/SASLogon/oauth/token" \
     -u 'sas.cli:' --data-urlencode 'grant_type=password' \
     --data-urlencode "username=$VIYA_USER" \
-    --data-urlencode "password=$VIYA_PASSWORD" \
-    | jq -er '.access_token // empty') \
-    || die 'Could not get a Viya administrator access token for the issuer update.'
+    --data-urlencode "password=$VIYA_PASSWORD" |
+    jq -er '.access_token // empty') ||
+    die 'Could not get a Viya administrator access token for the issuer update.'
 
   {
     printf '%s\n' "$access_token"
@@ -232,14 +262,14 @@ REMOTE_SCRIPT
     deployment/sas-logon-app --timeout=180s
 }
 
-configure_mcp_oauth_client() {
+function configure_mcp_oauth_client() {
   local access_token http_status group_file client_file secret_file response_file
   access_token=$(curl -ksSf -X POST "$VIYA_URL/SASLogon/oauth/token" \
     -u 'sas.cli:' --data-urlencode 'grant_type=password' \
     --data-urlencode "username=$VIYA_USER" \
-    --data-urlencode "password=$VIYA_PASSWORD" \
-    | jq -er '.access_token // empty') \
-    || die 'Could not get a Viya access token for the MCP OAuth client.'
+    --data-urlencode "password=$VIYA_PASSWORD" |
+    jq -er '.access_token // empty') ||
+    die 'Could not get a Viya access token for the MCP OAuth client.'
 
   group_file="$temporary_directory/mcp-client-group.json"
   client_file="$temporary_directory/mcp-client.json"
@@ -252,10 +282,10 @@ configure_mcp_oauth_client() {
   http_status=$(curl -ksS -o "$response_file" -w '%{http_code}' \
     -X POST "$VIYA_URL/identities/groups" \
     -H "Authorization: Bearer $access_token" \
-    -H 'Content-Type: application/json' --data-binary "@$group_file") \
-    || die 'Could not create the Viya MCP OAuth group.'
+    -H 'Content-Type: application/json' --data-binary "@$group_file") ||
+    die 'Could not create the Viya MCP OAuth group.'
   case "$http_status" in
-    200|201|409) ;;
+    200 | 201 | 409) ;;
     *) die "Viya MCP OAuth group creation returned HTTP $http_status." ;;
   esac
 
@@ -267,8 +297,8 @@ configure_mcp_oauth_client() {
   http_status=$(curl -ksS -o "$response_file" -w '%{http_code}' \
     -X POST "$VIYA_URL/SASLogon/oauth/clients" \
     -H "Authorization: Bearer $access_token" \
-    -H 'Content-Type: application/json' --data-binary "@$client_file") \
-    || die 'Could not create the Viya MCP OAuth client.'
+    -H 'Content-Type: application/json' --data-binary "@$client_file") ||
+    die 'Could not create the Viya MCP OAuth client.'
   case "$http_status" in
     201)
       printf 'Created the Viya MCP OAuth client.\n'
@@ -277,10 +307,10 @@ configure_mcp_oauth_client() {
       http_status=$(curl -ksS -o "$response_file" -w '%{http_code}' \
         -X PUT "$VIYA_URL/SASLogon/oauth/clients/$MCP_CLIENT_ID" \
         -H "Authorization: Bearer $access_token" \
-        -H 'Content-Type: application/json' --data-binary "@$client_file") \
-        || die 'Could not update the Viya MCP OAuth client.'
+        -H 'Content-Type: application/json' --data-binary "@$client_file") ||
+        die 'Could not update the Viya MCP OAuth client.'
       case "$http_status" in
-        200|201|204) ;;
+        200 | 201 | 204) ;;
         *) die "Viya MCP OAuth client update returned HTTP $http_status." ;;
       esac
       jq -n --arg id "$MCP_CLIENT_ID" --rawfile secret "$secret_file" \
@@ -289,10 +319,10 @@ configure_mcp_oauth_client() {
         -X PUT "$VIYA_URL/SASLogon/oauth/clients/$MCP_CLIENT_ID/secret" \
         -H "Authorization: Bearer $access_token" \
         -H 'Content-Type: application/json' \
-        --data-binary "@$temporary_directory/mcp-client-secret.json") \
-        || die 'Could not update the Viya MCP OAuth client secret.'
+        --data-binary "@$temporary_directory/mcp-client-secret.json") ||
+        die 'Could not update the Viya MCP OAuth client secret.'
       case "$http_status" in
-        200|201|204) ;;
+        200 | 201 | 204) ;;
         *) die "Viya MCP OAuth client secret update returned HTTP $http_status." ;;
       esac
       printf 'Updated the existing Viya MCP OAuth client.\n'
@@ -304,34 +334,42 @@ configure_mcp_oauth_client() {
 printf 'Checking the SAS Logon issuer...\n'
 if [[ "$(viya_token_issuer)" != "$ISSUER_URI/oauth/token" ]]; then
   set_viya_issuer
-  [[ "$(viya_token_issuer)" == "$ISSUER_URI/oauth/token" ]] \
-    || die 'The SAS Logon issuer did not match after restart.'
+  [[ "$(viya_token_issuer)" == "$ISSUER_URI/oauth/token" ]] ||
+    die 'The SAS Logon issuer did not match after restart.'
 fi
-discovery_issuer=$(curl -ksSf "$VIYA_URL/SASLogon/.well-known/openid-configuration" \
-  | jq -er '.issuer // empty') || die 'Could not read the Viya OpenID discovery issuer.'
-[[ "$discovery_issuer" == "$ISSUER_URI/oauth/token" ]] \
-  || die 'The Viya OpenID discovery issuer does not match the token issuer.'
+discovery_issuer=$(curl -ksSf "$VIYA_URL/SASLogon/.well-known/openid-configuration" |
+  jq -er '.issuer // empty') || die 'Could not read the Viya OpenID discovery issuer.'
+[[ "$discovery_issuer" == "$ISSUER_URI/oauth/token" ]] ||
+  die 'The Viya OpenID discovery issuer does not match the token issuer.'
 
 printf 'Linking Viya identity to RAM Keycloak...\n'
 bash "$SCRIPT_DIR/link_viya_identity.sh"
+printf 'Updating Viya group display names...\n'
+bash "$SCRIPT_DIR/rename_viya_group.sh"
+if [[ "$SKIP_VIYA_GROUP_MEMBERS" == true ]]; then
+  printf 'Skipping Viya group membership changes.\n'
+else
+  printf 'Adding SAS administrators to the RAM administrator group...\n'
+  bash "$SCRIPT_DIR/add_viya_group_member.sh"
+fi
 kc_token=$(curl -ksSf -X POST \
   "$RAM_URL/SASRetrievalAgentManager/auth/realms/master/protocol/openid-connect/token" \
   --data-urlencode 'grant_type=password' --data-urlencode 'client_id=admin-cli' \
   --data-urlencode "username=${RAM_KC_USER:-kcAdmin}" \
-  --data-urlencode "password=$RAM_KC_PASSWORD" | jq -er '.access_token // empty') \
-  || die 'Could not verify the Keycloak identity provider.'
+  --data-urlencode "password=$RAM_KC_PASSWORD" | jq -er '.access_token // empty') ||
+  die 'Could not verify the Keycloak identity provider.'
 idp_status=$(curl -ksS -o "$temporary_directory/idp.json" -w '%{http_code}' \
   -H "Authorization: Bearer $kc_token" \
-  "$RAM_URL/SASRetrievalAgentManager/auth/admin/realms/$RAM_KC_REALM/identity-provider/instances/$IDP_ALIAS") \
-  || die 'Could not read the Keycloak identity provider.'
+  "$RAM_URL/SASRetrievalAgentManager/auth/admin/realms/$RAM_KC_REALM/identity-provider/instances/$IDP_ALIAS") ||
+  die 'Could not read the Keycloak identity provider.'
 unset kc_token
 [[ "$idp_status" == 200 ]] || die "Keycloak identity provider lookup returned HTTP $idp_status."
 jq -e --arg issuer "$ISSUER_URI/oauth/token" \
   --arg client_id "${VIYA_CLIENT_ID:-ram-client}" '
   .enabled == true and .storeToken == true and .config.issuer == $issuer
   and .config.clientId == $client_id
-' "$temporary_directory/idp.json" >/dev/null \
-  || die 'The Keycloak identity provider does not match the Viya issuer and client.'
+' "$temporary_directory/idp.json" >/dev/null ||
+  die 'The Keycloak identity provider does not match the Viya issuer and client.'
 printf 'Granting the RAM client token-exchange access...\n'
 bash "$SCRIPT_DIR/enable_idp_token_exchange.sh"
 
@@ -408,8 +446,8 @@ PY
 
 if ! cmp -s "$config_file" "$temporary_directory/original.cfg"; then
   "${RAM_KUBECTL[@]}" --namespace "$RAM_NAMESPACE" create configmap "$config_name" \
-    --from-file="oauth2-proxy.cfg=$config_file" --dry-run=client -o yaml \
-    | "${RAM_KUBECTL[@]}" --namespace "$RAM_NAMESPACE" apply -f -
+    --from-file="oauth2-proxy.cfg=$config_file" --dry-run=client -o yaml |
+    "${RAM_KUBECTL[@]}" --namespace "$RAM_NAMESPACE" apply -f -
   for deployment in "${RAM_RELEASE}-api" "${RAM_RELEASE}-app"; do
     "${RAM_KUBECTL[@]}" --namespace "$RAM_NAMESPACE" rollout restart "deployment/$deployment"
     "${RAM_KUBECTL[@]}" --namespace "$RAM_NAMESPACE" rollout status \
@@ -417,13 +455,21 @@ if ! cmp -s "$config_file" "$temporary_directory/original.cfg"; then
   done
 fi
 
-printf 'Registering RAM in the Viya application registry...\n'
-bash "$SCRIPT_DIR/register-ram-with-viya.sh" \
-  --viya-url "$VIYA_URL" --username "$VIYA_USER"
+if [[ "$SKIP_RAM_APP_REGISTRATION" == true ]]; then
+  printf 'Skipping RAM registration in the Viya application registry.\n'
+else
+  printf 'Registering RAM in the Viya application registry...\n'
+  bash "$SCRIPT_DIR/register-ram-with-viya.sh" \
+    --viya-url "$VIYA_URL" --username "$VIYA_USER"
+fi
 
-printf 'Configuring the Viya client for OAuth-authenticated MCP...\n'
-configure_mcp_oauth_client
+if [[ "$SKIP_MCP_SERVERS" == true ]]; then
+  printf 'Skipping MCP OAuth client, template, and server setup.\n'
+else
+  printf 'Configuring the Viya client for OAuth-authenticated MCP...\n'
+  configure_mcp_oauth_client
 
-printf 'Registering the OAuth and user-authenticated SAS MCP tools servers...\n'
-bash "$SCRIPT_DIR/register-viya-mcp.sh"
-printf 'Configured Viya SSO, registered RAM in the Viya application registry, and requested both SAS MCP tools server deployments in RAM.\n'
+  printf 'Registering the OAuth and user-authenticated SAS MCP tools servers...\n'
+  bash "$SCRIPT_DIR/register-viya-mcp.sh"
+fi
+printf 'Configured Viya SSO. Completed the enabled connection steps.\n'
