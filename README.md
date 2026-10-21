@@ -30,9 +30,9 @@ OpenShift Container Platform (OCP).
 
 | Platform       | Description                                        | Kubernetes version | Guide |
 |----------------|----------------------------------------------------|--------------------|-------|
-| **Kubernetes** | Open-source Kubernetes deployment                  | 1.35+              | [Guide](./docs/k8s-deployment.md)   |
-| **Azure**      | Azure Kubernetes Service (AKS) deployment          | 1.35+              | [Guide](./docs/azure-deployment.md) |
-| **AWS**        | Amazon Elastic Kubernetes Service (EKS) deployment | 1.35+              | [Guide](./docs/aws-deployment.md)   |
+| **Kubernetes** | Open-source Kubernetes deployment                  | 1.33+              | [Guide](./docs/k8s-deployment.md)   |
+| **Azure**      | Azure Kubernetes Service (AKS) deployment          | 1.33+              | [Guide](./docs/azure-deployment.md) |
+| **AWS**        | Amazon Elastic Kubernetes Service (EKS) deployment | 1.33+              | [Guide](./docs/aws-deployment.md)   |
 | **OpenShift**  | OpenShift Container Platform (OCP)                 | 1.32 (OCP v4.19.1) | [Guide](./docs/ocp-deployment.md)   |
 
 ## Documentation
