@@ -28,6 +28,10 @@ and image pull secret.
 > GPG keys are the encryption foundation for all sensitive data. Generate and back them up before
 > the first installation, and never regenerate them afterwards. See [GPG keys](./gpg-keys.md).
 
+## After deployment
+
+If you want to connect SAS Retrieval Agent Manager to Viya, follow [Connecting RAM to Viya](./connecting-ram-to-viya.md) to configure SAS Viya SSO and MCP tools servers within SAS Retrieval Agent Manager.
+
 ## Supported platforms
 
 | Platform       | Description                                        |

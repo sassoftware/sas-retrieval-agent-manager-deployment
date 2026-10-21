@@ -41,6 +41,7 @@ OpenShift Container Platform (OCP).
 |-------|-------------|
 | [Get started](./docs/get-started.md) | Prerequisites, platform selection, license, and pull secret |
 | [Deployment](./docs/deployment.md) | Infrastructure, database, dependencies, GPG keys, install and upgrade |
+| [Connecting RAM to Viya](./docs/connecting-ram-to-viya.md) | Connect RAM sign-in and MCP tools servers to SAS Viya |
 | [Identity and access](./docs/identity-and-access.md) | Keycloak, LDAP, OpenID Connect, and SAML |
 | [LLM connections](./docs/llm-connection/README.md) | Connect Azure OpenAI, Amazon Bedrock, OpenAI, or Ollama |
 | [Monitoring](./docs/monitoring/README.md) | Logs, metrics, and traces |
