@@ -1,4 +1,9 @@
-{{- if .Values.api.serviceAccount.create -}}
+{{/*
+The API always runs, so it always needs these permissions. Do not gate this on
+`api.serviceAccount.create`: the ServiceAccount may be pre-created out of band (common on
+restricted OpenShift clusters), and `api.serviceAccountName` resolves to the same name either
+way. Gating here would leave the API running with no RBAC, failing at runtime with 403s.
+*/}}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
@@ -39,4 +44,3 @@ rules:
   # - apiGroups: ["", "batch", "apps"]
   #   resources: ["pods", "services", "jobs", "configmaps", "jobs/status", "pods/log", "deployments", "cronjobs"]
   #   verbs: ["create", "get", "list", "watch", "delete", "patch"]
-{{- end }}

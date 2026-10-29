@@ -59,6 +59,33 @@
 #
 # NOTE: the subject list at the end must track the ServiceAccounts the release actually runs pods
 # under, and that list can change between chart versions. Re-check it when you upgrade.
+#
+# SCOPE: this file grants the SCC and nothing else. It controls whether the pods are ADMITTED.
+# It does not grant the application anything against the Kubernetes API.
+#
+# The permissions the running pods need -- the API reading and watching Deployments, Jobs,
+# CronJobs, Services, ConfigMaps, Secrets, Pods and HorizontalPodAutoscalers in this namespace --
+# come from namespace-scoped Roles and RoleBindings that the chart creates during `helm install`.
+# They need no administrator, and you should not hand-apply them.
+#
+# Do NOT set `api.serviceAccount.create: false` just because this file names the ServiceAccounts.
+# A RoleBinding may reference a ServiceAccount that does not exist yet, so let the chart create
+# them; the subjects below resolve once it does.
+#
+# The two layers fail differently. If the SCC grant is wrong, pods never start:
+#
+#   provider "retrieval-agent-manager-scc": Forbidden: not usable by user or serviceaccount
+#
+# If the namespace RBAC is wrong, pods start and stay healthy, but the API returns 403:
+#
+#   deployments.apps is forbidden: User
+#   "system:serviceaccount:retagentmgr:retrieval-agent-manager-api" cannot watch resource
+#   "deployments" in API group "apps" in the namespace "retagentmgr"
+#
+# Do not diagnose the second as the first. Check it directly:
+#
+#   oc auth can-i watch deployments.apps -n retagentmgr \
+#     --as=system:serviceaccount:retagentmgr:retrieval-agent-manager-api
 ---
 apiVersion: security.openshift.io/v1
 kind: SecurityContextConstraints

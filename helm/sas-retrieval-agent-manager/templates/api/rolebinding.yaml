@@ -1,4 +1,7 @@
-{{- if .Values.api.serviceAccount.create -}}
+{{/*
+Bound unconditionally, for the same reason as the Role it references. A RoleBinding may name a
+ServiceAccount that the chart did not create; the subject resolves once that account exists.
+*/}}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
@@ -12,8 +15,8 @@ metadata:
 subjects:
 - kind: ServiceAccount
   name: {{ include "api.serviceAccountName" . }}
+  namespace: {{ .Release.Namespace }}
 roleRef:
   kind: Role
   name: {{ include "api.serviceAccountName" . }}
   apiGroup: rbac.authorization.k8s.io
-{{- end }}

@@ -57,6 +57,58 @@ Login issues may present as an error message after login indicating that the API
 
 - The database and Kubernetes cluster are both running and healthy
 
+## API Forbidden Errors on Kubernetes Resources
+
+The API pod starts and passes its health probes, but agent and collection status never loads, and
+the API log reports a `403` against the Kubernetes API:
+
+```text
+WARNING - Could not find deployment: Forbidden
+ERROR - Streaming task Task-164464 failed: (403)
+Reason: Forbidden: deployments.apps is forbidden: User
+"system:serviceaccount:retagentmgr:retrieval-agent-manager-api" cannot watch resource
+"deployments" in API group "apps" in the namespace "retagentmgr"
+```
+
+The API reads and watches Deployments, Jobs, CronJobs, Services, ConfigMaps, Secrets, Pods and
+HorizontalPodAutoscalers in its own namespace. The chart grants that through a namespace-scoped
+`Role` and `RoleBinding` named after the API ServiceAccount. A `403` means those objects are
+missing or do not bind the account the pod runs under.
+
+Check what the account is actually allowed to do:
+
+```bash
+# Should print "yes"
+kubectl auth can-i watch deployments.apps -n <namespace> \
+  --as=system:serviceaccount:<namespace>:retrieval-agent-manager-api
+
+# Both objects should exist
+kubectl get role,rolebinding retrieval-agent-manager-api -n <namespace>
+
+# The subject must match the account the pod runs under
+kubectl get rolebinding retrieval-agent-manager-api -n <namespace> -o yaml
+kubectl get deployment retrieval-agent-manager-api -n <namespace> \
+  -o jsonpath='{.spec.template.spec.serviceAccountName}{"\n"}'
+```
+
+If the `Role` and `RoleBinding` are missing, the release predates the fix that decoupled them from
+`api.serviceAccount.create`. In chart versions before that change, setting
+`api.serviceAccount.create: false` to use a pre-provisioned ServiceAccount also suppressed the
+API's RBAC, while `api.serviceAccount.name` kept resolving to the same account. The pod therefore
+ran under the expected identity with no permissions. Upgrade the chart, or apply the `Role` and
+`RoleBinding` by hand:
+
+```bash
+helm template <release> <chart> -n <namespace> -f <your-values.yaml> \
+  -s templates/api/role.yaml -s templates/api/rolebinding.yaml | kubectl apply -f -
+```
+
+> [!NOTE]
+> These are namespace-scoped objects, so this does not require a cluster administrator. It is
+> unrelated to the `SecurityContextConstraints` grant described in
+> [OpenShift Deployment](ocp-deployment.md); an SCC controls whether a pod may start, not what it
+> may call once running.
+
 ## Increasing Vectorization or Embedding Storage Sizes
 
 Before you deploy SAS Retrieval Agent Manager, you will need to set the Vectorization Hub PVC size equal to the amount of gigabytes purchased in your order. If you purchase more storage afterwards, you will have to upgrade the vectorization hub PVC. For the embedding-pvc or vhub-pvc, you can change the sizes of them in the values file with the following fields:

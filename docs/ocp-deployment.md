@@ -257,6 +257,49 @@ install; the subjects resolve once the chart creates the ServiceAccounts.
 > subject names in the manifests to match. If you change the SCC name, set `security.scc.name` so
 > the chart's binding points at it.
 
+> [!IMPORTANT]
+> Nothing in this section requires you to set `serviceAccount.create: false`. The manifests in
+> step 2 may name ServiceAccounts that do not exist yet, so let the chart create them.
+>
+> If your administrator does pre-create the ServiceAccounts and you set
+> `api.serviceAccount.create: false`, keep in mind that this suppresses only the ServiceAccount
+> object. The chart still creates the namespace-scoped `Role` and `RoleBinding` that the API needs
+> to read and watch Deployments, Jobs and the rest of its own namespace, and still binds them to
+> the name in `api.serviceAccount.name`.
+>
+> Earlier chart versions gated that RBAC on `serviceAccount.create` as well. On those versions,
+> pre-provisioning the account left the API running under the right identity with no permissions,
+> and it failed at runtime with `deployments.apps is forbidden`. If you are upgrading from one of
+> them, confirm the grant resolves:
+>
+> ```bash
+> oc auth can-i watch deployments.apps -n retagentmgr \
+>   --as=system:serviceaccount:retagentmgr:retrieval-agent-manager-api
+> ```
+>
+> See [Troubleshooting](troubleshoot.md#api-forbidden-errors-on-kubernetes-resources).
+
+### What stays inside the namespace
+
+The SCC and its ClusterRole are the only cluster-scoped objects this release needs. Everything
+else the chart grants is namespace-scoped and is created by the installer, so a restricted
+installer does not need an administrator for it:
+
+| Object | Scope | Created by | Purpose |
+|--------|-------|-----------|---------|
+| `SecurityContextConstraints` | Cluster | Administrator (step 2) | Lets the pods start |
+| `system:openshift:scc:...` `ClusterRole` | Cluster | Administrator (step 2) | Makes the SCC grantable |
+| `retrieval-agent-manager-scc-binding` `RoleBinding` | Namespace | Administrator (step 2) | Grants the SCC in this namespace only |
+| `retrieval-agent-manager-api` `Role` + `RoleBinding` | Namespace | Chart | Lets the API manage its own workloads |
+| `retrieval-agent-manager-db-init` `Role` + `RoleBinding` | Namespace | Chart | Lets database initialization read its credentials secret |
+| `retrieval-agent-manager-upgrade-cleanup` `Role` + `RoleBinding` | Namespace | Chart | Lets the pre-upgrade hook clear completed jobs |
+| `retrieval-agent-manager-postgrest` `Role` + `RoleBinding` | Namespace | Chart | Lets PostgREST read the Keycloak certificate secret |
+
+An SCC governs whether a pod is admitted. It has no bearing on what that pod may ask the
+Kubernetes API for once it is running; that is the namespace RBAC in the lower half of the table.
+The two fail in different ways, so do not diagnose one as the other: an SCC problem keeps pods
+from starting, while missing RBAC leaves pods running and healthy but returning `403`.
+
 ## Storage
 
 The chart does not create a `StorageClass` on OpenShift. It defaults the name to `nfs-client`,
