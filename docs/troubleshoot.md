@@ -109,6 +109,23 @@ helm template <release> <chart> -n <namespace> -f <your-values.yaml> \
 > [OpenShift Deployment](ocp-deployment.md); an SCC controls whether a pod may start, not what it
 > may call once running.
 
+### `helm upgrade` fails with "attempting to grant RBAC permissions not currently held"
+
+Kubernetes refuses to create a `Role` that grants permissions the installing user does not hold
+themselves, unless that user has the `escalate` verb on `roles`. The error lists the permissions
+the installer lacks, for example:
+
+```text
+roles.rbac.authorization.k8s.io "retrieval-agent-manager-api" is forbidden: user "<user>" is
+attempting to grant RBAC permissions not currently held:
+{APIGroups:["apps"], Resources:["deployments/status"], Verbs:["create" "delete" "patch"]}
+```
+
+The chart grants only read access (`get`, `list`, `watch`) on `*/status` subresources, because the
+API never writes them. If you see this error with an older chart, upgrade it. If the error still
+lists other permissions, either have a cluster administrator run the install, grant the installer
+`escalate` and `bind` on `roles` in the namespace, or remove the rules the installer cannot hold.
+
 ## Increasing Vectorization or Embedding Storage Sizes
 
 Before you deploy SAS Retrieval Agent Manager, you will need to set the Vectorization Hub PVC size equal to the amount of gigabytes purchased in your order. If you purchase more storage afterwards, you will have to upgrade the vectorization hub PVC. For the embedding-pvc or vhub-pvc, you can change the sizes of them in the values file with the following fields:

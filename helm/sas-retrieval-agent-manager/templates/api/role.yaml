@@ -16,8 +16,14 @@ metadata:
   {{- end }}
 rules:
   - apiGroups: ["batch"]
-    resources: ["cronjobs", "jobs", "jobs/status"]
+    resources: ["cronjobs", "jobs"]
     verbs: ["create", "get", "list", "watch", "patch", "delete"]
+  # Status subresources are read-only on purpose. The API reads .status from the parent resource and
+  # never writes it. Granting write verbs here would also block installs by users who lack them,
+  # since Kubernetes refuses to let you grant RBAC permissions you do not hold yourself.
+  - apiGroups: ["batch"]
+    resources: ["jobs/status"]
+    verbs: ["get", "list", "watch"]
   - apiGroups: [""]
     resources: ["pods/log"]
     verbs: ["get"]
@@ -35,11 +41,17 @@ rules:
     resources: ["configmaps", "services"]
     verbs: ["create", "get", "list", "watch", "delete", "patch"]
   - apiGroups: ["apps"]
-    resources: ["deployments", "deployments/status"]
+    resources: ["deployments"]
+    verbs: ["create", "get", "list", "watch", "delete", "patch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments/status"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["autoscaling"]
+    resources: ["horizontalpodautoscalers"]
     verbs: ["create", "get", "list", "watch", "delete", "patch"]
   - apiGroups: ["autoscaling"]
-    resources: ["horizontalpodautoscalers", "horizontalpodautoscalers/status"]
-    verbs: ["create", "get", "list", "watch", "delete", "patch"]
+    resources: ["horizontalpodautoscalers/status"]
+    verbs: ["get", "list", "watch"]
 
   # - apiGroups: ["", "batch", "apps"]
   #   resources: ["pods", "services", "jobs", "configmaps", "jobs/status", "pods/log", "deployments", "cronjobs"]
