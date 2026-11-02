@@ -35,12 +35,44 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 
 {{/*
 Selector labels
+
+Identify the PostgREST SERVER, and are what the Deployment, both Services and
+the PodDisruptionBudget select on. Only server pods may carry them.
 */}}
 {{- define "postgrest.selectorLabels" -}}
 app.kubernetes.io/name: {{ include "postgrest.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 app.kubernetes.io/component: postgrest
 app.kubernetes.io/part-of: {{ include "retrieval-agent-manager.name" . }}
+{{- end }}
+
+{{/*
+Labels for the role-update Job and its pod.
+
+Deliberately distinct from the server's. A Job pod inside the PodDisruptionBudget's
+selector makes the disruption controller give up on the whole PDB -- it looks for a
+`scale` subresource on each matched pod's controller and a Job has none:
+
+    reason: SyncFailed
+    message: "jobs.batch does not implement the scale subresource"
+    disruptionsAllowed: 0
+
+which blocks every eviction of PostgREST, and so every node drain, while leaving the
+PDB and the pods looking healthy. The Services would match such a pod too, and are
+spared only because they target ports by name and this Job declares none.
+
+Same convention as db-init and db-migration, which have their own name and component.
+*/}}
+{{- define "postgrest.roleUpdate.labels" -}}
+helm.sh/chart: {{ include "postgrest.chart" . }}
+app.kubernetes.io/name: {{ printf "%s-role-update" (include "postgrest.name" .) | trunc 63 | trimSuffix "-" }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/component: postgrest-role-update
+app.kubernetes.io/part-of: {{ include "retrieval-agent-manager.name" . }}
+{{- if .Chart.AppVersion }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+{{- end }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
 
 {{/*

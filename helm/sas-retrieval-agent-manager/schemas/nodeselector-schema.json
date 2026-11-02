@@ -1,0 +1,8 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": ["object", "null"],
+  "description": "Node labels for pod assignment. Pods will only be scheduled on nodes with matching labels",
+  "additionalProperties": {
+    "type": "string"
+  }
+}

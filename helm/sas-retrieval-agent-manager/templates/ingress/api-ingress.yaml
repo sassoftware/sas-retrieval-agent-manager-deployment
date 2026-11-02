@@ -4,6 +4,7 @@
     "labels" "api.labels"
     "pathsKey" "api"
     "servicePort" .Values.api.service.port
+    "applyTimeout" true
 -}}
 {{- $classType := include "retrieval-agent-manager.ingressClassType" . -}}
 {{- if eq $classType "route" -}}

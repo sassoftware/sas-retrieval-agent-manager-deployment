@@ -19,10 +19,17 @@ spec:
       {{- include "ui.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      {{- with merge (.Values.ui.podAnnotations | default dict) (.Values.podAnnotations | default dict) }}
+      {{- /*
+        The oauth2-proxy sidecar reads its config file once at startup, so a
+        ConfigMap-only change would otherwise never reach a running pod. See
+        "oauth2-proxy.configChecksum".
+      */}}
+      {{- $podAnnotations := merge (.Values.ui.podAnnotations | default dict) (include "ram.podAnnotations" . | fromYaml) }}
       annotations:
+        checksum/oauth2-proxy-config: {{ include "oauth2-proxy.configChecksum" . }}
+        {{- with $podAnnotations }}
         {{- toYaml . | nindent 8 }}
-      {{- end }}
+        {{- end }}
       labels:
         {{- include "ui.labels" . | nindent 8 }}
         {{- with merge (.Values.ui.podLabels | default dict) (.Values.podLabels | default dict) }}

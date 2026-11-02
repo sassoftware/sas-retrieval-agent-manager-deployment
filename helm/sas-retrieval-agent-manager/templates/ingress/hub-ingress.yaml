@@ -1,0 +1,19 @@
+{{- /*
+The delegation hub, rendered only when some OTHER release owns the FQDN.
+
+When this release owns the root it names its children there directly and no hub
+is created -- the indirection would be inert. When it does not, the hub is the
+single entry the foreign root has to adopt, and the place every later add-on is
+attached instead.
+
+Follows `ingress.enableRootIngress` and has no switch of its own: the two modes
+are the two halves of one decision. See templates/ingress/_contour.tpl.
+*/ -}}
+{{- if .Values.ingress.enabled -}}
+{{- $classType := include "retrieval-agent-manager.ingressClassType" . -}}
+{{- if eq $classType "contour" -}}
+{{- if include "contour.hub.enabled" . -}}
+{{- include "contour.httpproxy.hub" . -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}

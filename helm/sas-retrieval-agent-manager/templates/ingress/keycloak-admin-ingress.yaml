@@ -7,6 +7,8 @@
     "annotationsPath" "keycloakAdmin"
     "servicePort" .Values.iam.keycloak.service.port
 -}}
+{{- /* Name differs from the Service on purpose: keycloak and keycloak-admin are two
+   children backed by one Service, so each needs its own HTTPProxy name. */ -}}
 {{- $classType := include "retrieval-agent-manager.ingressClassType" . -}}
 {{- if eq $classType "route" -}}
 {{- include "openshift.route" (dict "ctx" . "config" $config) -}}

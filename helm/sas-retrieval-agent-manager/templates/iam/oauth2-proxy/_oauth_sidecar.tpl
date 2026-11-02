@@ -17,6 +17,29 @@ Parameters (passed via dict):
   .instance: (optional) Instance number for naming and port offset (defaults to 0)
 */}}
 
+{{/*
+Checksum of the rendered oauth2-proxy ConfigMap, for the pod annotation that
+makes a configuration change actually reach the sidecars.
+
+oauth2-proxy reads `--config=/config/oauth2-proxy.cfg` once, at startup. The
+file is projected from a ConfigMap, so changing it changes nothing already
+running: Kubernetes updates the mounted file, and the process never re-reads
+it. Nothing in the Deployment spec changes either, so there is no rollout.
+
+That turns a values-only upgrade into a silent no-op. Several settings touch
+ONLY this ConfigMap -- `integrations.viya.sso.idpHint`, the Viya JWT issuer,
+the login URL -- so `helm upgrade` reports success, the ConfigMap on the
+cluster is correct, and every sidecar carries on with the old configuration.
+
+Putting the checksum in the pod template annotations makes the template differ
+whenever the configuration does, which is what triggers the rollout.
+
+Usage: {{ include "oauth2-proxy.configChecksum" . }}
+*/}}
+{{- define "oauth2-proxy.configChecksum" -}}
+{{- include "oauth2-proxy.config" . | sha256sum -}}
+{{- end -}}
+
 {{- define "oauth2-proxy.sidecar" -}}
 {{- $oauthValues := .Root.Values.iam.oauthProxy -}}
 {{- $upstreamPort := .upstreamPort | required "upstreamPort is required for oauth2-proxy.sidecar" -}}

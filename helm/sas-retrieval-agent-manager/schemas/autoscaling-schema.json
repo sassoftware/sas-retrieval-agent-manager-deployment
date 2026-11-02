@@ -1,0 +1,27 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": ["object", "null"],
+  "description": "Horizontal Pod Autoscaler configuration",
+  "properties": {
+    "enabled": {
+      "type": "boolean",
+      "description": "Enable horizontal pod autoscaling"
+    },
+    "minReplicas": {
+      "type": "integer",
+      "description": "Minimum number of replicas"
+    },
+    "maxReplicas": {
+      "type": "integer",
+      "description": "Maximum number of replicas"
+    },
+    "targetCPUUtilizationPercentage": {
+      "type": "integer",
+      "description": "Target CPU utilization percentage"
+    },
+    "targetMemoryUtilizationPercentage": {
+      "type": "integer",
+      "description": "Target memory utilization percentage"
+    }
+  }
+}

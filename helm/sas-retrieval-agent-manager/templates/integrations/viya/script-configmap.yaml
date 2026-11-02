@@ -1,0 +1,988 @@
+{{- if include "viya.sso.enabled" . }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ printf "%s-scripts" (include "viya.sso.fullname" .) }}
+  labels:
+    {{- include "viya.sso.labels" . | nindent 4 }}
+data:
+  link-viya-identity.sh: |-
+    #!/usr/bin/env bash
+
+    # Configures SAS Viya as an OIDC identity provider for RAM's Keycloak realm,
+    # so users sign in with their Viya credentials and RAM can obtain a Viya
+    # token on their behalf.
+    #
+    # Runs in-cluster as a post-install/post-upgrade hook. Keycloak is reached
+    # over its ClusterIP service rather than the ingress, so no admin password
+    # leaves the cluster and the hook does not depend on DNS or TLS being ready.
+    #
+    # Every step is idempotent: re-running updates in place.
+
+    set -e -o pipefail -o nounset
+
+    CURL=(curl -sS --max-time 30)
+
+    # Viya is reached over its public URL, and this connection is NOT read-only
+    # or anonymous: it carries the Viya administrator password, the bearer
+    # token minted from it, and the OAuth client secret this release registers.
+    # Accepting any certificate would let anything that can answer on that
+    # hostname collect all three, or hand back a discovery document pointing
+    # RAM at endpoints of its choosing.
+    #
+    # So verification stays on. A deployment whose CA this pod does not already
+    # trust supplies the bundle through integrations.viya.tls.caBundleConfigMap;
+    # integrations.viya.tls.insecureSkipVerify remains for a throwaway
+    # environment, and says plainly what it costs.
+    VIYA_CURL=("${CURL[@]}")
+    if [ "${VIYA_TLS_INSECURE:-false}" == "true" ]; then
+      echo >&2 "WARNING: TLS verification is DISABLED for ${VIYA_URL}."
+      echo >&2 "         The Viya administrator password and the OAuth client secret are"
+      echo >&2 "         sent over this connection. Set integrations.viya.tls.caBundleConfigMap"
+      echo >&2 "         instead of integrations.viya.tls.insecureSkipVerify."
+      VIYA_CURL+=(-k)
+    elif [ -n "${VIYA_CA_BUNDLE:-}" ]; then
+      if [ ! -s "${VIYA_CA_BUNDLE}" ]; then
+        echo >&2 "The CA bundle ${VIYA_CA_BUNDLE} is missing or empty."
+        echo >&2 "Check integrations.viya.tls.caBundleConfigMap and .caBundleKey."
+        exit 1
+      fi
+      VIYA_CURL+=(--cacert "${VIYA_CA_BUNDLE}")
+    fi
+
+    KC_ADMIN_USER="$(cat /admin/username)"
+    KC_ADMIN_PASSWORD="$(cat /admin/password)"
+    VIYA_CLIENT_SECRET="$(cat /viya-client/client-secret)"
+
+    KC_BASE="${KEYCLOAK_URL}/admin/realms/${KEYCLOAK_REALM}"
+
+    # ------------------------------------------------------------------------
+    # Viya authentication, shared by every Viya-side step
+    # ------------------------------------------------------------------------
+
+    VIYA_TOKEN=""
+
+    function get_viya_token() {
+      # Cached: both the SASLogon configuration step and the client
+      # registration step need this, and it is the same token.
+      [ -n "${VIYA_TOKEN}" ] && return 0
+
+      local user password resp
+      user="$(cat /viya-admin/username)"
+      password="$(cat /viya-admin/password)"
+
+      resp="$("${VIYA_CURL[@]}" -X POST "${VIYA_URL}/SASLogon/oauth/token" \
+        -H "Content-Type: application/x-www-form-urlencoded" \
+        -u "sas.cli:" \
+        --data-urlencode "grant_type=password" \
+        --data-urlencode "username=${user}" \
+        --data-urlencode "password=${password}")"
+
+      VIYA_TOKEN="$(echo "${resp}" | jq -r '.access_token // empty')"
+      if [ -z "${VIYA_TOKEN}" ]; then
+        echo >&2 "Failed to obtain a Viya access token as '${user}'."
+        echo >&2 "$(echo "${resp}" | jq -r '.error_description // .error // .' 2>/dev/null || echo "${resp}")"
+        echo >&2 "Check the credentials in the Secret named by"
+        echo >&2 "integrations.viya.sso.adminSecret."
+        exit 1
+      fi
+    }
+
+    # ------------------------------------------------------------------------
+    # Keycloak REST helpers
+    # ------------------------------------------------------------------------
+
+    function kc_auth_header() {
+      echo "Authorization: Bearer ${KC_TOKEN}"
+    }
+
+    # kc_call <method> <path> [body]
+    #
+    # Prints the response body followed by a final line holding the HTTP status.
+    # The status travels in-band rather than in a global because every caller
+    # wraps this in $(...), which runs it in a subshell -- a global assigned
+    # here would never reach the caller, and the caller would silently act on a
+    # stale value from a previous request.
+    function kc_call() {
+      local method="${1}" path="${2}" body="${3:-}"
+      local args=(-X "${method}" -H "$(kc_auth_header)" -H "Content-Type: application/json")
+      [ -n "${body}" ] && args+=(--data "${body}")
+
+      "${CURL[@]}" "${args[@]}" -w $'\n%{http_code}' "${KC_BASE}${path}"
+    }
+
+    # http_status <call output> -- the trailing status line
+    #
+    # Shared by kc_call and viya_call: both encode the status the same way.
+    function http_status() {
+      printf '%s' "${1##*$'\n'}"
+    }
+
+    # http_body <call output> -- everything before the trailing status line
+    function http_body() {
+      printf '%s' "${1%$'\n'*}"
+    }
+
+    # kc_require <method> <path> [body] <description> -- prints body, fails on non-2xx
+    function kc_require() {
+      local method="${1}" path="${2}" body="${3}" what="${4}"
+      local raw status resp
+      raw="$(kc_call "${method}" "${path}" "${body}")"
+      status="$(http_status "${raw}")"
+      resp="$(http_body "${raw}")"
+      if [ "${status}" -lt 200 ] || [ "${status}" -ge 300 ]; then
+        echo >&2 "  Failed to ${what} (HTTP ${status})"
+        echo >&2 "  $(echo "${resp}" | jq -r '.errorMessage // .error // .' 2>/dev/null || echo "${resp}")"
+        exit 1
+      fi
+      printf '%s' "${resp}"
+    }
+
+    # ------------------------------------------------------------------------
+    # Step 0: set issuer.uri on SASLogon's sas.logon.jwt configuration
+    # ------------------------------------------------------------------------
+    #
+    # The issuer lives in TWO places that change at DIFFERENT times, and
+    # treating them as one value is what makes this step non-idempotent:
+    #
+    #   STORED  the sas.logon.jwt configuration held by the configuration
+    #           service. Changes the instant it is written.
+    #   SERVED  the `issuer` in SASLogon's discovery document. Changes only
+    #           once sas-logon-app restarts and re-reads its configuration.
+    #
+    # A run that wrote the configuration but failed before the restart
+    # completed leaves the two disagreeing. Gating BOTH actions on the served
+    # value -- which this script used to do -- makes the next run rewrite a
+    # configuration that is already correct and bounce sas-logon-app a second
+    # time. So each action is now gated on the state it actually changes: the
+    # write on STORED, the restart on SERVED.
+
+    # Where the response headers of the last viya_call are left. A fixed path
+    # rather than a return value, because callers wrap viya_call in $(...),
+    # which runs it in a subshell -- anything assigned there is discarded
+    # before the caller sees it.
+    VIYA_HEADERS=/tmp/viya-response-headers
+
+    # viya_call <method> <path> [content_type] [body] [etag]
+    #
+    # Prints the response body followed by a final line holding the HTTP
+    # status, exactly like kc_call; split it with http_body/http_status.
+    function viya_call() {
+      local method="${1}" path="${2}" ctype="${3:-}" body="${4:-}" etag="${5:-}"
+      local args=(-X "${method}" -D "${VIYA_HEADERS}"
+                  -H "Authorization: Bearer ${VIYA_TOKEN}"
+                  -H "Accept: application/json")
+      [ -n "${ctype}" ] && args+=(-H "Content-Type: ${ctype}")
+      [ -n "${etag}" ] && args+=(-H "If-Match: ${etag}")
+      [ -n "${body}" ] && args+=(--data "${body}")
+      "${VIYA_CURL[@]}" "${args[@]}" -w $'\n%{http_code}' "${VIYA_URL}${path}"
+    }
+
+    # The ETag from the last viya_call, empty when the endpoint sent none.
+    #
+    # grep rather than awk's IGNORECASE, which is a GNU extension the busybox
+    # awk in this image does not have.
+    #
+    # The trailing `|| true` matters: no ETag is an ANSWER, not a failure, and
+    # without it grep's exit 1 would propagate through `set -e` and kill the
+    # script before the caller could report why it is refusing to write.
+    function viya_etag() {
+      grep -i '^ETag:' "${VIYA_HEADERS}" 2>/dev/null \
+        | tail -n 1 | sed 's/^[^:]*:[[:space:]]*//' | tr -d '\r' || true
+    }
+
+    # The issuer SASLogon currently SERVES. Public, so no token needed.
+    function read_served_issuer() {
+      "${VIYA_CURL[@]}" "${VIYA_URL}/SASLogon/.well-known/openid-configuration" \
+        | jq -r '.issuer // empty'
+    }
+
+    # The configuration service versions its definitions, and the media type a
+    # configuration must be written with is published on the definition itself
+    # rather than being guessable -- so read the highest-versioned
+    # sas.logon.jwt definition and take the content type from its
+    # createConfigurations link.
+    function saslogon_media_type() {
+      local raw
+      raw="$(viya_call GET "/configuration/definitions?limit=1000")"
+      http_body "${raw}" | jq -r '
+        [.items[]? | select(.name == "sas.logon.jwt")]
+        | sort_by(.definitionVersion)
+        | last
+        | .links[]? | select(.rel == "createConfigurations") | .itemType // empty'
+    }
+
+    # Record what SASLogon's issuer was BEFORE this release first changed it.
+    #
+    # `helm uninstall` cannot undo the write: the configuration service keeps
+    # it as data in Viya's platform database, not as a Kubernetes object, so it
+    # also survives a Viya redeployment. This ConfigMap is the only record of
+    # the previous state, and the revert procedure in the chart NOTES reads it.
+    #
+    # Written once and never updated -- a later upgrade must not overwrite the
+    # original with a value this release itself set.
+    function stash_original_issuer() {
+      local stored_json="${1}"
+
+      if kubectl -n "${RELEASE_NAMESPACE}" get configmap "${BACKUP_CONFIGMAP}" >/dev/null 2>&1; then
+        return 0
+      fi
+
+      local existed="true"
+      [ -n "${stored_json}" ] || existed="false"
+
+      # Record the shape of the original, with its secrets removed.
+      #
+      # sas.logon.jwt is not a single-purpose object: alongside issuer.uri it
+      # can hold signingKey -- the PRIVATE key SASLogon signs tokens with. A
+      # ConfigMap is readable by anyone with get on configmaps in this
+      # namespace, with none of the extra handling a Secret gets, so copying
+      # the document verbatim would widen who can read signing material and
+      # forge Viya tokens.
+      #
+      # Nothing needs it here. The revert procedure in NOTES.txt restores
+      # issuer.uri and nothing else, and the write path never replays this
+      # copy -- it re-reads the live object and edits that, precisely so the
+      # siblings it does not understand are preserved in place.
+      #
+      # What is left is the non-sensitive remainder, which is still worth
+      # having when someone is working out what changed. `redacted` names what
+      # was dropped so that is not a silent omission.
+      local redacted_json
+      redacted_json="$(echo "${stored_json}" | jq -c '
+        if type == "object" then
+          (to_entries
+            | map(select(.key | ascii_downcase
+                | test("signingkey|privatekey|secret|password|passphrase|credential")))
+            | map(.key)) as $dropped
+          | with_entries(select(.key | ascii_downcase
+              | test("signingkey|privatekey|secret|password|passphrase|credential") | not))
+          | if ($dropped | length) > 0 then . + {redacted: $dropped} else . end
+        else . end' 2>/dev/null || echo "")"
+
+      if ! kubectl -n "${RELEASE_NAMESPACE}" create configmap "${BACKUP_CONFIGMAP}" \
+          --from-literal=existed="${existed}" \
+          --from-literal=issuer-uri="$(echo "${stored_json}" | jq -r '."issuer.uri" // empty')" \
+          --from-literal=configuration.json="${redacted_json}" >/dev/null; then
+        echo >&2 "  Could not record the pre-change issuer in configmap/${BACKUP_CONFIGMAP}."
+        echo >&2 "  Refusing to change SASLogon without somewhere to record how to undo it."
+        exit 1
+      fi
+      echo "  Recorded the pre-change state in configmap/${BACKUP_CONFIGMAP}."
+    }
+
+    # Make the STORED issuer match, writing only if it does not already.
+    function ensure_stored_issuer() {
+      local media_type="${1}"
+      local attempt
+
+      # Two passes at most: one to write, one more if the resource changed
+      # under us between the read and the write (HTTP 412).
+      for attempt in 1 2; do
+        local raw status existing count id stored_json etag stored_uri body
+
+        raw="$(viya_call GET "/configuration/configurations?definitionName=sas.logon.jwt")"
+        status="$(http_status "${raw}")"
+        if [ "${status}" != "200" ]; then
+          echo >&2 "  Could not list the sas.logon.jwt configuration (HTTP ${status})."
+          exit 1
+        fi
+        existing="$(http_body "${raw}")"
+
+        # More than one configuration for the definition and there is no way to
+        # tell which SASLogon reads. Stop rather than pick one.
+        count="$(echo "${existing}" | jq -r '(.count // (.items | length)) // 0')"
+        if [ "${count}" -gt 1 ]; then
+          echo >&2 "  ${count} sas.logon.jwt configurations exist. This script will not"
+          echo >&2 "  guess which one SASLogon reads. Resolve the duplicates, or set"
+          echo >&2 "  integrations.viya.sso.configureSASLogon to false and set issuer.uri"
+          echo >&2 "  yourself -- see the chart NOTES."
+          exit 1
+        fi
+        id="$(echo "${existing}" | jq -r '.items[0].id // empty')"
+
+        if [ -z "${id}" ]; then
+          echo "  No sas.logon.jwt configuration exists - creating one."
+          stash_original_issuer ""
+          raw="$(viya_call POST "/configuration/configurations" "${media_type}" \
+            "$(jq -nc --arg uri "${VIYA_ISSUER_URI}" '{"issuer.uri": $uri}')")"
+          status="$(http_status "${raw}")"
+          if [ "${status}" -lt 200 ] || [ "${status}" -ge 300 ]; then
+            echo >&2 "  Failed to create the sas.logon.jwt configuration (HTTP ${status})."
+            echo >&2 "  $(http_body "${raw}" | jq -r '.message // .error_description // .error // .' 2>/dev/null)"
+            exit 1
+          fi
+          echo "  Configuration created."
+          return 0
+        fi
+
+        # Re-read the single resource: a collection response carries no
+        # per-item ETag, and the ETag is the precondition for the PUT.
+        raw="$(viya_call GET "/configuration/configurations/${id}")"
+        status="$(http_status "${raw}")"
+        if [ "${status}" != "200" ]; then
+          echo >&2 "  Could not read configuration ${id} (HTTP ${status})."
+          exit 1
+        fi
+        stored_json="$(http_body "${raw}")"
+        etag="$(viya_etag)"
+        stored_uri="$(echo "${stored_json}" | jq -r '."issuer.uri" // empty')"
+
+        if [ "${stored_uri}" == "${VIYA_ISSUER_URI}" ]; then
+          echo "  issuer.uri is already '${stored_uri}' - not writing."
+          return 0
+        fi
+        echo "  issuer.uri is '${stored_uri}', want '${VIYA_ISSUER_URI}'."
+
+        # No ETag means the service is not offering the precondition. The
+        # alternative is `If-Match: *`, which is an unconditional overwrite of
+        # a resource owned by Viya, so stop instead.
+        if [ -z "${etag}" ]; then
+          echo >&2 "  Configuration ${id} was returned without an ETag, so this write"
+          echo >&2 "  cannot be made conditional. Refusing to overwrite it blindly."
+          echo >&2 "  Set integrations.viya.sso.configureSASLogon to false and set"
+          echo >&2 "  issuer.uri yourself -- see the chart NOTES."
+          exit 1
+        fi
+
+        stash_original_issuer "${stored_json}"
+
+        # PUT replaces the whole representation, so send back what is already
+        # stored with only issuer.uri changed.
+        #
+        # A body of just issuer.uri would drop every sibling member, and
+        # sas.logon.jwt is not a single-purpose object: it also holds
+        # signingKey, signingCert and the four policy.*TokenValiditySeconds
+        # values. Erasing an administrator's overridden JWT signing key would
+        # invalidate every token the deployment issues.
+        #
+        # .metadata is a NESTED object here (creationTimeStamp, createdBy,
+        # mediaType, services...), not the flat members the REST conventions
+        # suggest -- verified against a live Viya 4.13 rather than assumed.
+        # It is server-owned, as are .id and .version, so none of them are ours
+        # to assert back.
+        body="$(echo "${stored_json}" | jq -c --arg uri "${VIYA_ISSUER_URI}" \
+          'del(.links, .id, .version, .metadata) + {"issuer.uri": $uri}')"
+
+        echo "  Updating configuration ${id} (If-Match ${etag})..."
+        raw="$(viya_call PUT "/configuration/configurations/${id}" "${media_type}" "${body}" "${etag}")"
+        status="$(http_status "${raw}")"
+
+        if [ "${status}" -ge 200 ] && [ "${status}" -lt 300 ]; then
+          echo "  Configuration written."
+          return 0
+        fi
+
+        if [ "${status}" == "412" ]; then
+          # Someone else wrote between our read and our write. Re-read and try
+          # once more; a second failure means the resource is being changed
+          # continuously and this job should not fight over it.
+          echo "  Configuration changed while we were writing - re-reading."
+          continue
+        fi
+
+        echo >&2 "  Failed to update the sas.logon.jwt configuration (HTTP ${status})."
+        echo >&2 "  $(http_body "${raw}" | jq -r '.message // .error_description // .error // .' 2>/dev/null)"
+        exit 1
+      done
+
+      echo >&2 "  Gave up updating the sas.logon.jwt configuration: it changed under"
+      echo >&2 "  every attempt. Re-run once the environment is quiet."
+      exit 1
+    }
+
+    function configure_saslogon_issuer() {
+      echo "Checking SASLogon's issuer URI..."
+      get_viya_token
+
+      local media_type
+      media_type="$(saslogon_media_type)"
+      if [ -z "${media_type}" ]; then
+        echo >&2 "  Could not find the 'sas.logon.jwt' configuration definition at"
+        echo >&2 "  ${VIYA_URL}/configuration/definitions."
+        echo >&2 "  Set integrations.viya.sso.configureSASLogon to false and configure"
+        echo >&2 "  issuer.uri manually -- see the chart NOTES for the steps."
+        exit 1
+      fi
+
+      ensure_stored_issuer "${media_type}"
+
+      # The restart is judged on the SERVED value, independently of whether
+      # anything was written above: a previous run may have written the
+      # configuration and then failed before sas-logon-app picked it up.
+      local served
+      served="$(read_served_issuer)"
+      if [ "${served}" == "${VIYA_ISSUER_URI}/oauth/token" ]; then
+        echo "  SASLogon already serves '${served}' - no restart needed."
+        return 0
+      fi
+      echo "  SASLogon still serves '${served}' - a restart is needed."
+
+      restart_saslogon
+    }
+
+    function restart_saslogon() {
+      # sas-logon-app reads the JWT issuer at startup, so the configuration
+      # write above changes nothing until the pods cycle.
+      if [ "${VIYA_NAMESPACE}" == "" ]; then
+        echo >&2 ""
+        echo >&2 "ACTION REQUIRED: SASLogon's issuer URI has been set to"
+        echo >&2 "'${VIYA_ISSUER_URI}', but sas-logon-app must restart to pick it up."
+        echo >&2 ""
+        echo >&2 "  kubectl -n <viya-namespace> rollout restart deploy/sas-logon-app"
+        echo >&2 "  kubectl -n <viya-namespace> rollout status deploy/sas-logon-app --timeout=180s"
+        echo >&2 ""
+        echo >&2 "Then re-run 'helm upgrade' to finish SSO setup. Set"
+        echo >&2 "integrations.viya.namespace to have this release do it for you."
+        echo >&2 ""
+        exit 1
+      fi
+
+      echo "  Restarting sas-logon-app in namespace '${VIYA_NAMESPACE}'..."
+      kubectl -n "${VIYA_NAMESPACE}" rollout restart deploy/sas-logon-app
+      kubectl -n "${VIYA_NAMESPACE}" rollout status deploy/sas-logon-app --timeout=300s
+
+      # The rollout completing means the new pods are ready, but SASLogon
+      # serves discovery a moment later; poll rather than assume.
+      local i current
+      for i in $(seq 1 30); do
+        current="$(read_served_issuer)"
+        if [ "${current}" == "${VIYA_ISSUER_URI}/oauth/token" ]; then
+          echo "  Issuer is now '${current}'."
+          return 0
+        fi
+        sleep 5
+      done
+
+      echo >&2 "  sas-logon-app restarted but still reports issuer '${current}'."
+      echo >&2 "  Expected '${VIYA_ISSUER_URI}/oauth/token'. Check that the"
+      echo >&2 "  sas.logon.jwt configuration was applied to the right Viya deployment."
+      exit 1
+    }
+
+    # ------------------------------------------------------------------------
+    # Step 1: read Viya's discovery document and sanity-check the issuer
+    # ------------------------------------------------------------------------
+
+    function fetch_viya_discovery() {
+      echo "Fetching Viya OIDC discovery document..."
+      if ! OIDC_CONFIG="$("${VIYA_CURL[@]}" "${VIYA_URL}/SASLogon/.well-known/openid-configuration")"; then
+        echo >&2 "Could not reach ${VIYA_URL}/SASLogon/.well-known/openid-configuration"
+        echo >&2 "Check integrations.viya.url and that this cluster can route to Viya."
+        exit 1
+      fi
+
+      if ! echo "${OIDC_CONFIG}" | jq -e '.issuer' >/dev/null 2>&1; then
+        echo >&2 "Discovery document from ${VIYA_URL} has no 'issuer' claim:"
+        echo >&2 "${OIDC_CONFIG}"
+        exit 1
+      fi
+
+      VIYA_ISSUER="$(echo "${OIDC_CONFIG}" | jq -r '.issuer')"
+      echo "  Viya issuer: ${VIYA_ISSUER}"
+
+      # SASLogon ships with no external issuer configured and stamps every token
+      # with http://localhost/SASLogon/oauth/token until an administrator sets
+      # sas.logon.jwt issuer.uri. That address is not dialable from this cluster,
+      # so signature verification can never succeed. Failing here, loudly, is
+      # far cheaper than debugging it later as a broken IdP: the symptom is a
+      # 400 during token exchange, which looks nothing like its cause.
+      case "${VIYA_ISSUER}" in
+        *localhost*)
+          echo >&2 ""
+          echo >&2 "ERROR: Viya's SASLogon is issuing tokens with issuer '${VIYA_ISSUER}'."
+          echo >&2 ""
+          echo >&2 "SASLogon has no external issuer URI configured. Set 'issuer.uri' on the"
+          echo >&2 "sas.logon.jwt configuration definition to '${VIYA_ISSUER_URI}', restart"
+          echo >&2 "sas-logon-app, then re-run 'helm upgrade' to finish SSO setup."
+          echo >&2 ""
+          exit 1
+          ;;
+      esac
+
+      if [ "${VIYA_ISSUER}" != "${VIYA_ISSUER_URI}/oauth/token" ]; then
+        # Not fatal: the IdP is built from the discovery document, so Keycloak
+        # stays self-consistent. But oauth2-proxy's extra_jwt_issuers was
+        # rendered from the chart value, so raw-token access would silently
+        # 401 while browser login works.
+        echo >&2 "  WARNING: expected issuer '${VIYA_ISSUER_URI}/oauth/token' but Viya reports"
+        echo >&2 "  '${VIYA_ISSUER}'. Set integrations.viya.sso.issuerURI to match, otherwise"
+        echo >&2 "  direct API calls using a raw Viya token will be rejected by oauth2-proxy."
+      fi
+    }
+
+    # ------------------------------------------------------------------------
+    # Step 2: authenticate against Keycloak
+    # ------------------------------------------------------------------------
+
+    function get_kc_admin_token() {
+      echo "Authenticating with Keycloak..."
+      local resp
+      resp="$("${CURL[@]}" -X POST \
+        "${KEYCLOAK_URL}/realms/master/protocol/openid-connect/token" \
+        --data-urlencode "grant_type=password" \
+        --data-urlencode "client_id=admin-cli" \
+        --data-urlencode "username=${KC_ADMIN_USER}" \
+        --data-urlencode "password=${KC_ADMIN_PASSWORD}")"
+
+      KC_TOKEN="$(echo "${resp}" | jq -r '.access_token // empty')"
+      if [ -z "${KC_TOKEN}" ]; then
+        echo >&2 "Failed to obtain Keycloak admin token"
+        echo >&2 "${resp}"
+        exit 1
+      fi
+    }
+
+    # ------------------------------------------------------------------------
+    # Step 3 (optional): register the OAuth client in Viya SASLogon
+    # ------------------------------------------------------------------------
+
+    # check_viya_write <raw call output> <description> -- fail on a non-2xx
+    # status or an error body.
+    #
+    # Both halves matter. SASLogon answers some failures with a 4xx and an
+    # empty body, and others with a 200 carrying {"error": ...}; checking only
+    # one of them lets the other through. curl itself is no help here -- the
+    # shared CURL options deliberately omit --fail, because several callers
+    # need to read the body of a non-2xx response.
+    function check_viya_write() {
+      local raw="${1}" what="${2}"
+      local status resp
+      status="$(http_status "${raw}")"
+      resp="$(http_body "${raw}")"
+
+      if [ "${status}" -lt 200 ] || [ "${status}" -ge 300 ]; then
+        echo >&2 "Failed to ${what} (HTTP ${status})"
+        [ -z "${resp}" ] || echo >&2 "${resp}"
+        exit 1
+      fi
+      if echo "${resp}" | jq -e '.error' >/dev/null 2>&1; then
+        echo >&2 "Failed to ${what}:"
+        echo >&2 "$(echo "${resp}" | jq -r '.error'): $(echo "${resp}" | jq -r '.error_description // empty')"
+        exit 1
+      fi
+    }
+
+    function register_viya_client() {
+      echo "Registering OAuth client '${VIYA_CLIENT_ID}' in Viya..."
+
+      get_viya_token
+      local token="${VIYA_TOKEN}"
+
+      # 'authorities' is SASAdministrators -- Viya's own built-in superuser
+      # group, not something this chart creates. autoapprove avoids UAA showing
+      # an interactive consent screen on every login.
+      local body
+      body="$(jq -n \
+        --arg cid "${VIYA_CLIENT_ID}" \
+        --arg cs "${VIYA_CLIENT_SECRET}" \
+        --arg uri "${VIYA_REDIRECT_URI}" \
+        '{
+          client_id: $cid,
+          client_secret: $cs,
+          authorities: ["SASAdministrators"],
+          authorized_grant_types: ["authorization_code", "refresh_token"],
+          name: "RAM Keycloak",
+          scope: ["openid", "uaa.user", "profile", "email"],
+          redirect_uri: [$uri],
+          autoapprove: true
+        }')"
+
+      local headers=(-H "Authorization: Bearer ${token}" -H "Content-Type: application/json")
+      local status
+      status="$("${VIYA_CURL[@]}" --head -o /dev/null -w '%{http_code}' \
+        "${VIYA_URL}/SASLogon/oauth/clients/${VIYA_CLIENT_ID}" \
+        -H "Authorization: Bearer ${token}")"
+
+      if [ "${status}" == "200" ]; then
+        echo "  Client exists - updating."
+        check_viya_write \
+          "$("${VIYA_CURL[@]}" -X PUT "${VIYA_URL}/SASLogon/oauth/clients/${VIYA_CLIENT_ID}" \
+            "${headers[@]}" --data "${body}" -w $'\n%{http_code}')" \
+          "register OAuth client '${VIYA_CLIENT_ID}'"
+
+        # The secret is a SEPARATE endpoint, and its own failure.
+        #
+        # Checked rather than discarded because of what happens when it is not:
+        # Keycloak is configured further down with the secret this release
+        # generated, so a rejected update leaves SASLogon holding the old one
+        # and the two silently disagree. Every federated login then fails with
+        # invalid_client, long after this job has reported success.
+        check_viya_write \
+          "$("${VIYA_CURL[@]}" -X PUT \
+            "${VIYA_URL}/SASLogon/oauth/clients/${VIYA_CLIENT_ID}/secret" \
+            "${headers[@]}" \
+            --data "$(jq -n --arg cid "${VIYA_CLIENT_ID}" --arg cs "${VIYA_CLIENT_SECRET}" \
+              '{clientId: $cid, secret: $cs}')" -w $'\n%{http_code}')" \
+          "set the secret of OAuth client '${VIYA_CLIENT_ID}'"
+      else
+        check_viya_write \
+          "$("${VIYA_CURL[@]}" -X POST "${VIYA_URL}/SASLogon/oauth/clients" \
+            "${headers[@]}" --data "${body}" -w $'\n%{http_code}')" \
+          "register OAuth client '${VIYA_CLIENT_ID}'"
+      fi
+
+      echo "  Client '${VIYA_CLIENT_ID}' registered."
+    }
+
+    # ------------------------------------------------------------------------
+    # Step 4: create or update the Keycloak identity provider
+    # ------------------------------------------------------------------------
+
+    function upsert_idp() {
+      echo "Configuring Keycloak identity provider '${IDP_ALIAS}'..."
+
+      # Endpoints come from Viya's own discovery document rather than being
+      # assembled from VIYA_URL, which is what keeps the issuer Keycloak stores
+      # identical to the one Viya stamps on its tokens.
+      local body
+      body="$(echo "${OIDC_CONFIG}" | jq \
+        --arg alias "${IDP_ALIAS}" \
+        --arg display "${IDP_DISPLAY_NAME}" \
+        --arg cid "${VIYA_CLIENT_ID}" \
+        --arg cs "${VIYA_CLIENT_SECRET}" \
+        '{
+          alias: $alias,
+          displayName: $display,
+          providerId: "oidc",
+          enabled: true,
+          trustEmail: true,
+          storeToken: true,
+          config: {
+            clientId: $cid,
+            clientSecret: $cs,
+            clientAuthMethod: "client_secret_post",
+            authorizationUrl: .authorization_endpoint,
+            tokenUrl: .token_endpoint,
+            userInfoUrl: .userinfo_endpoint,
+            jwksUrl: .jwks_uri,
+            issuer: .issuer,
+            logoutUrl: (.end_session_endpoint // ""),
+            defaultScope: "openid profile email",
+            validateSignature: "true",
+            useJwksUrl: "true",
+            isAccessTokenJWT: "true"
+          }
+        }')"
+
+      local probe
+      probe="$(http_status "$(kc_call GET "/identity-provider/instances/${IDP_ALIAS}")")"
+      if [ "${probe}" == "200" ]; then
+        kc_require PUT "/identity-provider/instances/${IDP_ALIAS}" "${body}" \
+          "update identity provider '${IDP_ALIAS}'" >/dev/null
+        echo "  Identity provider updated."
+      else
+        kc_require POST "/identity-provider/instances" "${body}" \
+          "create identity provider '${IDP_ALIAS}'" >/dev/null
+        echo "  Identity provider created."
+      fi
+    }
+
+    # ------------------------------------------------------------------------
+    # Step 5: group mappers
+    # ------------------------------------------------------------------------
+
+    function upsert_group_mappers() {
+      echo "Configuring identity provider group mappers..."
+
+      local types
+      types="$(kc_require GET "/identity-provider/instances/${IDP_ALIAS}/mapper-types" "" \
+        "list identity provider mapper types")"
+      if ! echo "${types}" | jq -e 'has("oidc-hardcoded-group-idp-mapper")' >/dev/null 2>&1; then
+        echo >&2 "  Mapper type 'oidc-hardcoded-group-idp-mapper' is unavailable."
+        echo >&2 "  Available: $(echo "${types}" | jq -r 'keys | join(", ")')"
+        exit 1
+      fi
+
+      local existing
+      existing="$(kc_require GET "/identity-provider/instances/${IDP_ALIAS}/mappers" "" \
+        "list identity provider mappers")"
+
+      # A hardcoded-group mapper puts EVERY federated Viya user in the group it
+      # names, with no condition. Which group that is therefore decides what
+      # merely being able to log in to Viya grants here.
+      #
+      # The user group is unconditional by design. Earlier designs gated the
+      # admin group on a live SASAdministrators signal taken from the login
+      # token's 'authorities' claim; that claim does not reliably survive this
+      # login flow, and real administrators were dropped from both groups on a
+      # routine session refresh. The Admin/User boundary is instead enforced by
+      # the RAM API, which asks Viya directly via
+      # /identities/users/@currentUser/memberships using the caller's own token.
+      #
+      # The admin group is therefore EMPTY by default, because that same
+      # unconditional placement is not safe for it: this chart's 'Admin' group
+      # carries Keycloak's realm-management roles (manage-users, view-users,
+      # view-events -- see iam/keycloak/realm-secret.yaml), so naming it here
+      # would hand Keycloak user administration to everyone who can sign in to
+      # Viya. RAM's own Admin/User decision does not come from this mapper, so
+      # leaving it empty costs nothing.
+      local names=("ram-admin-mapper" "ram-user-mapper")
+      local groups=("${RAM_KC_ADMIN_GROUP}" "${RAM_KC_USER_GROUP}")
+
+      local i
+      for i in 0 1; do
+        local mapper_name="${names[$i]}"
+        local group="${groups[$i]}"
+
+        local id
+        id="$(echo "${existing}" | jq -r --arg n "${mapper_name}" \
+          '.[] | select(.name == $n) | .id')"
+
+        # No group configured: make sure the mapper is ABSENT rather than
+        # merely skipped, so turning a group off on upgrade actually revokes
+        # it instead of leaving the previous release's mapper in place.
+        if [ -z "${group}" ]; then
+          if [ -n "${id}" ]; then
+            kc_require DELETE "/identity-provider/instances/${IDP_ALIAS}/mappers/${id}" "" \
+              "remove mapper '${mapper_name}'" >/dev/null
+            echo "  Mapper '${mapper_name}' removed - no group configured."
+          fi
+          continue
+        fi
+
+        # Keycloak requires absolute group paths.
+        [[ "${group}" == /* ]] || group="/${group}"
+
+        local body
+        body="$(jq -n \
+          --arg alias "${IDP_ALIAS}" \
+          --arg name "${mapper_name}" \
+          --arg group "${group}" \
+          '{
+            identityProviderAlias: $alias,
+            identityProviderMapper: "oidc-hardcoded-group-idp-mapper",
+            name: $name,
+            config: {
+              syncMode: "INHERIT",
+              group: $group
+            }
+          }')"
+
+        if [ -n "${id}" ]; then
+          kc_require PUT "/identity-provider/instances/${IDP_ALIAS}/mappers/${id}" \
+            "$(echo "${body}" | jq --arg id "${id}" '. + {id: $id}')" \
+            "update mapper '${mapper_name}'" >/dev/null
+          echo "  Mapper '${mapper_name}' updated -> ${group}"
+        else
+          kc_require POST "/identity-provider/instances/${IDP_ALIAS}/mappers" "${body}" \
+            "create mapper '${mapper_name}'" >/dev/null
+          echo "  Mapper '${mapper_name}' created -> ${group}"
+        fi
+      done
+
+      # Remove mappers left behind by the abandoned claim-matching design. They
+      # never match anything now, but they are confusing to find in the console.
+      local legacy
+      for legacy in "ram-admin-group-mapper" "ram-user-group-mapper"; do
+        local legacy_id
+        legacy_id="$(echo "${existing}" | jq -r --arg n "${legacy}" \
+          '.[] | select(.name == $n) | .id')"
+        if [ -n "${legacy_id}" ]; then
+          kc_require DELETE "/identity-provider/instances/${IDP_ALIAS}/mappers/${legacy_id}" "" \
+            "remove obsolete mapper '${legacy}'" >/dev/null
+          echo "  Removed obsolete mapper '${legacy}'."
+        fi
+      done
+    }
+
+    # ------------------------------------------------------------------------
+    # Step 6/7: email verification workaround
+    # ------------------------------------------------------------------------
+
+    function fix_email_verified() {
+      # Viya does not necessarily send an email_verified claim. Keycloak's
+      # built-in 'email' client scope requires one, which fails the login; drop
+      # that protocol mapper and hardcode the attribute on the IdP instead.
+      echo "Applying email verification workaround..."
+
+      local scopes scope_id
+      scopes="$(kc_require GET "/client-scopes" "" "list client scopes")"
+      scope_id="$(echo "${scopes}" | jq -r '.[] | select(.name == "email") | .id')"
+
+      if [ -z "${scope_id}" ]; then
+        echo "  Client scope 'email' not found - skipping."
+      else
+        local mappers mapper_id
+        mappers="$(kc_require GET "/client-scopes/${scope_id}/protocol-mappers/models" "" \
+          "list protocol mappers on the 'email' client scope")"
+        mapper_id="$(echo "${mappers}" | jq -r '.[] | select(.name == "email verified") | .id')"
+        if [ -n "${mapper_id}" ]; then
+          kc_require DELETE "/client-scopes/${scope_id}/protocol-mappers/models/${mapper_id}" "" \
+            "remove the 'email verified' protocol mapper" >/dev/null
+          echo "  Removed 'email verified' mapper from the 'email' client scope."
+        else
+          echo "  'email verified' mapper already absent."
+        fi
+      fi
+
+      local mapper_name="hardcode-email-verified"
+      local existing id
+      existing="$(kc_require GET "/identity-provider/instances/${IDP_ALIAS}/mappers" "" \
+        "list identity provider mappers")"
+      id="$(echo "${existing}" | jq -r --arg n "${mapper_name}" \
+        '.[] | select(.name == $n) | .id')"
+
+      local body
+      body="$(jq -n \
+        --arg alias "${IDP_ALIAS}" \
+        --arg name "${mapper_name}" \
+        '{
+          identityProviderAlias: $alias,
+          identityProviderMapper: "hardcoded-attribute-idp-mapper",
+          name: $name,
+          config: {
+            syncMode: "INHERIT",
+            attribute: "emailVerified",
+            "attribute.value": "true"
+          }
+        }')"
+
+      if [ -n "${id}" ]; then
+        kc_require PUT "/identity-provider/instances/${IDP_ALIAS}/mappers/${id}" \
+          "$(echo "${body}" | jq --arg id "${id}" '. + {id: $id}')" \
+          "update mapper '${mapper_name}'" >/dev/null
+      else
+        kc_require POST "/identity-provider/instances/${IDP_ALIAS}/mappers" "${body}" \
+          "create mapper '${mapper_name}'" >/dev/null
+      fi
+      echo "  Mapper '${mapper_name}' configured."
+    }
+
+    # ------------------------------------------------------------------------
+    # Step 8: let the RAM client read the brokered Viya token
+    # ------------------------------------------------------------------------
+
+    function find_client_uuid() {
+      local client_id="${1}"
+      local clients
+      clients="$(kc_require GET "/clients?clientId=${client_id}" "" \
+        "look up client '${client_id}'")"
+      echo "${clients}" | jq -r '.[0].id // empty'
+    }
+
+    function configure_client_brokering() {
+      echo "Configuring client '${RAM_APP_CLIENT}' for identity brokering..."
+
+      local uuid
+      uuid="$(find_client_uuid "${RAM_APP_CLIENT}")"
+      if [ -z "${uuid}" ]; then
+        echo >&2 "  Client '${RAM_APP_CLIENT}' not found in realm '${KEYCLOAK_REALM}'."
+        exit 1
+      fi
+
+      local client updated
+      client="$(kc_require GET "/clients/${uuid}" "" "read client '${RAM_APP_CLIENT}'")"
+      updated="$(echo "${client}" | jq --arg idp "${IDP_ALIAS}" \
+        '.attributes["external.token.enabled"] = "true"
+         | .attributes["external.token.idp"] = $idp')"
+
+      kc_require PUT "/clients/${uuid}" "${updated}" \
+        "update client '${RAM_APP_CLIENT}'" >/dev/null
+      echo "  Identity Brokering API v2 attributes set."
+    }
+
+    # ------------------------------------------------------------------------
+    # Step 9: authorize token exchange against the IdP
+    # ------------------------------------------------------------------------
+
+    function enable_token_exchange() {
+      # The brokering endpoint only ever returns the token copy captured at
+      # login, which Viya never refreshes, so it goes stale within minutes.
+      # Keycloak's token-exchange endpoint mints a fresh external token from the
+      # live session instead -- but it is gated by fine-grained authorization
+      # until a policy explicitly permits this client.
+      echo "Authorizing token exchange for '${RAM_APP_CLIENT}' via '${IDP_ALIAS}'..."
+
+      local realm_mgmt_uuid exchange_uuid
+      realm_mgmt_uuid="$(find_client_uuid "realm-management")"
+      exchange_uuid="$(find_client_uuid "${RAM_APP_CLIENT}")"
+      if [ -z "${realm_mgmt_uuid}" ] || [ -z "${exchange_uuid}" ]; then
+        echo >&2 "  Could not resolve realm-management or '${RAM_APP_CLIENT}' client."
+        exit 1
+      fi
+
+      local permissions permission_id
+      permissions="$(kc_require PUT \
+        "/identity-provider/instances/${IDP_ALIAS}/management/permissions" \
+        '{"enabled":true}' "enable fine-grained permissions on '${IDP_ALIAS}'")"
+      permission_id="$(echo "${permissions}" | jq -r '.scopePermissions["token-exchange"] // empty')"
+
+      if [ -z "${permission_id}" ]; then
+        echo >&2 "  No 'token-exchange' scope permission was returned."
+        echo >&2 "  Confirm Keycloak was built with the 'token-exchange' and"
+        echo >&2 "  'admin-fine-grained-authz:v1' server features."
+        exit 1
+      fi
+
+      local policy_name="${RAM_APP_CLIENT}-token-exchange-policy"
+      local policy_body policy_id existing
+      policy_body="$(jq -n --arg name "${policy_name}" --arg client "${exchange_uuid}" \
+        '{
+          name: $name,
+          logic: "POSITIVE",
+          clients: [$client]
+        }')"
+
+      existing="$(kc_require GET \
+        "/clients/${realm_mgmt_uuid}/authz/resource-server/policy?name=${policy_name}&exactName=true" \
+        "" "look up policy '${policy_name}'")"
+      policy_id="$(echo "${existing}" | jq -r '.[0].id // empty')"
+
+      if [ -n "${policy_id}" ]; then
+        kc_require PUT \
+          "/clients/${realm_mgmt_uuid}/authz/resource-server/policy/client/${policy_id}" \
+          "$(echo "${policy_body}" | jq --arg id "${policy_id}" '. + {id: $id}')" \
+          "update policy '${policy_name}'" >/dev/null
+      else
+        local created
+        created="$(kc_require POST \
+          "/clients/${realm_mgmt_uuid}/authz/resource-server/policy/client" \
+          "${policy_body}" "create policy '${policy_name}'")"
+        policy_id="$(echo "${created}" | jq -r '.id')"
+      fi
+
+      local permission updated
+      permission="$(kc_require GET \
+        "/clients/${realm_mgmt_uuid}/authz/resource-server/permission/${permission_id}" \
+        "" "read the token-exchange permission")"
+      updated="$(echo "${permission}" | jq --arg policy "${policy_id}" \
+        '.policies = [$policy] | .decisionStrategy = "UNANIMOUS"')"
+
+      kc_require PUT \
+        "/clients/${realm_mgmt_uuid}/authz/resource-server/permission/scope/${permission_id}" \
+        "${updated}" "attach policy to the token-exchange permission" >/dev/null
+      echo "  Token exchange authorized."
+    }
+
+    # ------------------------------------------------------------------------
+
+    if [ "${CONFIGURE_SASLOGON}" == "true" ]; then
+      configure_saslogon_issuer
+    else
+      echo "Skipping SASLogon issuer configuration (integrations.viya.sso.configureSASLogon is false)."
+    fi
+
+    fetch_viya_discovery
+    get_kc_admin_token
+
+    if [ "${REGISTER_VIYA_CLIENT}" == "true" ]; then
+      register_viya_client
+    else
+      echo "Skipping Viya client registration (integrations.viya.sso.registerClient is false)."
+    fi
+
+    upsert_idp
+    upsert_group_mappers
+    fix_email_verified
+    configure_client_brokering
+
+    if [ "${ENABLE_TOKEN_EXCHANGE}" == "true" ]; then
+      enable_token_exchange
+    else
+      echo "Skipping token-exchange authorization (integrations.viya.sso.tokenExchange is false)."
+    fi
+
+    echo ""
+    echo "Viya SSO configured. Users can sign in through '${IDP_DISPLAY_NAME}'."
+{{- end }}

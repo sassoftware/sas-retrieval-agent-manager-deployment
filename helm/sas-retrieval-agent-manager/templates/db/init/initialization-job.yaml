@@ -14,7 +14,7 @@ metadata:
 spec:
   template:
     metadata:
-      {{- with merge (.Values.db.init.podAnnotations | default dict) (.Values.podAnnotations | default dict) }}
+      {{- with merge (.Values.db.init.podAnnotations | default dict) (include "ram.podAnnotations" . | fromYaml) }}
       annotations:
         {{- toYaml . | nindent 8 }}
       {{- end }}

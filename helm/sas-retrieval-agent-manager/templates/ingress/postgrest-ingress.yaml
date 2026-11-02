@@ -5,6 +5,7 @@
     "pathsKey" "postgrest"
     "servicePort" .Values.db.rest.service.port
     "monitoringPort" .Values.db.rest.monitoring.service.port
+    "rewritePrefix" "/"
 -}}
 {{- $classType := include "retrieval-agent-manager.ingressClassType" . -}}
 {{- if eq $classType "route" -}}

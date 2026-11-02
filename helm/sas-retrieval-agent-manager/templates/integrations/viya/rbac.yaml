@@ -1,0 +1,101 @@
+{{- if and (include "viya.sso.enabled" .) .Values.integrations.viya.sso.configureSASLogon }}
+{{- /*
+  Before changing SASLogon's issuer URI the job records the value it found, so
+  the change can be undone. That record is a ConfigMap in THIS namespace,
+  because the change itself cannot live here: the configuration service keeps
+  it as data in Viya's platform database, where neither `helm uninstall` nor a
+  Viya redeployment will undo it.
+
+  create has no resourceNames (the API cannot scope a create to a name), so it
+  is granted at the namespace level; everything afterwards is scoped to the one
+  object. No update or delete verb: the record is written once, and a later
+  upgrade must not be able to overwrite the original with a value this release
+  itself set.
+*/}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ printf "%s-backup" (include "viya.sso.fullname" .) }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "viya.sso.labels" . | nindent 4 }}
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["create"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    resourceNames: [{{ printf "%s-saslogon-backup" (include "viya.sso.fullname" .) | quote }}]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ printf "%s-backup" (include "viya.sso.fullname" .) }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "viya.sso.labels" . | nindent 4 }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "viya.sso.fullname" . }}
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: Role
+  name: {{ printf "%s-backup" (include "viya.sso.fullname" .) }}
+  apiGroup: rbac.authorization.k8s.io
+{{- end }}
+{{- if include "viya.sso.canRestartSASLogon" . }}
+---
+{{- /*
+  Changing SASLogon's issuer URI only takes effect once sas-logon-app
+  restarts, and sas-logon-app lives in the Viya namespace rather than ours.
+  These two objects are therefore created in THAT namespace, and are the only
+  reason this release needs any Kubernetes API access at all.
+
+  The verbs are the minimum `kubectl rollout restart` plus `rollout status`
+  need: patch to stamp the restart annotation on the Deployment, and read
+  access to the Deployment and the ReplicaSets/Pods it rolls out, so progress
+  can be followed. Nothing here can create, delete or scale anything.
+
+  Scoped to the single sas-logon-app Deployment by name where the API allows
+  it -- resourceNames cannot be used for list/watch, so those stay at the
+  namespace level.
+*/}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "viya.sso.fullname" . }}
+  namespace: {{ .Values.integrations.viya.namespace }}
+  labels:
+    {{- include "viya.sso.labels" . | nindent 4 }}
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    resourceNames: ["sas-logon-app"]
+    verbs: ["get", "patch"]
+  - apiGroups: ["apps"]
+    resources: ["replicasets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "viya.sso.fullname" . }}
+  namespace: {{ .Values.integrations.viya.namespace }}
+  labels:
+    {{- include "viya.sso.labels" . | nindent 4 }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "viya.sso.fullname" . }}
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: Role
+  name: {{ include "viya.sso.fullname" . }}
+  apiGroup: rbac.authorization.k8s.io
+{{- end }}

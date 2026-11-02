@@ -1,6 +1,19 @@
+{{- /*
+The root HTTPProxy, rendered only when THIS release owns the FQDN.
+
+`ingress.enableRootIngress` is the switch. It already meant "RAM is hosted on the
+root ingress", and under Contour owning the root object and answering at `/` are
+the same question, so it gates both here.
+
+False means some other root owns the hostname -- typically Viya's
+`sas-httpproxy-root` -- and this release contributes only its children, which that
+root must include. See templates/ingress/_contour.tpl.
+*/ -}}
 {{- if .Values.ingress.enabled -}}
 {{- $classType := include "retrieval-agent-manager.ingressClassType" . -}}
 {{- if eq $classType "contour" -}}
-{{- include "contour.httpproxy.combined" . -}}
+{{- if (or (not (hasKey .Values.ingress "enableRootIngress")) (eq .Values.ingress.enableRootIngress true)) -}}
+{{- include "contour.httpproxy.root" . -}}
+{{- end -}}
 {{- end -}}
 {{- end -}}

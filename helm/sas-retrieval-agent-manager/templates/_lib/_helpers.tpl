@@ -53,6 +53,17 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
+Add the Linkerd default to the global pod annotations.
+*/}}
+{{- define "ram.podAnnotations" -}}
+{{- $annotations := deepCopy (.Values.podAnnotations | default dict) -}}
+{{- if .Values.integrations.linkerd.enabled -}}
+{{- $annotations = merge $annotations (dict "linkerd.io/inject" "enabled") -}}
+{{- end -}}
+{{- toYaml $annotations -}}
+{{- end -}}
+
+{{/*
 Render a pod security context, stripping runAsUser/runAsGroup/runAsNonRoot on OpenShift
 so the SCC assigns them from the namespace UID range automatically.
 fsGroup is retained so Kubernetes triggers volume ownership chown on EBS/PVC mounts.

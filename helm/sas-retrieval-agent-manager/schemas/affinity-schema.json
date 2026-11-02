@@ -1,0 +1,346 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": ["object", "null"],
+  "description": "Affinity and anti-affinity rules for pod scheduling",
+  "properties": {
+    "nodeAffinity": {
+      "type": ["object", "null"],
+      "description": "Node affinity scheduling rules",
+      "properties": {
+        "requiredDuringSchedulingIgnoredDuringExecution": {
+          "type": ["object", "null"],
+          "description": "Hard node affinity requirements that must be met",
+          "properties": {
+            "nodeSelectorTerms": {
+              "type": "array",
+              "description": "List of node selector terms (ORed together)",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "matchExpressions": {
+                    "type": ["array", "null"],
+                    "description": "List of node selector requirements by node labels",
+                    "items": {
+                      "type": "object",
+                      "required": ["key", "operator"],
+                      "properties": {
+                        "key": {
+                          "type": "string",
+                          "description": "The label key"
+                        },
+                        "operator": {
+                          "type": "string",
+                          "description": "Operator for the key-value relationship",
+                          "enum": ["In", "NotIn", "Exists", "DoesNotExist", "Gt", "Lt"]
+                        },
+                        "values": {
+                          "type": ["array", "null"],
+                          "description": "Values for the label key (used with In/NotIn operators)",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "matchFields": {
+                    "type": ["array", "null"],
+                    "description": "List of node selector requirements by node fields",
+                    "items": {
+                      "type": "object",
+                      "required": ["key", "operator"],
+                      "properties": {
+                        "key": {
+                          "type": "string",
+                          "description": "The field key"
+                        },
+                        "operator": {
+                          "type": "string",
+                          "description": "Operator for the key-value relationship",
+                          "enum": ["In", "NotIn", "Exists", "DoesNotExist", "Gt", "Lt"]
+                        },
+                        "values": {
+                          "type": ["array", "null"],
+                          "description": "Values for the field key",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "required": ["nodeSelectorTerms"]
+        },
+        "preferredDuringSchedulingIgnoredDuringExecution": {
+          "type": ["array", "null"],
+          "description": "Soft node affinity preferences",
+          "items": {
+            "type": "object",
+            "required": ["weight", "preference"],
+            "properties": {
+              "weight": {
+                "type": "integer",
+                "description": "Weight associated with matching the preference (1-100)",
+                "minimum": 1,
+                "maximum": 100
+              },
+              "preference": {
+                "type": "object",
+                "description": "Node selector term preference",
+                "properties": {
+                  "matchExpressions": {
+                    "type": ["array", "null"],
+                    "description": "List of node selector requirements by node labels",
+                    "items": {
+                      "type": "object",
+                      "required": ["key", "operator"],
+                      "properties": {
+                        "key": {
+                          "type": "string",
+                          "description": "The label key"
+                        },
+                        "operator": {
+                          "type": "string",
+                          "description": "Operator for the key-value relationship",
+                          "enum": ["In", "NotIn", "Exists", "DoesNotExist", "Gt", "Lt"]
+                        },
+                        "values": {
+                          "type": ["array", "null"],
+                          "description": "Values for the label key",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "matchFields": {
+                    "type": ["array", "null"],
+                    "description": "List of node selector requirements by node fields",
+                    "items": {
+                      "type": "object",
+                      "required": ["key", "operator"],
+                      "properties": {
+                        "key": {
+                          "type": "string",
+                          "description": "The field key"
+                        },
+                        "operator": {
+                          "type": "string",
+                          "description": "Operator for the key-value relationship",
+                          "enum": ["In", "NotIn", "Exists", "DoesNotExist", "Gt", "Lt"]
+                        },
+                        "values": {
+                          "type": ["array", "null"],
+                          "description": "Values for the field key",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "podAffinity": {
+      "type": ["object", "null"],
+      "description": "Pod affinity scheduling rules (schedule pods near other pods)",
+      "properties": {
+        "requiredDuringSchedulingIgnoredDuringExecution": {
+          "type": ["array", "null"],
+          "description": "Hard pod affinity requirements",
+          "items": {
+            "type": "object",
+            "required": ["topologyKey"],
+            "properties": {
+              "labelSelector": {
+                "type": ["object", "null"],
+                "properties": {
+                  "matchLabels": {
+                    "type": ["object", "null"],
+                    "additionalProperties": {
+                      "type": "string"
+                    }
+                  },
+                  "matchExpressions": {
+                    "type": ["array", "null"],
+                    "items": {
+                      "type": "object",
+                      "required": ["key", "operator"],
+                      "properties": {
+                        "key": {
+                          "type": "string"
+                        },
+                        "operator": {
+                          "type": "string",
+                          "enum": ["In", "NotIn", "Exists", "DoesNotExist"]
+                        },
+                        "values": {
+                          "type": ["array", "null"],
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "namespaces": {
+                "type": ["array", "null"],
+                "description": "Namespaces to match pods from",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "namespaceSelector": {
+                "type": ["object", "null"],
+                "description": "Selector for namespaces"
+              },
+              "topologyKey": {
+                "type": "string",
+                "description": "Label key of the node topology domain"
+              }
+            }
+          }
+        },
+        "preferredDuringSchedulingIgnoredDuringExecution": {
+          "type": ["array", "null"],
+          "description": "Soft pod affinity preferences",
+          "items": {
+            "type": "object",
+            "required": ["weight", "podAffinityTerm"],
+            "properties": {
+              "weight": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 100
+              },
+              "podAffinityTerm": {
+                "type": "object",
+                "required": ["topologyKey"],
+                "properties": {
+                  "labelSelector": {
+                    "type": ["object", "null"]
+                  },
+                  "namespaces": {
+                    "type": ["array", "null"],
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "topologyKey": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "podAntiAffinity": {
+      "type": ["object", "null"],
+      "description": "Pod anti-affinity scheduling rules (avoid scheduling pods near other pods)",
+      "properties": {
+        "requiredDuringSchedulingIgnoredDuringExecution": {
+          "type": ["array", "null"],
+          "description": "Hard pod anti-affinity requirements",
+          "items": {
+            "type": "object",
+            "required": ["topologyKey"],
+            "properties": {
+              "labelSelector": {
+                "type": ["object", "null"],
+                "properties": {
+                  "matchLabels": {
+                    "type": ["object", "null"],
+                    "additionalProperties": {
+                      "type": "string"
+                    }
+                  },
+                  "matchExpressions": {
+                    "type": ["array", "null"],
+                    "items": {
+                      "type": "object",
+                      "required": ["key", "operator"],
+                      "properties": {
+                        "key": {
+                          "type": "string"
+                        },
+                        "operator": {
+                          "type": "string",
+                          "enum": ["In", "NotIn", "Exists", "DoesNotExist"]
+                        },
+                        "values": {
+                          "type": ["array", "null"],
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "namespaces": {
+                "type": ["array", "null"],
+                "items": {
+                  "type": "string"
+                }
+              },
+              "namespaceSelector": {
+                "type": ["object", "null"]
+              },
+              "topologyKey": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "preferredDuringSchedulingIgnoredDuringExecution": {
+          "type": ["array", "null"],
+          "description": "Soft pod anti-affinity preferences",
+          "items": {
+            "type": "object",
+            "required": ["weight", "podAffinityTerm"],
+            "properties": {
+              "weight": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 100
+              },
+              "podAffinityTerm": {
+                "type": "object",
+                "required": ["topologyKey"],
+                "properties": {
+                  "labelSelector": {
+                    "type": ["object", "null"]
+                  },
+                  "namespaces": {
+                    "type": ["array", "null"],
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "topologyKey": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

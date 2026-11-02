@@ -1,0 +1,38 @@
+{{- if include "viya.sso.enabled" . }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ printf "%s-env" (include "viya.sso.fullname" .) }}
+  labels:
+    {{- include "viya.sso.labels" . | nindent 4 }}
+data:
+  VIYA_URL: {{ include "viya.sso.url" . | quote }}
+  VIYA_ISSUER_URI: {{ include "viya.sso.issuerURI" . | quote }}
+  VIYA_CLIENT_ID: {{ .Values.integrations.viya.sso.clientId | quote }}
+  VIYA_REDIRECT_URI: {{ include "viya.sso.redirectURI" . | quote }}
+  IDP_ALIAS: {{ .Values.integrations.viya.sso.idpAlias | quote }}
+  IDP_DISPLAY_NAME: {{ .Values.integrations.viya.sso.displayName | quote }}
+  KEYCLOAK_URL: {{ include "keycloak.internalBaseURL" . | quote }}
+  KEYCLOAK_REALM: {{ .Values.iam.keycloak.config.realm | quote }}
+  RAM_APP_CLIENT: {{ .Values.iam.keycloak.config.clientId | quote }}
+  RAM_KC_ADMIN_GROUP: {{ .Values.integrations.viya.sso.adminGroup | quote }}
+  RAM_KC_USER_GROUP: {{ .Values.integrations.viya.sso.userGroup | quote }}
+  ENABLE_TOKEN_EXCHANGE: {{ .Values.integrations.viya.sso.tokenExchange | quote }}
+  REGISTER_VIYA_CLIENT: {{ .Values.integrations.viya.sso.registerClient | quote }}
+  CONFIGURE_SASLOGON: {{ .Values.integrations.viya.sso.configureSASLogon | quote }}
+  VIYA_NAMESPACE: {{ .Values.integrations.viya.namespace | quote }}
+  RELEASE_NAMESPACE: {{ .Release.Namespace | quote }}
+  {{- $tls := .Values.integrations.viya.tls | default dict }}
+  VIYA_TLS_INSECURE: {{ $tls.insecureSkipVerify | default false | quote }}
+  {{- if $tls.caBundleConfigMap }}
+  VIYA_CA_BUNDLE: {{ printf "/viya-ca/%s" ($tls.caBundleKey | default "ca.crt") | quote }}
+  {{- end }}
+  {{- /*
+    Where the job records SASLogon's issuer as it found it. The configuration
+    service keeps that value as data in Viya's platform database rather than as
+    a Kubernetes object, so neither `helm uninstall` nor a Viya redeployment
+    undoes the change -- this ConfigMap is the only record of how to put it
+    back. See the revert procedure in the chart NOTES.
+  */}}
+  BACKUP_CONFIGMAP: {{ printf "%s-saslogon-backup" (include "viya.sso.fullname" .) | quote }}
+{{- end }}

@@ -16,6 +16,11 @@ spec:
   activeDeadlineSeconds: 1800
   ttlSecondsAfterFinished: 300
   template:
+    {{- with include "ram.podAnnotations" . | fromYaml }}
+    metadata:
+      annotations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
     spec:
       initContainers:
         - command:
