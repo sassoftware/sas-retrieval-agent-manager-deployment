@@ -7,7 +7,7 @@ permalink: /
 
 # SAS Retrieval Agent Manager
 
-SAS Retrieval Agent Manager is a comprehensive solution for managing agents or interacting directly
+[SAS Retrieval Agent Manager](https://www.sas.com/en_za/software/retrieval-agent-manager.html) is a comprehensive solution for managing agents or interacting directly
 with LLMs in a RAG or non-RAG context. This documentation covers deployment and operation on
 open-source Kubernetes, Azure Kubernetes Service (AKS), Amazon Elastic Kubernetes Service (EKS), and
 OpenShift Container Platform (OCP).
