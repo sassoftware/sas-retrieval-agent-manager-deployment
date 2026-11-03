@@ -1,4 +1,5 @@
 {{ include "validatePasswords" .}}
+{{ include "validateSecrets" .}}
 
 Thank you for installing the SAS Retrieval Agent Manager Helm chart!
 
@@ -8,6 +9,126 @@ NOTE: This chart includes post-install hooks that may take several minutes to co
 
 NOTE: Istio ambient mode is enabled. Enroll the namespace in the waypoint proxy by running:
   kubectl label namespace {{ .Release.Namespace }} istio.io/use-waypoint={{ .Values.integrations.istio.waypoint.name | default "waypoint" }} --overwrite
+{{- end }}
+{{- if include "viya.sso.enabled" . }}
+
+Viya SSO is enabled. The {{ include "viya.sso.fullname" . }} job configures Keycloak to
+federate logins to {{ include "viya.sso.url" . }}, and reports what it did here:
+
+  kubectl logs -n {{ .Release.Namespace }} job/{{ include "viya.sso.fullname" . }}
+{{- if .Values.integrations.viya.sso.configureSASLogon }}
+
+SASLogon issuer URI: handled for you. The job sets issuer.uri to
+{{ include "viya.sso.issuerURI" . }} on the sas.logon.jwt configuration
+definition. SASLogon ships without an external issuer and otherwise stamps every token
+with http://localhost/SASLogon/oauth/token, which nothing in this cluster can dial.
+
+  NOTE: this change is NOT undone by 'helm uninstall', and it SURVIVES a Viya
+  redeployment -- the configuration service holds it as data in Viya's platform
+  database, not as a Kubernetes object. The value found beforehand was recorded in
+  configmap/{{ printf "%s-saslogon-backup" (include "viya.sso.fullname" .) }}; to put
+  Viya back as it was, see "Removing the SASLogon change" at the end of these notes.
+{{- if include "viya.sso.canRestartSASLogon" . }}
+The change needs a restart of sas-logon-app to take effect, and this release has a Role
+in namespace '{{ .Values.integrations.viya.namespace }}' to do exactly that -- nothing else.
+{{- else }}
+
+  ACTION MAY BE REQUIRED: the change only takes effect once sas-logon-app restarts, and
+  integrations.viya.namespace is not set, so this release cannot do it. If the job
+  reports a restart is outstanding, run:
+
+    kubectl -n <viya-namespace> rollout restart deploy/sas-logon-app
+    kubectl -n <viya-namespace> rollout status deploy/sas-logon-app --timeout=180s
+
+  then re-run helm upgrade. Set integrations.viya.namespace to automate this.
+{{- end }}
+{{- else }}
+
+SASLogon issuer URI: NOT managed by this release (configureSASLogon is false). It must
+already read {{ include "viya.sso.issuerURI" . }}/oauth/token, or the job will
+refuse to continue. See the ram-viya-sso repository for the manual procedure.
+{{- end }}
+{{- if .Values.integrations.viya.sso.registerClient }}
+
+SASLogon OAuth client: handled for you. The job registers '{{ .Values.integrations.viya.sso.clientId }}'
+using the credentials in secret '{{ .Values.integrations.viya.sso.adminSecret }}'.
+{{- else }}
+
+SASLogon OAuth client: NOT managed by this release (registerClient is false). Register
+it by hand with these exact values:
+
+    client_id      {{ .Values.integrations.viya.sso.clientId }}
+    redirect_uri   {{ include "viya.sso.redirectURI" . }}
+    authorities    SASAdministrators
+    grant types    authorization_code, refresh_token
+    scope          openid, uaa.user, profile, email
+    autoapprove    true
+
+  Without autoapprove, SASLogon shows a consent screen on every login.
+
+  Retrieve the client secret this release generated with:
+    kubectl get secret -n {{ .Release.Namespace }} {{ include "viya.sso.clientSecretName" . }} -o jsonpath="{.data.client-secret}" | base64 --decode && echo
+{{- end }}
+
+Removing the SASLogon change
+----------------------------
+Both changes this release makes inside Viya -- the issuer URI and the OAuth client --
+are stored by Viya's own services, so 'helm uninstall' leaves them in place. Undo them
+with the same APIs, authenticated as a Viya administrator:
+{{- if .Values.integrations.viya.sso.configureSASLogon }}
+
+  1. Read what the issuer was before this release changed it:
+
+       kubectl get configmap -n {{ .Release.Namespace }} {{ printf "%s-saslogon-backup" (include "viya.sso.fullname" .) }} \
+         -o jsonpath="{.data.existed} {.data.issuer-uri}"; echo
+
+     'false' means there was no sas.logon.jwt configuration at all, so reverting means
+     DELETE-ing the one this release created. Otherwise restore the recorded value.
+
+     The configuration.json key of the same ConfigMap holds the rest of the original
+     object for reference, with any signing key or secret removed -- a ConfigMap is not
+     the place for those. Its 'redacted' array names what was dropped. Nothing needs
+     them to revert: only issuer.uri changed, and the siblings were never overwritten.
+
+  2. Apply the revert against {{ include "viya.sso.url" . }}/configuration/configurations,
+     then restart sas-logon-app -- the issuer does not change until it does:
+
+       kubectl -n {{ .Values.integrations.viya.namespace | default "<viya-namespace>" }} rollout restart deploy/sas-logon-app
+{{- end }}
+{{- if .Values.integrations.viya.sso.registerClient }}
+
+  3. Remove the OAuth client this release registered:
+
+       DELETE {{ include "viya.sso.url" . }}/SASLogon/oauth/clients/{{ .Values.integrations.viya.sso.clientId }}
+{{- end }}
+{{- end }}
+{{- if and .Values.ingress.enabled (eq (include "retrieval-agent-manager.ingressClassType" .) "contour") }}
+{{- if not (or (not (hasKey .Values.ingress "enableRootIngress")) (eq .Values.ingress.enableRootIngress true)) }}
+
+ACTION REQUIRED: ingress.enableRootIngress is false, so this release did NOT create a
+root HTTPProxy. It published {{ len (include "contour.children" . | fromYamlArray) }} child proxies{{ if include "contour.hub.enabled" . }} and a hub{{ end }} that serve no traffic until the
+root owning {{ .Values.ingress.domain }} includes them.
+
+Add to that root's spec.includes:
+{{ include "contour.delegation.snippet" . | trim | indent 2 }}
+{{- if include "contour.hub.enabled" . }}
+
+That single entry is all this root ever needs. Components added later -- LiteLLM,
+the UI extension -- are attached to {{ include "contour.hub.name" . }} through
+ingress.contour.includes (the child carries its own full prefix) or
+ingress.contour.addons (this release assigns it one), which is a change to THIS
+release rather than to the one that owns the hostname. Worth having: a root
+owned by SAS Viya is applied from
+Viya's own deployment manifests, so a runtime 'kubectl patch' of its includes is
+replaced by the next apply -- the durable form is a kustomize/site-config patch and
+a redeployment, which is not a thing to repeat per component.
+{{- end }}
+
+On a cluster running SAS Viya that root is sas-httpproxy-root in the Viya namespace.
+Verify afterwards -- a child that no root includes reports status "orphaned" and is
+ignored by Contour entirely, which looks identical to a routing bug:
+  kubectl get httpproxy -n {{ .Release.Namespace }} -o custom-columns=NAME:.metadata.name,STATUS:.status.currentStatus
+{{- end }}
 {{- end }}
 
 You can now access your environment at:

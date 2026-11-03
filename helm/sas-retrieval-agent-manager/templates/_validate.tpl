@@ -35,9 +35,49 @@
   {{- if not (regexMatch `[!@#$%^&*_+|?<>/-]` $kcPw)                  }}{{- $errors = append $errors "users.keycloak.admin.password must contain at least one special character (!@#$%^&*_-+|?<>/)" }}{{- end }}
 {{- end }}
 
-{{/* ── Emit all errors at once ── */}}
+{{/* ── Emit all user errors at once ── */}}
 {{- if $errors }}
   {{- $msg := printf "\n\nPassword validation failed with %d error(s):\n" (len $errors) -}}
+  {{- range $i, $e := $errors -}}
+    {{- $msg = printf "%s  [%d] %s\n" $msg (add1 $i) $e -}}
+  {{- end -}}
+  {{- fail $msg -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "validateSecrets" -}}
+{{- if not (.Values.iam.skipSecretValidation | default false) -}}
+{{- $errors := list -}}
+
+{{/* ── iam.keycloak.config.cookieSecret: full policy check ── */}}
+{{- $cookieSecret := .Values.iam.keycloak.config.cookieSecret -}}
+{{- if not $cookieSecret }}
+  {{- $errors = append $errors "iam.keycloak.config.cookieSecret is empty" }}
+{{- else }}
+  {{- $cookieSecretLength := len $cookieSecret -}}
+  {{/* Match OAuth2 Proxy: use decoded bytes only for a valid AES key length. */}}
+  {{- $encoded := regexReplaceAll "=+$" $cookieSecret "" | replace "\r" "" | replace "\n" "" -}}
+  {{- if and (regexMatch `^[A-Za-z0-9_-]*$` $encoded) (ne (mod (len $encoded) 4) 1) }}
+    {{- $encoded = $encoded | replace "-" "+" | replace "_" "/" -}}
+    {{- $padding := mod (sub 4 (mod (len $encoded) 4)) 4 | int -}}
+    {{- $decodedLength := len (b64dec (printf "%s%s" $encoded (repeat $padding "="))) -}}
+    {{- if has $decodedLength (list 16 24 32) }}
+      {{- $cookieSecretLength = $decodedLength -}}
+    {{- end }}
+  {{- end }}
+  {{- if not (has $cookieSecretLength (list 16 24 32)) }}
+    {{- $errors = append $errors (printf "iam.keycloak.config.cookieSecret must be 16, 24, or 32 bytes to create an AES cipher, but is %d bytes" $cookieSecretLength) }}
+  {{- end }}
+{{- end }}
+
+{{/* ── Simple non-empty checks ── */}}
+{{- if not .Values.iam.keycloak.config.clientSecret }}{{- $errors = append $errors "iam.keycloak.config.clientSecret is empty" }}{{- end }}
+{{- if and (not .Values.api.config.license) (not .Values.api.config.license_secret) }}{{- $errors = append $errors "api.config.license is empty" }}{{- end }}
+
+{{/* ── Emit all secret errors at once ── */}}
+{{- if $errors }}
+  {{- $msg := printf "\n\nSecret validation failed with %d error(s):\n" (len $errors) -}}
   {{- range $i, $e := $errors -}}
     {{- $msg = printf "%s  [%d] %s\n" $msg (add1 $i) $e -}}
   {{- end -}}

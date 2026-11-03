@@ -1,13 +1,47 @@
 {{- if eq (include "retrieval-agent-manager.createStorageClass" .) "true" }}
 {{- $storageClassName := default (include "retrieval-agent-manager.defaultStorageClassName" .) .Values.storage.customStorageClass.name }}
+{{- /*
+  Render when the StorageClass is absent, or when it is already ours.
+
+  A StorageClass is cluster-scoped and shared, so one this release does not own
+  is left alone: rendering it fails the install with "exists and cannot be
+  imported into the current release: invalid ownership metadata".
+
+  Ownership is the full trio Helm's own checkOwnership requires -- the
+  managed-by label AND both release annotations. Testing fewer would call an
+  object ours that Helm then rejects for the very error this guard avoids.
+
+  Note `lookup` is empty under `helm template`, so every GitOps render takes the
+  first branch and adopts whatever is there.
+*/}}
 {{- $storageClass := lookup "storage.k8s.io/v1" "StorageClass" "" $storageClassName }}
-{{- if not $storageClass }}
+{{- $ownedByThisRelease := false }}
+{{- if $storageClass }}
+{{- $existingAnnotations := $storageClass.metadata.annotations | default dict }}
+{{- $existingLabels := $storageClass.metadata.labels | default dict }}
+{{- $ownedByThisRelease = and
+      (eq (index $existingLabels "app.kubernetes.io/managed-by" | default "") "Helm")
+      (eq (index $existingAnnotations "meta.helm.sh/release-name" | default "") .Release.Name)
+      (eq (index $existingAnnotations "meta.helm.sh/release-namespace" | default "") .Release.Namespace) }}
+{{- end }}
+{{- if or (not $storageClass) $ownedByThisRelease }}
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
   name: {{ $storageClassName }}
   annotations:
-    helm.sh/hook: pre-install
+    {{- /*
+      An ordinary resource, never a hook. A hook with no delete policy is
+      deleted and recreated on every Argo CD sync, which for a StorageClass with
+      live PersistentVolumeClaims bound to it breaks provisioning for any claim
+      made in that window.
+
+      Storage outlives the release that created it, so it survives an uninstall.
+      Both annotations are needed: Helm reads resource-policy, Argo CD reads
+      sync-options.
+    */}}
+    helm.sh/resource-policy: keep
+    argocd.argoproj.io/sync-options: Prune=false
 provisioner: file.csi.azure.com
 allowVolumeExpansion: true
 mountOptions:

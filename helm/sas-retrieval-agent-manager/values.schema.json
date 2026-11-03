@@ -3034,6 +3034,15 @@
     "iam": {
       "additionalProperties": false,
       "description": "SAS Retrieval Agent Manager IAM: Authentication services",
+      "patternProperties": {
+        "^skipSecretValidation$": {
+          "required": [],
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      },
       "properties": {
         "keycloak": {
           "additionalProperties": false,
@@ -3063,13 +3072,13 @@
                 },
                 "clientSecret": {
                   "default": "",
-                  "description": "OAuth2 client secret for the application",
+                  "description": "OAuth2 client secret for the application. This value must not be empty when secret validation is active.",
                   "title": "clientSecret",
                   "type": "string"
                 },
                 "cookieSecret": {
                   "default": "",
-                  "description": "OAuth2 client secret for the application",
+                  "description": "OAuth2 Proxy cookie encryption secret. Use 16, 24, or 32 bytes, or URL-safe Base64 for one of these byte lengths. This value must not be empty when secret validation is active.",
                   "title": "cookieSecret",
                   "type": "string"
                 },
@@ -3307,6 +3316,27 @@
           "additionalProperties": false,
           "description": "OAuth2 Proxy configuration for authentication",
           "properties": {
+            "extraJwtIssuers": {
+              "default": [],
+              "description": "Additional trusted JWT issuers for bearer-token auth (OAuth2 Proxy's `extra_jwt_issuers`)",
+              "items": {
+                "properties": {
+                  "audience": {
+                    "type": "string"
+                  },
+                  "issuer": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "issuer",
+                  "audience"
+                ],
+                "type": "object"
+              },
+              "title": "extraJwtIssuers",
+              "type": "array"
+            },
             "resources": {
               "$ref": "#/definitions/resources",
               "required": []
@@ -3488,6 +3518,111 @@
             "null"
           ]
         },
+        "contour": {
+          "additionalProperties": false,
+          "description": "Contour-specific settings. Only read when the resolved ingress class type is\n`contour`. Under Contour this chart publishes a root HTTPProxy that owns the\nFQDN plus one child per component, rather than a single combined object, so the\nhostname stays open to charts shipped outside this one.",
+          "properties": {
+            "addons": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "namespace": {
+                    "type": "string"
+                  },
+                  "prefix": {
+                    "type": "string"
+                  },
+                  "redirectBarePrefix": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "name",
+                  "prefix"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "extraRoutes": {
+              "items": {
+                "required": [],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "hub": {
+              "additionalProperties": false,
+              "properties": {
+                "name": {
+                  "required": [],
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [],
+              "type": "object"
+            },
+            "includes": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "conditions": {
+                    "items": {
+                      "required": [],
+                      "type": "object"
+                    },
+                    "type": "array"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "namespace": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "name"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "redirectBarePrefix": {
+              "type": "boolean"
+            },
+            "redirectStatusCode": {
+              "type": "integer"
+            },
+            "root": {
+              "additionalProperties": false,
+              "properties": {
+                "name": {
+                  "required": [],
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [],
+              "type": "object"
+            },
+            "timeoutPolicy": {
+              "additionalProperties": true,
+              "required": [],
+              "type": "object"
+            }
+          },
+          "required": [],
+          "title": "contour",
+          "type": "object"
+        },
         "domain": {
           "default": "null",
           "description": "Default domain/host for ingress resources\nIf not set, each chart uses its own host configuration",
@@ -3500,7 +3635,7 @@
         },
         "enableRootIngress": {
           "default": true,
-          "description": "Whether RAM is hosted on the root ingress or not",
+          "description": "Whether RAM owns the root of the hostname.\nWhen true the chart answers at `/` (for Contour it creates the root HTTPProxy\nthat owns the FQDN and the certificate; for nginx it sets the app-root\nannotation). Set it false when another release already owns the hostname --\non a cluster running SAS Viya that is `sas-httpproxy-root`. RAM then publishes\nonly its child HTTPProxies, and that root must include them; `helm install`\nprints the exact fragment to add.",
           "title": "enableRootIngress",
           "type": "boolean"
         },
@@ -3892,6 +4027,23 @@
           "title": "kueue",
           "type": "object"
         },
+        "linkerd": {
+          "additionalProperties": false,
+          "description": "Linkerd service mesh configuration",
+          "properties": {
+            "enabled": {
+              "default": true,
+              "description": "Add the Linkerd injection annotation to all chart pods.",
+              "title": "enabled",
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "enabled"
+          ],
+          "title": "linkerd",
+          "type": "object"
+        },
         "trustedCerts": {
           "additionalProperties": false,
           "description": "Trusted certificate configuration for secure communication with external services",
@@ -3932,6 +4084,141 @@
               "description": "Wether or not viya is enabled on the cluster",
               "title": "enabled",
               "type": "boolean"
+            },
+            "namespace": {
+              "default": "",
+              "description": "Kubernetes namespace Viya is deployed in, when it shares this cluster.\nSetting it lets the chart restart `sas-logon-app` after changing its\nissuer URI, which is the only way that change takes effect. The chart\nthen creates a Role and RoleBinding in that namespace. Leave empty if\nViya is in another cluster or you prefer to restart it yourself; the\ninstall will tell you when a restart is outstanding.",
+              "title": "namespace",
+              "type": "string"
+            },
+            "sso": {
+              "additionalProperties": false,
+              "description": "Single sign-on through Viya's SASLogon. When enabled the chart configures\nRAM's Keycloak to federate logins to Viya, so users sign in with their Viya\ncredentials and RAM can retrieve their Viya token to run compute on their\nbehalf. Requires `integrations.viya.enabled` and `ingress.enabled`.",
+              "properties": {
+                "acceptViyaTokens": {
+                  "default": true,
+                  "description": "Trust raw Viya bearer tokens at oauth2-proxy by adding the Viya\nissuer to `extra_jwt_issuers`. Needed only for callers that hit RAM's\nAPI directly with a Viya token instead of through a browser session,\nsuch as a SAS Studio or Job Execution process.\nThe entry is appended to `iam.oauthProxy.extraJwtIssuers` rather than\nwritten separately -- oauth2-proxy reads one `extra_jwt_issuers` key,\nso two writers would mean one issuer silently losing. Listing the Viya\nissuer there yourself takes precedence over this.",
+                  "title": "acceptViyaTokens",
+                  "type": "boolean"
+                },
+                "adminGroup": {
+                  "default": "",
+                  "description": "Keycloak group to place every federated Viya user in ON TOP OF\n`userGroup`. Empty by default, and that default is a security boundary\nrather than a preference.\nThe mapper is a hardcoded-group mapper: it has no condition, so whoever\nit names is granted to everyone who can sign in to Viya. This chart's\n`Admin` group carries Keycloak's `realm-management` roles\n(`manage-users`, `view-users`, `view-events` -- see\n`templates/iam/keycloak/realm-secret.yaml`), so setting this to `Admin`\nhands Keycloak user administration to every Viya user.\nNothing in RAM needs it: the Admin/User distinction is enforced by the\nRAM API against Viya's live `SASAdministrators` membership, not by this\nmapper. Set it only if you genuinely want that blanket grant.\nClearing it on upgrade removes the mapper, revoking the grant.",
+                  "title": "adminGroup",
+                  "type": "string"
+                },
+                "adminSecret": {
+                  "default": "",
+                  "description": "Name of an existing Secret holding Viya administrator credentials\nunder the keys `username` and `password`. Required unless both\n`registerClient` and `configureSASLogon` are false, because every\nchange the chart makes on the Viya side authenticates with it.\nCreate one with:\n`kubectl create secret generic viya-admin --from-literal=username=... --from-literal=password=...`",
+                  "title": "adminSecret",
+                  "type": "string"
+                },
+                "clientId": {
+                  "default": "ram-client",
+                  "description": "OAuth client ID registered in Viya SASLogon and used by Keycloak's\nidentity provider to federate logins",
+                  "title": "clientId",
+                  "type": "string"
+                },
+                "clientSecret": {
+                  "default": "",
+                  "description": "OAuth client secret for `clientId`. Leave empty to generate one and\npersist it in a chart-managed Secret; the generated value is reused on\nupgrade. The same secret must be registered on the Viya SASLogon client.",
+                  "title": "clientSecret",
+                  "type": "string"
+                },
+                "configureSASLogon": {
+                  "default": true,
+                  "description": "Set `issuer.uri` on SASLogon's `sas.logon.jwt` configuration so Viya\nstamps a dialable issuer on its tokens. On by default because token\nverification cannot work without it. The change only takes effect once\n`sas-logon-app` restarts -- set `integrations.viya.namespace` to let\nthe chart do that too. Requires `adminSecret`.",
+                  "title": "configureSASLogon",
+                  "type": "boolean"
+                },
+                "displayName": {
+                  "default": "SAS Viya",
+                  "description": "Display name shown on the Keycloak login page for the Viya provider",
+                  "title": "displayName",
+                  "type": "string"
+                },
+                "enabled": {
+                  "default": false,
+                  "description": "Enable Viya SSO configuration of the Keycloak realm",
+                  "title": "enabled",
+                  "type": "boolean"
+                },
+                "existingClientSecret": {
+                  "default": "",
+                  "description": "Name of an existing Secret holding the Viya client secret under the\nkey `client-secret`. Takes precedence over `clientSecret`.",
+                  "title": "existingClientSecret",
+                  "type": "string"
+                },
+                "idpAlias": {
+                  "default": "viya-oidc",
+                  "description": "Alias of the Viya identity provider entry created in Keycloak",
+                  "title": "idpAlias",
+                  "type": "string"
+                },
+                "idpHint": {
+                  "default": true,
+                  "description": "Send users straight to Viya's SASLogon by pinning `kc_idp_hint` on\noauth2-proxy's `login_url`, instead of stopping at Keycloak's provider\nchooser. On by default: once SSO is enabled, federation is the only way\nin, so the chooser offers a choice the user does not have.\nThis must be rendered by the chart rather than patched onto the live\nConfigMap afterwards -- Helm owns the whole `oauth2-proxy.cfg` key, so\nan in-place edit is discarded by the next `helm upgrade`.\nTurn it off if local Keycloak accounts still need to reach the login\nform.",
+                  "title": "idpHint",
+                  "type": "boolean"
+                },
+                "issuerURI": {
+                  "default": "",
+                  "description": "Issuer URI to configure on SASLogon's `sas.logon.jwt` definition.\nDefaults to `{integrations.viya.url}/SASLogon`. SASLogon ships with no\nexternal issuer and emits `http://localhost/SASLogon/oauth/token` until\none is set, which no token verifier can dial. With\n`configureSASLogon` enabled the chart sets this value for you;\notherwise it must already match what an administrator configured.",
+                  "title": "issuerURI",
+                  "type": "string"
+                },
+                "registerClient": {
+                  "default": true,
+                  "description": "Register (or update) the OAuth client in Viya SASLogon. Without this\nclient Keycloak has nothing to federate to and login cannot work, so it\nis on by default; turn it off only if the client is managed elsewhere.\nRequires `adminSecret`.",
+                  "title": "registerClient",
+                  "type": "boolean"
+                },
+                "tokenAudience": {
+                  "default": "openid",
+                  "description": "Audience oauth2-proxy requires in the `aud` claim of a Viya token,\npaired with the issuer as `\u003cissuer\u003e=\u003caudience\u003e`.\nA token fetched with `scope=openid` carries `openid`, which is what the\nSAS Studio flow in the deployment repo's connection scripts does, so\nthat is the default. Set it to the OAuth client ID -- `sas.cli` for\nthose scripts -- if your callers request a different scope, or\nverification will reject tokens that are otherwise valid.",
+                  "title": "tokenAudience",
+                  "type": "string"
+                },
+                "tokenExchange": {
+                  "default": true,
+                  "description": "Authorize the RAM application client to exchange a Keycloak session\nfor a fresh Viya token via Keycloak's token-exchange endpoint. Without\nthis, RAM can only read the stale copy captured at login, which Viya\nnever refreshes. Requires the `token-exchange` and\n`admin-fine-grained-authz:v1` Keycloak server features.",
+                  "title": "tokenExchange",
+                  "type": "boolean"
+                },
+                "userGroup": {
+                  "default": "User",
+                  "description": "Keycloak group every federated Viya user is placed in. This one is\nunconditional by design -- it carries only the application's own user\nrole, and it is what lets a Viya user reach RAM at all.\nSet to empty to create no group mapper at all.",
+                  "title": "userGroup",
+                  "type": "string"
+                }
+              },
+              "required": [],
+              "title": "sso",
+              "type": "object"
+            },
+            "tls": {
+              "additionalProperties": false,
+              "description": "How the SSO job verifies Viya's TLS certificate.\nIt authenticates to Viya as an administrator and registers an OAuth\nclient, so this connection carries the admin password from\n`sso.adminSecret`, a bearer token, and the OAuth client secret -- not\njust the public discovery document. Verification is therefore on, and a\ndeployment using a private CA should supply the bundle rather than turn\nit off.",
+              "properties": {
+                "caBundleConfigMap": {
+                  "type": "string"
+                },
+                "caBundleKey": {
+                  "type": "string"
+                },
+                "insecureSkipVerify": {
+                  "type": "boolean"
+                }
+              },
+              "required": [],
+              "title": "tls",
+              "type": "object"
+            },
+            "url": {
+              "default": "",
+              "description": "Base URL of the SAS Viya deployment (for example `https://viya.example.com`).\nRequired when `integrations.viya.sso.enabled` is true: the chart reads Viya's\nOIDC discovery document from `{url}/SASLogon/.well-known/openid-configuration`\nto configure the Keycloak identity provider.",
+              "title": "url",
+              "type": "string"
             }
           },
           "required": [
@@ -3942,6 +4229,7 @@
         }
       },
       "required": [
+        "linkerd",
         "viya",
         "kueue",
         "trustedCerts"
@@ -3969,7 +4257,7 @@
     },
     "podAnnotations": {
       "additionalProperties": true,
-      "description": "Annotations to be added to all pods deployed by the SAS Retrieval Agent manager chart",
+      "description": "Annotations to be added to all pods deployed by the SAS Retrieval Agent manager chart\nLinkerd adds `linkerd.io/inject: \"enabled\"` when `integrations.linkerd.enabled` is true.\nGlobal and component annotations can override this default.",
       "required": [],
       "title": "podAnnotations",
       "type": "object"

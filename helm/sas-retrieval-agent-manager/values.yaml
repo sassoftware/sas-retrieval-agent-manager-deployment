@@ -680,7 +680,13 @@ ingress:
   # type: boolean
   # required: true
   # @schema
-  # -- Whether RAM is hosted on the root ingress or not
+  # -- Whether RAM owns the root of the hostname.
+  # When true the chart answers at `/` (for Contour it creates the root HTTPProxy
+  # that owns the FQDN and the certificate; for nginx it sets the app-root
+  # annotation). Set it false when another release already owns the hostname --
+  # on a cluster running SAS Viya that is `sas-httpproxy-root`. RAM then publishes
+  # only its child HTTPProxies, and that root must include them; `helm install`
+  # prints the exact fragment to add.
   enableRootIngress: true
   # @schema
   # type: [string,null]
@@ -834,6 +840,194 @@ ingress:
     # Example overrides:
     # nginx.ingress.kubernetes.io/proxy-buffer-size: 32k
     # nginx.ingress.kubernetes.io/proxy-body-size: 1g
+
+  # @schema
+  # type: object
+  # required: false
+  # additionalProperties: false
+  # properties:
+  #   root:
+  #     type: object
+  #     additionalProperties: false
+  #     properties:
+  #       name:
+  #         type: [string, null]
+  #   timeoutPolicy:
+  #     type: object
+  #     additionalProperties: true
+  #   includes:
+  #     type: array
+  #     items:
+  #       type: object
+  #       required: [name]
+  #       additionalProperties: false
+  #       properties:
+  #         name:
+  #           type: string
+  #         namespace:
+  #           type: string
+  #         conditions:
+  #           type: array
+  #           items:
+  #             type: object
+  #   addons:
+  #     type: array
+  #     items:
+  #       type: object
+  #       required: [name, prefix]
+  #       additionalProperties: false
+  #       properties:
+  #         name:
+  #           type: string
+  #         namespace:
+  #           type: string
+  #         prefix:
+  #           type: string
+  #         redirectBarePrefix:
+  #           type: boolean
+  #   redirectBarePrefix:
+  #     type: boolean
+  #   redirectStatusCode:
+  #     type: integer
+  #   extraRoutes:
+  #     type: array
+  #     items:
+  #       type: object
+  #   hub:
+  #     type: object
+  #     additionalProperties: false
+  #     properties:
+  #       name:
+  #         type: [string, null]
+  # @schema
+  # -- Contour-specific settings. Only read when the resolved ingress class type is
+  # `contour`. Under Contour this chart publishes a root HTTPProxy that owns the
+  # FQDN plus one child per component, rather than a single combined object, so the
+  # hostname stays open to charts shipped outside this one.
+  contour:
+    # @schema
+    # type: object
+    # required: false
+    # @schema
+    # -- Overrides for the root HTTPProxy, which is created only when
+    # `enableRootIngress` is true.
+    root:
+      # @schema
+      # type: [string,null]
+      # required: false
+      # @schema
+      # -- Name of the root HTTPProxy. Defaults to `<fullname>-ingress`.
+      # Set this to adopt an existing root created under a different name.
+      name: null
+    # @schema
+    # type: object
+    # required: false
+    # additionalProperties: true
+    # @schema
+    # -- Contour timeoutPolicy applied to the API child's routes. Agent and
+    # evaluation calls can outlive Envoy's 15s default, which surfaces as a 504
+    # mid-request.
+    # Example: {response: 300s}
+    timeoutPolicy: {}
+    # @schema
+    # type: array
+    # required: false
+    # @schema
+    # -- Additional child HTTPProxies to delegate from this release's root, for
+    # add-ons that must answer on the same hostname. Each entry needs a `name`,
+    # plus a `namespace` when the child lives outside the release namespace. The
+    # child must set no virtualhost of its own, and must carry the full path
+    # prefix it serves, because these includes add no conditions.
+    # This is the same contract this release's own children use, and the one SAS's
+    # monitoring stack uses to publish Grafana under Viya's root. Prefer it when
+    # you control the child. Use `addons` below when you do not.
+    # Example:
+    #   - name: litellm
+    #     namespace: litellm
+    includes: []
+    # @schema
+    # type: array
+    # required: false
+    # @schema
+    # -- Add-ons published under a path prefix this release assigns, for children
+    # that cannot carry an absolute prefix themselves -- a stock upstream chart
+    # that only knows how to serve `/`.
+    # The include carries `conditions: [{prefix}]` and Contour concatenates it
+    # with the child's own, so a child matching `/` is served at `<prefix>/`.
+    # The child must set no virtualhost (it inherits this hostname and its
+    # certificate) and MUST set `ingressClassName`, or Contour ignores it
+    # silently -- the child sits at `NotReconciled` while the parent reports
+    # `IncludeNotFound`, pointing the error at the wrong object.
+    # Attaches to the root when this release owns it, and to the hub when a
+    # foreign root does, so it is one values change in either mode.
+    # The render fails rather than publishing a path map that cannot work: a
+    # prefix of `/`, a prefix this release already serves, or two add-ons on one
+    # prefix.
+    # Example:
+    #   - name: litellm
+    #     namespace: litellm
+    #     prefix: /litellm
+    addons: []
+    # @schema
+    # type: boolean
+    # required: false
+    # @schema
+    # -- Redirect each add-on's BARE prefix to its slashed form. Default for the
+    # `addons` list; override per entry with `redirectBarePrefix`.
+    # The concatenated prefix always carries a trailing slash, so `/litellm`
+    # matches nothing in the child and would fall through to this release's `/`
+    # catch-all -- landing the visitor in RAM rather than on a 404. This is the
+    # redirect a web server does for a directory.
+    # Turn it off only for a child that answers the bare form itself and
+    # redirects the slashed form back to it: the two would otherwise bounce off
+    # each other until the browser gives up. Entries in `includes` never need
+    # it -- they carry their own full prefix.
+    redirectBarePrefix: true
+    # @schema
+    # type: integer
+    # required: false
+    # @schema
+    # -- Status code for those redirects. 302 stays recoverable; 301 is cached by
+    # the browser and outlives the config that produced it. Contour accepts 301,
+    # 302, 303, 307 and 308.
+    redirectStatusCode: 302
+    # @schema
+    # type: array
+    # required: false
+    # @schema
+    # -- Extra routes appended to whichever object carries this release's
+    # delegations -- the root when it owns the hostname, the hub otherwise.
+    # An escape hatch for a route that belongs to the hostname rather than to any
+    # component. Written through verbatim, so it is on you to keep it valid.
+    extraRoutes: []
+    # @schema
+    # type: object
+    # required: false
+    # additionalProperties: false
+    # properties:
+    #   name:
+    #     type: [string, null]
+    # @schema
+    # -- The delegation hub: a single child that names this release's components
+    # and its add-ons, so the root owning the FQDN adopts ONE entry rather than
+    # one per component.
+    # Published automatically when `enableRootIngress` is false, and not at all
+    # when it is true -- a root this release owns names its children directly,
+    # so the indirection would be inert. There is no switch because there is no
+    # combination of the two where a choice is useful.
+    # Nothing about the routing changes; what changes is that a later add-on is
+    # attached here instead of in the other release's manifests. That matters
+    # because a root owned by SAS Viya is applied from Viya's own deployment,
+    # so adding to it means a kustomize patch and a redeploy -- a runtime
+    # `kubectl patch` is replaced by the next apply.
+    hub:
+      # @schema
+      # type: [string,null]
+      # required: false
+      # @schema
+      # -- Name of the hub HTTPProxy. Defaults to `<fullname>-hub`.
+      # Set this to adopt a hub already named in the other release's root.
+      name: null
 
   # @schema
   # type: object
@@ -3278,6 +3472,11 @@ db:
 # @schema
 # type: object
 # required: true
+# patternProperties:
+#   "^skipSecretValidation$":
+#     type:
+#       - boolean
+#       - null
 # @schema
 # -- SAS Retrieval Agent Manager IAM: Authentication services
 iam:
@@ -3334,13 +3533,13 @@ iam:
       # type: string
       # required: true
       # @schema
-      # -- OAuth2 client secret for the application
+      # -- OAuth2 client secret for the application. This value must not be empty when secret validation is active.
       clientSecret: ""
       # @schema
       # type: string
       # required: true
       # @schema
-      # -- OAuth2 client secret for the application
+      # -- OAuth2 Proxy cookie encryption secret. Use 16, 24, or 32 bytes, or URL-safe Base64 for one of these byte lengths. This value must not be empty when secret validation is active.
       cookieSecret: ""
       # @schema
       # type: string
@@ -3703,6 +3902,23 @@ iam:
     # - name: foo
     #   mountPath: "/etc/foo"
     #   readOnly: true
+
+    # @schema
+    # type: array
+    # items:
+    #   type: object
+    #   properties:
+    #     issuer:
+    #       type: string
+    #     audience:
+    #       type: string
+    #   required: ["issuer", "audience"]
+    # default: []
+    # @schema
+    # -- Additional trusted JWT issuers for bearer-token auth (OAuth2 Proxy's `extra_jwt_issuers`)
+    extraJwtIssuers: []
+    # - issuer: "https://viya.example.com/SASLogon/oauth/token"
+    #   audience: "sas.cli"
 
 # @schema
 # type: object
@@ -4157,6 +4373,8 @@ storage:
 # additionalProperties: true
 # @schema
 # -- Annotations to be added to all pods deployed by the SAS Retrieval Agent manager chart
+# Linkerd adds `linkerd.io/inject: "enabled"` when `integrations.linkerd.enabled` is true.
+# Global and component annotations can override this default.
 podAnnotations: {}
 
 # @schema
@@ -4179,6 +4397,18 @@ integrations:
   # type: object
   # required: true
   # @schema
+  # -- Linkerd service mesh configuration
+  linkerd:
+    # @schema
+    # type: boolean
+    # required: true
+    # @schema
+    # -- Add the Linkerd injection annotation to all chart pods.
+    enabled: true
+  # @schema
+  # type: object
+  # required: true
+  # @schema
   # -- Viya configuration for when deploying in parallel
   viya:
     # @schema
@@ -4187,6 +4417,239 @@ integrations:
     # @schema
     # -- Wether or not viya is enabled on the cluster
     enabled: false
+    # @schema
+    # type: string
+    # required: false
+    # @schema
+    # -- Base URL of the SAS Viya deployment (for example `https://viya.example.com`).
+    # Required when `integrations.viya.sso.enabled` is true: the chart reads Viya's
+    # OIDC discovery document from `{url}/SASLogon/.well-known/openid-configuration`
+    # to configure the Keycloak identity provider.
+    url: ""
+    # @schema
+    # type: string
+    # required: false
+    # @schema
+    # -- Kubernetes namespace Viya is deployed in, when it shares this cluster.
+    # Setting it lets the chart restart `sas-logon-app` after changing its
+    # issuer URI, which is the only way that change takes effect. The chart
+    # then creates a Role and RoleBinding in that namespace. Leave empty if
+    # Viya is in another cluster or you prefer to restart it yourself; the
+    # install will tell you when a restart is outstanding.
+    namespace: ""
+    # @schema
+    # type: object
+    # required: false
+    # additionalProperties: false
+    # properties:
+    #   insecureSkipVerify:
+    #     type: boolean
+    #   caBundleConfigMap:
+    #     type: string
+    #   caBundleKey:
+    #     type: string
+    # @schema
+    # -- How the SSO job verifies Viya's TLS certificate.
+    # It authenticates to Viya as an administrator and registers an OAuth
+    # client, so this connection carries the admin password from
+    # `sso.adminSecret`, a bearer token, and the OAuth client secret -- not
+    # just the public discovery document. Verification is therefore on, and a
+    # deployment using a private CA should supply the bundle rather than turn
+    # it off.
+    tls:
+      # @schema
+      # type: boolean
+      # required: false
+      # @schema
+      # -- Skip certificate verification when talking to Viya.
+      # Accepts an impersonated Viya, which can capture the administrator
+      # password and the OAuth client secret, or substitute the discovery
+      # document to point RAM at an attacker's endpoints. Use
+      # `caBundleConfigMap` instead; this is a last resort for a throwaway
+      # environment.
+      insecureSkipVerify: false
+      # @schema
+      # type: string
+      # required: false
+      # @schema
+      # -- Name of a ConfigMap holding the CA bundle that signed Viya's
+      # certificate, for a deployment whose CA this cluster does not already
+      # trust. Mounted into the job and passed to curl as `--cacert`.
+      # Create one with:
+      # `kubectl create configmap viya-ca --from-file=ca.crt=/path/to/ca.crt`
+      caBundleConfigMap: ""
+      # @schema
+      # type: string
+      # required: false
+      # @schema
+      # -- Key within `caBundleConfigMap` holding the PEM bundle.
+      caBundleKey: "ca.crt"
+    # @schema
+    # type: object
+    # required: false
+    # @schema
+    # -- Single sign-on through Viya's SASLogon. When enabled the chart configures
+    # RAM's Keycloak to federate logins to Viya, so users sign in with their Viya
+    # credentials and RAM can retrieve their Viya token to run compute on their
+    # behalf. Requires `integrations.viya.enabled` and `ingress.enabled`.
+    sso:
+      # @schema
+      # type: boolean
+      # required: false
+      # @schema
+      # -- Enable Viya SSO configuration of the Keycloak realm
+      enabled: false
+      # @schema
+      # type: string
+      # required: false
+      # @schema
+      # -- Issuer URI to configure on SASLogon's `sas.logon.jwt` definition.
+      # Defaults to `{integrations.viya.url}/SASLogon`. SASLogon ships with no
+      # external issuer and emits `http://localhost/SASLogon/oauth/token` until
+      # one is set, which no token verifier can dial. With
+      # `configureSASLogon` enabled the chart sets this value for you;
+      # otherwise it must already match what an administrator configured.
+      issuerURI: ""
+      # @schema
+      # type: string
+      # required: false
+      # @schema
+      # -- Name of an existing Secret holding Viya administrator credentials
+      # under the keys `username` and `password`. Required unless both
+      # `registerClient` and `configureSASLogon` are false, because every
+      # change the chart makes on the Viya side authenticates with it.
+      # Create one with:
+      # `kubectl create secret generic viya-admin --from-literal=username=... --from-literal=password=...`
+      adminSecret: ""
+      # @schema
+      # type: string
+      # required: false
+      # @schema
+      # -- Alias of the Viya identity provider entry created in Keycloak
+      idpAlias: "viya-oidc"
+      # @schema
+      # type: string
+      # required: false
+      # @schema
+      # -- Display name shown on the Keycloak login page for the Viya provider
+      displayName: "SAS Viya"
+      # @schema
+      # type: string
+      # required: false
+      # @schema
+      # -- OAuth client ID registered in Viya SASLogon and used by Keycloak's
+      # identity provider to federate logins
+      clientId: "ram-client"
+      # @schema
+      # type: string
+      # required: false
+      # @schema
+      # -- OAuth client secret for `clientId`. Leave empty to generate one and
+      # persist it in a chart-managed Secret; the generated value is reused on
+      # upgrade. The same secret must be registered on the Viya SASLogon client.
+      clientSecret: ""
+      # @schema
+      # type: string
+      # required: false
+      # @schema
+      # -- Name of an existing Secret holding the Viya client secret under the
+      # key `client-secret`. Takes precedence over `clientSecret`.
+      existingClientSecret: ""
+      # @schema
+      # type: string
+      # required: false
+      # @schema
+      # -- Keycloak group to place every federated Viya user in ON TOP OF
+      # `userGroup`. Empty by default, and that default is a security boundary
+      # rather than a preference.
+      # The mapper is a hardcoded-group mapper: it has no condition, so whoever
+      # it names is granted to everyone who can sign in to Viya. This chart's
+      # `Admin` group carries Keycloak's `realm-management` roles
+      # (`manage-users`, `view-users`, `view-events` -- see
+      # `templates/iam/keycloak/realm-secret.yaml`), so setting this to `Admin`
+      # hands Keycloak user administration to every Viya user.
+      # Nothing in RAM needs it: the Admin/User distinction is enforced by the
+      # RAM API against Viya's live `SASAdministrators` membership, not by this
+      # mapper. Set it only if you genuinely want that blanket grant.
+      # Clearing it on upgrade removes the mapper, revoking the grant.
+      adminGroup: ""
+      # @schema
+      # type: string
+      # required: false
+      # @schema
+      # -- Keycloak group every federated Viya user is placed in. This one is
+      # unconditional by design -- it carries only the application's own user
+      # role, and it is what lets a Viya user reach RAM at all.
+      # Set to empty to create no group mapper at all.
+      userGroup: "User"
+      # @schema
+      # type: boolean
+      # required: false
+      # @schema
+      # -- Authorize the RAM application client to exchange a Keycloak session
+      # for a fresh Viya token via Keycloak's token-exchange endpoint. Without
+      # this, RAM can only read the stale copy captured at login, which Viya
+      # never refreshes. Requires the `token-exchange` and
+      # `admin-fine-grained-authz:v1` Keycloak server features.
+      tokenExchange: true
+      # @schema
+      # type: boolean
+      # required: false
+      # @schema
+      # -- Trust raw Viya bearer tokens at oauth2-proxy by adding the Viya
+      # issuer to `extra_jwt_issuers`. Needed only for callers that hit RAM's
+      # API directly with a Viya token instead of through a browser session,
+      # such as a SAS Studio or Job Execution process.
+      # The entry is appended to `iam.oauthProxy.extraJwtIssuers` rather than
+      # written separately -- oauth2-proxy reads one `extra_jwt_issuers` key,
+      # so two writers would mean one issuer silently losing. Listing the Viya
+      # issuer there yourself takes precedence over this.
+      acceptViyaTokens: true
+      # @schema
+      # type: string
+      # required: false
+      # @schema
+      # -- Audience oauth2-proxy requires in the `aud` claim of a Viya token,
+      # paired with the issuer as `<issuer>=<audience>`.
+      # A token fetched with `scope=openid` carries `openid`, which is what the
+      # SAS Studio flow in the deployment repo's connection scripts does, so
+      # that is the default. Set it to the OAuth client ID -- `sas.cli` for
+      # those scripts -- if your callers request a different scope, or
+      # verification will reject tokens that are otherwise valid.
+      tokenAudience: "openid"
+      # @schema
+      # type: boolean
+      # required: false
+      # @schema
+      # -- Send users straight to Viya's SASLogon by pinning `kc_idp_hint` on
+      # oauth2-proxy's `login_url`, instead of stopping at Keycloak's provider
+      # chooser. On by default: once SSO is enabled, federation is the only way
+      # in, so the chooser offers a choice the user does not have.
+      # This must be rendered by the chart rather than patched onto the live
+      # ConfigMap afterwards -- Helm owns the whole `oauth2-proxy.cfg` key, so
+      # an in-place edit is discarded by the next `helm upgrade`.
+      # Turn it off if local Keycloak accounts still need to reach the login
+      # form.
+      idpHint: true
+      # @schema
+      # type: boolean
+      # required: false
+      # @schema
+      # -- Register (or update) the OAuth client in Viya SASLogon. Without this
+      # client Keycloak has nothing to federate to and login cannot work, so it
+      # is on by default; turn it off only if the client is managed elsewhere.
+      # Requires `adminSecret`.
+      registerClient: true
+      # @schema
+      # type: boolean
+      # required: false
+      # @schema
+      # -- Set `issuer.uri` on SASLogon's `sas.logon.jwt` configuration so Viya
+      # stamps a dialable issuer on its tokens. On by default because token
+      # verification cannot work without it. The change only takes effect once
+      # `sas-logon-app` restarts -- set `integrations.viya.namespace` to let
+      # the chart do that too. Requires `adminSecret`.
+      configureSASLogon: true
   # @schema
   # type: object
   # required: true

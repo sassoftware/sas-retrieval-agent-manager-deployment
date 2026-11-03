@@ -3,21 +3,29 @@ kind: Job
 metadata:
   name: {{ include "postgrest.fullname" . }}-role-update
   labels:
-    {{- include "postgrest.labels" . | nindent 4 }}
+    {{- include "postgrest.roleUpdate.labels" . | nindent 4 }}
     ram-base-job: "true"
   annotations:
-    argocd.argoproj.io/sync-options: Skip
     helm.sh/hook-weight: "0"
-    helm.sh/hook: post-install, post-upgrade
+    helm.sh/hook: post-install,post-upgrade
+    {{- /*
+      Cleanup is the delete policy's job rather than a ttlSecondsAfterFinished,
+      because a TTL deletes finished Jobs whether they succeeded or failed and
+      would discard the logs of a failed role update. These two tell the
+      outcomes apart: hook-succeeded drops it on success, before-hook-creation
+      clears a failed one on the next attempt -- which is also what lets a
+      stable-named Job be re-run, since a Job's pod template is immutable.
+    */}}
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
 spec:
   template:
     metadata:
-      {{- with merge (.Values.db.rest.podAnnotations | default dict) (.Values.podAnnotations | default dict) }}
+      {{- with merge (.Values.db.rest.podAnnotations | default dict) (include "ram.podAnnotations" . | fromYaml) }}
       annotations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "postgrest.labels" . | nindent 8 }}
+        {{- include "postgrest.roleUpdate.labels" . | nindent 8 }}
         {{- with merge (.Values.db.rest.podLabels | default dict) (.Values.podLabels | default dict) }}
         {{- toYaml . | nindent 8 }}
         {{- end }}

@@ -1,0 +1,148 @@
+{{- include "viya.sso.validate" . }}
+{{- if include "viya.sso.enabled" . }}
+{{- $keycloakPath := first .Values.ingress.keycloak.paths -}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "viya.sso.fullname" . }}
+  labels:
+    {{- include "viya.sso.labels" . | nindent 4 }}
+    ram-base-job: "true"
+    app.kubernetes.io/version: {{ .Chart.Version | quote }}
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    {{- /*
+      Weight 20 runs this after the realm-update job (weight 10), which is what
+      creates and shapes the RAM application client this job then attaches the
+      identity provider to.
+    */}}
+    helm.sh/hook-weight: "20"
+    helm.sh/hook-delete-policy: before-hook-creation
+spec:
+  backoffLimit: 3
+  activeDeadlineSeconds: 600
+  ttlSecondsAfterFinished: 300
+  template:
+    metadata:
+      labels:
+        {{- include "viya.sso.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      initContainers:
+        - name: idp-ready
+          image: "{{- include "images.kubectl" . -}}"
+          imagePullPolicy: {{ .Values.images.kubectl.pullPolicy }}
+          command:
+            - /bin/sh
+            - -c
+            - |
+              while [ $(curl -sw '%{http_code}' "http://{{ include "keycloak.fullname" . | lower }}:{{ .Values.iam.keycloak.service.port }}{{ $keycloakPath }}/realms/{{ .Values.iam.keycloak.config.realm }}" -o /dev/null) -ne 200 ]; do
+                echo "Waiting for ID provider to reach ready state...";
+                sleep 15;
+              done
+          resources:
+            limits:
+              cpu: 50m
+              memory: 32Mi
+            requests:
+              cpu: 50m
+              memory: 32Mi
+          securityContext:
+            {{- include "ram.securityContext" (list .Values.iam.keycloak.securityContext .Values.platform) | nindent 12 }}
+      containers:
+        - name: link-viya-identity
+          image: "{{- include "images.kubectl" . -}}"
+          imagePullPolicy: {{ .Values.images.kubectl.pullPolicy }}
+          command:
+            - /scripts/link-viya-identity.sh
+          envFrom:
+            - configMapRef:
+                name: {{ printf "%s-env" (include "viya.sso.fullname" .) }}
+                optional: false
+          env:
+            {{- /* readOnlyRootFilesystem is on, so give curl a writable HOME. */}}
+            - name: HOME
+              value: /tmp
+          resources:
+            limits:
+              cpu: 500m
+              memory: 256Mi
+            requests:
+              cpu: 50m
+              memory: 64Mi
+          securityContext:
+            {{- include "ram.securityContext" (list .Values.iam.keycloak.securityContext .Values.platform) | nindent 12 }}
+          volumeMounts:
+            - mountPath: /scripts
+              name: scripts
+              readOnly: true
+            - mountPath: /admin
+              name: admin-credentials
+              readOnly: true
+            - mountPath: /viya-client
+              name: viya-client-secret
+              readOnly: true
+            {{- if include "viya.sso.needsAdmin" . }}
+            - mountPath: /viya-admin
+              name: viya-admin-credentials
+              readOnly: true
+            {{- end }}
+            {{- if (.Values.integrations.viya.tls | default dict).caBundleConfigMap }}
+            - mountPath: /viya-ca
+              name: viya-ca-bundle
+              readOnly: true
+            {{- end }}
+            - mountPath: /tmp
+              name: tmp
+      restartPolicy: OnFailure
+      serviceAccountName: {{ include "viya.sso.fullname" . }}
+      volumes:
+        - name: scripts
+          configMap:
+            defaultMode: 0755
+            name: {{ printf "%s-scripts" (include "viya.sso.fullname" .) }}
+        - name: admin-credentials
+          secret:
+            secretName: {{ printf "%s-admin-secret" (include "keycloak.fullname" .) }}
+            items:
+              - key: user
+                path: username
+              - key: password
+                path: password
+        - name: viya-client-secret
+          secret:
+            secretName: {{ include "viya.sso.clientSecretName" . }}
+            items:
+              - key: client-secret
+                path: client-secret
+        {{- if include "viya.sso.needsAdmin" . }}
+        - name: viya-admin-credentials
+          secret:
+            secretName: {{ .Values.integrations.viya.sso.adminSecret }}
+            items:
+              - key: username
+                path: username
+              - key: password
+                path: password
+        {{- end }}
+        {{- $tls := .Values.integrations.viya.tls | default dict }}
+        {{- if $tls.caBundleConfigMap }}
+        {{- /*
+          The CA that signed Viya's certificate, for a deployment this cluster
+          does not already trust. Not optional: a missing bundle means the job
+          would fall back to the system trust store and fail the handshake with
+          a confusing error, so let it fail on the mount instead.
+        */}}
+        - name: viya-ca-bundle
+          configMap:
+            name: {{ $tls.caBundleConfigMap | quote }}
+            items:
+              - key: {{ $tls.caBundleKey | default "ca.crt" | quote }}
+                path: {{ $tls.caBundleKey | default "ca.crt" | quote }}
+            optional: false
+        {{- end }}
+        - name: tmp
+          emptyDir: {}
+{{- end }}

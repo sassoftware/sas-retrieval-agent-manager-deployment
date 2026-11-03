@@ -6,61 +6,13 @@ metadata:
   labels:
     {{- include "oauth2-proxy.labels" . | nindent 4 }}
 data:
+  {{- /*
+    The content lives in "oauth2-proxy.config" so the pod annotation in each
+    consuming Deployment can hash the same bytes. See _oauth_config.tpl.
+  */}}
+  {{- /*
+    The leading indent is literal: `{{- define ... -}}` trims the whitespace
+    after the action, so the body's FIRST line arrives without its own.
+  */}}
   oauth2-proxy.cfg: |
-    # http_address is set via OAUTH2_PROXY_HTTP_ADDRESS env var in sidecar (see _oauth_sidecar.tpl)
-    # upstreams is set via OAUTH2_PROXY_UPSTREAMS env var in sidecar (see _oauth_sidecar.tpl)
-    reverse_proxy             = true
-    ssl_insecure_skip_verify  = false
-    upstream_timeout          = "300s"
-
-    # Provider Configuration
-    provider                = "oidc"
-    skip_provider_button    = true
-    skip_jwt_bearer_tokens  = true
-    code_challenge_method   = "S256"
-
-    redirect_url            = "{{ include "oauth2-proxy.ingressURL" . }}/callback"
-    oidc_issuer_url         = "{{ include "keycloak.ingressURL" . }}"
-    login_url               = "{{ include "keycloak.ingressURL" . }}/protocol/openid-connect/auth"
-    whitelist_domains       = "{{ include "oauth2-proxy.domain" . }}"
-    proxy_prefix            = "{{ include "oauth2-proxy.prefix" . }}"
-    email_domains           = "*"
-
-    # Skip OIDC discovery and provide internal URLs directly.
-    # If OIDC discovery is not skipped, external URLs returned from the .well-known endpoint
-    # will be used. These may not be reachable from within the cluster.
-    skip_oidc_discovery = true
-    oidc_jwks_url       = "{{ include "keycloak.internalURL" . }}/protocol/openid-connect/certs"
-    redeem_url          = "{{ include "keycloak.internalURL" . }}/protocol/openid-connect/token"
-    validate_url        = "{{ include "keycloak.internalURL" . }}/protocol/openid-connect/userinfo"
-
-    # Cookie Configuration
-    cookie_name     = "esp_oauth2_proxy"
-    cookie_path     = "/"
-    cookie_expire   = "12h"
-    cookie_refresh  = "60s"    
-    cookie_secure   = true
-    cookie_domains  = [
-      "{{ .Values.ingress.domain }}",
-      "{{ include "oauth2-proxy.fullname" . | lower }}.{{ .Release.Namespace }}.svc.cluster.local",
-    ]
-    cookie_samesite = "lax"
-
-    cookie_csrf_per_request       = true
-    cookie_csrf_per_request_limit = 10
-
-    # Auth Response Headers (for nginx auth subrequest pattern)
-    set_authorization_header  = true
-    set_xauthrequest          = true
-    pass_access_token         = true
-
-    # Pass ID token to upstream in Authorization header (required for reverse_proxy/sidecar mode)
-    pass_authorization_header = true
-
-    # CORS and preflight
-    skip_auth_preflight       = true
-
-    # bypass authentication for requests that match the method & path. Format: method=path_regex OR path_regex alone for all methods
-    # skip_auth_routes = [
-    #   "GET=^/$"
-    # ]
+    {{ include "oauth2-proxy.config" . }}

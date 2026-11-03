@@ -1,0 +1,141 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": ["object", "null"],
+  "additionalProperties": false,
+  "properties": {
+    "appArmorProfile": {
+      "description": "appArmorProfile is the AppArmor options to use by the containers in this pod.",
+      "type": ["object", "null"],
+      "properties": {
+        "localhostProfile": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["Localhost", "RuntimeDefault", "Unconfined"]
+        }
+      }
+    },
+    "fsGroup": {
+      "description": "A special supplemental group that applies to all containers in a pod. Some volume types allow the Kubelet to change the ownership of that volume to be owned by the pod: 1. The owning GID will be the FSGroup 2. The setgid bit is set (new files created in the volume will be owned by FSGroup) 3. The permission bits are OR'd with rw-rw----. If unset, the Kubelet will not modify the ownership and permissions of any volume.",
+      "type": ["integer", "null"],
+      "format": "int64",
+      "default": 10001
+    },
+    "fsGroupChangePolicy": {
+      "description": "fsGroupChangePolicy defines behavior of changing ownership and permission of the volume before being exposed inside Pod. This field will only apply to volume types which support fsGroup based ownership(and permissions). It will have no effect on ephemeral volume types such as: secret, configmaps and emptydir.",
+      "type": ["string", "null"],
+      "enum": ["OnRootMismatch", "Always"],
+      "default": "Always"
+    },
+    "runAsGroup": {
+      "description": "The GID to run the entrypoint of the container process. Uses runtime default if unset. May also be set in SecurityContext. If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence for that container.",
+      "type": ["integer", "null"],
+      "format": "int64",
+      "default": 10001
+    },
+    "runAsNonRoot": {
+      "description": "Indicates that the container must run as a non-root user. If true, the Kubelet will validate the image at runtime to ensure that it does not run as UID 0 (root) and fail to start the container if it does. If unset or false, no such validation will be performed. May also be set in SecurityContext. If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.",
+      "type": ["boolean", "null"],
+      "default": true
+    },
+    "runAsUser": {
+      "description": "The UID to run the entrypoint of the container process. Defaults to user specified in image metadata if unspecified. May also be set in SecurityContext. If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence for that container.",
+      "type": ["integer", "null"],
+      "format": "int64",
+      "default": 10001
+    },
+    "seLinuxOptions": {
+      "description": "The SELinux context to be applied to all containers. If unspecified, the container runtime will allocate a random SELinux context for each container. May also be set in SecurityContext. If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence for that container.",
+      "type": ["object", "null"],
+      "properties": {
+        "level": {
+          "type": "string",
+          "description": "Level is SELinux level label that applies to the container"
+        },
+        "role": {
+          "type": "string",
+          "description": "Role is a SELinux role label that applies to the container"
+        },
+        "type": {
+          "type": "string",
+          "description": "Type is a SELinux type label that applies to the container"
+        },
+        "user": {
+          "type": "string",
+          "description": "User is a SELinux user label that applies to the container"
+        }
+      }
+    },
+    "seccompProfile": {
+      "description": "The seccomp options to use by the containers in this pod.",
+      "type": ["object", "null"],
+      "properties": {
+        "localhostProfile": {
+          "type": "string",
+          "description": "localhostProfile indicates a profile defined in a file on the node should be used. The profile must be preconfigured on the node to work."
+        },
+        "type": {
+          "type": "string",
+          "enum": ["Localhost", "RuntimeDefault", "Unconfined"],
+          "description": "type indicates which kind of seccomp profile will be applied. Valid options are: Localhost, RuntimeDefault, Unconfined"
+        }
+      },
+      "required": ["type"]
+    },
+    "supplementalGroups": {
+      "description": "A list of groups applied to the first process run in each container, in addition to the container's primary GID and fsGroup (if specified). If the SupplementalGroupsPolicy feature is enabled, the supplementalGroupsPolicy field determines whether these are in addition to or instead of any group memberships defined in the container image. If unspecified, no additional groups are added, though group memberships defined in the container image may still be used, depending on the supplementalGroupsPolicy field.",
+      "type": ["array", "null"],
+      "items": {
+        "type": "integer",
+        "format": "int64"
+      }
+    },
+    "supplementalGroupsPolicy": {
+      "description": "Defines how supplemental groups of the first container processes are calculated. Valid values are 'Merge' and 'Strict'. If not specified, 'Merge' is used. (Alpha) Using the field requires the SupplementalGroupsPolicy feature gate to be enabled and the container runtime must implement support for this feature.",
+      "type": ["string", "null"],
+      "enum": ["Merge", "Strict"],
+      "default": "Merge"
+    },
+    "sysctls": {
+      "description": "Sysctls hold a list of namespaced sysctls used for the pod. Pods with unsupported sysctls (by the container runtime) might fail to launch.",
+      "type": ["array", "null"],
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of a property to set"
+          },
+          "value": {
+            "type": "string",
+            "description": "Value of a property to set"
+          }
+        },
+        "required": ["name", "value"]
+      }
+    },
+    "windowsOptions": {
+      "description": "The Windows specific settings applied to all containers. If unspecified, the options within a container's SecurityContext will be used.",
+      "type": ["object", "null"],
+      "properties": {
+        "gmsaCredentialSpec": {
+          "type": "string",
+          "description": "GMSACredentialSpec is where the GMSA admission webhook inlines the contents of the GMSA credential spec named by the GMSACredentialSpecName field"
+        },
+        "gmsaCredentialSpecName": {
+          "type": "string",
+          "description": "GMSACredentialSpecName is the name of the GMSA credential spec to use"
+        },
+        "hostProcess": {
+          "type": "boolean",
+          "description": "HostProcess determines if a container should be run as a 'Host Process' container"
+        },
+        "runAsUserName": {
+          "type": "string",
+          "description": "The UserName in Windows to run the entrypoint of the container process"
+        }
+      }
+    }
+  }
+}
