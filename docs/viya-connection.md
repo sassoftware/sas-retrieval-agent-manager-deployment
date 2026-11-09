@@ -20,4 +20,4 @@ Set the applicable skip setting to `true` in the environment file to skip a conn
 
 The settings are independent. Skipping a step does not remove existing resources or group members. `SKIP_VIYA_GROUP_MEMBERS` does not skip group creation or display names. All steps not skipped still run.
 
-See the [Viya connection scripts guide](https://github.com/sassoftware/sas-retrieval-agent-manager-deployment/tree/main/scripts/viya) for requirements and run steps.
+See the [Viya connection scripts guide](https://github.com/sassoftware/sas-retrieval-agent-manager-deployment/blob/main/scripts/viya/README.md) for requirements and run steps.
