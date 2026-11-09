@@ -9,6 +9,15 @@ nav_order: 10
 
 This page describes scripts that connect an existing SAS Viya deployment to an existing SAS Retrieval Agent Manager cluster. The scripts set up single sign-on, add SAS Retrieval Agent Manager to the Viya application registry, and create missing Viya home directories. They also register two Model Context Protocol (MCP) servers in the SAS Retrieval Agent Manager cluster. One server uses a Viya OAuth client credential. The other server uses the signed-in user's Viya token.
 
-Set `SKIP_HOME_DIRECTORIES=true` in the environment file to skip Viya home directory creation. All other connection steps still run. If the setting is absent or `false`, the script creates missing home directories. Only `true` and `false` are valid.
+Set the applicable skip setting to `true` in the environment file to skip a connection step. Each setting defaults to `false` when absent. Only `true` and `false` are valid. An empty value is not valid.
 
-See the [Viya connection scripts guide](../scripts/viya/README.md) for requirements and run steps.
+| Setting | Step skipped when `true` |
+| --- | --- |
+| `SKIP_HOME_DIRECTORIES` | Viya home directory creation |
+| `SKIP_MCP_SERVERS` | MCP OAuth client setup, template creation and publication, and server creation and startup |
+| `SKIP_RAM_APP_REGISTRATION` | RAM registration in the Viya application registry |
+| `SKIP_VIYA_GROUP_MEMBERS` | Addition of `SASAdministrators` to `ram-admin-group` |
+
+The settings are independent. Skipping a step does not remove existing resources or group members. `SKIP_VIYA_GROUP_MEMBERS` does not skip group creation or display names. All steps not skipped still run.
+
+See the [Viya connection scripts guide](https://github.com/sassoftware/sas-retrieval-agent-manager-deployment/tree/main/scripts/viya) for requirements and run steps.
