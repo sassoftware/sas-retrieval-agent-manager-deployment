@@ -832,7 +832,7 @@ data:
           identityProviderMapper: "hardcoded-attribute-idp-mapper",
           name: $name,
           config: {
-            syncMode: "INHERIT",
+            syncMode: "IMPORT",
             attribute: "emailVerified",
             "attribute.value": "true"
           }
