@@ -382,7 +382,7 @@ function create_hardcoded_email_verified_mapper() {
       identityProviderMapper: "hardcoded-attribute-idp-mapper",
       name: $name,
       config: {
-        syncMode: "INHERIT",
+        syncMode: "IMPORT",
         "attribute": "emailVerified",
         "attribute.value": "true"
       }
