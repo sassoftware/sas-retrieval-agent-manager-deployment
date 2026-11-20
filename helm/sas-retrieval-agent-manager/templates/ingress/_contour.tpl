@@ -297,7 +297,7 @@ metadata:
 spec:
   ingressClassName: {{ include "retrieval-agent-manager.ingressClassName" $ctx }}
   virtualhost:
-    fqdn: {{ $ctx.Values.ingress.domain }}
+    fqdn: {{ required "ingress.domain is required when the ingress class type is contour and ingress.enableRootIngress is true: the root HTTPProxy owns the FQDN, and Contour rejects a root without one" $ctx.Values.ingress.domain }}
     {{- if and ((include "testValuesPath" (list $ctx.Values "ingress" "tls" "enabled")) | eq "true" | default false) ($ctx.Values.ingress.tls.enabled | default false) }}
     tls:
       {{- if $ctx.Values.ingress.tls.secretName }}

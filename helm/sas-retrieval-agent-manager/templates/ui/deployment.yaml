@@ -52,6 +52,10 @@ spec:
           image: "{{- include "images.ui" . -}}"
           imagePullPolicy: {{ .Values.images.ui.pullPolicy }}
           env:
+            {{- with include "ui.sitePrefix" . }}
+            - name: SITE_PREFIX
+              value: {{ . | quote }}
+            {{- end }}
             - name: LOGOUT_URL
               valueFrom:
                 configMapKeyRef:

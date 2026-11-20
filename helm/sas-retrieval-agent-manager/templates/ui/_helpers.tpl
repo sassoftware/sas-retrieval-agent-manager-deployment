@@ -125,3 +125,12 @@ Merged readiness probe - combines defaults with user values
 {{- $custom := .Values.ui.readinessProbe | default dict }}
 {{- toYaml (merge (deepCopy $custom) (deepCopy $default)) }}
 {{- end }}
+
+{{/*
+Clean the site prefix for the ingress path
+Example: /ram-f/SASRetrievalAgentManager becomes ram-f
+The result is empty when the path has no prefix
+*/}}
+{{- define "ui.sitePrefix" -}}
+{{- include "ui.uiPath" . | trimAll "/" | trimSuffix "SASRetrievalAgentManager" | trimAll "/" -}}
+{{- end }}

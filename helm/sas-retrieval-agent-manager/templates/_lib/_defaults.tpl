@@ -8,7 +8,7 @@ Priority:
   1. If platform is openshift: "route"
   2. .Values.ingress.classType if set
   3. Infer from .Values.ingress.className if it matches a known type (contour, route, nginx)
-  4. Default: "nginx"
+  4. Default: "contour"
 Returns: nginx, contour, or route
 */}}
 {{- define "retrieval-agent-manager.ingressClassType" -}}
@@ -16,12 +16,12 @@ Returns: nginx, contour, or route
 route
 {{- else if .Values.ingress.classType -}}
 {{- .Values.ingress.classType -}}
-{{- else if and .Values.ingress.className (eq .Values.ingress.className "contour") -}}
-contour
+{{- else if and .Values.ingress.className (eq .Values.ingress.className "nginx") -}}
+nginx
 {{- else if and .Values.ingress.className (eq .Values.ingress.className "route") -}}
 route
 {{- else -}}
-nginx
+contour
 {{- end -}}
 {{- end -}}
 

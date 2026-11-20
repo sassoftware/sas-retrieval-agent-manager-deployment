@@ -1,0 +1,131 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": ["object", "null"],
+  "additionalProperties": false,
+  "properties": {
+    "claims": {
+      "description": "Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container.",
+      "type": ["array", "null"],
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name must match the name of one entry in pod.spec.resourceClaims"
+          },
+          "request": {
+            "type": "string",
+            "description": "Request is the name chosen for a request in the referenced claim"
+          }
+        },
+        "required": ["name"]
+      }
+    },
+    "limits": {
+      "description": "Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
+      "type": ["object", "null"],
+      "additionalProperties": {
+        "oneOf": [
+          {
+            "type": "string",
+            "pattern": "^[0-9]+(\\.[0-9]+)?(m|Ki|Mi|Gi|Ti|Pi|Ei)?$"
+          },
+          {
+            "type": "integer"
+          }
+        ]
+      },
+      "properties": {
+        "cpu": {
+          "description": "CPU limit (e.g., '100m', '1', '2')",
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9]+(\\.[0-9]+)?m?$"
+            },
+            {
+              "type": "integer"
+            }
+          ]
+        },
+        "memory": {
+          "description": "Memory limit (e.g., '128Mi', '1Gi')",
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9]+(\\.[0-9]+)?(Ki|Mi|Gi|Ti|Pi|Ei)$"
+            },
+            {
+              "type": "integer"
+            }
+          ]
+        },
+        "ephemeral-storage": {
+          "description": "Ephemeral storage limit",
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9]+(\\.[0-9]+)?(Ki|Mi|Gi|Ti|Pi|Ei)$"
+            },
+            {
+              "type": "integer"
+            }
+          ]
+        }
+      }
+    },
+    "requests": {
+      "description": "Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
+      "type": ["object", "null"],
+      "additionalProperties": {
+        "oneOf": [
+          {
+            "type": "string",
+            "pattern": "^[0-9]+(\\.[0-9]+)?(m|Ki|Mi|Gi|Ti|Pi|Ei)?$"
+          },
+          {
+            "type": "integer"
+          }
+        ]
+      },
+      "properties": {
+        "cpu": {
+          "description": "CPU request (e.g., '100m', '1', '2')",
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9]+(\\.[0-9]+)?m?$"
+            },
+            {
+              "type": "integer"
+            }
+          ]
+        },
+        "memory": {
+          "description": "Memory request (e.g., '128Mi', '1Gi')",
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9]+(\\.[0-9]+)?(Ki|Mi|Gi|Ti|Pi|Ei)$"
+            },
+            {
+              "type": "integer"
+            }
+          ]
+        },
+        "ephemeral-storage": {
+          "description": "Ephemeral storage request",
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9]+(\\.[0-9]+)?(Ki|Mi|Gi|Ti|Pi|Ei)$"
+            },
+            {
+              "type": "integer"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

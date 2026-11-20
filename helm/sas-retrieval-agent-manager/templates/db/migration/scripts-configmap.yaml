@@ -137,7 +137,7 @@ data:
     
     if [[ -f "$SQL_FILE" ]]; then
       echo "Executing embedding model hydration SQL script..."
-      $PSQL -h "$DB_HOST" -p "$DB_PORT" -U "$USER" -d "$DB_NAME" -f "$SQL_FILE"
+      $PSQL -h "$DB_HOST" -p "$DB_PORT" -U "$USER" -d "$DB_NAME" -v ON_ERROR_STOP=1 -f "$SQL_FILE"
       
       if [ $? -eq 0 ]; then
         echo "Embedding model hydration completed successfully."
@@ -161,8 +161,15 @@ data:
     {{- range $index, $model := .Values.db.migration.config.embModelHydration.models }}
     
     -- Update embedding model {{ $index }}: {{ $model }}
-    UPDATE embedding_model 
-    SET metadata = metadata || jsonb_build_object('published', true)
-    WHERE metadata->>'deployment_name' = '{{ $model }}' AND type = 'onnx';
+    DO $$
+    BEGIN
+      UPDATE embedding_model
+      SET metadata = metadata || jsonb_build_object('published', true)
+      WHERE metadata->>'deployment_name' = '{{ $model }}' AND type = 'onnx';
+      IF NOT FOUND THEN
+        RAISE EXCEPTION 'Configured embedding model {{ $model }} is missing or is not an ONNX model';
+      END IF;
+    END
+    $$;
     {{- end }}
 {{- end }}
