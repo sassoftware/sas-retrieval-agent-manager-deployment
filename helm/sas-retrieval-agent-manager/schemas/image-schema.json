@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "repo": {
+      "type": ["object", "null"],
+      "properties": {
+        "base": {
+          "type": ["string", "null"],
+          "description": "Container registry base URL"
+        },
+        "path": {
+          "type": ["string", "null"],
+          "description": "Container image path/name"
+        }
+      },
+      "additionalProperties": false
+    },
+    "pullPolicy": {
+      "type": ["string", "null"],
+      "enum": ["IfNotPresent", "Always", "Never", null],
+      "description": "Image pull policy"
+    },
+    "tag": {
+      "type": ["string", "null"],
+      "description": "Container image tag"
+    }
+  }
+}

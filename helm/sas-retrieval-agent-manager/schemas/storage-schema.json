@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "description": "Persistent Volume Claim configuration",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name for the PVC",
+      "minLength": 1,
+      "maxLength": 63
+    },
+    "storageClassName": {
+      "type": ["string", "null"],
+      "description": "Storage class name for the PVC. If null, defaults based on platform (azure: azurefile-sas, aws: efs-sc, kubernetes/openshift: nfs-client)"
+    },
+    "createStorageClass": {
+      "type": ["boolean", "null"],
+      "description": "Whether to create the storage class if it doesn't exist. If null, defaults based on platform (azure: true, others: false)"
+    },
+    "accessModes": {
+      "type": "array",
+      "description": "Access modes for the PVC",
+      "items": {
+        "type": "string",
+        "enum": ["ReadWriteOnce", "ReadOnlyMany", "ReadWriteMany", "ReadWriteOncePod"]
+      },
+      "minItems": 1
+    },
+    "size": {
+      "type": "string",
+      "description": "Size for the PVC (e.g., 10Gi, 100Gi)",
+      "pattern": "^[0-9]+(Ki|Mi|Gi|Ti|Pi|Ei)?$"
+    },
+    "existingClaim": {
+      "type": "string",
+      "description": "Existing claim name for the PVC (if not creating a new one). Leave empty to create a new PVC"
+    }
+  },
+  "required": ["name", "accessModes", "size"]
+}

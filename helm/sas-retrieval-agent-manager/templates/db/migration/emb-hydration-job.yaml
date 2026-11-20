@@ -8,8 +8,6 @@ metadata:
     ram-base-job: "true"
   annotations:
     argocd.argoproj.io/sync-options: Skip
-    helm.sh/hook-weight: "0"
-    helm.sh/hook: post-install
 spec:
   template:
     metadata:
