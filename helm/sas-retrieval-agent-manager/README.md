@@ -1,6 +1,6 @@
 # sas-retrieval-agent-manager
 
-![Version: 2026.10.5](https://img.shields.io/badge/Version-2026.10.5-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 2026.10.0](https://img.shields.io/badge/AppVersion-2026.10.0-informational?style=flat-square)
+![Version: 1.2.3-dev.20241225](https://img.shields.io/badge/Version-1.2.3--dev.20241225-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.2.0](https://img.shields.io/badge/AppVersion-1.2.0-informational?style=flat-square)
 
 A comprehensive Helm chart for deploying SAS Retrieval Agent Manager (RAM) platform. Provides AI-powered document retrieval, processing, and management capabilities with integrated authentication, file management, and vector search functionality.
 
@@ -424,31 +424,31 @@ Kubernetes: `>=1.24.0-0`
 | iam.oauthProxy.serviceAccount.name | string | `"oauth2-proxy"` | The name of the service account to use for OAuth2 Proxy |
 | iam.oauthProxy.volumeMounts | list | `[]` | Additional volumeMounts on the OAuth2 Proxy Deployment definition |
 | iam.oauthProxy.volumes | list | `[]` | Additional volumes on the OAuth2 Proxy Deployment definition |
-| images.agent | object | `{"pullPolicy":"IfNotPresent","repo":{"base":"cr.sas.com","path":"viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-agent"},"tag":"1.20.8-20261007.1791402863800"}` | Container image configuration for RAM agents |
+| images.agent | object | `{"pullPolicy":"IfNotPresent","repo":{"base":"cr.sas.com","path":"viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-agent"},"tag":"1.21.5-20261113.1794599268880"}` | Container image configuration for RAM agents |
 | images.agent.pullPolicy | string | `"IfNotPresent"` | Image pull policy for agent container |
 | images.agent.repo.base | string | `"cr.sas.com"` | Container registry base URL for agent |
 | images.agent.repo.path | string | `"viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-agent"` | Container image path/name for agent |
-| images.agent.tag | string | `"1.20.8-20261007.1791402863800"` | Container image tag for agent |
-| images.api | object | `{"pullPolicy":"IfNotPresent","repo":{"base":"cr.sas.com","path":"viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager"},"tag":"1.22.14-20261008.1791469156044"}` | Container image configuration for the RAM API |
+| images.agent.tag | string | `"1.21.5-20261113.1794599268880"` | Container image tag for agent |
+| images.api | object | `{"pullPolicy":"IfNotPresent","repo":{"base":"cr.sas.com","path":"viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager"},"tag":"1.23.14-20261113.1794599371407"}` | Container image configuration for the RAM API |
 | images.api.pullPolicy | string | `"IfNotPresent"` | Image pull policy for API container |
 | images.api.repo.base | string | `"cr.sas.com"` | SAS container registry |
 | images.api.repo.path | string | `"viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager"` | SAS API image |
-| images.api.tag | string | `"1.22.14-20261008.1791469156044"` | Image tag (defaults to chart appVersion) |
+| images.api.tag | string | `"1.23.14-20261113.1794599371407"` | Image tag (defaults to chart appVersion) |
 | images.embedding | object | `{"pullPolicy":"IfNotPresent","repo":{"base":"ghcr.io","path":"huggingface/text-embeddings-inference"},"tag":"cpu-1.8.3"}` | Container image configuration for embedding model inference |
 | images.embedding.pullPolicy | string | `"IfNotPresent"` | Image pull policy |
 | images.embedding.repo.base | string | `"ghcr.io"` | Container registry base URL for embedding model inference |
 | images.embedding.repo.path | string | `"huggingface/text-embeddings-inference"` | Container image path/name for embedding model inference |
 | images.embedding.tag | string | `"cpu-1.8.3"` | Container image tag for embedding model inference with CPU |
-| images.eval | object | `{"pullPolicy":"IfNotPresent","repo":{"base":"cr.sas.com","path":"viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-evaluation"},"tag":"1.17.6-20261009.1791559703775"}` | Container image configuration for evaluations |
+| images.eval | object | `{"pullPolicy":"IfNotPresent","repo":{"base":"cr.sas.com","path":"viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-evaluation"},"tag":"1.18.3-20261113.1794599280202"}` | Container image configuration for evaluations |
 | images.eval.pullPolicy | string | `"IfNotPresent"` | Image pull policy for eval container |
 | images.eval.repo.base | string | `"cr.sas.com"` | Container registry base URL for evaluation service |
 | images.eval.repo.path | string | `"viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-evaluation"` | Container image path/name for evaluation service |
-| images.eval.tag | string | `"1.17.6-20261009.1791559703775"` | Container image tag for evaluation service |
-| images.goose | object | `{"pullPolicy":"IfNotPresent","repo":{"base":"cr.sas.com","path":"viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-db-migration"},"tag":"1.17.6-20261007.1791404081426"}` | Goose migration tool container image configuration |
+| images.eval.tag | string | `"1.18.3-20261113.1794599280202"` | Container image tag for evaluation service |
+| images.goose | object | `{"pullPolicy":"IfNotPresent","repo":{"base":"cr.sas.com","path":"viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-db-migration"},"tag":"1.18.8-20261113.1794604939837"}` | Goose migration tool container image configuration |
 | images.goose.pullPolicy | string | `"IfNotPresent"` | Image pull policy for Goose container |
 | images.goose.repo.base | string | `"cr.sas.com"` | Container registry base URL for Goose |
 | images.goose.repo.path | string | `"viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-db-migration"` | Container image path/name for Goose |
-| images.goose.tag | string | `"1.17.6-20261007.1791404081426"` | Goose container image tag |
+| images.goose.tag | string | `"1.18.8-20261113.1794604939837"` | Goose container image tag |
 | images.imagePullSecrets | list | `[]` | Global image pull secrets for accessing private container registries Applied to all sub-charts that reference private registries |
 | images.keycloak | object | `{"pullPolicy":"IfNotPresent","repo":{"base":"quay.io","path":"keycloak/keycloak"},"tag":"26.7.3"}` | Container image configuration for Keycloak |
 | images.keycloak.pullPolicy | string | `"IfNotPresent"` | Image pull policy for Keycloak container |
@@ -485,22 +485,22 @@ Kubernetes: `>=1.24.0-0`
 | images.postgrest.tag | string | `"v16.2"` | Image tag (defaults to chart appVersion) |
 | images.repo | object | `{"base":null}` | Image repository details (useful for private registries) |
 | images.repo.base | string | `nil` | Base container registry URL (used when mirrorring images) |
-| images.theme | object | `{"pullPolicy":"IfNotPresent","repo":{"base":"cr.sas.com","path":"viya-4-x64_oci_linux_2-docker/sas-iot-keycloak-theme"},"tag":"1.4.1-20261007.1791369309274"}` | Custom theme container image configuration |
+| images.theme | object | `{"pullPolicy":"IfNotPresent","repo":{"base":"cr.sas.com","path":"viya-4-x64_oci_linux_2-docker/sas-iot-keycloak-theme"},"tag":"1.4.4-20261112.1794482467022"}` | Custom theme container image configuration |
 | images.theme.pullPolicy | string | `"IfNotPresent"` | Image pull policy for theme container |
 | images.theme.repo | object | `{"base":"cr.sas.com","path":"viya-4-x64_oci_linux_2-docker/sas-iot-keycloak-theme"}` | Container image configuration for the SAS Keycloak theme |
 | images.theme.repo.base | string | `"cr.sas.com"` | Container registry base URL for theme |
 | images.theme.repo.path | string | `"viya-4-x64_oci_linux_2-docker/sas-iot-keycloak-theme"` | Container image path/name for theme |
-| images.theme.tag | string | `"1.4.1-20261007.1791369309274"` | Theme container image tag |
-| images.ui | object | `{"pullPolicy":"IfNotPresent","repo":{"base":"cr.sas.com","path":"viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-app"},"tag":"1.15.13-20261009.1791561788268"}` | Container image configuration for UI |
+| images.theme.tag | string | `"1.4.4-20261112.1794482467022"` | Theme container image tag |
+| images.ui | object | `{"pullPolicy":"IfNotPresent","repo":{"base":"cr.sas.com","path":"viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-app"},"tag":"1.16.26-20261117.1794951813382"}` | Container image configuration for UI |
 | images.ui.pullPolicy | string | `"IfNotPresent"` | Image pull policy for UI container |
 | images.ui.repo.base | string | `"cr.sas.com"` | Container registry base URL |
 | images.ui.repo.path | string | `"viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-app"` | Container image path/name |
-| images.ui.tag | string | `"1.15.13-20261009.1791561788268"` | Container image tag |
-| images.vectorizationHub | object | `{"pullPolicy":"IfNotPresent","repo":{"base":"cr.sas.com","path":"viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-vectorization-hub"},"tag":"1.17.9-20261008.1791469424760"}` | Container image configuration for vectorization hub |
+| images.ui.tag | string | `"1.16.26-20261117.1794951813382"` | Container image tag |
+| images.vectorizationHub | object | `{"pullPolicy":"IfNotPresent","repo":{"base":"cr.sas.com","path":"viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-vectorization-hub"},"tag":"1.18.12-20261117.1794946340931"}` | Container image configuration for vectorization hub |
 | images.vectorizationHub.pullPolicy | string | `"IfNotPresent"` | Image pull policy for vectorization hub container |
 | images.vectorizationHub.repo.base | string | `"cr.sas.com"` | Container registry base URL for vectorization hub |
 | images.vectorizationHub.repo.path | string | `"viya-4-x64_oci_linux_2-docker/sas-retrieval-agent-manager-vectorization-hub"` | Container image path/name for vectorization hub |
-| images.vectorizationHub.tag | string | `"1.17.9-20261008.1791469424760"` | Container image tag for vectorization hub |
+| images.vectorizationHub.tag | string | `"1.18.12-20261117.1794946340931"` | Container image tag for vectorization hub |
 | ingress | object | `{"annotations":{},"api":{"annotations":{},"paths":["/SASRetrievalAgentManager/api"]},"className":null,"classType":null,"contour":{"addons":[],"extraRoutes":[],"hub":{"name":null},"includes":[],"redirectBarePrefix":true,"redirectStatusCode":302,"root":{"name":null},"timeoutPolicy":{}},"domain":null,"enableRootIngress":true,"enabled":true,"keycloak":{"paths":["/SASRetrievalAgentManager/auth","/SASRetrievalAgentManager/auth/realms","/SASRetrievalAgentManager/auth/resources"]},"keycloakAdmin":{"paths":["/SASRetrievalAgentManager/auth/admin"]},"oauthProxy":{"logoutPaths":["/SASRetrievalAgentManager/logout"],"paths":["/SASRetrievalAgentManager/oauth2"]},"postgrest":{"annotations":{},"paths":["/SASRetrievalAgentManager/postgrest","/SASRetrievalAgentManager/postgrest/monitoring"]},"tls":{"caCertificate":"","certManager":{"dnsNames":[],"duration":null,"enabled":false,"issuerRef":{"kind":"ClusterIssuer","name":""},"renewBefore":null},"certificate":"","enabled":true,"insecureEdgeTerminationPolicy":"","key":"","secretName":"","termination":""},"ui":{"annotations":{},"paths":["/SASRetrievalAgentManager"]}}` | Ingress configuration for all services |
 | ingress.annotations | object | `{}` | Annotations applied to all ingress resources Default nginx annotations are defined in templates/ingress/_nginx.tpl Add annotations here to override defaults or add new ones |
 | ingress.api | object | `{"annotations":{},"paths":["/SASRetrievalAgentManager/api"]}` | API ingress configuration Default annotations defined in templates/ingress/_nginx.tpl (nginx.default.annotations.api) |
